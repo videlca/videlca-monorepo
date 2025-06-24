@@ -1,0 +1,19 @@
+export const EnvConfiguration = () => ({
+    environment: process.env.ENV || 'dev',
+    jwtSecret: process.env.JWT_SECRET,
+    authToken: process.env.AUTH_TOKEN,
+    defaultLimit: +process.env.DEAFULT_LIMIT || 10,
+    port: +process.env.PORT || 3000,
+    hostApi: process.env.HOST_API,
+    hostPublic: process.env.HOST_PUBLIC,
+    hostFrontend: process.env.HOST_FRONTEND,
+    dbHost: process.env.DB_HOST,
+    dbPort: process.env.DB_PORT,
+    dbName: process.env.DB_NAME,
+    dbUsername: process.env.DB_USERNAME,
+    dbPassword: process.env.DB_PASSWORD,
+    mailerService: process.env.MAILER_sERVICE,
+    mailerEmail: process.env.MAILER_EMAIL,
+    mailerSecretKey: process.env.MAILER_SECRET_KEY,
+    mailerTo: process.env.CONTACT_MAILER_TO
+});
