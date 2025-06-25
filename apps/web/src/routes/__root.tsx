@@ -1,18 +1,28 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
 
 export const Route = createRootRoute({
+  beforeLoad: async ({ location, context }) => {
+    // TODO: check if user is logged in
+    console.log("beforeLoad", location, context);
+  },
   component: () => (
     <main className="relative h-full max-h-screen w-full">
-      <div className="flex gap-2 p-2">
-        <Link to="/" className="[&.active]:font-bold">
-          Home
-        </Link>
-        <Link to="/dashboard" className="[&.active]:font-bold">
-          Dashboard
-        </Link>
-      </div>
-      <hr />
       <Outlet />
     </main>
+  ),
+  notFoundComponent: () => (
+    <div className="flex h-full w-full items-center justify-center bg-blue-400">
+      <div className="flex w-full max-w-sm flex-col items-center justify-center gap-4 rounded-lg bg-white p-8">
+        <h1 className="mb-2 text-center text-2xl font-medium text-gray-700">
+          404
+        </h1>
+        <p className="text-sm font-light text-gray-500">
+          La página que buscas no existe.
+        </p>
+        <Link to="/" className="text-blue-400">
+          Regresar al inicio
+        </Link>
+      </div>
+    </div>
   ),
 });

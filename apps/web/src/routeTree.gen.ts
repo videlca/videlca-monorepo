@@ -9,13 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RecuperarRouteImport } from './routes/recuperar'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ActualizarRouteImport } from './routes/actualizar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 
+const RecuperarRoute = RecuperarRouteImport.update({
+  id: '/recuperar',
+  path: '/recuperar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActualizarRoute = ActualizarRouteImport.update({
+  id: '/actualizar',
+  path: '/actualizar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,39 +43,67 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/actualizar': typeof ActualizarRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/recuperar': typeof RecuperarRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/actualizar': typeof ActualizarRoute
+  '/recuperar': typeof RecuperarRoute
   '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/actualizar': typeof ActualizarRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/recuperar': typeof RecuperarRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/dashboard/'
+  fullPaths: '/' | '/actualizar' | '/dashboard' | '/recuperar' | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard'
-  id: '__root__' | '/' | '/dashboard' | '/dashboard/'
+  to: '/' | '/actualizar' | '/recuperar' | '/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/actualizar'
+    | '/dashboard'
+    | '/recuperar'
+    | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActualizarRoute: typeof ActualizarRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  RecuperarRoute: typeof RecuperarRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/recuperar': {
+      id: '/recuperar'
+      path: '/recuperar'
+      fullPath: '/recuperar'
+      preLoaderRoute: typeof RecuperarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/actualizar': {
+      id: '/actualizar'
+      path: '/actualizar'
+      fullPath: '/actualizar'
+      preLoaderRoute: typeof ActualizarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -97,7 +137,9 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActualizarRoute: ActualizarRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  RecuperarRoute: RecuperarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
