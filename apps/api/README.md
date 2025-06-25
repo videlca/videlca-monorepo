@@ -81,6 +81,13 @@ http://localhost:{PORT}/videlca/api/v1/seed
 ```
 Asegúrate de usar el puerto correspondiente en la URL.
 
+## 7. Acceso a la documentación del proyecto.
+
+Se debe ejecutar la ruta:
+```
+http://localhost:{PORT}/docs
+```
+
 
 # 🧑‍💻 Tecnologías utilizadas
 
