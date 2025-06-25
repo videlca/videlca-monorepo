@@ -1,7 +1,9 @@
+import { ApiProperty } from "@nestjs/swagger";
 import { IsString, Matches, MaxLength, MinLength } from "class-validator";
 
 export class NewPasswordDto {
     
+    @ApiProperty({ description: 'Contraseña del usuario', example: 'dfjnveliuvneiv123@', required:true})
     @IsString({ message: 'El campo clave debe ser un string' })
     @MinLength(6, { message: 'La clave debe tener al menos 6 caracteres' })
     @MaxLength(50, { message: 'La clave no puede exceder los 50 caracteres' })
@@ -11,6 +13,7 @@ export class NewPasswordDto {
     })
     clave: string;
     
+    @ApiProperty({ description: 'Confirmar contraseña del usuario', example: 'dfjnveliuvneiv123@', required:true})
     @IsString({ message: 'El campo confirmar clave debe ser un string' })
     @MinLength(6, { message: 'La clave debe tener al menos 6 caracteres' })
     @MaxLength(50, { message: 'La clave no puede exceder los 50 caracteres' })
