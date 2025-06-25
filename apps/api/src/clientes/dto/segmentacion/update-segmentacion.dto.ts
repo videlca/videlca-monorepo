@@ -1,4 +1,4 @@
-import { PartialType, OmitType } from '@nestjs/mapped-types';
+import { PartialType, OmitType, ApiProperty } from '@nestjs/swagger';
 import { CreateSegmentacionDto } from './create-segmentacion.dto';
 import { IsBoolean, IsOptional } from 'class-validator';
 
@@ -6,7 +6,7 @@ import { IsBoolean, IsOptional } from 'class-validator';
 export class UpdateSegmentacionDto extends PartialType(
   OmitType(CreateSegmentacionDto, ['subSegmentaciones'])
 ) {
-
+    @ApiProperty({ description: 'identificador de estado activo', example: true, required:false})
     @IsOptional()
     @IsBoolean({message: 'El campo estado debe ser boolean'})
     estado?: boolean;

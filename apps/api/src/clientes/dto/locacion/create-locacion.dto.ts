@@ -1,6 +1,7 @@
 import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, Length, ValidateNested, ArrayMinSize, IsNumber, IsPositive, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
+
 export class CreateCorreoDto {
 
   @IsString()
