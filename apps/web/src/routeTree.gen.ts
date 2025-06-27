@@ -14,6 +14,22 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ActualizarRouteImport } from './routes/actualizar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardPerfilUsuarioRouteImport } from './routes/dashboard/perfil-usuario'
+import { Route as DashboardUsuariosIndexRouteImport } from './routes/dashboard/usuarios/index'
+import { Route as DashboardPersonalIndexRouteImport } from './routes/dashboard/personal/index'
+import { Route as DashboardPermisosIndexRouteImport } from './routes/dashboard/permisos/index'
+import { Route as DashboardClientesIndexRouteImport } from './routes/dashboard/clientes/index'
+import { Route as DashboardPersonalNovedadesRouteImport } from './routes/dashboard/personal/novedades'
+import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
+import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
+import { Route as DashboardConfiguracionTipoPersonalRouteImport } from './routes/dashboard/configuracion/tipo-personal'
+import { Route as DashboardConfiguracionTipoIdRouteImport } from './routes/dashboard/configuracion/tipo-id'
+import { Route as DashboardConfiguracionTipoGeneroRouteImport } from './routes/dashboard/configuracion/tipo-genero'
+import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/dashboard/configuracion/tipo-cliente'
+import { Route as DashboardConfiguracionOrdenServicioRouteImport } from './routes/dashboard/configuracion/orden-servicio'
+import { Route as DashboardClientesSubSegmentacionRouteImport } from './routes/dashboard/clientes/sub-segmentacion'
+import { Route as DashboardClientesSegmentacionRouteImport } from './routes/dashboard/clientes/segmentacion'
+import { Route as DashboardClientesLocacionesRouteImport } from './routes/dashboard/clientes/locaciones'
 
 const RecuperarRoute = RecuperarRouteImport.update({
   id: '/recuperar',
@@ -40,19 +56,142 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardPerfilUsuarioRoute = DashboardPerfilUsuarioRouteImport.update({
+  id: '/perfil-usuario',
+  path: '/perfil-usuario',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardUsuariosIndexRoute = DashboardUsuariosIndexRouteImport.update({
+  id: '/usuarios/',
+  path: '/usuarios/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPersonalIndexRoute = DashboardPersonalIndexRouteImport.update({
+  id: '/personal/',
+  path: '/personal/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPermisosIndexRoute = DashboardPermisosIndexRouteImport.update({
+  id: '/permisos/',
+  path: '/permisos/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardClientesIndexRoute = DashboardClientesIndexRouteImport.update({
+  id: '/clientes/',
+  path: '/clientes/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPersonalNovedadesRoute =
+  DashboardPersonalNovedadesRouteImport.update({
+    id: '/personal/novedades',
+    path: '/personal/novedades',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionUbicacionRoute =
+  DashboardConfiguracionUbicacionRouteImport.update({
+    id: '/configuracion/ubicacion',
+    path: '/configuracion/ubicacion',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionTiposNovedadRoute =
+  DashboardConfiguracionTiposNovedadRouteImport.update({
+    id: '/configuracion/tipos-novedad',
+    path: '/configuracion/tipos-novedad',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionTipoPersonalRoute =
+  DashboardConfiguracionTipoPersonalRouteImport.update({
+    id: '/configuracion/tipo-personal',
+    path: '/configuracion/tipo-personal',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionTipoIdRoute =
+  DashboardConfiguracionTipoIdRouteImport.update({
+    id: '/configuracion/tipo-id',
+    path: '/configuracion/tipo-id',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionTipoGeneroRoute =
+  DashboardConfiguracionTipoGeneroRouteImport.update({
+    id: '/configuracion/tipo-genero',
+    path: '/configuracion/tipo-genero',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionTipoClienteRoute =
+  DashboardConfiguracionTipoClienteRouteImport.update({
+    id: '/configuracion/tipo-cliente',
+    path: '/configuracion/tipo-cliente',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionOrdenServicioRoute =
+  DashboardConfiguracionOrdenServicioRouteImport.update({
+    id: '/configuracion/orden-servicio',
+    path: '/configuracion/orden-servicio',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardClientesSubSegmentacionRoute =
+  DashboardClientesSubSegmentacionRouteImport.update({
+    id: '/clientes/sub-segmentacion',
+    path: '/clientes/sub-segmentacion',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardClientesSegmentacionRoute =
+  DashboardClientesSegmentacionRouteImport.update({
+    id: '/clientes/segmentacion',
+    path: '/clientes/segmentacion',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardClientesLocacionesRoute =
+  DashboardClientesLocacionesRouteImport.update({
+    id: '/clientes/locaciones',
+    path: '/clientes/locaciones',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actualizar': typeof ActualizarRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/recuperar': typeof RecuperarRoute
+  '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/clientes/locaciones': typeof DashboardClientesLocacionesRoute
+  '/dashboard/clientes/segmentacion': typeof DashboardClientesSegmentacionRoute
+  '/dashboard/clientes/sub-segmentacion': typeof DashboardClientesSubSegmentacionRoute
+  '/dashboard/configuracion/orden-servicio': typeof DashboardConfiguracionOrdenServicioRoute
+  '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
+  '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
+  '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
+  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
+  '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
+  '/dashboard/clientes': typeof DashboardClientesIndexRoute
+  '/dashboard/permisos': typeof DashboardPermisosIndexRoute
+  '/dashboard/personal': typeof DashboardPersonalIndexRoute
+  '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actualizar': typeof ActualizarRoute
   '/recuperar': typeof RecuperarRoute
+  '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/clientes/locaciones': typeof DashboardClientesLocacionesRoute
+  '/dashboard/clientes/segmentacion': typeof DashboardClientesSegmentacionRoute
+  '/dashboard/clientes/sub-segmentacion': typeof DashboardClientesSubSegmentacionRoute
+  '/dashboard/configuracion/orden-servicio': typeof DashboardConfiguracionOrdenServicioRoute
+  '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
+  '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
+  '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
+  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
+  '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
+  '/dashboard/clientes': typeof DashboardClientesIndexRoute
+  '/dashboard/permisos': typeof DashboardPermisosIndexRoute
+  '/dashboard/personal': typeof DashboardPersonalIndexRoute
+  '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -60,20 +199,93 @@ export interface FileRoutesById {
   '/actualizar': typeof ActualizarRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/recuperar': typeof RecuperarRoute
+  '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/clientes/locaciones': typeof DashboardClientesLocacionesRoute
+  '/dashboard/clientes/segmentacion': typeof DashboardClientesSegmentacionRoute
+  '/dashboard/clientes/sub-segmentacion': typeof DashboardClientesSubSegmentacionRoute
+  '/dashboard/configuracion/orden-servicio': typeof DashboardConfiguracionOrdenServicioRoute
+  '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
+  '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
+  '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
+  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
+  '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
+  '/dashboard/clientes/': typeof DashboardClientesIndexRoute
+  '/dashboard/permisos/': typeof DashboardPermisosIndexRoute
+  '/dashboard/personal/': typeof DashboardPersonalIndexRoute
+  '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/actualizar' | '/dashboard' | '/recuperar' | '/dashboard/'
+  fullPaths:
+    | '/'
+    | '/actualizar'
+    | '/dashboard'
+    | '/recuperar'
+    | '/dashboard/perfil-usuario'
+    | '/dashboard/'
+    | '/dashboard/clientes/locaciones'
+    | '/dashboard/clientes/segmentacion'
+    | '/dashboard/clientes/sub-segmentacion'
+    | '/dashboard/configuracion/orden-servicio'
+    | '/dashboard/configuracion/tipo-cliente'
+    | '/dashboard/configuracion/tipo-genero'
+    | '/dashboard/configuracion/tipo-id'
+    | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipos-novedad'
+    | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/personal/novedades'
+    | '/dashboard/clientes'
+    | '/dashboard/permisos'
+    | '/dashboard/personal'
+    | '/dashboard/usuarios'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/actualizar' | '/recuperar' | '/dashboard'
+  to:
+    | '/'
+    | '/actualizar'
+    | '/recuperar'
+    | '/dashboard/perfil-usuario'
+    | '/dashboard'
+    | '/dashboard/clientes/locaciones'
+    | '/dashboard/clientes/segmentacion'
+    | '/dashboard/clientes/sub-segmentacion'
+    | '/dashboard/configuracion/orden-servicio'
+    | '/dashboard/configuracion/tipo-cliente'
+    | '/dashboard/configuracion/tipo-genero'
+    | '/dashboard/configuracion/tipo-id'
+    | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipos-novedad'
+    | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/personal/novedades'
+    | '/dashboard/clientes'
+    | '/dashboard/permisos'
+    | '/dashboard/personal'
+    | '/dashboard/usuarios'
   id:
     | '__root__'
     | '/'
     | '/actualizar'
     | '/dashboard'
     | '/recuperar'
+    | '/dashboard/perfil-usuario'
     | '/dashboard/'
+    | '/dashboard/clientes/locaciones'
+    | '/dashboard/clientes/segmentacion'
+    | '/dashboard/clientes/sub-segmentacion'
+    | '/dashboard/configuracion/orden-servicio'
+    | '/dashboard/configuracion/tipo-cliente'
+    | '/dashboard/configuracion/tipo-genero'
+    | '/dashboard/configuracion/tipo-id'
+    | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipos-novedad'
+    | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/personal/novedades'
+    | '/dashboard/clientes/'
+    | '/dashboard/permisos/'
+    | '/dashboard/personal/'
+    | '/dashboard/usuarios/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -120,15 +332,163 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/perfil-usuario': {
+      id: '/dashboard/perfil-usuario'
+      path: '/perfil-usuario'
+      fullPath: '/dashboard/perfil-usuario'
+      preLoaderRoute: typeof DashboardPerfilUsuarioRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/usuarios/': {
+      id: '/dashboard/usuarios/'
+      path: '/usuarios'
+      fullPath: '/dashboard/usuarios'
+      preLoaderRoute: typeof DashboardUsuariosIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/personal/': {
+      id: '/dashboard/personal/'
+      path: '/personal'
+      fullPath: '/dashboard/personal'
+      preLoaderRoute: typeof DashboardPersonalIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/permisos/': {
+      id: '/dashboard/permisos/'
+      path: '/permisos'
+      fullPath: '/dashboard/permisos'
+      preLoaderRoute: typeof DashboardPermisosIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/clientes/': {
+      id: '/dashboard/clientes/'
+      path: '/clientes'
+      fullPath: '/dashboard/clientes'
+      preLoaderRoute: typeof DashboardClientesIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/personal/novedades': {
+      id: '/dashboard/personal/novedades'
+      path: '/personal/novedades'
+      fullPath: '/dashboard/personal/novedades'
+      preLoaderRoute: typeof DashboardPersonalNovedadesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion/ubicacion': {
+      id: '/dashboard/configuracion/ubicacion'
+      path: '/configuracion/ubicacion'
+      fullPath: '/dashboard/configuracion/ubicacion'
+      preLoaderRoute: typeof DashboardConfiguracionUbicacionRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion/tipos-novedad': {
+      id: '/dashboard/configuracion/tipos-novedad'
+      path: '/configuracion/tipos-novedad'
+      fullPath: '/dashboard/configuracion/tipos-novedad'
+      preLoaderRoute: typeof DashboardConfiguracionTiposNovedadRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion/tipo-personal': {
+      id: '/dashboard/configuracion/tipo-personal'
+      path: '/configuracion/tipo-personal'
+      fullPath: '/dashboard/configuracion/tipo-personal'
+      preLoaderRoute: typeof DashboardConfiguracionTipoPersonalRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion/tipo-id': {
+      id: '/dashboard/configuracion/tipo-id'
+      path: '/configuracion/tipo-id'
+      fullPath: '/dashboard/configuracion/tipo-id'
+      preLoaderRoute: typeof DashboardConfiguracionTipoIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion/tipo-genero': {
+      id: '/dashboard/configuracion/tipo-genero'
+      path: '/configuracion/tipo-genero'
+      fullPath: '/dashboard/configuracion/tipo-genero'
+      preLoaderRoute: typeof DashboardConfiguracionTipoGeneroRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion/tipo-cliente': {
+      id: '/dashboard/configuracion/tipo-cliente'
+      path: '/configuracion/tipo-cliente'
+      fullPath: '/dashboard/configuracion/tipo-cliente'
+      preLoaderRoute: typeof DashboardConfiguracionTipoClienteRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion/orden-servicio': {
+      id: '/dashboard/configuracion/orden-servicio'
+      path: '/configuracion/orden-servicio'
+      fullPath: '/dashboard/configuracion/orden-servicio'
+      preLoaderRoute: typeof DashboardConfiguracionOrdenServicioRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/clientes/sub-segmentacion': {
+      id: '/dashboard/clientes/sub-segmentacion'
+      path: '/clientes/sub-segmentacion'
+      fullPath: '/dashboard/clientes/sub-segmentacion'
+      preLoaderRoute: typeof DashboardClientesSubSegmentacionRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/clientes/segmentacion': {
+      id: '/dashboard/clientes/segmentacion'
+      path: '/clientes/segmentacion'
+      fullPath: '/dashboard/clientes/segmentacion'
+      preLoaderRoute: typeof DashboardClientesSegmentacionRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/clientes/locaciones': {
+      id: '/dashboard/clientes/locaciones'
+      path: '/clientes/locaciones'
+      fullPath: '/dashboard/clientes/locaciones'
+      preLoaderRoute: typeof DashboardClientesLocacionesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
+  DashboardPerfilUsuarioRoute: typeof DashboardPerfilUsuarioRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardClientesLocacionesRoute: typeof DashboardClientesLocacionesRoute
+  DashboardClientesSegmentacionRoute: typeof DashboardClientesSegmentacionRoute
+  DashboardClientesSubSegmentacionRoute: typeof DashboardClientesSubSegmentacionRoute
+  DashboardConfiguracionOrdenServicioRoute: typeof DashboardConfiguracionOrdenServicioRoute
+  DashboardConfiguracionTipoClienteRoute: typeof DashboardConfiguracionTipoClienteRoute
+  DashboardConfiguracionTipoGeneroRoute: typeof DashboardConfiguracionTipoGeneroRoute
+  DashboardConfiguracionTipoIdRoute: typeof DashboardConfiguracionTipoIdRoute
+  DashboardConfiguracionTipoPersonalRoute: typeof DashboardConfiguracionTipoPersonalRoute
+  DashboardConfiguracionTiposNovedadRoute: typeof DashboardConfiguracionTiposNovedadRoute
+  DashboardConfiguracionUbicacionRoute: typeof DashboardConfiguracionUbicacionRoute
+  DashboardPersonalNovedadesRoute: typeof DashboardPersonalNovedadesRoute
+  DashboardClientesIndexRoute: typeof DashboardClientesIndexRoute
+  DashboardPermisosIndexRoute: typeof DashboardPermisosIndexRoute
+  DashboardPersonalIndexRoute: typeof DashboardPersonalIndexRoute
+  DashboardUsuariosIndexRoute: typeof DashboardUsuariosIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardPerfilUsuarioRoute: DashboardPerfilUsuarioRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardClientesLocacionesRoute: DashboardClientesLocacionesRoute,
+  DashboardClientesSegmentacionRoute: DashboardClientesSegmentacionRoute,
+  DashboardClientesSubSegmentacionRoute: DashboardClientesSubSegmentacionRoute,
+  DashboardConfiguracionOrdenServicioRoute:
+    DashboardConfiguracionOrdenServicioRoute,
+  DashboardConfiguracionTipoClienteRoute:
+    DashboardConfiguracionTipoClienteRoute,
+  DashboardConfiguracionTipoGeneroRoute: DashboardConfiguracionTipoGeneroRoute,
+  DashboardConfiguracionTipoIdRoute: DashboardConfiguracionTipoIdRoute,
+  DashboardConfiguracionTipoPersonalRoute:
+    DashboardConfiguracionTipoPersonalRoute,
+  DashboardConfiguracionTiposNovedadRoute:
+    DashboardConfiguracionTiposNovedadRoute,
+  DashboardConfiguracionUbicacionRoute: DashboardConfiguracionUbicacionRoute,
+  DashboardPersonalNovedadesRoute: DashboardPersonalNovedadesRoute,
+  DashboardClientesIndexRoute: DashboardClientesIndexRoute,
+  DashboardPermisosIndexRoute: DashboardPermisosIndexRoute,
+  DashboardPersonalIndexRoute: DashboardPersonalIndexRoute,
+  DashboardUsuariosIndexRoute: DashboardUsuariosIndexRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
