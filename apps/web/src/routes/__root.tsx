@@ -6,7 +6,7 @@ export const Route = createRootRoute({
     console.log("beforeLoad", location, context);
   },
   component: () => (
-    <main className="relative h-full max-h-screen w-full">
+    <main className="max-h-screen w-full">
       <Outlet />
     </main>
   ),

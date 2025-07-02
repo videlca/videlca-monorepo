@@ -23,10 +23,10 @@ import { Route as DashboardPersonalNovedadesRouteImport } from './routes/dashboa
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
 import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
 import { Route as DashboardConfiguracionTipoPersonalRouteImport } from './routes/dashboard/configuracion/tipo-personal'
+import { Route as DashboardConfiguracionTipoOrdenServicioRouteImport } from './routes/dashboard/configuracion/tipo-orden-servicio'
 import { Route as DashboardConfiguracionTipoIdRouteImport } from './routes/dashboard/configuracion/tipo-id'
 import { Route as DashboardConfiguracionTipoGeneroRouteImport } from './routes/dashboard/configuracion/tipo-genero'
 import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/dashboard/configuracion/tipo-cliente'
-import { Route as DashboardConfiguracionOrdenServicioRouteImport } from './routes/dashboard/configuracion/orden-servicio'
 import { Route as DashboardClientesSubSegmentacionRouteImport } from './routes/dashboard/clientes/sub-segmentacion'
 import { Route as DashboardClientesSegmentacionRouteImport } from './routes/dashboard/clientes/segmentacion'
 import { Route as DashboardClientesLocacionesRouteImport } from './routes/dashboard/clientes/locaciones'
@@ -105,6 +105,12 @@ const DashboardConfiguracionTipoPersonalRoute =
     path: '/configuracion/tipo-personal',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardConfiguracionTipoOrdenServicioRoute =
+  DashboardConfiguracionTipoOrdenServicioRouteImport.update({
+    id: '/configuracion/tipo-orden-servicio',
+    path: '/configuracion/tipo-orden-servicio',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardConfiguracionTipoIdRoute =
   DashboardConfiguracionTipoIdRouteImport.update({
     id: '/configuracion/tipo-id',
@@ -121,12 +127,6 @@ const DashboardConfiguracionTipoClienteRoute =
   DashboardConfiguracionTipoClienteRouteImport.update({
     id: '/configuracion/tipo-cliente',
     path: '/configuracion/tipo-cliente',
-    getParentRoute: () => DashboardRoute,
-  } as any)
-const DashboardConfiguracionOrdenServicioRoute =
-  DashboardConfiguracionOrdenServicioRouteImport.update({
-    id: '/configuracion/orden-servicio',
-    path: '/configuracion/orden-servicio',
     getParentRoute: () => DashboardRoute,
   } as any)
 const DashboardClientesSubSegmentacionRoute =
@@ -158,10 +158,10 @@ export interface FileRoutesByFullPath {
   '/dashboard/clientes/locaciones': typeof DashboardClientesLocacionesRoute
   '/dashboard/clientes/segmentacion': typeof DashboardClientesSegmentacionRoute
   '/dashboard/clientes/sub-segmentacion': typeof DashboardClientesSubSegmentacionRoute
-  '/dashboard/configuracion/orden-servicio': typeof DashboardConfiguracionOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
+  '/dashboard/configuracion/tipo-orden-servicio': typeof DashboardConfiguracionTipoOrdenServicioRoute
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
@@ -180,10 +180,10 @@ export interface FileRoutesByTo {
   '/dashboard/clientes/locaciones': typeof DashboardClientesLocacionesRoute
   '/dashboard/clientes/segmentacion': typeof DashboardClientesSegmentacionRoute
   '/dashboard/clientes/sub-segmentacion': typeof DashboardClientesSubSegmentacionRoute
-  '/dashboard/configuracion/orden-servicio': typeof DashboardConfiguracionOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
+  '/dashboard/configuracion/tipo-orden-servicio': typeof DashboardConfiguracionTipoOrdenServicioRoute
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
@@ -204,10 +204,10 @@ export interface FileRoutesById {
   '/dashboard/clientes/locaciones': typeof DashboardClientesLocacionesRoute
   '/dashboard/clientes/segmentacion': typeof DashboardClientesSegmentacionRoute
   '/dashboard/clientes/sub-segmentacion': typeof DashboardClientesSubSegmentacionRoute
-  '/dashboard/configuracion/orden-servicio': typeof DashboardConfiguracionOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
+  '/dashboard/configuracion/tipo-orden-servicio': typeof DashboardConfiguracionTipoOrdenServicioRoute
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
@@ -229,10 +229,10 @@ export interface FileRouteTypes {
     | '/dashboard/clientes/locaciones'
     | '/dashboard/clientes/segmentacion'
     | '/dashboard/clientes/sub-segmentacion'
-    | '/dashboard/configuracion/orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
+    | '/dashboard/configuracion/tipo-orden-servicio'
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
@@ -251,10 +251,10 @@ export interface FileRouteTypes {
     | '/dashboard/clientes/locaciones'
     | '/dashboard/clientes/segmentacion'
     | '/dashboard/clientes/sub-segmentacion'
-    | '/dashboard/configuracion/orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
+    | '/dashboard/configuracion/tipo-orden-servicio'
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
@@ -274,10 +274,10 @@ export interface FileRouteTypes {
     | '/dashboard/clientes/locaciones'
     | '/dashboard/clientes/segmentacion'
     | '/dashboard/clientes/sub-segmentacion'
-    | '/dashboard/configuracion/orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
+    | '/dashboard/configuracion/tipo-orden-servicio'
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
@@ -395,6 +395,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardConfiguracionTipoPersonalRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/configuracion/tipo-orden-servicio': {
+      id: '/dashboard/configuracion/tipo-orden-servicio'
+      path: '/configuracion/tipo-orden-servicio'
+      fullPath: '/dashboard/configuracion/tipo-orden-servicio'
+      preLoaderRoute: typeof DashboardConfiguracionTipoOrdenServicioRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/configuracion/tipo-id': {
       id: '/dashboard/configuracion/tipo-id'
       path: '/configuracion/tipo-id'
@@ -414,13 +421,6 @@ declare module '@tanstack/react-router' {
       path: '/configuracion/tipo-cliente'
       fullPath: '/dashboard/configuracion/tipo-cliente'
       preLoaderRoute: typeof DashboardConfiguracionTipoClienteRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/configuracion/orden-servicio': {
-      id: '/dashboard/configuracion/orden-servicio'
-      path: '/configuracion/orden-servicio'
-      fullPath: '/dashboard/configuracion/orden-servicio'
-      preLoaderRoute: typeof DashboardConfiguracionOrdenServicioRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/clientes/sub-segmentacion': {
@@ -453,10 +453,10 @@ interface DashboardRouteChildren {
   DashboardClientesLocacionesRoute: typeof DashboardClientesLocacionesRoute
   DashboardClientesSegmentacionRoute: typeof DashboardClientesSegmentacionRoute
   DashboardClientesSubSegmentacionRoute: typeof DashboardClientesSubSegmentacionRoute
-  DashboardConfiguracionOrdenServicioRoute: typeof DashboardConfiguracionOrdenServicioRoute
   DashboardConfiguracionTipoClienteRoute: typeof DashboardConfiguracionTipoClienteRoute
   DashboardConfiguracionTipoGeneroRoute: typeof DashboardConfiguracionTipoGeneroRoute
   DashboardConfiguracionTipoIdRoute: typeof DashboardConfiguracionTipoIdRoute
+  DashboardConfiguracionTipoOrdenServicioRoute: typeof DashboardConfiguracionTipoOrdenServicioRoute
   DashboardConfiguracionTipoPersonalRoute: typeof DashboardConfiguracionTipoPersonalRoute
   DashboardConfiguracionTiposNovedadRoute: typeof DashboardConfiguracionTiposNovedadRoute
   DashboardConfiguracionUbicacionRoute: typeof DashboardConfiguracionUbicacionRoute
@@ -473,12 +473,12 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardClientesLocacionesRoute: DashboardClientesLocacionesRoute,
   DashboardClientesSegmentacionRoute: DashboardClientesSegmentacionRoute,
   DashboardClientesSubSegmentacionRoute: DashboardClientesSubSegmentacionRoute,
-  DashboardConfiguracionOrdenServicioRoute:
-    DashboardConfiguracionOrdenServicioRoute,
   DashboardConfiguracionTipoClienteRoute:
     DashboardConfiguracionTipoClienteRoute,
   DashboardConfiguracionTipoGeneroRoute: DashboardConfiguracionTipoGeneroRoute,
   DashboardConfiguracionTipoIdRoute: DashboardConfiguracionTipoIdRoute,
+  DashboardConfiguracionTipoOrdenServicioRoute:
+    DashboardConfiguracionTipoOrdenServicioRoute,
   DashboardConfiguracionTipoPersonalRoute:
     DashboardConfiguracionTipoPersonalRoute,
   DashboardConfiguracionTiposNovedadRoute:

@@ -6,7 +6,7 @@ import {
   Shield,
   Users,
 } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { linksSideBar } from "../../../LinkPages";
 
 interface SidebarProps {
@@ -25,6 +25,7 @@ export function Sidebar({
   onLogout,
 }: SidebarProps) {
   const navigate = useNavigate();
+  const pathname = useLocation();
   const navigationItems = [
     {
       id: "configuracion",
@@ -113,7 +114,14 @@ export function Sidebar({
                   !collapsed && (
                     <ul className="mt-1 ml-6 space-y-1">
                       {item.subItems.map((subItem) => (
-                        <li key={subItem.to}>
+                        <li
+                          key={subItem.to}
+                          className={`rounded-l-md ${
+                            subItem.to === pathname.pathname
+                              ? "bg-blue-500"
+                              : ""
+                          }`}
+                        >
                           <button
                             onClick={() =>
                               navigate({

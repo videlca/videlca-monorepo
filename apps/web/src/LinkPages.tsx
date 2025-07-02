@@ -17,9 +17,9 @@ interface LinksSideBar {
 export const linksSideBar: LinksSideBar = {
   configuracion: [
     {
-      to: "/dashboard/configuracion/orden-servicio",
-      label: "Orden de Servicio",
-      description: "orden-servicio",
+      to: "/dashboard/configuracion/tipo-orden-servicio",
+      label: "Tipo de Orden de Servicio",
+      description: "tipo-orden-servicio",
     },
     {
       to: "/dashboard/configuracion/tipo-personal",
