@@ -12,3 +12,13 @@ body,
   height: 100vh;
   overflow: hidden;
 }
+
+#portal-root {
+  position: relative;
+  z-index: 1000;
+}
+
+[data-portal-id] {
+  position: relative;
+  z-index: 1001;
+}
