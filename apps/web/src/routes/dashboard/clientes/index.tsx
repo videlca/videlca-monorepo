@@ -5,6 +5,7 @@ import { PencilIcon, PlusIcon } from "lucide-react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useState } from "react";
 import Table from "../../../components/common/Table";
+import { useModal } from "../../../hooks/useModal";
 
 export const Route = createFileRoute("/dashboard/clientes/")({
   component: RouteComponent,
@@ -20,7 +21,34 @@ interface User {
 }
 
 function RouteComponent() {
-  const [selectedRow, setSelectedRow] = useState<Row<User> | null>(null);
+  // const [selectedRow, setSelectedRow] = useState<Row<User> | null>(null);
+
+  const { showModal, hideModal } = useModal("agregar-cliente-modal");
+  const { showModal: showModalEditar, hideModal: hideModalEditar } = useModal(
+    "editar-cliente-modal",
+  );
+
+  const handleShowModal = () => {
+    showModal(
+      <div className="space-y-4">
+        <p className="text-gray-600">Formulario para agregar un cliente</p>
+      </div>,
+      "Agregar cliente",
+      "md",
+    );
+  };
+
+  const handleShowModalEditar = (row: Row<User>) => {
+    showModalEditar(
+      <div className="space-y-4">
+        <p className="text-gray-600">Formulario para editar un cliente</p>
+        <pre>{JSON.stringify(row?.original, null, 2)}</pre>
+      </div>,
+      "Editar cliente",
+      "md",
+    );
+  };
+
   const dataUsers: User[] = [
     {
       id: 1,
@@ -109,7 +137,10 @@ function RouteComponent() {
       cell: ({ row }) => (
         <button
           className="flex cursor-pointer items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-500"
-          onClick={() => setSelectedRow(row)}
+          onClick={() => {
+            // setSelectedRow(row);
+            handleShowModalEditar(row);
+          }}
         >
           <PencilIcon className="h-4 w-4" />
           Editar
@@ -125,7 +156,8 @@ function RouteComponent() {
             Icon={PlusIcon}
             label="Nuevo cliente"
             onClick={() => {
-              console.log(selectedRow?.original);
+              // console.log(selectedRow?.original);
+              handleShowModal();
             }}
           />
         </div>
@@ -136,7 +168,7 @@ function RouteComponent() {
           enablePagination={true}
           pageSize={10}
         />
-        <pre>{JSON.stringify(selectedRow?.original, null, 2)}</pre>
+        {/* <pre>{JSON.stringify(selectedRow?.original, null, 2)}</pre> */}
       </div>
     </Section>
   );
