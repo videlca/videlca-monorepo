@@ -6,32 +6,11 @@ import type { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../components/common/Table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { useModal } from "../../../hooks/useModal";
+import type { Ciudad, Departamento, Pais, TableType } from "../../../types";
 
 export const Route = createFileRoute("/dashboard/configuracion/ubicacion")({
   component: RouteComponent,
 });
-
-type TableType = "ciudades" | "departamentos" | "paises";
-
-interface Ciudad {
-  idCiudad: number;
-  descripcion: string;
-  codigoCiudad: string;
-  estado: boolean;
-  idDepartamento: Departamento;
-}
-
-interface Departamento {
-  idDepartamento: number;
-  descripcion: string;
-  codigoDepartamento: string;
-  idPais: Pais;
-}
-
-interface Pais {
-  idPais: number;
-  descripcion: string;
-}
 
 const ciudades: Ciudad[] = [
   {

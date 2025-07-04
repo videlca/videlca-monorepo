@@ -6,19 +6,12 @@ import type { ColumnDef, Row } from "@tanstack/react-table";
 import { useState } from "react";
 import Table from "../../../components/common/Table";
 import { useModal } from "../../../hooks/useModal";
+import type { Cliente } from "../../../types";
+import { StateLabel } from "../../../components/common/StateLabel";
 
 export const Route = createFileRoute("/dashboard/clientes/")({
   component: RouteComponent,
 });
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  status: "active" | "inactive";
-  createdAt: string;
-}
 
 function RouteComponent() {
   // const [selectedRow, setSelectedRow] = useState<Row<User> | null>(null);
@@ -38,7 +31,7 @@ function RouteComponent() {
     );
   };
 
-  const handleShowModalEditar = (row: Row<User>) => {
+  const handleShowModalEditar = (row: Row<Cliente>) => {
     showModalEditar(
       <div className="space-y-4">
         <p className="text-gray-600">Formulario para editar un cliente</p>
@@ -49,108 +42,111 @@ function RouteComponent() {
     );
   };
 
-  const dataUsers: User[] = [
+  const dataUsers: Cliente[] = [
     {
-      id: 1,
-      name: "John Doe",
-      email: "john@example.com",
-      role: "Admin",
-      status: "active",
-      createdAt: "2024-01-15",
+      idCliente: 1,
+      numeroIdentificacion: "1234567890",
+      nombre: "John Doe",
+      estado: true,
+      idTipoIdentificacion: {
+        idTipoIdentificacion: 1,
+        descripcion: "Cédula",
+        estado: true,
+      },
+      idTipoCliente: {
+        idTipoCliente: 1,
+        descripcion: "Cliente",
+        estado: true,
+      },
+      idSubSegmentacion: {
+        idSubSegmentacion: 1,
+        descripcion: "SubSegmentación 1",
+        estado: true,
+        idSegmentacion: {
+          idSegmentacion: 1,
+          descripcion: "Segmentación 1",
+          estado: true,
+        },
+      },
     },
     {
-      id: 2,
-      name: "Jane Smith",
-      email: "jane@example.com",
-      role: "User",
-      status: "active",
-      createdAt: "2024-01-16",
-    },
-    {
-      id: 3,
-      name: "Bob Johnson",
-      email: "bob@example.com",
-      role: "Manager",
-      status: "inactive",
-      createdAt: "2024-01-17",
+      idCliente: 2,
+      numeroIdentificacion: "1234567890",
+      nombre: "Jane Smith",
+      estado: true,
+      idTipoIdentificacion: {
+        idTipoIdentificacion: 2,
+        descripcion: "NIT",
+        estado: true,
+      },
+      idTipoCliente: {
+        idTipoCliente: 2,
+        descripcion: "Proveedor",
+        estado: true,
+      },
+      idSubSegmentacion: {
+        idSubSegmentacion: 2,
+        descripcion: "SubSegmentación 2",
+        estado: true,
+        idSegmentacion: {
+          idSegmentacion: 2,
+          descripcion: "Segmentación 2",
+          estado: true,
+        },
+      },
     },
   ];
 
   // Column definitions
-  const columns: ColumnDef<User>[] = [
+  const columns: ColumnDef<Cliente>[] = [
     {
-      accessorKey: "id",
+      accessorKey: "idCliente",
       header: "ID",
-      cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("id")}</span>
-      ),
     },
     {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => <span>{row.getValue("name")}</span>,
+      accessorKey: "idTipoIdentificacion.descripcion",
+      header: "Tipo de identificación",
     },
     {
-      accessorKey: "email",
-      header: "Email",
-      cell: ({ row }) => (
-        <span className="text-blue-600">{row.getValue("email")}</span>
-      ),
+      accessorKey: "numeroIdentificacion",
+      header: "Número de identificación",
     },
     {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ row }) => (
-        <span className="inline-flex rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
-          {row.getValue("role")}
-        </span>
-      ),
+      accessorKey: "nombre",
+      header: "Nombre",
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: "idTipoCliente.descripcion",
+      header: "Tipo de cliente",
+    },
+    {
+      accessorKey: "idSubSegmentacion.descripcion",
+      header: "Subsegmentación",
+    },
+    {
+      accessorKey: "estado",
+      header: "Estado",
       cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        return (
-          <span
-            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-              status === "active"
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {status}
-          </span>
-        );
+        return <StateLabel state={row.original.estado} />;
       },
     },
     {
-      accessorKey: "createdAt",
-      header: "Created At",
-      cell: ({ row }) => (
-        <span>{new Date(row.getValue("createdAt")).toLocaleDateString()}</span>
-      ),
-    },
-    {
-      id: "select-col",
+      accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        <button
-          className="flex cursor-pointer items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-500"
+        <ButtonAction
+          Icon={PencilIcon}
+          label="Editar"
           onClick={() => {
-            // setSelectedRow(row);
             handleShowModalEditar(row);
           }}
-        >
-          <PencilIcon className="h-4 w-4" />
-          Editar
-        </button>
+        />
       ),
     },
   ];
   return (
     <Section>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
             Icon={PlusIcon}
@@ -167,6 +163,7 @@ function RouteComponent() {
           enableSorting={true}
           enablePagination={true}
           pageSize={10}
+          enableFiltering={true}
         />
         {/* <pre>{JSON.stringify(selectedRow?.original, null, 2)}</pre> */}
       </div>

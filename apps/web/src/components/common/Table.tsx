@@ -130,7 +130,7 @@ const Table = <TData, TValues>({
           <div className="flex items-center gap-2">
             <Search className="h-4 w-4 text-gray-400" />
             <span className="text-sm font-medium text-gray-700">
-              Filter by:
+              Filtrar por:
             </span>
           </div>
 
@@ -139,7 +139,7 @@ const Table = <TData, TValues>({
             onChange={(e) => setSelectedFilterColumn(e.target.value)}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           >
-            <option value="">Select column</option>
+            <option value="">Seleccionar columna</option>
             {filterableColumns.map((column) => (
               <option
                 key={(column as any).accessorKey as string}
@@ -159,8 +159,8 @@ const Table = <TData, TValues>({
               onChange={(e) => handleFilterChange(e.target.value)}
               placeholder={
                 selectedFilterColumn
-                  ? `Filter ${selectedFilterColumn}...`
-                  : "Select a column first"
+                  ? `Filtrar ${selectedFilterColumn}...`
+                  : "Seleccionar una columna primero"
               }
               disabled={!selectedFilterColumn}
               className="w-full rounded-md border border-gray-300 px-3 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100"
@@ -177,7 +177,7 @@ const Table = <TData, TValues>({
 
           {filterValue && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Filtering:</span>
+              <span>Filtrando:</span>
               <span className="font-medium">{selectedFilterColumn}</span>
               <span>=</span>
               <span className="font-medium">"{filterValue}"</span>
@@ -252,47 +252,46 @@ const Table = <TData, TValues>({
             )}
           </tbody>
         </table>
-
-        {enablePagination && table.getPageCount() > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-200 bg-white px-6 py-3">
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <span>
-                Showing{" "}
-                {table.getState().pagination.pageIndex *
-                  table.getState().pagination.pageSize +
-                  1}{" "}
-                to{" "}
-                {Math.min(
-                  (table.getState().pagination.pageIndex + 1) *
-                    table.getState().pagination.pageSize,
-                  table.getFilteredRowModel().rows.length,
-                )}{" "}
-                of {table.getFilteredRowModel().rows.length} results
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-gray-700">
-                Page {table.getState().pagination.pageIndex + 1} of{" "}
-                {table.getPageCount()}
-              </span>
-              <button
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-                className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
       </div>
+      {enablePagination && (
+        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-6 py-3">
+          <div className="flex items-center gap-2 text-sm text-gray-700">
+            <span>
+              Mostrando{" "}
+              {table.getState().pagination.pageIndex *
+                table.getState().pagination.pageSize +
+                1}{" "}
+              to{" "}
+              {Math.min(
+                (table.getState().pagination.pageIndex + 1) *
+                  table.getState().pagination.pageSize,
+                table.getFilteredRowModel().rows.length,
+              )}{" "}
+              de {table.getFilteredRowModel().rows.length} resultados
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <span className="text-sm text-gray-700">
+              Página {table.getState().pagination.pageIndex + 1} de{" "}
+              {table.getPageCount()}
+            </span>
+            <button
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

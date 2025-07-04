@@ -7,20 +7,13 @@ import { ButtonAction } from "../../../components/common/ButtonAction";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import { useModal } from "../../../hooks/useModal";
 import Button from "../../../components/common/Button";
+import type { TipoOrdenServicio } from "../../../types";
 
 export const Route = createFileRoute(
   "/dashboard/configuracion/tipo-orden-servicio",
 )({
   component: RouteComponent,
 });
-
-interface TipoOrdenServicio {
-  idEstadoOrdenServicio: number;
-  descripcion: string;
-  estado: boolean;
-  programable: boolean;
-  dias: number;
-}
 
 function RouteComponent() {
   const [selectedRow, setSelectedRow] = useState<Row<TipoOrdenServicio> | null>(
