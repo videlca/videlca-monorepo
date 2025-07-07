@@ -1,6 +1,7 @@
 // Configuraciones
 
 export type TableType = "ciudades" | "departamentos" | "paises";
+export type ClientesTableType = "clientes" | "locaciones" | "segmentacion" | "sub-segmentacion";
 
 export interface TipoNovedad {
   idTipoNovedad: number;

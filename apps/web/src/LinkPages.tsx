@@ -58,21 +58,6 @@ export const linksSideBar: LinksSideBar = {
       label: "Clientes",
       description: "clientes",
     },
-    {
-      to: "/dashboard/clientes/locaciones",
-      label: "Locaciones",
-      description: "locaciones",
-    },
-    {
-      to: "/dashboard/clientes/segmentacion",
-      label: "Segmentación",
-      description: "segmentacion",
-    },
-    {
-      to: "/dashboard/clientes/sub-segmentacion",
-      label: "Sub-Segmentación",
-      description: "sub-segmentacion",
-    },
   ],
   permisos: [
     {

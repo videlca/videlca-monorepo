@@ -27,9 +27,6 @@ import { Route as DashboardConfiguracionTipoOrdenServicioRouteImport } from './r
 import { Route as DashboardConfiguracionTipoIdRouteImport } from './routes/dashboard/configuracion/tipo-id'
 import { Route as DashboardConfiguracionTipoGeneroRouteImport } from './routes/dashboard/configuracion/tipo-genero'
 import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/dashboard/configuracion/tipo-cliente'
-import { Route as DashboardClientesSubSegmentacionRouteImport } from './routes/dashboard/clientes/sub-segmentacion'
-import { Route as DashboardClientesSegmentacionRouteImport } from './routes/dashboard/clientes/segmentacion'
-import { Route as DashboardClientesLocacionesRouteImport } from './routes/dashboard/clientes/locaciones'
 
 const RecuperarRoute = RecuperarRouteImport.update({
   id: '/recuperar',
@@ -129,24 +126,6 @@ const DashboardConfiguracionTipoClienteRoute =
     path: '/configuracion/tipo-cliente',
     getParentRoute: () => DashboardRoute,
   } as any)
-const DashboardClientesSubSegmentacionRoute =
-  DashboardClientesSubSegmentacionRouteImport.update({
-    id: '/clientes/sub-segmentacion',
-    path: '/clientes/sub-segmentacion',
-    getParentRoute: () => DashboardRoute,
-  } as any)
-const DashboardClientesSegmentacionRoute =
-  DashboardClientesSegmentacionRouteImport.update({
-    id: '/clientes/segmentacion',
-    path: '/clientes/segmentacion',
-    getParentRoute: () => DashboardRoute,
-  } as any)
-const DashboardClientesLocacionesRoute =
-  DashboardClientesLocacionesRouteImport.update({
-    id: '/clientes/locaciones',
-    path: '/clientes/locaciones',
-    getParentRoute: () => DashboardRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -155,9 +134,6 @@ export interface FileRoutesByFullPath {
   '/recuperar': typeof RecuperarRoute
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/dashboard/': typeof DashboardIndexRoute
-  '/dashboard/clientes/locaciones': typeof DashboardClientesLocacionesRoute
-  '/dashboard/clientes/segmentacion': typeof DashboardClientesSegmentacionRoute
-  '/dashboard/clientes/sub-segmentacion': typeof DashboardClientesSubSegmentacionRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
@@ -177,9 +153,6 @@ export interface FileRoutesByTo {
   '/recuperar': typeof RecuperarRoute
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/dashboard': typeof DashboardIndexRoute
-  '/dashboard/clientes/locaciones': typeof DashboardClientesLocacionesRoute
-  '/dashboard/clientes/segmentacion': typeof DashboardClientesSegmentacionRoute
-  '/dashboard/clientes/sub-segmentacion': typeof DashboardClientesSubSegmentacionRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
@@ -201,9 +174,6 @@ export interface FileRoutesById {
   '/recuperar': typeof RecuperarRoute
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/dashboard/': typeof DashboardIndexRoute
-  '/dashboard/clientes/locaciones': typeof DashboardClientesLocacionesRoute
-  '/dashboard/clientes/segmentacion': typeof DashboardClientesSegmentacionRoute
-  '/dashboard/clientes/sub-segmentacion': typeof DashboardClientesSubSegmentacionRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
@@ -226,9 +196,6 @@ export interface FileRouteTypes {
     | '/recuperar'
     | '/dashboard/perfil-usuario'
     | '/dashboard/'
-    | '/dashboard/clientes/locaciones'
-    | '/dashboard/clientes/segmentacion'
-    | '/dashboard/clientes/sub-segmentacion'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
@@ -248,9 +215,6 @@ export interface FileRouteTypes {
     | '/recuperar'
     | '/dashboard/perfil-usuario'
     | '/dashboard'
-    | '/dashboard/clientes/locaciones'
-    | '/dashboard/clientes/segmentacion'
-    | '/dashboard/clientes/sub-segmentacion'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
@@ -271,9 +235,6 @@ export interface FileRouteTypes {
     | '/recuperar'
     | '/dashboard/perfil-usuario'
     | '/dashboard/'
-    | '/dashboard/clientes/locaciones'
-    | '/dashboard/clientes/segmentacion'
-    | '/dashboard/clientes/sub-segmentacion'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
@@ -423,36 +384,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardConfiguracionTipoClienteRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/clientes/sub-segmentacion': {
-      id: '/dashboard/clientes/sub-segmentacion'
-      path: '/clientes/sub-segmentacion'
-      fullPath: '/dashboard/clientes/sub-segmentacion'
-      preLoaderRoute: typeof DashboardClientesSubSegmentacionRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/clientes/segmentacion': {
-      id: '/dashboard/clientes/segmentacion'
-      path: '/clientes/segmentacion'
-      fullPath: '/dashboard/clientes/segmentacion'
-      preLoaderRoute: typeof DashboardClientesSegmentacionRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/clientes/locaciones': {
-      id: '/dashboard/clientes/locaciones'
-      path: '/clientes/locaciones'
-      fullPath: '/dashboard/clientes/locaciones'
-      preLoaderRoute: typeof DashboardClientesLocacionesRouteImport
-      parentRoute: typeof DashboardRoute
-    }
   }
 }
 
 interface DashboardRouteChildren {
   DashboardPerfilUsuarioRoute: typeof DashboardPerfilUsuarioRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
-  DashboardClientesLocacionesRoute: typeof DashboardClientesLocacionesRoute
-  DashboardClientesSegmentacionRoute: typeof DashboardClientesSegmentacionRoute
-  DashboardClientesSubSegmentacionRoute: typeof DashboardClientesSubSegmentacionRoute
   DashboardConfiguracionTipoClienteRoute: typeof DashboardConfiguracionTipoClienteRoute
   DashboardConfiguracionTipoGeneroRoute: typeof DashboardConfiguracionTipoGeneroRoute
   DashboardConfiguracionTipoIdRoute: typeof DashboardConfiguracionTipoIdRoute
@@ -470,9 +407,6 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardPerfilUsuarioRoute: DashboardPerfilUsuarioRoute,
   DashboardIndexRoute: DashboardIndexRoute,
-  DashboardClientesLocacionesRoute: DashboardClientesLocacionesRoute,
-  DashboardClientesSegmentacionRoute: DashboardClientesSegmentacionRoute,
-  DashboardClientesSubSegmentacionRoute: DashboardClientesSubSegmentacionRoute,
   DashboardConfiguracionTipoClienteRoute:
     DashboardConfiguracionTipoClienteRoute,
   DashboardConfiguracionTipoGeneroRoute: DashboardConfiguracionTipoGeneroRoute,
