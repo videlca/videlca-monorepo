@@ -19,5 +19,12 @@ export default defineConfig({
         secure: false,
       }
     }
-  }
+  },
+  build: {
+    rollupOptions: {
+      onwarn(_warning, _warn) {
+        return;
+      },
+    },
+  },
 });
