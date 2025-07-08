@@ -12,6 +12,9 @@ interface LinksSideBar {
   permisos: LinkSideBar[];
   personal: LinkSideBar[];
   usuarios: LinkSideBar[];
+  programaciones: LinkSideBar[];
+  tarifas: LinkSideBar[];
+  reportes: LinkSideBar[];
 }
 
 export const linksSideBar: LinksSideBar = {
@@ -83,6 +86,27 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/usuarios",
       label: "Usuarios",
       description: "usuarios",
+    },
+  ],
+  programaciones: [
+    {
+      to: "/dashboard/programaciones",
+      label: "Programaciones",
+      description: "programaciones",
+    },
+  ],
+  tarifas: [
+    {
+      to: "/dashboard/tarifas",
+      label: "Tarifas",
+      description: "tarifas",
+    },
+  ],
+  reportes: [
+    {
+      to: "/dashboard/reportes",
+      label: "Reportes",
+      description: "reportes",
     },
   ],
 };

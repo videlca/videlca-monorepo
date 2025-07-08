@@ -1,9 +1,14 @@
 import {
+  BarChart3,
+  Calendar,
   ChevronRight,
+  DollarSign,
   LogOut,
   Menu,
   Settings,
   Shield,
+  User2,
+  UserCog2,
   Users,
 } from "lucide-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
@@ -48,14 +53,32 @@ export function Sidebar({
     {
       id: "personal",
       label: "Personal",
-      icon: Users,
+      icon: User2,
       subItems: linksSideBar.personal,
     },
     {
       id: "usuarios",
       label: "Usuarios",
-      icon: Users,
+      icon: UserCog2,
       subItems: linksSideBar.usuarios,
+    },
+    {
+      id: "programaciones",
+      label: "Programaciones",
+      icon: Calendar,
+      subItems: linksSideBar.programaciones,
+    },
+    {
+      id: "tarifas",
+      label: "Tarifas",
+      icon: DollarSign,
+      subItems: linksSideBar.tarifas,
+    },
+    {
+      id: "reportes",
+      label: "Reportes",
+      icon: BarChart3,
+      subItems: linksSideBar.reportes,
     },
   ];
 
@@ -81,7 +104,15 @@ export function Sidebar({
       <nav className="scrollbar-thin scrollbar-track-blue-700 scrollbar-thumb-blue-400 hover:scrollbar-thumb-blue-300 flex-1 overflow-y-auto py-4">
         <ul className="space-y-1">
           {navigationItems.map((item) => (
-            <li key={item.id}>
+            <li
+              key={item.id}
+              className={`${
+                pathname.pathname.includes(item.id) &&
+                item.subItems.length === 1
+                  ? "bg-blue-500"
+                  : ""
+              }`}
+            >
               <div>
                 <button
                   onClick={() => {
@@ -116,9 +147,9 @@ export function Sidebar({
                       {item.subItems.map((subItem) => (
                         <li
                           key={subItem.to}
-                          className={`rounded-l-md ${
+                          className={` ${
                             subItem.to === pathname.pathname
-                              ? "bg-blue-500"
+                              ? "border-l-2 border-blue-300 bg-blue-500/40"
                               : ""
                           }`}
                         >
@@ -128,7 +159,7 @@ export function Sidebar({
                                 to: subItem.to,
                               })
                             }
-                            className={`flex w-full items-center rounded-l-md px-6 py-2 text-left text-sm transition-colors hover:bg-blue-500`}
+                            className={`flex w-full items-center px-6 py-2 text-left text-sm transition-colors hover:bg-blue-500`}
                           >
                             <span className="ml-2">{subItem.label}</span>
                           </button>

@@ -16,6 +16,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardPerfilUsuarioRouteImport } from './routes/dashboard/perfil-usuario'
 import { Route as DashboardUsuariosIndexRouteImport } from './routes/dashboard/usuarios/index'
+import { Route as DashboardTarifasIndexRouteImport } from './routes/dashboard/tarifas/index'
+import { Route as DashboardReportesIndexRouteImport } from './routes/dashboard/reportes/index'
+import { Route as DashboardProgramacionesIndexRouteImport } from './routes/dashboard/programaciones/index'
 import { Route as DashboardPersonalIndexRouteImport } from './routes/dashboard/personal/index'
 import { Route as DashboardPermisosIndexRouteImport } from './routes/dashboard/permisos/index'
 import { Route as DashboardClientesIndexRouteImport } from './routes/dashboard/clientes/index'
@@ -63,6 +66,22 @@ const DashboardUsuariosIndexRoute = DashboardUsuariosIndexRouteImport.update({
   path: '/usuarios/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardTarifasIndexRoute = DashboardTarifasIndexRouteImport.update({
+  id: '/tarifas/',
+  path: '/tarifas/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardReportesIndexRoute = DashboardReportesIndexRouteImport.update({
+  id: '/reportes/',
+  path: '/reportes/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProgramacionesIndexRoute =
+  DashboardProgramacionesIndexRouteImport.update({
+    id: '/programaciones/',
+    path: '/programaciones/',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardPersonalIndexRoute = DashboardPersonalIndexRouteImport.update({
   id: '/personal/',
   path: '/personal/',
@@ -145,6 +164,9 @@ export interface FileRoutesByFullPath {
   '/dashboard/clientes': typeof DashboardClientesIndexRoute
   '/dashboard/permisos': typeof DashboardPermisosIndexRoute
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
+  '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
+  '/dashboard/reportes': typeof DashboardReportesIndexRoute
+  '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -164,6 +186,9 @@ export interface FileRoutesByTo {
   '/dashboard/clientes': typeof DashboardClientesIndexRoute
   '/dashboard/permisos': typeof DashboardPermisosIndexRoute
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
+  '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
+  '/dashboard/reportes': typeof DashboardReportesIndexRoute
+  '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
 }
 export interface FileRoutesById {
@@ -185,6 +210,9 @@ export interface FileRoutesById {
   '/dashboard/clientes/': typeof DashboardClientesIndexRoute
   '/dashboard/permisos/': typeof DashboardPermisosIndexRoute
   '/dashboard/personal/': typeof DashboardPersonalIndexRoute
+  '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
+  '/dashboard/reportes/': typeof DashboardReportesIndexRoute
+  '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
 }
 export interface FileRouteTypes {
@@ -207,6 +235,9 @@ export interface FileRouteTypes {
     | '/dashboard/clientes'
     | '/dashboard/permisos'
     | '/dashboard/personal'
+    | '/dashboard/programaciones'
+    | '/dashboard/reportes'
+    | '/dashboard/tarifas'
     | '/dashboard/usuarios'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -226,6 +257,9 @@ export interface FileRouteTypes {
     | '/dashboard/clientes'
     | '/dashboard/permisos'
     | '/dashboard/personal'
+    | '/dashboard/programaciones'
+    | '/dashboard/reportes'
+    | '/dashboard/tarifas'
     | '/dashboard/usuarios'
   id:
     | '__root__'
@@ -246,6 +280,9 @@ export interface FileRouteTypes {
     | '/dashboard/clientes/'
     | '/dashboard/permisos/'
     | '/dashboard/personal/'
+    | '/dashboard/programaciones/'
+    | '/dashboard/reportes/'
+    | '/dashboard/tarifas/'
     | '/dashboard/usuarios/'
   fileRoutesById: FileRoutesById
 }
@@ -305,6 +342,27 @@ declare module '@tanstack/react-router' {
       path: '/usuarios'
       fullPath: '/dashboard/usuarios'
       preLoaderRoute: typeof DashboardUsuariosIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/tarifas/': {
+      id: '/dashboard/tarifas/'
+      path: '/tarifas'
+      fullPath: '/dashboard/tarifas'
+      preLoaderRoute: typeof DashboardTarifasIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/reportes/': {
+      id: '/dashboard/reportes/'
+      path: '/reportes'
+      fullPath: '/dashboard/reportes'
+      preLoaderRoute: typeof DashboardReportesIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/programaciones/': {
+      id: '/dashboard/programaciones/'
+      path: '/programaciones'
+      fullPath: '/dashboard/programaciones'
+      preLoaderRoute: typeof DashboardProgramacionesIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/personal/': {
@@ -401,6 +459,9 @@ interface DashboardRouteChildren {
   DashboardClientesIndexRoute: typeof DashboardClientesIndexRoute
   DashboardPermisosIndexRoute: typeof DashboardPermisosIndexRoute
   DashboardPersonalIndexRoute: typeof DashboardPersonalIndexRoute
+  DashboardProgramacionesIndexRoute: typeof DashboardProgramacionesIndexRoute
+  DashboardReportesIndexRoute: typeof DashboardReportesIndexRoute
+  DashboardTarifasIndexRoute: typeof DashboardTarifasIndexRoute
   DashboardUsuariosIndexRoute: typeof DashboardUsuariosIndexRoute
 }
 
@@ -422,6 +483,9 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardClientesIndexRoute: DashboardClientesIndexRoute,
   DashboardPermisosIndexRoute: DashboardPermisosIndexRoute,
   DashboardPersonalIndexRoute: DashboardPersonalIndexRoute,
+  DashboardProgramacionesIndexRoute: DashboardProgramacionesIndexRoute,
+  DashboardReportesIndexRoute: DashboardReportesIndexRoute,
+  DashboardTarifasIndexRoute: DashboardTarifasIndexRoute,
   DashboardUsuariosIndexRoute: DashboardUsuariosIndexRoute,
 }
 

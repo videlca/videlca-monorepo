@@ -38,7 +38,7 @@ function RouteComponent() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex cursor-pointer items-center space-x-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
+                className={`flex cursor-pointer items-center space-x-2 border-b-2 px-1 py-4 text-sm font-semibold transition-colors ${
                   activeTab === tab.id
                     ? "border-blue-500 text-blue-600"
                     : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
