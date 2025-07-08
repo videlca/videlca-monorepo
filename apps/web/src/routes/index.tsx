@@ -1,18 +1,51 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { Lock, User } from "lucide-react";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
+import { useLogin } from "../api/queryFunctions/auth";
+import { useForm } from "../hooks/useForm";
+import { useAuth } from "../context/AuthContext";
 
 export const Route = createFileRoute("/")({
   component: Index,
-  beforeLoad: async ({ location, context }) => {
-    console.log("beforeLoad", location, context);
+  beforeLoad: async ({ context }: any) => {
+    if (context?.auth?.isAuthenticated) {
+      throw redirect({ to: "/dashboard" });
+    }
   },
 });
 
 function Index() {
-  const navigate = useNavigate();
+  const mutation = useLogin();
+  const { isLoading } = useAuth();
+  const { form, handleChange, resetForm } = useForm({
+    email: "",
+    clave: "",
+  });
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    mutation.mutate({
+      email: form.email,
+      clave: form.clave,
+    });
+    resetForm();
+  };
+
+  if (isLoading) {
+    return (
+      <AuthLayout>
+        <div className="flex items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-600">Verificando autenticación...</p>
+          </div>
+        </div>
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout>
       <div className="space-y-2 text-center">
@@ -21,13 +54,15 @@ function Index() {
           Ingrese sus credenciales para acceder al sistema
         </p>
       </div>
-      <form className="space-y-4">
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <Input
           label="Usuario"
           placeholder="Ingrese su nombre de usuario"
           icon={User}
           type="text"
-          id="username"
+          id="email"
+          value={form.email}
+          onChange={handleChange}
         />
 
         <Input
@@ -35,7 +70,9 @@ function Index() {
           placeholder="Ingrese su contraseña"
           icon={Lock}
           type="password"
-          id="password"
+          id="clave"
+          value={form.clave}
+          onChange={handleChange}
         />
         <div className="text-right">
           <Link
@@ -48,8 +85,8 @@ function Index() {
           </Link>
         </div>
 
-        <Button type="submit" onClick={() => navigate({ to: "/dashboard" })}>
-          Iniciar Sesión
+        <Button type="submit" disabled={mutation.isPending}>
+          {mutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
         </Button>
       </form>
     </AuthLayout>

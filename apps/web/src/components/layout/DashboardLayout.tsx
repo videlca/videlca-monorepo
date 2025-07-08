@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Header } from "../ui/dashboard/Header";
 import { MainContent } from "../ui/dashboard/MainContent";
 import { Sidebar } from "../ui/dashboard/Sidebar";
-import { useNavigate } from "@tanstack/react-router";
+import { useLogout } from "../../api/queryFunctions/auth";
 
 export function DashboardLayout() {
-  const navigate = useNavigate();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const logoutMutation = useLogout();
 
   const toggleMenu = (menuId: string) => {
     setExpandedMenus((prev) =>
@@ -18,9 +18,7 @@ export function DashboardLayout() {
   };
 
   const onLogout = () => {
-    navigate({
-      to: "/",
-    });
+    logoutMutation.mutate();
   };
 
   return (

@@ -1,4 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useNavigate,
+} from "@tanstack/react-router";
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { Mail } from "lucide-react";
 import Input from "../components/common/Input";
@@ -6,6 +11,11 @@ import Button from "../components/common/Button";
 
 export const Route = createFileRoute("/recuperar")({
   component: RouteComponent,
+  beforeLoad: async ({ context }: any) => {
+    if (!context?.auth?.isAuthenticated) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
 });
 
 function RouteComponent() {

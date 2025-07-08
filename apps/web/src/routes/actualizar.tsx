@@ -1,4 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useNavigate,
+} from "@tanstack/react-router";
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { Lock } from "lucide-react";
 import Input from "../components/common/Input";
@@ -8,6 +13,11 @@ import { useForm } from "../hooks/useForm";
 
 export const Route = createFileRoute("/actualizar")({
   component: RouteComponent,
+  beforeLoad: async ({ context }: any) => {
+    if (!context?.auth?.isAuthenticated) {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
 });
 
 function RouteComponent() {
