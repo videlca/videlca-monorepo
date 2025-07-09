@@ -1,5 +1,5 @@
 import {
-  createHashHistory,
+  createBrowserHistory,
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
@@ -13,7 +13,7 @@ import {
   type AuthContextType,
 } from "./context/AuthContext";
 
-const hashHistory = createHashHistory();
+const browserHistory = createBrowserHistory();
 
 const router = createRouter({
   routeTree,
@@ -21,7 +21,7 @@ const router = createRouter({
     auth: undefined! as AuthContextType,
     queryClient: undefined! as QueryClient,
   },
-  history: hashHistory,
+  history: browserHistory,
 });
 
 declare module "@tanstack/react-router" {

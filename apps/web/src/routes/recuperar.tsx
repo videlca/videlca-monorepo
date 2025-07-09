@@ -12,7 +12,10 @@ import Button from "../components/common/Button";
 export const Route = createFileRoute("/recuperar")({
   component: RouteComponent,
   beforeLoad: async ({ context }: any) => {
-    if (!context?.auth?.isAuthenticated) {
+    if (
+      context?.auth?.isAuthenticated &&
+      !context?.auth?.isPermissionsLoading
+    ) {
       throw redirect({ to: "/dashboard" });
     }
   },

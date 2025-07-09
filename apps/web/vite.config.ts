@@ -26,5 +26,7 @@ export default defineConfig({
         return;
       },
     },
+    outDir: 'dist',
   },
+  base: './',
 });

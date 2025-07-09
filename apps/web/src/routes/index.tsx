@@ -1,4 +1,9 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useRouter,
+} from "@tanstack/react-router";
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { Lock, User } from "lucide-react";
 import Input from "../components/common/Input";
@@ -10,7 +15,10 @@ import { useAuth } from "../context/AuthContext";
 export const Route = createFileRoute("/")({
   component: Index,
   beforeLoad: async ({ context }: any) => {
-    if (context?.auth?.isAuthenticated) {
+    if (
+      context?.auth?.isAuthenticated &&
+      !context?.auth?.isPermissionsLoading
+    ) {
       throw redirect({ to: "/dashboard" });
     }
   },
@@ -18,6 +26,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const mutation = useLogin();
+  const router = useRouter();
   // const { isLoading } = useAuth();
   const { form, handleChange, resetForm } = useForm({
     email: "",
@@ -77,8 +86,6 @@ function Index() {
         <div className="text-right">
           <Link
             to="/recuperar"
-            type="button"
-            onClick={() => console.log("forgot password")}
             className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 hover:underline"
           >
             ¿Olvidó su contraseña?
