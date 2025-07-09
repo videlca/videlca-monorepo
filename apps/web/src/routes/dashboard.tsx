@@ -9,4 +9,7 @@ export const Route = createFileRoute("/dashboard")({
       throw redirect({ to: "/" });
     }
   },
+  notFoundComponent: () => {
+    throw redirect({ to: "/" });
+  },
 });

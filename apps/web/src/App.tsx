@@ -1,4 +1,8 @@
-import { createRouter, RouterProvider } from "@tanstack/react-router";
+import {
+  createHashHistory,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PortalProvider } from "./context/PortalContext";
@@ -9,12 +13,15 @@ import {
   type AuthContextType,
 } from "./context/AuthContext";
 
+const hashHistory = createHashHistory();
+
 const router = createRouter({
   routeTree,
   context: {
     auth: undefined! as AuthContextType,
     queryClient: undefined! as QueryClient,
   },
+  history: hashHistory,
 });
 
 declare module "@tanstack/react-router" {

@@ -1,12 +1,27 @@
 import { axiosClient } from "../../config"
 import type { loginUserDto } from "../../dtos"
 
-export const login = async (data: loginUserDto) => {
+interface loginResponse {
+  status?: number
+  message?: string
+  data?: {
+    user: {
+      idUser: number
+      email: string
+      nombre: string
+    }
+  }
+}
+
+export const login = async (data: loginUserDto): Promise<loginResponse> => {
   const response = await axiosClient.post('/auth/login', data).then((res) => {
-    return res.data
+    return {
+      status: res.status,
+      data: res.data
+    }
   }).catch((error) => {
     return {
-      success: false,
+      status: error.response?.status,
       message: error.response?.data?.message || 'Error de conexión',
     }
   })

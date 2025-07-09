@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const mutation = useLogin();
-  const { isLoading } = useAuth();
+  // const { isLoading } = useAuth();
   const { form, handleChange, resetForm } = useForm({
     email: "",
     clave: "",
@@ -30,21 +30,21 @@ function Index() {
       email: form.email,
       clave: form.clave,
     });
-    resetForm();
+    // resetForm();
   };
 
-  if (isLoading) {
-    return (
-      <AuthLayout>
-        <div className="flex items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-gray-600">Verificando autenticación...</p>
-          </div>
-        </div>
-      </AuthLayout>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <AuthLayout>
+  //       <div className="flex items-center justify-center">
+  //         <div className="text-center">
+  //           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+  //           <p className="mt-2 text-gray-600">Verificando autenticación...</p>
+  //         </div>
+  //       </div>
+  //     </AuthLayout>
+  //   );
+  // }
 
   return (
     <AuthLayout>

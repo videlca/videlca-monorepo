@@ -17,15 +17,18 @@ export const useLogin = (): UseMutationResult<any, Error, loginUserDto> => {
   return useMutation({
     mutationFn: (data: loginUserDto) => login(data),
     onSuccess: (data) => {
-      console.log(data);
-      setIsAuthenticated(true);
       queryClient.invalidateQueries({ queryKey: ["login"] });
+      setIsAuthenticated(true);
+      console.log(data);
+      if (data.status === 200) {
+        console.log("success");
+        navigate({ to: "/dashboard", replace: true });
+      } else {
+        throw new Error(data.message || "Error al iniciar sesión");
+      }
     },
     onError: (error) => {
       console.log(error);
-    },
-    onSettled: () => {
-      navigate({ to: "/dashboard" });
     },
   });
 };
