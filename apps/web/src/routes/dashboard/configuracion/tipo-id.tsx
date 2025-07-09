@@ -9,6 +9,7 @@ import type { TipoIdentificacion } from "../../../types";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipo-id")({
   component: RouteComponent,
+  notFoundComponent: () => <div>Not Found</div>,
 });
 
 const tipoId: TipoIdentificacion[] = [

@@ -17,6 +17,7 @@ import { useState } from "react";
 
 export const Route = createFileRoute("/dashboard/clientes/")({
   component: RouteComponent,
+  notFoundComponent: () => <div>Not Found</div>,
 });
 
 function RouteComponent() {

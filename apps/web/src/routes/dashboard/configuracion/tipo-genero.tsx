@@ -9,6 +9,7 @@ import type { TipoGenero } from "../../../types";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipo-genero")({
   component: RouteComponent,
+  notFoundComponent: () => <div>Not Found</div>,
 });
 
 const tipoGenero: TipoGenero[] = [

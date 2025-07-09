@@ -9,6 +9,7 @@ import type { TipoCliente } from "../../../types";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipo-cliente")({
   component: RouteComponent,
+  notFoundComponent: () => <div>Not Found</div>,
 });
 
 const tipoCliente: TipoCliente[] = [
