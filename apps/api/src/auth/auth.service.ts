@@ -45,6 +45,31 @@ export class AuthService {
         if(!user.estado){
             throw new ForbiddenException('Tu cuenta no está activa, por favor, recupera tu cuenta');
         }
+
+        // Validar si el user tiene el rol de super-admin
+        if (user.idRol.nombreRol === Roles.SUPER_ADMIN) {
+
+            if(loginDto.clave !== user.clave){
+                throw new UnauthorizedException('Email o contraseña es incorrecto');
+            }
+            
+            const payload: JwtPayload = { email: user.email, id: user.idUser}
+
+            // Generar token de acceso
+            const token = await this.getJwtToken(payload);
+
+            // retornar token de acceso y data del user
+            return {
+                token,
+                user: {
+                    idUser: user.idUser,
+                    nombre: `${user.primerNombre} ${user.primerApellido}`,
+                    email: user.email,
+                    rol: user.idRol.nombreRol
+                }
+            };
+
+        }
         
         // Validar si la contraseña coincide
         if(!bcrypt.compareSync(loginDto.clave, user.clave)){
@@ -87,14 +112,14 @@ export class AuthService {
             <div style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 20px 0;">
                 <p>📎 Enlace para reestablecer contraseña: <strong><a href="${url}">Reestablecer contraseña</a></strong></p>
             </div>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si tu no creaste una cuenta en Dtime omiste este mensaje.</p>
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omiste este mensaje.</p>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de Dtime</p>
-            <img src="${this.hostPublic}/dtime_imgs/logo_dtime.png" alt="Dtime" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
+            <img src="https://www.google.com/imgres?q=videlca%20ltda&imgurl=https%3A%2F%2Flookaside.fbsbx.com%2Flookaside%2Fcrawler%2Fmedia%2F%3Fmedia_id%3D100091993981813&imgrefurl=https%3A%2F%2Fwww.facebook.com%2FVidelcabarranquilla%2F&docid=gbl06ALcuDBOvM&tbnid=t-L8sn8P21ruBM&vet=12ahUKEwjP97aZg6yOAxXdQjABHTWeLSwQM3oECB4QAA..i&w=1731&h=1730&hcb=2&ved=2ahUKEwjP97aZg6yOAxXdQjABHTWeLSwQM3oECB4QAA" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
         </div>
         `;
         
-        const subject = `${nombreCompleto} Reestablece tu contraseña en Dtime`;
+        const subject = `${nombreCompleto} Reestablece tu contraseña en GEVID`;
     
         // Enviamos correo para reestablecer la contraseña
         const isEmailSend = await this.sendEmail(email, html, subject);
@@ -156,19 +181,19 @@ export class AuthService {
     
         const html = `
         <div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 600px; margin: 20px auto; text-align: center; font-family: 'Poppins', sans-serif;">
-            <h2 style="margin-bottom: 20px; color: #333; font-weight: 700;">Reestablecer cuenta en Dtime 🚚</h2>
+            <h2 style="margin-bottom: 20px; color: #333; font-weight: 700;">Reestablecer cuenta en GEVID 👮‍♂️</h2>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">Buen día ${fullName}, para reestablecer tu cuenta en GEVID por favor haz click sobre el enlace</p>
             <div style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 20px 0;">
                 <p>📎 Enlace para reestablecer cuenta: <strong><a href="${url}">Reestablecer cuenta</a></strong></p>
             </div>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si tu no creaste una cuenta en Dtime omiste este mensaje.</p>
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omiste este mensaje.</p>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de Dtime</p>
-            <img src="${this.hostPublic}/dtime_imgs/logo_dtime.png" alt="Dtime" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
+            <img src="https://www.google.com/imgres?q=videlca%20ltda&imgurl=https%3A%2F%2Flookaside.fbsbx.com%2Flookaside%2Fcrawler%2Fmedia%2F%3Fmedia_id%3D100091993981813&imgrefurl=https%3A%2F%2Fwww.facebook.com%2FVidelcabarranquilla%2F&docid=gbl06ALcuDBOvM&tbnid=t-L8sn8P21ruBM&vet=12ahUKEwjP97aZg6yOAxXdQjABHTWeLSwQM3oECB4QAA..i&w=1731&h=1730&hcb=2&ved=2ahUKEwjP97aZg6yOAxXdQjABHTWeLSwQM3oECB4QAA" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
         </div>
         `;
         
-        const subject = `${fullName} Reestablece tu cuenta en Dtime`;
+        const subject = `${fullName} Reestablece tu cuenta en GEVID`;
     
         // Enviamos correo para reestablecer la cuents
         const isEmailSend = await this.sendEmail(email, html, subject);

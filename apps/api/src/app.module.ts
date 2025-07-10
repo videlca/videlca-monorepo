@@ -13,6 +13,7 @@ import { ClientesModule } from './clientes/clientes.module';
 import { PersonalModule } from './personal/personal.module';
 import { NovedadModule } from './novedad/novedad.module';
 import { TarifasModule } from './tarifas/tarifas.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -47,7 +48,7 @@ import { TarifasModule } from './tarifas/tarifas.module';
     
     TarifasModule, 
     
-    CommonModule,
+    CommonModule, SeedModule,
     
   ],
   controllers: [],

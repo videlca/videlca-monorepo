@@ -452,7 +452,7 @@ export class UsersService {
   // EMAIL PARA VALIDAR CUENTA DEL USER
   async emailValidation(fullName: string, email: string, token: string) {
 
-    const url = `${this.hostFrontend}/auth/olvide-password/${token}`;
+    const url = `${this.hostFrontend}/auth/confirmar-cuenta/${token}`;
     
     const html = `
     <div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 600px; margin: 20px auto; text-align: center; font-family: 'Poppins', sans-serif;">
@@ -464,7 +464,7 @@ export class UsersService {
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si tu no creaste una cuenta en GEVID omiste este mensaje.</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
-        <img src="${this.hostPublic}/dtime_imgs/logo_dtime.png" alt="Dtime" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+        <img src="https://www.google.com/imgres?q=videlca%20ltda&imgurl=https%3A%2F%2Flookaside.fbsbx.com%2Flookaside%2Fcrawler%2Fmedia%2F%3Fmedia_id%3D100091993981813&imgrefurl=https%3A%2F%2Fwww.facebook.com%2FVidelcabarranquilla%2F&docid=gbl06ALcuDBOvM&tbnid=t-L8sn8P21ruBM&vet=12ahUKEwjP97aZg6yOAxXdQjABHTWeLSwQM3oECB4QAA..i&w=1731&h=1730&hcb=2&ved=2ahUKEwjP97aZg6yOAxXdQjABHTWeLSwQM3oECB4QAA" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
     </div>
     `;
     

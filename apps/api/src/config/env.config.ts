@@ -15,5 +15,4 @@ export const EnvConfiguration = () => ({
     mailerService: process.env.MAILER_sERVICE,
     mailerEmail: process.env.MAILER_EMAIL,
     mailerSecretKey: process.env.MAILER_SECRET_KEY,
-    mailerTo: process.env.CONTACT_MAILER_TO
 });

@@ -11,7 +11,7 @@ export function AppAuth(routeDescription: DescriptionRoutes) {
 
   return applyDecorators(
     ProtectedRoute(routeDescription),
-    UseGuards(AuthGuard(), RouteStateGuard, UserPermissionsGuard)
+    UseGuards(AuthGuard(), UserPermissionsGuard)
   );
 
 }

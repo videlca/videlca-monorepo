@@ -9,9 +9,6 @@ export class Permission {
         name: 'idPermiso'
     })
     id: number;
-    
-    @Column({ type: 'varchar' })
-    ruta: string; // Ruta o acción a la que da acceso
 
     @Column({
         type: 'varchar',
@@ -26,24 +23,6 @@ export class Permission {
     })
     nombre: string; // nombre que se mostrara en el frontend
 
-    @Column({
-        type: 'varchar',
-    })
-    modulo: string;
-
-    @Column({
-        type: 'boolean',
-        default: true,
-        name: 'estado'
-    })
-    activo: boolean;
-
-    @Column({
-        type: 'boolean',
-        default: true
-    })
-    modificar: boolean;
-
     // Relación muchos a muchos con roles
     @ManyToMany(() => Role, (role) => role.permissions)
     roles: Role[];
@@ -52,7 +31,6 @@ export class Permission {
     checkFieldsBeforeInsert(){
         this.descripcion = this.descripcion.toLowerCase().trim();
         this.nombre = this.nombre.toLowerCase().trim();
-        this.modulo = this.modulo.toLowerCase().trim();
     }
 
     @BeforeUpdate()

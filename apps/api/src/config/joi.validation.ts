@@ -17,5 +17,4 @@ export const JoiValidationSchema = Joi.object({
     MAILER_SERVICE: Joi.required(),
     MAILER_EMAIL: Joi.required(),
     MAILER_SECRET_KEY: Joi.required(),
-    CONTACT_MAILER_TO: Joi.required()
 });

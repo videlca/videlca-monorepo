@@ -6,7 +6,7 @@ import { DescriptionRoutes } from '../auth/interfaces';
 import { PaginationDto } from '../common/dto';
 
 import { PermissionsService } from './permissions.service';
-import { CreateRoleDto, UpdateRoleDto, CreatePermissionDto, UpdatePermissionStateDto } from './dto';
+import { CreateRoleDto, UpdateRoleDto } from './dto';
 
 
 @Controller('permissions')
