@@ -247,9 +247,10 @@ export class UsersService {
     
     }
 
-    const rol = await this.permissionsService.findOneRole(updateUserstateRolDto.idRol);
+    
+    if(updateUserstateRolDto.idRol){
 
-    if(updateUserstateRolDto.idRol && existUser.idRol !== rol){
+      const rol = await this.permissionsService.findOneRole(updateUserstateRolDto.idRol);
 
       existUser.idRol = rol;
 
@@ -328,19 +329,7 @@ export class UsersService {
     
     const role = await this.permissionsService.findOneRole(user.idRol.id);
 
-    const permisos = role.permissions.reduce((acc, permiso) => {
-      
-      // Si la categoría no existe, crear un array vacío
-      if (!acc[permiso.modulo]) {
-        acc[permiso.modulo] = [];
-      }
-      
-      // Agregar el permiso al array de su categoría
-      acc[permiso.modulo].push(permiso);
-  
-      return acc;
-    
-    }, {});
+    const permisos = role.permissions
 
     return {
       ...user,
@@ -464,7 +453,7 @@ export class UsersService {
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si tu no creaste una cuenta en GEVID omiste este mensaje.</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
-        <img src="https://www.google.com/imgres?q=videlca%20ltda&imgurl=https%3A%2F%2Flookaside.fbsbx.com%2Flookaside%2Fcrawler%2Fmedia%2F%3Fmedia_id%3D100091993981813&imgrefurl=https%3A%2F%2Fwww.facebook.com%2FVidelcabarranquilla%2F&docid=gbl06ALcuDBOvM&tbnid=t-L8sn8P21ruBM&vet=12ahUKEwjP97aZg6yOAxXdQjABHTWeLSwQM3oECB4QAA..i&w=1731&h=1730&hcb=2&ved=2ahUKEwjP97aZg6yOAxXdQjABHTWeLSwQM3oECB4QAA" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
     </div>
     `;
     

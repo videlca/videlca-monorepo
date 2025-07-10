@@ -68,7 +68,7 @@ export class UsersController {
   }
 
   // RUTA PROTEGIDA : Obtener data de un user
-  @Get('data/:id')
+  @Get(':id')
   @AppAuth(DescriptionRoutes.USUARIOS)
   async findOne(@Param('id', ParseIntPipe) id: number) {
       
@@ -79,7 +79,7 @@ export class UsersController {
   }
 
   // RUTA PROTEGIDA : Actualizar estado y rol de un user
-  @Patch('data/:id')
+  @Patch(':id')
   @AppAuth(DescriptionRoutes.USUARIOS)
   updateUser(
     @Param('id', ParseIntPipe) id: number,
