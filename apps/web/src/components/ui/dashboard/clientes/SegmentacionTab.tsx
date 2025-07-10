@@ -4,15 +4,18 @@ import type { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
 import type { Segmentacion } from "../../../../types";
-import { useModal } from "../../../../hooks/useModal";
+import { SimpleModal } from "../../../common/SimpleModal";
+import { useState } from "react";
 
 interface SegmentacionTabProps {
   dataSegmentacion: Segmentacion[];
 }
 
 export function SegmentacionTab({ dataSegmentacion }: SegmentacionTabProps) {
-  const { showModal } = useModal("agregar-segmentacion-modal");
-  const { showModal: showModalEditar } = useModal("editar-segmentacion-modal");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSegmentacion, setEditingSegmentacion] =
+    useState<Segmentacion | null>(null);
 
   const columnsSegmentacion: ColumnDef<Segmentacion>[] = [
     {
@@ -42,26 +45,12 @@ export function SegmentacionTab({ dataSegmentacion }: SegmentacionTabProps) {
   ];
 
   const handleShowAddSegmentacionModal = () => {
-    showModal(
-      <div className="space-y-4">
-        <p className="text-gray-600">
-          Formulario para agregar una segmentación
-        </p>
-      </div>,
-      "Agregar segmentación",
-      "md",
-    );
+    setIsAddModalOpen(true);
   };
 
   const handleShowEditSegmentacionModal = (row: any) => {
-    showModalEditar(
-      <div className="space-y-4">
-        <p className="text-gray-600">Formulario para editar una segmentación</p>
-        <pre>{JSON.stringify(row?.original, null, 2)}</pre>
-      </div>,
-      "Editar segmentación",
-      "md",
-    );
+    setEditingSegmentacion(row.original);
+    setIsEditModalOpen(true);
   };
 
   return (
@@ -80,6 +69,37 @@ export function SegmentacionTab({ dataSegmentacion }: SegmentacionTabProps) {
         pageSize={10}
         enableSorting={true}
       />
+
+      {/* Modal para agregar segmentación */}
+      <SimpleModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Agregar segmentación"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Formulario para agregar una segmentación
+          </p>
+        </div>
+      </SimpleModal>
+
+      {/* Modal para editar segmentación */}
+      <SimpleModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Editar segmentación"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Formulario para editar una segmentación
+          </p>
+          {editingSegmentacion && (
+            <pre>{JSON.stringify(editingSegmentacion, null, 2)}</pre>
+          )}
+        </div>
+      </SimpleModal>
     </div>
   );
 }

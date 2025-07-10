@@ -4,15 +4,17 @@ import type { ColumnDef, Row } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
 import type { Cliente } from "../../../../types";
-import { useModal } from "../../../../hooks/useModal";
+import { SimpleModal } from "../../../common/SimpleModal";
+import { useState } from "react";
 
 interface ClientesTabProps {
   dataClientes: Cliente[];
 }
 
 export function ClientesTab({ dataClientes }: ClientesTabProps) {
-  const { showModal } = useModal("agregar-cliente-modal");
-  const { showModal: showModalEditar } = useModal("editar-cliente-modal");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
 
   const columnsClientes: ColumnDef<Cliente>[] = [
     {
@@ -62,24 +64,12 @@ export function ClientesTab({ dataClientes }: ClientesTabProps) {
   ];
 
   const handleShowAddClienteModal = () => {
-    showModal(
-      <div className="space-y-4">
-        <p className="text-gray-600">Formulario para agregar un cliente</p>
-      </div>,
-      "Agregar cliente",
-      "md",
-    );
+    setIsAddModalOpen(true);
   };
 
   const handleShowEditClienteModal = (row: Row<Cliente>) => {
-    showModalEditar(
-      <div className="space-y-4">
-        <p className="text-gray-600">Formulario para editar un cliente</p>
-        <pre>{JSON.stringify(row?.original, null, 2)}</pre>
-      </div>,
-      "Editar cliente",
-      "md",
-    );
+    setEditingCliente(row.original);
+    setIsEditModalOpen(true);
   };
 
   return (
@@ -99,6 +89,33 @@ export function ClientesTab({ dataClientes }: ClientesTabProps) {
         pageSize={10}
         enableFiltering={true}
       />
+
+      {/* Modal para agregar cliente */}
+      <SimpleModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Agregar cliente"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">Formulario para agregar un cliente</p>
+        </div>
+      </SimpleModal>
+
+      {/* Modal para editar cliente */}
+      <SimpleModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Editar cliente"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">Formulario para editar un cliente</p>
+          {editingCliente && (
+            <pre>{JSON.stringify(editingCliente, null, 2)}</pre>
+          )}
+        </div>
+      </SimpleModal>
     </div>
   );
 }

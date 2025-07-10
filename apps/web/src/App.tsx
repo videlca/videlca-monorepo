@@ -5,7 +5,6 @@ import {
 } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PortalProvider } from "./context/PortalContext";
 import { BaseLayout } from "./components/layout/BaseLayout";
 import {
   AuthProvider,
@@ -57,9 +56,7 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <PortalProvider>
-          <RouterApp />
-        </PortalProvider>
+        <RouterApp />
       </QueryClientProvider>
     </AuthProvider>
   );

@@ -1,13 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
-import type { ColumnDef, Row } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
 import Table from "../../../components/common/Table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { PencilIcon, PlusIcon } from "lucide-react";
-import { useModal } from "../../../hooks/useModal";
 import Button from "../../../components/common/Button";
 import type { TipoOrdenServicio } from "../../../types";
+import {
+  useActualizarEstadoOrden,
+  useCrearEstadoOrden,
+  useEstadoOrden,
+} from "../../../api/queryFunctions/configuracion";
+import { useForm } from "../../../hooks/useForm";
+import type {
+  ActualizarEstadoOrden,
+  CrearEstadoOrden,
+} from "../../../api/types";
+import { InputForm } from "../../../components/common/InputForm";
+import { SimpleModal } from "../../../components/common/SimpleModal";
 
 export const Route = createFileRoute(
   "/dashboard/configuracion/tipo-orden-servicio",
@@ -16,58 +27,59 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  const [selectedRow, setSelectedRow] = useState<Row<TipoOrdenServicio> | null>(
-    null,
-  );
-  const { showModal, hideModal } = useModal(
-    "agregar-tipo-orden-servicio-modal",
-  );
+  const { form, handleChange, resetForm } = useForm<CrearEstadoOrden>({
+    descripcion: "",
+  });
+  const {
+    form: formEditar,
+    handleChange: handleChangeEditar,
+    resetForm: resetFormEditar,
+    setForm: setFormEditar,
+  } = useForm<ActualizarEstadoOrden>({
+    dias: 0,
+  });
+  const { data: estadosOrden } = useEstadoOrden();
+  const { mutate: crearEstadoOrden, isPending: isCreatingEstadoOrden } =
+    useCrearEstadoOrden();
+  const { mutate: editarEstadoOrden, isPending: isEditingEstadoOrden } =
+    useActualizarEstadoOrden();
 
-  const handleShowModal = () => {
-    showModal(
-      <div className="space-y-4">
-        <p className="text-gray-600">
-          Formulario para agregar un tipo de orden de servicio
-        </p>
-        <div className="flex justify-end space-x-2">
-          <Button
-            onClick={hideModal}
-            className="w-auto bg-gray-500 hover:bg-gray-600"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={() => {
-              alert("Action confirmed!");
-              hideModal();
-            }}
-            className="w-auto"
-          >
-            Agregar
-          </Button>
-        </div>
-      </div>,
-      "Agregar tipo de orden de servicio",
-      "md",
-    );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingRow, setEditingRow] = useState<TipoOrdenServicio | null>(null);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    crearEstadoOrden({
+      descripcion: form.descripcion as string,
+    });
+    resetForm();
+    setIsModalOpen(false);
   };
 
-  const dataOrdenServicio: TipoOrdenServicio[] = [
-    {
-      idEstadoOrdenServicio: 1,
-      descripcion: "Orden de servicio",
-      estado: true,
-      programable: false,
-      dias: 1,
-    },
-    {
-      idEstadoOrdenServicio: 2,
-      descripcion: "Orden de servicio",
-      estado: true,
-      programable: true,
-      dias: 1,
-    },
-  ];
+  const handleShowModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleShowModalEditar = (row: TipoOrdenServicio) => {
+    setFormEditar({
+      dias: row.dias,
+    });
+    setEditingRow(row);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    editarEstadoOrden({
+      id: editingRow?.idEstadoOrdenServicio as number,
+      data: {
+        dias: formEditar.dias,
+      },
+    });
+    resetFormEditar();
+    setIsEditModalOpen(false);
+  };
 
   const columns: ColumnDef<TipoOrdenServicio>[] = [
     {
@@ -111,7 +123,13 @@ function RouteComponent() {
       cell: ({ row }) => {
         if (row.getValue("programable")) {
           return (
-            <ButtonAction Icon={PencilIcon} label="Editar" onClick={() => {}} />
+            <ButtonAction
+              Icon={PencilIcon}
+              label="Editar"
+              onClick={() => {
+                handleShowModalEditar(row.original);
+              }}
+            />
           );
         }
         return <span>No disponible</span>;
@@ -125,17 +143,105 @@ function RouteComponent() {
           <ButtonAction
             Icon={PlusIcon}
             label="Agregar tipo de orden de servicio"
-            onClick={handleShowModal}
+            onClick={() => handleShowModal()}
           />
         </div>
         <Table
-          data={dataOrdenServicio}
+          data={estadosOrden?.data || []}
           columns={columns}
           enablePagination={true}
           pageSize={10}
           enableSorting={true}
         />
       </div>
+
+      {/* Modal para agregar un tipo de orden de servicio */}
+      <SimpleModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          resetForm();
+        }}
+        title="Agregar tipo de orden de servicio"
+        size="md"
+      >
+        <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <InputForm
+              label="Descripción"
+              placeholder="Descripción"
+              type="text"
+              id="descripcion"
+              value={form.descripcion}
+              onChange={handleChange}
+              required
+              disabled={false}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  resetForm();
+                }}
+                className="w-auto bg-gray-500 hover:bg-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="w-auto"
+                disabled={isCreatingEstadoOrden}
+              >
+                {isCreatingEstadoOrden ? "Creando..." : "Agregar"}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </SimpleModal>
+
+      {/* Modal para editar un tipo de orden de servicio */}
+      <SimpleModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          resetForm();
+        }}
+        title="Editar tipo de orden de servicio"
+        size="md"
+      >
+        <div className="space-y-4">
+          <form onSubmit={handleSubmitEditar} className="flex flex-col gap-4">
+            <InputForm
+              label="Días"
+              placeholder="Días"
+              type="number"
+              id="dias"
+              value={formEditar.dias.toString()}
+              onChange={handleChangeEditar}
+              required
+              disabled={false}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  resetFormEditar();
+                }}
+                className="w-auto bg-gray-500 hover:bg-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="w-auto"
+                disabled={isEditingEstadoOrden}
+              >
+                {isEditingEstadoOrden ? "Editando..." : "Editar"}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </SimpleModal>
     </Section>
   );
 }

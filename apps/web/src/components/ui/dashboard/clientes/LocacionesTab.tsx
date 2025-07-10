@@ -4,15 +4,17 @@ import type { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
 import type { Locacion } from "../../../../types";
-import { useModal } from "../../../../hooks/useModal";
+import { SimpleModal } from "../../../common/SimpleModal";
+import { useState } from "react";
 
 interface LocacionesTabProps {
   dataLocaciones: Locacion[];
 }
 
 export function LocacionesTab({ dataLocaciones }: LocacionesTabProps) {
-  const { showModal } = useModal("agregar-locacion-modal");
-  const { showModal: showModalEditar } = useModal("editar-locacion-modal");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingLocacion, setEditingLocacion] = useState<Locacion | null>(null);
 
   const columnsLocaciones: ColumnDef<Locacion>[] = [
     {
@@ -78,24 +80,12 @@ export function LocacionesTab({ dataLocaciones }: LocacionesTabProps) {
   ];
 
   const handleShowAddLocacionModal = () => {
-    showModal(
-      <div className="space-y-4">
-        <p className="text-gray-600">Formulario para agregar una locación</p>
-      </div>,
-      "Agregar locación",
-      "md",
-    );
+    setIsAddModalOpen(true);
   };
 
   const handleShowEditLocacionModal = (row: any) => {
-    showModalEditar(
-      <div className="space-y-4">
-        <p className="text-gray-600">Formulario para editar una locación</p>
-        <pre>{JSON.stringify(row?.original, null, 2)}</pre>
-      </div>,
-      "Editar locación",
-      "md",
-    );
+    setEditingLocacion(row.original);
+    setIsEditModalOpen(true);
   };
 
   return (
@@ -114,6 +104,33 @@ export function LocacionesTab({ dataLocaciones }: LocacionesTabProps) {
         pageSize={10}
         enableSorting={true}
       />
+
+      {/* Modal para agregar locación */}
+      <SimpleModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Agregar locación"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">Formulario para agregar una locación</p>
+        </div>
+      </SimpleModal>
+
+      {/* Modal para editar locación */}
+      <SimpleModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Editar locación"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">Formulario para editar una locación</p>
+          {editingLocacion && (
+            <pre>{JSON.stringify(editingLocacion, null, 2)}</pre>
+          )}
+        </div>
+      </SimpleModal>
     </div>
   );
 }

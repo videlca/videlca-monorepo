@@ -4,7 +4,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
 import type { SubSegmentacion } from "../../../../types";
-import { useModal } from "../../../../hooks/useModal";
+import { SimpleModal } from "../../../common/SimpleModal";
+import { useState } from "react";
 
 interface SubSegmentacionTabProps {
   dataSubSegmentacion: SubSegmentacion[];
@@ -13,10 +14,10 @@ interface SubSegmentacionTabProps {
 export function SubSegmentacionTab({
   dataSubSegmentacion,
 }: SubSegmentacionTabProps) {
-  const { showModal } = useModal("agregar-sub-segmentacion-modal");
-  const { showModal: showModalEditar } = useModal(
-    "editar-sub-segmentacion-modal",
-  );
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSubSegmentacion, setEditingSubSegmentacion] =
+    useState<SubSegmentacion | null>(null);
 
   const columnsSubSegmentacion: ColumnDef<SubSegmentacion>[] = [
     {
@@ -46,28 +47,12 @@ export function SubSegmentacionTab({
   ];
 
   const handleShowAddSubSegmentacionModal = () => {
-    showModal(
-      <div className="space-y-4">
-        <p className="text-gray-600">
-          Formulario para agregar una sub-segmentación
-        </p>
-      </div>,
-      "Agregar sub-segmentación",
-      "md",
-    );
+    setIsAddModalOpen(true);
   };
 
   const handleShowEditSubSegmentacionModal = (row: any) => {
-    showModalEditar(
-      <div className="space-y-4">
-        <p className="text-gray-600">
-          Formulario para editar una sub-segmentación
-        </p>
-        <pre>{JSON.stringify(row?.original, null, 2)}</pre>
-      </div>,
-      "Editar sub-segmentación",
-      "md",
-    );
+    setEditingSubSegmentacion(row.original);
+    setIsEditModalOpen(true);
   };
 
   return (
@@ -86,6 +71,37 @@ export function SubSegmentacionTab({
         pageSize={10}
         enableSorting={true}
       />
+
+      {/* Modal para agregar sub-segmentación */}
+      <SimpleModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Agregar sub-segmentación"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Formulario para agregar una sub-segmentación
+          </p>
+        </div>
+      </SimpleModal>
+
+      {/* Modal para editar sub-segmentación */}
+      <SimpleModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Editar sub-segmentación"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Formulario para editar una sub-segmentación
+          </p>
+          {editingSubSegmentacion && (
+            <pre>{JSON.stringify(editingSubSegmentacion, null, 2)}</pre>
+          )}
+        </div>
+      </SimpleModal>
     </div>
   );
 }

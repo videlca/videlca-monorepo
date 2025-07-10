@@ -1,17 +1,16 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  type UseMutationResult,
-  type UseQueryResult,
-} from "@tanstack/react-query";
+import { useMutation, type UseMutationResult } from "@tanstack/react-query";
 import { login, logout } from "../../functions/auth";
 import type { loginUserDto } from "../../dtos";
 import { useNavigate } from "@tanstack/react-router";
 import { queryClient } from "../../../App";
 import { useAuth } from "../../../context/AuthContext";
+import type { ApiResponse } from "../../types/common";
 
-export const useLogin = (): UseMutationResult<any, Error, loginUserDto> => {
+export const useLogin = (): UseMutationResult<
+  ApiResponse,
+  Error,
+  loginUserDto
+> => {
   const { setIsAuthenticated } = useAuth();
   const navigate = useNavigate();
   return useMutation({
@@ -33,7 +32,7 @@ export const useLogin = (): UseMutationResult<any, Error, loginUserDto> => {
   });
 };
 
-export const useLogout = (): UseMutationResult<any, Error, void> => {
+export const useLogout = (): UseMutationResult<ApiResponse, Error, void> => {
   const navigate = useNavigate();
   const { setIsAuthenticated } = useAuth();
 

@@ -13,6 +13,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  //! TODO: Configurar permisos por modulos
   const [isPermissionsLoading, setIsPermissionsLoading] = useState(true);
 
   useEffect(() => {

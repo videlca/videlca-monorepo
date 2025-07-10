@@ -33,7 +33,7 @@ export const logout = async () => {
     return res.data
   }).catch((error) => {
     return {
-      success: false,
+      status: error.response?.status,
       message: error.response?.data?.message || 'Error de conexión',
     }
   })
@@ -47,8 +47,7 @@ export const checkAuth = async () => {
   } catch (error: any) {
     console.error('Auth validation error:', error)
     return {
-      success: false,
-      isAuthenticated: false,
+      status: error.response?.status,
       message: error.response?.data?.message || 'Error de autenticación'
     }
   }
