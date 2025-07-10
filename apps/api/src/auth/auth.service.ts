@@ -35,12 +35,9 @@ export class AuthService {
     async loginUser(loginDto: LoginUserDto) {
     
         // Encontrar user que quiere iniciar sesion
-        const user = await this.usersService.findOneByEmailWithPassword(loginDto.email);
-        
-        // Validar si existe
-        if(!user){
-            throw new UnauthorizedException('Email o contraseña es incorrecto');
-        }
+        const userFound = await this.usersService.findOneByEmailWithPassword(loginDto.email);
+
+        const {user, permisos} = userFound;
         
         if(!user.estado){
             throw new ForbiddenException('Tu cuenta no está activa, por favor, recupera tu cuenta');
@@ -65,8 +62,9 @@ export class AuthService {
                     idUser: user.idUser,
                     nombre: `${user.primerNombre} ${user.primerApellido}`,
                     email: user.email,
-                    rol: user.idRol.nombreRol
-                }
+                    rol: user.idRol.nombreRol,
+                },
+                permisos
             };
 
         }
@@ -85,14 +83,16 @@ export class AuthService {
         return {
             token,
             user: {
-            idUser: user.idUser,
-            nombre: `${user.primerNombre} ${user.primerApellido}`,
-            email: user.email
-            }
+                idUser: user.idUser,
+                nombre: `${user.primerNombre} ${user.primerApellido}`,
+                email: user.email,
+                rol: user.idRol.nombreRol
+            },
+            permisos
         };
     }
     
-    // ENVIAR CORREO PARA REESTABLECER LA CONTRASEÑA DEL USER DEL APLICATIVO
+    // ENVIAR CORREO PARA REESTABLECER LA CONTRASEÑA DEL USER
     async olvidePassword(olvidePasswordDto: ReestablecerDatosDto) {
     
         const { nroIdentificacion } = olvidePasswordDto;
@@ -130,7 +130,7 @@ export class AuthService {
 
     }
 
-    // VALIDAR USER DEL APLICATIVO WEB (FRONTEND) y DASHBOARD (BACKEND)
+    // VALIDAR USER
     async comprobarTokenOlvidePassword(token: string){
     
         // validamos el token y extraemos el email
@@ -149,7 +149,7 @@ export class AuthService {
 
     }
 
-    // REESTABLECER CONTRASEÑA DEL USER DEL APLICATIVO WEB (FRONTEND)
+    // REESTABLECER CONTRASEÑA DEL USER
     async nuevaPassword(token: string, newPasswordDto: NewPasswordDto){
 
         const { clave, confirmarClave } = newPasswordDto;
@@ -169,7 +169,7 @@ export class AuthService {
 
     }
 
-    // ENVIAR CORREO PARA REESTABLECER LA CUENTA DEL USER DEL APLICATIVO
+    // ENVIAR CORREO PARA REESTABLECER LA CUENTA DEL USER
     async reestablecerCuenta(reestablecerCuentaDto: ReestablecerDatosDto) {
 
         const { nroIdentificacion } = reestablecerCuentaDto;
@@ -204,7 +204,7 @@ export class AuthService {
 
     }
 
-    // VALIDAR / VERIFICAR CUENTA DEL USER DEL APLICATIVO WEB (FRONTEND)
+    // VALIDAR / VERIFICAR CUENTA DEL USER
     async confirmarCuenta(token: string){
     
         // validamos el token y extraemos el email
@@ -217,7 +217,7 @@ export class AuthService {
 
     }
 
-    // VALIDAR USER DEL APLICATIVO
+    // VALIDAR USER
     async validateUser(numeroIdentificacion: string){
     
         // Verificamos que el user si exista en nuestra BD

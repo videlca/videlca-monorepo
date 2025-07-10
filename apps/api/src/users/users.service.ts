@@ -20,6 +20,7 @@ import { User } from './entities/user.entity';
 
 import { CreateUserDto, UpdateUserDto, UpdateUserStateRolDto } from './dto';
 import { Role } from '../permissions/entities/role.entity';
+import { truncate } from 'fs';
 
 @Injectable()
 export class UsersService {
@@ -351,15 +352,27 @@ export class UsersService {
         clave: true, 
         primerNombre: true, 
         primerApellido: true, 
-        estado: true
+        estado: true,
+        idRol: true
       },
     });
 
-    if (user){
-      delete user.idTipoIdentificacion;
+    // Validar si existe
+    if(!user){
+        throw new UnauthorizedException('Email o contraseña es incorrecto');
     }
 
-    return user;
+    delete user.idTipoIdentificacion;    
+
+    const rol = await this.permissionsService.findOneRole(user.idRol.id);
+
+    const permisos = rol.permissions.map(permiso => permiso.descripcion);
+
+    return {
+      user,
+      permisos
+    };
+
   }
 
   async findOneByNroId(numeroIdentificacion: string){
@@ -413,7 +426,7 @@ export class UsersService {
       throw new UnauthorizedException('Token no valido');
     }
 
-    if(user.estado){
+    if(user.estado === true){
       return;
     }
 

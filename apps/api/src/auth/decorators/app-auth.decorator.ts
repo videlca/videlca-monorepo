@@ -1,7 +1,7 @@
 import { applyDecorators, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
-import { RouteStateGuard, UserPermissionsGuard } from '../guards';
+import { UserPermissionsGuard } from '../guards';
 
 import { ProtectedRoute } from './protected-route.decorator';
 
