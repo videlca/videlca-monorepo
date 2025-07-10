@@ -242,7 +242,7 @@ export class UsersService {
       throw new UnauthorizedException('No se puede editar este Usuario');
     }
     
-    if(updateUserstateRolDto.estado && existUser.estado !== updateUserstateRolDto.estado ){
+    if(updateUserstateRolDto.hasOwnProperty('estado') && existUser.estado !== updateUserstateRolDto.estado ){
       
       existUser.estado = updateUserstateRolDto.estado;
     
@@ -445,10 +445,6 @@ export class UsersService {
 
     }
 
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
   }
 
   // EMAIL PARA VALIDAR CUENTA DEL USER

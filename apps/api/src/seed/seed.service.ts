@@ -1,9 +1,12 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { initialData } from './data/data_prueba';
 import { ClientesService, SegmentacionService } from '../clientes/services';
 import { EstadoOrdenServicioService, TipoClienteService, TipoIdentificacionService, UbicacionService } from '../common/services';
+import { UsersService } from '../users/users.service';
+import { PermissionsService } from '../permissions/permissions.service';
+
+import { initialData } from './data/data_prueba';
 
 @Injectable()
 export class SeedService {
@@ -18,6 +21,8 @@ export class SeedService {
         private readonly tipoClienteService: TipoClienteService,
         private readonly tipoIdService: TipoIdentificacionService,
         private readonly ubicacionService: UbicacionService,
+        private readonly userService: UsersService,
+        private readonly permissionsService: PermissionsService,
     ){
         this.environment = this.configService.get<string>('environment');
     }
@@ -37,6 +42,13 @@ export class SeedService {
     }
 
     private async deleteTables(){
+        
+        // ELIMINAR TABLA USUARIOS
+        await this.userService.deleteAllUsers();
+
+        // ELIMINAR TABLA ROLES Y PERMISOS
+        await this.permissionsService.deleteAllRoles();
+        await this.permissionsService.deleteAllPermissions();
 
         // ELIMINAR TABLA CLIENTES -> LOCACIONES -> CORREOS -> CORREO_ESTADO
         await this.clienteService.deleteAllClientes();
@@ -50,8 +62,13 @@ export class SeedService {
         // ELIMINAR TABLA TIPO CLIENTE:
         await this.tipoClienteService.deleteAllTiposCliente();
 
+        // ELIMINAR TABLA PERSONAL -> NOVEDADES
 
+        // ELIMINAR TIPO NOVEDAD
 
+        // ELIMINAR TIPO GENERO
+
+        // ELIMINAR TIPO PERSONAL
 
         // ELIMINAR TABLA TIPO ID: despues de eliminar usuario, cliente y personal
         await this.tipoIdService.deleteAllTiposId();
