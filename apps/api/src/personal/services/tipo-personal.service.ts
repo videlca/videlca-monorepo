@@ -173,7 +173,7 @@ export class TipoPersonalService {
   
   // ELIMINAR TODOS LOS TIPOS PERSONAL
   // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA TIPO-PERSONAL
-  async deleteAllTiposId(){
+  async deleteAllTiposPersonal(){
   
     const query = this.tipoPersonalRepository.createQueryBuilder('tipo-personal');
 

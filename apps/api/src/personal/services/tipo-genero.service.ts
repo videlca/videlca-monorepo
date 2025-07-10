@@ -173,7 +173,7 @@ export class TipoGeneroService {
   
   // ELIMINAR TODOS LOS TIPOS GENERO
   // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA TIPO-GENERO
-  async deleteAllTiposId(){
+  async deleteAllTiposGenero(){
   
     const query = this.tipoGeneroRepository.createQueryBuilder('tipo-genero');
 

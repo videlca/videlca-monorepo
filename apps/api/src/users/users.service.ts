@@ -479,7 +479,7 @@ export class UsersService {
 
   }
 
-  // CREAR USUARIOS BACKEND
+  // CREAR USUARIOS
   async createUserSeed(
     createUserDto: {
       primerNombre: string,
@@ -496,7 +496,7 @@ export class UsersService {
 
     const {
       tipoIdentificacion,
-      rol: roleName,
+      rol: nombreRol,
       ...createUserData
     } = createUserDto;
     
@@ -504,7 +504,7 @@ export class UsersService {
     const tipoId = await this.tipoIdentificacionService.findOneByName(tipoIdentificacion);
 
     // OBTENER ROL USER
-    const rol = await this.permissionsService.findOneRoleByName(roleName);
+    const rol = await this.permissionsService.findOneRoleByName(nombreRol);
     
     try {
 

@@ -269,13 +269,13 @@ export class PersonalService {
 
       await queryRunner.manager.save(empleado);
 
-      if(updatePersonalDto.hasOwnProperty('laborando') && updatePersonalDto.laborando === false){
+      if(updatePersonalDto.hasOwnProperty('laborando') && updatePersonalDto.laborando === false && updatePersonalDto.laborando != empleado.laborando){
 
         await this.novedadService.createNovedadRetiro(empleado, queryRunner);
 
       }
       
-      if(updatePersonalDto.hasOwnProperty('laborando') && updatePersonalDto.laborando === true){
+      if(updatePersonalDto.hasOwnProperty('laborando') && updatePersonalDto.laborando === true && updatePersonalDto.laborando != empleado.laborando){
 
         await this.novedadService.removeNovedadRetiro(empleado, queryRunner);
 
@@ -328,6 +328,27 @@ export class PersonalService {
     empleado.laborando = laborando;
 
     await queryRunner.manager.save(Personal, empleado);
+
+  }
+
+  // ELIMINAR TODOS LOS EMPLEADOS
+  // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA PERSONAL
+  async deleteAllPersonal(){
+  
+    const query = this.personalRepository.createQueryBuilder('personal');
+
+    try {
+      
+      return await query
+        .delete()
+        .where({})
+        .execute();
+
+    } catch (error) {
+      
+      this.handleDbExceptions(error);
+
+    }
 
   }
 

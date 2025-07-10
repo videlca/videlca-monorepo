@@ -5,6 +5,8 @@ import { ClientesService, SegmentacionService } from '../clientes/services';
 import { EstadoOrdenServicioService, TipoClienteService, TipoIdentificacionService, UbicacionService } from '../common/services';
 import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
+import { PersonalService, TipoGeneroService, TipoPersonalService } from '../personal/services';
+import { TipoNovedadService } from '../novedad/services';
 
 import { initialData } from './data/data_prueba';
 
@@ -23,6 +25,10 @@ export class SeedService {
         private readonly ubicacionService: UbicacionService,
         private readonly userService: UsersService,
         private readonly permissionsService: PermissionsService,
+        private readonly personalService: PersonalService,
+        private readonly tipoNovedadService: TipoNovedadService,
+        private readonly tipoGeneroService: TipoGeneroService,
+        private readonly tipoPersonalService: TipoPersonalService,
     ){
         this.environment = this.configService.get<string>('environment');
     }
@@ -63,12 +69,16 @@ export class SeedService {
         await this.tipoClienteService.deleteAllTiposCliente();
 
         // ELIMINAR TABLA PERSONAL -> NOVEDADES
+        await this.personalService.deleteAllPersonal();    
 
         // ELIMINAR TIPO NOVEDAD
+        await this.tipoNovedadService.deleteAllTiposNovedad();
 
         // ELIMINAR TIPO GENERO
+        await this.tipoGeneroService.deleteAllTiposGenero();
 
         // ELIMINAR TIPO PERSONAL
+        await this.tipoPersonalService.deleteAllTiposPersonal();
 
         // ELIMINAR TABLA TIPO ID: despues de eliminar usuario, cliente y personal
         await this.tipoIdService.deleteAllTiposId();
@@ -78,6 +88,54 @@ export class SeedService {
 
     }
 
-    private async insertNewData() {}
+    private async insertNewData() {
+
+        const tiposId = initialData.tiposId;
+        
+        const tiposNovedad = initialData.tiposNovedad;
+
+        const estadosOrdenesServicio = initialData.estadosOrdenServicio;
+
+        const roles = initialData.roles;
+        const permisos = initialData.permissions;
+
+        const usuarios = initialData.users;
+
+        const insertPromises = [];
+        
+        // insertar tipos id
+        tiposId.forEach(tipoId => {
+            insertPromises.push(this.tipoIdService.create({
+                descripcion: tipoId.descripcion
+            }))
+        })
+
+        // insertar tipos novedad
+        tiposNovedad.forEach(tipoNovedad => {
+            insertPromises.push(this.tipoNovedadService.createTipoNovedadSeed(tipoNovedad))
+        });
+
+        // insertar estados orden de servicio
+        estadosOrdenesServicio.forEach(estadoOrden => {
+            insertPromises.push(this.estadoOrdenServicioService.createEstadoOrdenSeed(estadoOrden))
+        });
+
+        // insertar rol
+        roles.forEach(rol => {
+            insertPromises.push(this.permissionsService.createRoleSeed(rol))
+        });
+
+        // insertar permisos
+        permisos.forEach(permiso => {
+            insertPromises.push(this.permissionsService.createPermission(permiso))
+        })
+
+        await Promise.all(insertPromises);
+
+        await Promise.all(usuarios.map(user => this.userService.createUserSeed(user)))
+
+        return true;
+
+    }
 
 }

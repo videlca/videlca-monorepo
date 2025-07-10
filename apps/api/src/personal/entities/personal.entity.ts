@@ -127,7 +127,7 @@ export class Personal {
     @ManyToOne(
         () => TipoPersonal,
         (tipoPersonal) => tipoPersonal.personal,
-        // {eager: true}
+        {eager: true}
     )
     @JoinColumn({name: 'idTipoPersonal'})
     idTipoPersonal: TipoPersonal;
@@ -143,7 +143,10 @@ export class Personal {
     // novedades -> relacion tabla novedades ()
     @OneToMany(
         () => Novedad, 
-        (novedad) => novedad.idPersonal
+        (novedad) => novedad.idPersonal,
+        {
+            cascade: true
+        }
     )
     novedades: Novedad[];
 

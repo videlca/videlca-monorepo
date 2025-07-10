@@ -4,7 +4,7 @@ interface User {
     primerApellido: string;
     segundoApellido?: string;
     email: string;
-    clave?: string;
+    clave: string;
     numeroIdentificacion: string;
     tipoIdentificacion: string;
     rol: string;
@@ -31,11 +31,18 @@ interface EstadoOrdenServicio {
     dias: number;
 }
 
+// tipo novedad
+interface TipoNovedad {
+    descripcion: string;
+    retirado: boolean;
+}
+
 interface SeedData {
     users: User[],
     roles: Role[],
     permissions: Permission[],
     tiposId: Tipo[],
+    tiposNovedad: TipoNovedad[],
     estadosOrdenServicio: EstadoOrdenServicio[]
 }
 
@@ -65,6 +72,10 @@ export const initialData: SeedData = {
     tiposId: [
         {descripcion: 'Cedula Ciudadania'},
         {descripcion: 'NIT'},
+    ],
+
+    tiposNovedad: [
+        {descripcion: 'retirado', retirado: true}
     ],
     
     users: [
