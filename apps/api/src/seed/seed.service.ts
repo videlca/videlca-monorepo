@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { initialData } from './data/data_prueba';
 import { ClientesService, SegmentacionService } from '../clientes/services';
-import { EstadoOrdenServicioService } from '../common/services';
+import { EstadoOrdenServicioService, TipoClienteService, TipoIdentificacionService, UbicacionService } from '../common/services';
 
 @Injectable()
 export class SeedService {
@@ -15,7 +15,9 @@ export class SeedService {
         private readonly clienteService: ClientesService,
         private readonly segmentacionService: SegmentacionService,
         private readonly estadoOrdenServicioService: EstadoOrdenServicioService,
-        
+        private readonly tipoClienteService: TipoClienteService,
+        private readonly tipoIdService: TipoIdentificacionService,
+        private readonly ubicacionService: UbicacionService,
     ){
         this.environment = this.configService.get<string>('environment');
     }
@@ -41,6 +43,21 @@ export class SeedService {
 
         // ELIMINAR TABLAS SEGMENTACION -> SUBSEGMENTACION
         await this.segmentacionService.deleteAllSegmentaciones();
+
+        // ELIMINAR TABLA ESTADO ORDEN DE SERVICIO
+        await this.estadoOrdenServicioService.deleteAllTiposEstadosOrden();
+
+        // ELIMINAR TABLA TIPO CLIENTE:
+        await this.tipoClienteService.deleteAllTiposCliente();
+
+
+
+
+        // ELIMINAR TABLA TIPO ID: despues de eliminar usuario, cliente y personal
+        await this.tipoIdService.deleteAllTiposId();
+
+        // ELIMINAR TABLA PAIS -> DEPARTAMENTO -> CIUDAD: despues de borrar personal y locacion
+        await this.ubicacionService.deleteAllPais();
 
     }
 

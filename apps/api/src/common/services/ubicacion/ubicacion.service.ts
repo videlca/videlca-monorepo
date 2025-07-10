@@ -256,6 +256,7 @@ export class UbicacionService {
         });
 
     }
+    
 
     // EDITAR DEPARTAMENTO
     async updateDepartamento(id: number, updateDepartamentoDto: UpdateDepartamentoDto) {

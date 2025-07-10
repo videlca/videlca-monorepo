@@ -18,32 +18,32 @@ export class TipoIdentificacionController {
       return this.tipoIdentificacionService.create(createTipoIdDto);
   }
   
-  // RUTA PUBLICA: Obtener todos los tipos de id
+  // RUTA PROTEGIDA: Obtener todos los tipos de id
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.tipoIdentificacionService.findAll(paginationDto, paginationDto.pagination);
   }
 
-  // OBTENER TODOS LOS TIPOS ID
+  // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS ID
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
     return this.tipoIdentificacionService.findAllActives(paginationDto, paginationDto.pagination);
   }
 
-  // OBTENER UN TIPO ID
+  // RUTA PROTEGIDA: OBTENER UN TIPO ID
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.tipoIdentificacionService.findOne(id);
   }
 
-  // EDITAR UN TIPO ID
+  // RUTA PROTEGIDA: EDITAR UN TIPO ID
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateTipoIdDto: UpdatetipoDto) {
     return this.tipoIdentificacionService.update(id, updateTipoIdDto);
   }
 
-  // ELIMINAR UN TIPO ID
+  // RUTA PROTEGIDA: ELIMINAR UN TIPO ID
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.tipoIdentificacionService.remove(id);
