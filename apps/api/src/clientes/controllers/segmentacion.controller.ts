@@ -57,26 +57,26 @@ export class SegmentacionController {
   }
 
   // 7. PATCH /segmentaciones/:segmentacionId/subsegmentaciones/:subSegmentacionId - Actualizar subsegmentación
-  @Patch(':segmentacionId/subsegmentaciones/:subSegmentacionId')
-  updateSubSegmentacion(
-    @Param('segmentacionId', ParseIntPipe) segmentacionId: number,
-    @Param('subSegmentacionId', ParseIntPipe) subSegmentacionId: number,
-    @Body() updateSubSegmentacionDto: UpdatetipoDto
-  ) {
-    return this.segmentacionService.updateSubSegmentacion(
-      segmentacionId, 
-      subSegmentacionId, 
-      updateSubSegmentacionDto
-    );
-  }
+  // @Patch(':segmentacionId/subsegmentaciones/:subSegmentacionId')
+  // updateSubSegmentacion(
+  //   @Param('segmentacionId', ParseIntPipe) segmentacionId: number,
+  //   @Param('subSegmentacionId', ParseIntPipe) subSegmentacionId: number,
+  //   @Body() updateSubSegmentacionDto: UpdatetipoDto
+  // ) {
+  //   return this.segmentacionService.updateSubSegmentacion(
+  //     segmentacionId, 
+  //     subSegmentacionId, 
+  //     updateSubSegmentacionDto
+  //   );
+  // }
 
   // 8. DELETE /segmentaciones/:segmentacionId/subsegmentaciones/:subSegmentacionId - Eliminar subsegmentación
-  @Delete(':segmentacionId/subsegmentaciones/:subSegmentacionId')
-  removeSubSegmentacion(
-    @Param('segmentacionId', ParseIntPipe) segmentacionId: number,
-    @Param('subSegmentacionId', ParseIntPipe) subSegmentacionId: number
-  ) {
-    return this.segmentacionService.removeSubSegmentacion(segmentacionId, subSegmentacionId);
-  }
+  // @Delete(':segmentacionId/subsegmentaciones/:subSegmentacionId')
+  // removeSubSegmentacion(
+  //   @Param('segmentacionId', ParseIntPipe) segmentacionId: number,
+  //   @Param('subSegmentacionId', ParseIntPipe) subSegmentacionId: number
+  // ) {
+  //   return this.segmentacionService.removeSubSegmentacion(segmentacionId, subSegmentacionId);
+  // }
 
 }

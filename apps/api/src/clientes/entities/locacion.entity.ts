@@ -99,6 +99,7 @@ export class Locacion {
         () => Cliente,
         (cliente) => cliente.locaciones,
         {
+            onDelete: 'CASCADE',
             eager: true
         }
     )

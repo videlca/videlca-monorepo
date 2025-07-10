@@ -34,4 +34,11 @@ export class SubSegmentacionController {
         return this.subSegmentacionService.update(id, updateSubSegmentacionDto);
     }
 
+    @Delete(':id')
+    remove(
+        @Param('id', ParseIntPipe) id: number,
+    ) {
+        return this.subSegmentacionService.remove(id);
+    }
+
 }

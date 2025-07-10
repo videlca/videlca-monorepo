@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -84,6 +84,28 @@ export class SubSegmentacionService {
 
     // Guardar y retornar
     return await this.subSegmentacionRepository.save(subSegmentacionToUpdate);
+  }
+
+  async remove(id: number) {
+    
+    const subSegmentacion = await this.findOne(id);
+    
+    try {
+
+      await this.subSegmentacionRepository.remove(subSegmentacion);
+      
+    } catch (error) {
+      
+      this.logger.error(error);
+
+      if(error.errno == 1451){
+        throw new BadRequestException(`El tipo id ${subSegmentacion.descripcion} no se puede eliminar debido a que se esta usando en el sistema`); 
+      }
+        
+      throw new InternalServerErrorException(`Unexpected error, check server logs`);
+
+    }
+
   }
 
 }

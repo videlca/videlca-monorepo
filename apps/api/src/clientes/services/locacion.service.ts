@@ -215,30 +215,6 @@ export class LocacionService {
         });
     }
 
-    // Obtener locaciones por cliente
-    async findByCliente(idCliente: number) {
-
-        // Verificar que el cliente existe
-        const cliente = await this.clienteService.findOne(idCliente);
-    
-        return await this.locacionRepository.find({
-            where: {
-                idCliente: cliente,
-                // estado: true
-            },
-            relations: {
-                correos: {
-                    estados: true
-                },
-                idCiudad: true,
-                idCliente: true
-            },
-            order: {
-                nombre: 'ASC'
-            }
-        });
-    }
-
     // Obtener una locación por ID
     async findOne(id: number) {
 
@@ -294,6 +270,8 @@ export class LocacionService {
             }
             
             await queryRunner.manager.save(locacionExistente);
+
+            const correosCreados: Correo[] = [];
     
             // Si se actualizan los correos
             if (correos && correos.length > 0) {
@@ -332,9 +310,15 @@ export class LocacionService {
                         estados: estados,
                     });
         
-                    await queryRunner.manager.save(Correo, correo);
+                    const savedCorreo = await queryRunner.manager.save(Correo, correo);
+
+                    correosCreados.push(savedCorreo);
+
                 }
             }
+
+            // Asignar los correos creados a la locación
+            locacionExistente.correos = correosCreados;
     
             await queryRunner.commitTransaction();
     
