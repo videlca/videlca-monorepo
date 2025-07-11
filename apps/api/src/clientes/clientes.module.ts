@@ -63,6 +63,7 @@ import {
   exports: [
     TypeOrmModule,
     ClientesService,
+    SegmentacionService,
     LocacionService
   ]
 })

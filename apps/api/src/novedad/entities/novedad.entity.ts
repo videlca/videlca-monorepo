@@ -52,7 +52,6 @@ export class Novedad {
         () => Personal,
         (personal) => personal.idTipoPersonal,
         {
-            eager: true,
             onDelete: 'CASCADE'
         }
     )
