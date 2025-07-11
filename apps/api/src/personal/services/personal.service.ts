@@ -109,7 +109,8 @@ export class PersonalService {
               primerApellido: 'ASC'
           },
           relations: {
-            idTipoPersonal: true
+            idTipoPersonal: true,
+            novedades: true
           }
       });
   
@@ -122,7 +123,8 @@ export class PersonalService {
         primerApellido: 'ASC'
       },
       relations: {
-        idTipoPersonal: true
+        idTipoPersonal: true,
+        novedades: true
       }
     });
 
@@ -147,7 +149,8 @@ export class PersonalService {
             laborando: true
           },
           relations: {
-            idTipoPersonal: true
+            idTipoPersonal: true,
+            novedades: true
           }
       });
   
@@ -163,7 +166,8 @@ export class PersonalService {
             laborando: true
         },
         relations: {
-          idTipoPersonal: true
+          idTipoPersonal: true,
+          novedades: true
         }
     });
 
@@ -176,7 +180,8 @@ export class PersonalService {
         idPersonal: id
       },
       relations: {
-        idTipoPersonal: true
+        idTipoPersonal: true,
+        novedades: true
       }
     });
     

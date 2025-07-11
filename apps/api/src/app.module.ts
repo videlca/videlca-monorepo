@@ -49,6 +49,7 @@ import { SeedModule } from './seed/seed.module';
     TarifasModule, 
     
     CommonModule, 
+    
     SeedModule,
     
   ],

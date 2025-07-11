@@ -50,9 +50,10 @@ export class Novedad {
     // ID PERSONAL
     @ManyToOne(
         () => Personal,
-        (personal) => personal.idTipoPersonal,
+        (personal) => personal.novedades,
         {
-            onDelete: 'CASCADE'
+            onDelete: 'CASCADE',
+            eager: true
         }
     )
     @JoinColumn({name: 'idPersonal'})

@@ -64,6 +64,7 @@ import {
     TypeOrmModule,
     ClientesService,
     SegmentacionService,
+    SubSegmentacionService,
     LocacionService
   ]
 })
