@@ -3,6 +3,7 @@ import {
   Link,
   redirect,
   useNavigate,
+  useParams,
 } from "@tanstack/react-router";
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { Lock } from "lucide-react";
@@ -10,8 +11,9 @@ import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import { useState } from "react";
 import { useForm } from "../hooks/useForm";
+import { useUpdatePassword } from "../api/queryFunctions/auth";
 
-export const Route = createFileRoute("/actualizar")({
+export const Route = createFileRoute("/actualizar/$id")({
   component: RouteComponent,
   beforeLoad: async ({ context }: any) => {
     if (context?.auth?.isAuthenticated) {
@@ -21,27 +23,35 @@ export const Route = createFileRoute("/actualizar")({
 });
 
 function RouteComponent() {
+  const { id } = useParams({ from: "/actualizar/$id" });
   const navigate = useNavigate();
   const { form, handleChange } = useForm({
-    password: "",
-    confirmPassword: "",
+    clave: "",
+    confirmarClave: "",
   });
+  const mutation = useUpdatePassword();
   const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (form.password !== form.confirmPassword) {
+    if (form.clave !== form.confirmarClave) {
       setError("Las contraseñas no coinciden");
       return;
     }
 
-    if (form.password.length < 6) {
+    if (form.clave.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres");
       return;
     }
-    console.log("Contraseña actualizada exitosamente");
+    mutation.mutate({
+      token: id as string,
+      data: {
+        clave: form.clave,
+        confirmarClave: form.confirmarClave,
+      },
+    });
   };
 
   return (
@@ -67,8 +77,8 @@ function RouteComponent() {
           placeholder="Ingrese su nueva contraseña"
           icon={Lock}
           type="password"
-          id="password"
-          value={form.password}
+          id="clave"
+          value={form.clave}
           onChange={handleChange}
           required
         />
@@ -77,21 +87,19 @@ function RouteComponent() {
           placeholder="Confirme su nueva contraseña"
           icon={Lock}
           type="password"
-          id="confirmPassword"
-          value={form.confirmPassword}
+          id="confirmarClave"
+          value={form.confirmarClave}
           onChange={handleChange}
           required
         />
-        <Button type="submit" onClick={() => navigate({ to: "/" })}>
-          Actualizar Contraseña
-        </Button>
+        <Button type="submit">Actualizar Contraseña</Button>
       </form>
 
       <div className="text-center">
         <Link
           to="/"
           type="button"
-          onClick={() => console.log("volver a iniciar sesión")}
+          onClick={() => navigate({ to: "/", replace: true })}
           className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
         >
           Volver a Iniciar Sesión

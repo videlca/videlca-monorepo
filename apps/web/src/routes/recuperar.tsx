@@ -1,13 +1,10 @@
-import {
-  createFileRoute,
-  Link,
-  redirect,
-  useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { AuthLayout } from "../components/layout/AuthLayout";
-import { Mail } from "lucide-react";
+import { User } from "lucide-react";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
+import { useForm } from "../hooks/useForm";
+import { useRecoverPassword } from "../api/queryFunctions/auth";
 
 export const Route = createFileRoute("/recuperar")({
   component: RouteComponent,
@@ -19,7 +16,20 @@ export const Route = createFileRoute("/recuperar")({
 });
 
 function RouteComponent() {
-  const navigate = useNavigate();
+  const { form, handleChange } = useForm({
+    numeroIdentificacion: "",
+  });
+
+  const mutation = useRecoverPassword();
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log(form);
+    mutation.mutate({
+      numeroIdentificacion: form.numeroIdentificacion,
+    });
+  };
+
   return (
     <AuthLayout>
       <div className="space-y-2 text-center">
@@ -31,16 +41,17 @@ function RouteComponent() {
         </p>
       </div>
 
-      <form className="space-y-4">
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <Input
-          label="Correo Electrónico"
-          placeholder="Ingrese su correo electrónico"
-          icon={Mail}
-          type="email"
-          id="email"
+          label="Número de identificación"
+          placeholder="Ingrese su número de identificación"
+          icon={User}
+          type="text"
+          onChange={handleChange}
+          id="numeroIdentificacion"
         />
 
-        <Button type="submit" onClick={() => navigate({ to: "/actualizar" })}>
+        <Button type="submit" onClick={() => {}}>
           Recuperar
         </Button>
       </form>

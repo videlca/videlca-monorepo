@@ -23,7 +23,6 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const mutation = useLogin();
-  const router = useRouter();
   const { form, handleChange } = useForm({
     email: "",
     clave: "",
