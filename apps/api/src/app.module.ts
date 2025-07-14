@@ -14,6 +14,7 @@ import { PersonalModule } from './personal/personal.module';
 import { NovedadModule } from './novedad/novedad.module';
 import { TarifasModule } from './tarifas/tarifas.module';
 import { SeedModule } from './seed/seed.module';
+import { ServiciosModule } from './servicios/servicios.module';
 
 @Module({
   imports: [
@@ -48,9 +49,11 @@ import { SeedModule } from './seed/seed.module';
     
     TarifasModule, 
     
+    ServiciosModule,
+    
     CommonModule, 
     
-    SeedModule,
+    SeedModule, 
     
   ],
   controllers: [],
