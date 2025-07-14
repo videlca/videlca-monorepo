@@ -95,13 +95,13 @@ export class AuthService {
     // ENVIAR CORREO PARA REESTABLECER LA CONTRASEÑA DEL USER
     async olvidePassword(olvidePasswordDto: ReestablecerDatosDto) {
     
-        const { nroIdentificacion } = olvidePasswordDto;
+        const { numeroIdentificacion } = olvidePasswordDto;
             
         // VALIDACION USER
         // Validamos que user si se encuentre en nuestra BD y extraemos la data y el token de acceso
-        const { fullName, token, email } = await this.validateUser(nroIdentificacion);
+        const { fullName, token, email } = await this.validateUser(numeroIdentificacion);
 
-        const url = `${this.hostFrontend}/auth/olvide-password/${token}`;
+        const url = `${this.hostFrontend}/olvide-password/${token}`;
 
         const nombreCompleto = fullName;        
     
@@ -172,12 +172,12 @@ export class AuthService {
     // ENVIAR CORREO PARA REESTABLECER LA CUENTA DEL USER
     async reestablecerCuenta(reestablecerCuentaDto: ReestablecerDatosDto) {
 
-        const { nroIdentificacion } = reestablecerCuentaDto;
+        const { numeroIdentificacion } = reestablecerCuentaDto;
         
         // Validamos que user si se encuentre en nuestra BD y extraemos la data y el token de acceso
-        const { fullName, token, email } = await this.validateUser(nroIdentificacion);
+        const { fullName, token, email } = await this.validateUser(numeroIdentificacion);
 
-        const url = `${this.hostFrontend}/auth/confirmar/${token}`;
+        const url = `${this.hostFrontend}/actualizar/${token}`;
     
         const html = `
         <div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 600px; margin: 20px auto; text-align: center; font-family: 'Poppins', sans-serif;">
