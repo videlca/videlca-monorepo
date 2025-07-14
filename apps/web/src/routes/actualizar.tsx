@@ -14,10 +14,7 @@ import { useForm } from "../hooks/useForm";
 export const Route = createFileRoute("/actualizar")({
   component: RouteComponent,
   beforeLoad: async ({ context }: any) => {
-    if (
-      !context?.auth?.isAuthenticated &&
-      !context?.auth?.isPermissionsLoading
-    ) {
+    if (context?.auth?.isAuthenticated) {
       throw redirect({ to: "/dashboard" });
     }
   },

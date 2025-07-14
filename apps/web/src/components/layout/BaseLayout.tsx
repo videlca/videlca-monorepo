@@ -6,11 +6,5 @@ interface BaseLayoutProps {
 }
 
 export const BaseLayout: React.FC<BaseLayoutProps> = ({ children }) => {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex min-h-screen flex-col">
-        <main className="relative flex-1">{children}</main>
-      </div>
-    </div>
-  );
+  return <div className="min-h-screen bg-gray-50">{children}</div>;
 };

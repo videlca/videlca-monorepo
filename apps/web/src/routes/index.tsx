@@ -15,10 +15,7 @@ import { useAuth } from "../context/AuthContext";
 export const Route = createFileRoute("/")({
   component: Index,
   beforeLoad: async ({ context }: any) => {
-    if (
-      context?.auth?.isAuthenticated &&
-      !context?.auth?.isPermissionsLoading
-    ) {
+    if (context?.auth?.isAuthenticated) {
       throw redirect({ to: "/dashboard" });
     }
   },
@@ -27,8 +24,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const mutation = useLogin();
   const router = useRouter();
-  // const { isLoading } = useAuth();
-  const { form, handleChange, resetForm } = useForm({
+  const { form, handleChange } = useForm({
     email: "",
     clave: "",
   });
@@ -39,21 +35,7 @@ function Index() {
       email: form.email,
       clave: form.clave,
     });
-    // resetForm();
   };
-
-  // if (isLoading) {
-  //   return (
-  //     <AuthLayout>
-  //       <div className="flex items-center justify-center">
-  //         <div className="text-center">
-  //           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-  //           <p className="mt-2 text-gray-600">Verificando autenticación...</p>
-  //         </div>
-  //       </div>
-  //     </AuthLayout>
-  //   );
-  // }
 
   return (
     <AuthLayout>

@@ -1,15 +1,7 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
 
 export const Route = createRootRoute({
-  beforeLoad: async ({ location, context }) => {
-    // TODO: check if user is logged in
-    console.log("beforeLoad", location, context);
-  },
-  component: () => (
-    <main className="max-h-screen w-full">
-      <Outlet />
-    </main>
-  ),
+  component: () => <Outlet />,
   notFoundComponent: () => (
     <div className="flex h-full w-full items-center justify-center bg-blue-400">
       <div className="flex w-full max-w-sm flex-col items-center justify-center gap-4 rounded-lg bg-white p-8">

@@ -20,7 +20,7 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
 import { InputForm } from "../../../components/common/InputForm";
 import Button from "../../../components/common/Button";
-import { InputSelect } from "../../../components/common/InputSelect";
+import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipo-personal")({
   component: RouteComponent,
@@ -61,9 +61,10 @@ function RouteComponent() {
     actualizarTipoPersonal({
       id: editingRow?.idTipoPersonal as number,
       data: {
-        estado: formEditar.estado,
+        estado: String(formEditar.estado) === "true",
       },
     });
+    console.log(formEditar.estado);
     setIsModalOpenEditar(false);
     resetFormEditar();
   };
@@ -180,11 +181,11 @@ function RouteComponent() {
         }}
         children={
           <form onSubmit={handleSubmitEditar} className="flex flex-col gap-4">
-            <InputSelect
+            <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
               id="estado"
-              value={formEditar.estado ? "1" : "0"}
+              value={formEditar.estado.toString()}
               onChange={handleChangeEditar}
             />
             <div className="flex justify-end space-x-2">

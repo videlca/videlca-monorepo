@@ -84,7 +84,7 @@ export function Sidebar({
 
   return (
     <aside
-      className={`${collapsed ? "w-16" : "w-64"} flex h-screen flex-col bg-blue-600 text-white transition-all duration-300 ease-in-out`}
+      className={`${collapsed ? "w-16" : "w-64"} flex min-h-screen flex-col bg-blue-600 text-white transition-all duration-300 ease-in-out`}
     >
       <div
         className={`${collapsed ? "p-2" : "p-6"} flex min-h-[80px] items-center justify-between border-b border-blue-500`}

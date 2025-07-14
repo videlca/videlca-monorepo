@@ -2,8 +2,10 @@ interface InputSelectProps {
   label: string;
   placeholder: string;
   id: string;
-  value: string;
+  value: string | number;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: { id: number; descripcion: string }[];
+  required?: boolean;
 }
 
 export const InputSelect = ({
@@ -12,11 +14,9 @@ export const InputSelect = ({
   id,
   value,
   onChange,
+  options,
+  required = false,
 }: InputSelectProps) => {
-  const options = [
-    { value: "1", label: "Activo" },
-    { value: "0", label: "Inactivo" },
-  ];
   return (
     <div className="flex flex-col gap-2">
       <label htmlFor={id} className="text-sm font-medium text-gray-700">
@@ -24,14 +24,17 @@ export const InputSelect = ({
       </label>
       <select
         id={id}
-        value={value}
+        value={value.toString()}
         onChange={onChange}
         className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+        required={required}
       >
-        <option value="">{placeholder}</option>
+        <option value="" disabled>
+          {placeholder}
+        </option>
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
+          <option key={option.id} value={option.id}>
+            {option.descripcion}
           </option>
         ))}
       </select>

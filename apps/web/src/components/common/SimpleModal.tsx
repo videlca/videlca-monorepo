@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import type { ReactNode } from "react";
 
 interface SimpleModalProps {
@@ -16,38 +16,6 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
   title,
   size = "md",
 }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden";
-
-      // Selecciona el primer input, textarea o select del modal cuando se abre
-      setTimeout(() => {
-        const firstInput = modalRef.current?.querySelector(
-          "input, textarea, select",
-        ) as HTMLElement;
-        if (firstInput) {
-          firstInput.focus();
-        }
-      }, 100);
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   const sizeClasses = {
     sm: "max-w-sm",
     md: "max-w-md",
@@ -56,13 +24,16 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center ${
+        isOpen ? "block" : "hidden"
+      }`}
+    >
       <div
         className="absolute inset-0 bg-black/40 transition-opacity"
         onClick={onClose}
       />
       <div
-        ref={modalRef}
         className={`relative mx-4 w-full rounded-lg bg-white shadow-xl ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >

@@ -1,2 +1,7 @@
 export * from './estado-orden'
+export * from './tipo-identificacion'
 export * from './tipo-personal'
+export * from './tipo-cliente'
+export * from './tipo-genero'
+export * from './tipo-novedad'
+export * from './ubicaciones'

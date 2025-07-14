@@ -48,14 +48,14 @@ export interface Ciudad {
   descripcion: string;
   codigoCiudad: string;
   estado: boolean;
-  idDepartamento: Departamento;
+  departamento: Departamento;
 }
 
 export interface Departamento {
   idDepartamento: number;
   descripcion: string;
   codigoDepartamento: string;
-  idPais: Pais;
+  pais: Pais;
 }
 
 export interface Pais {
