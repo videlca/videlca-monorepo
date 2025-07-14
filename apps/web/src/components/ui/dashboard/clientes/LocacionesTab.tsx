@@ -7,11 +7,7 @@ import type { Locacion } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { useState } from "react";
 
-interface LocacionesTabProps {
-  dataLocaciones: Locacion[];
-}
-
-export function LocacionesTab({ dataLocaciones }: LocacionesTabProps) {
+export function LocacionesTab() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLocacion, setEditingLocacion] = useState<Locacion | null>(null);
@@ -98,7 +94,7 @@ export function LocacionesTab({ dataLocaciones }: LocacionesTabProps) {
         />
       </div>
       <Table
-        data={dataLocaciones}
+        data={[]}
         columns={columnsLocaciones}
         enablePagination={true}
         pageSize={10}

@@ -7,11 +7,7 @@ import type { Segmentacion } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { useState } from "react";
 
-interface SegmentacionTabProps {
-  dataSegmentacion: Segmentacion[];
-}
-
-export function SegmentacionTab({ dataSegmentacion }: SegmentacionTabProps) {
+export function SegmentacionTab() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingSegmentacion, setEditingSegmentacion] =
@@ -63,7 +59,7 @@ export function SegmentacionTab({ dataSegmentacion }: SegmentacionTabProps) {
         />
       </div>
       <Table
-        data={dataSegmentacion}
+        data={[]}
         columns={columnsSegmentacion}
         enablePagination={true}
         pageSize={10}

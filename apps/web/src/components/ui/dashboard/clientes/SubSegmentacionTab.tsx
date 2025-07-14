@@ -7,13 +7,7 @@ import type { SubSegmentacion } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { useState } from "react";
 
-interface SubSegmentacionTabProps {
-  dataSubSegmentacion: SubSegmentacion[];
-}
-
-export function SubSegmentacionTab({
-  dataSubSegmentacion,
-}: SubSegmentacionTabProps) {
+export function SubSegmentacionTab() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingSubSegmentacion, setEditingSubSegmentacion] =
@@ -65,7 +59,7 @@ export function SubSegmentacionTab({
         />
       </div>
       <Table
-        data={dataSubSegmentacion}
+        data={[]}
         columns={columnsSubSegmentacion}
         enablePagination={true}
         pageSize={10}

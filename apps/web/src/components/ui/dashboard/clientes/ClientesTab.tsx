@@ -7,11 +7,7 @@ import type { Cliente } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { useState } from "react";
 
-interface ClientesTabProps {
-  dataClientes: Cliente[];
-}
-
-export function ClientesTab({ dataClientes }: ClientesTabProps) {
+export function ClientesTab() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
@@ -82,7 +78,7 @@ export function ClientesTab({ dataClientes }: ClientesTabProps) {
         />
       </div>
       <Table
-        data={dataClientes}
+        data={[]}
         columns={columnsClientes}
         enableSorting={true}
         enablePagination={true}

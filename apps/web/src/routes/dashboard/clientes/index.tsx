@@ -7,12 +7,6 @@ import {
   SegmentacionTab,
   SubSegmentacionTab,
 } from "../../../components/ui/dashboard/clientes";
-import {
-  dataClientes,
-  dataLocaciones,
-  dataSegmentacion,
-  dataSubSegmentacion,
-} from "../../../data/clientesData";
 import { useState } from "react";
 
 export const Route = createFileRoute("/dashboard/clientes/")({
@@ -52,18 +46,10 @@ function RouteComponent() {
         </nav>
       </div>
       <div className="flex flex-col gap-8">
-        {activeTab === "clientes" && (
-          <ClientesTab dataClientes={dataClientes} />
-        )}
-        {activeTab === "locaciones" && (
-          <LocacionesTab dataLocaciones={dataLocaciones} />
-        )}
-        {activeTab === "segmentacion" && (
-          <SegmentacionTab dataSegmentacion={dataSegmentacion} />
-        )}
-        {activeTab === "sub-segmentacion" && (
-          <SubSegmentacionTab dataSubSegmentacion={dataSubSegmentacion} />
-        )}
+        {activeTab === "clientes" && <ClientesTab />}
+        {activeTab === "locaciones" && <LocacionesTab />}
+        {activeTab === "segmentacion" && <SegmentacionTab />}
+        {activeTab === "sub-segmentacion" && <SubSegmentacionTab />}
       </div>
     </Section>
   );

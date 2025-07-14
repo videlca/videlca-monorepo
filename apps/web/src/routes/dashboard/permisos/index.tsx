@@ -11,63 +11,54 @@ export interface ModulePermission {
   id: string;
   name: string;
   description: string;
-  icon: string;
 }
 
 export interface Role {
   id: string;
   name: string;
-  modules: string[]; // Array of module IDs that have access
+  modules: string[];
 }
 
 export const systemModules: ModulePermission[] = [
   {
-    id: "dashboard",
-    name: "Dashboard",
-    description: "Panel principal con estadísticas y resumen del sistema",
-    icon: "LayoutDashboard",
-  },
-  {
-    id: "usuarios",
-    name: "Usuarios",
-    description: "Gestión completa de usuarios del sistema",
-    icon: "Users",
-  },
-  {
-    id: "empresas",
-    name: "Empresas",
-    description: "Administración de empresas y organizaciones",
-    icon: "Building2",
-  },
-  {
-    id: "seguridad",
-    name: "Seguridad",
-    description: "Control de acceso y monitoreo de seguridad",
-    icon: "Shield",
-  },
-  {
     id: "configuracion",
     name: "Configuración",
-    description: "Configuraciones generales del sistema",
-    icon: "Settings",
+    description: "Configuración de módulos y permisos",
   },
   {
-    id: "ubicaciones",
-    name: "Ubicaciones",
-    description: "Gestión de ubicaciones y zonas",
-    icon: "MapPin",
+    id: "clientes",
+    name: "Clientes",
+    description: "Gestión de clientes y sus datos",
   },
   {
-    id: "parametros",
-    name: "Parámetros",
-    description: "Configuración de parámetros del sistema",
-    icon: "Sliders",
+    id: "personal",
+    name: "Personal",
+    description: "Gestión de personal y sus datos",
+  },
+  {
+    id: "programaciones",
+    name: "Programaciones",
+    description: "Gestión de programaciones y sus datos",
   },
   {
     id: "reportes",
     name: "Reportes",
     description: "Generación y consulta de reportes",
-    icon: "BarChart3",
+  },
+  {
+    id: "tarifas",
+    name: "Tarifas",
+    description: "Gestión de tarifas y sus datos",
+  },
+  {
+    id: "usuarios",
+    name: "Usuarios",
+    description: "Gestión de usuarios y sus datos",
+  },
+  {
+    id: "permisos",
+    name: "Permisos",
+    description: "Gestión de permisos y sus datos",
   },
 ];
 
@@ -82,23 +73,26 @@ export const roles: Role[] = [
     id: "supervisor",
     name: "Supervisor",
     modules: [
-      "dashboard",
-      "usuarios",
-      "empresas",
-      "seguridad",
-      "ubicaciones",
+      "configuracion",
+      "clientes",
+      "personal",
+      "programaciones",
       "reportes",
+      "tarifas",
+      "usuarios",
+      "permisos",
     ],
   },
   {
     id: "operator",
     name: "Operador",
-    modules: ["dashboard", "usuarios", "empresas", "seguridad", "ubicaciones"],
-  },
-  {
-    id: "viewer",
-    name: "Consultor",
-    modules: ["dashboard", "reportes"],
+    modules: [
+      "configuracion",
+      "clientes",
+      "personal",
+      "programaciones",
+      "reportes",
+    ],
   },
 ];
 

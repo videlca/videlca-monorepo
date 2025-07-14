@@ -11,10 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RecuperarRouteImport } from './routes/recuperar'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as ActualizarRouteImport } from './routes/actualizar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as OlvidePasswordIdRouteImport } from './routes/olvide-password.$id'
 import { Route as DashboardPerfilUsuarioRouteImport } from './routes/dashboard/perfil-usuario'
+import { Route as ActualizarIdRouteImport } from './routes/actualizar.$id'
 import { Route as DashboardUsuariosIndexRouteImport } from './routes/dashboard/usuarios/index'
 import { Route as DashboardTarifasIndexRouteImport } from './routes/dashboard/tarifas/index'
 import { Route as DashboardReportesIndexRouteImport } from './routes/dashboard/reportes/index'
@@ -41,11 +42,6 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ActualizarRoute = ActualizarRouteImport.update({
-  id: '/actualizar',
-  path: '/actualizar',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -56,10 +52,20 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const OlvidePasswordIdRoute = OlvidePasswordIdRouteImport.update({
+  id: '/olvide-password/$id',
+  path: '/olvide-password/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardPerfilUsuarioRoute = DashboardPerfilUsuarioRouteImport.update({
   id: '/perfil-usuario',
   path: '/perfil-usuario',
   getParentRoute: () => DashboardRoute,
+} as any)
+const ActualizarIdRoute = ActualizarIdRouteImport.update({
+  id: '/actualizar/$id',
+  path: '/actualizar/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardUsuariosIndexRoute = DashboardUsuariosIndexRouteImport.update({
   id: '/usuarios/',
@@ -148,10 +154,11 @@ const DashboardConfiguracionTipoClienteRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/actualizar': typeof ActualizarRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/recuperar': typeof RecuperarRoute
+  '/actualizar/$id': typeof ActualizarIdRoute
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
+  '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
@@ -171,9 +178,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/actualizar': typeof ActualizarRoute
   '/recuperar': typeof RecuperarRoute
+  '/actualizar/$id': typeof ActualizarIdRoute
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
+  '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
@@ -194,10 +202,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/actualizar': typeof ActualizarRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/recuperar': typeof RecuperarRoute
+  '/actualizar/$id': typeof ActualizarIdRoute
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
+  '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
@@ -219,10 +228,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/actualizar'
     | '/dashboard'
     | '/recuperar'
+    | '/actualizar/$id'
     | '/dashboard/perfil-usuario'
+    | '/olvide-password/$id'
     | '/dashboard/'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
@@ -242,9 +252,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/actualizar'
     | '/recuperar'
+    | '/actualizar/$id'
     | '/dashboard/perfil-usuario'
+    | '/olvide-password/$id'
     | '/dashboard'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
@@ -264,10 +275,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/actualizar'
     | '/dashboard'
     | '/recuperar'
+    | '/actualizar/$id'
     | '/dashboard/perfil-usuario'
+    | '/olvide-password/$id'
     | '/dashboard/'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
@@ -288,9 +300,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ActualizarRoute: typeof ActualizarRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   RecuperarRoute: typeof RecuperarRoute
+  ActualizarIdRoute: typeof ActualizarIdRoute
+  OlvidePasswordIdRoute: typeof OlvidePasswordIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -309,13 +322,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/actualizar': {
-      id: '/actualizar'
-      path: '/actualizar'
-      fullPath: '/actualizar'
-      preLoaderRoute: typeof ActualizarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -330,12 +336,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/olvide-password/$id': {
+      id: '/olvide-password/$id'
+      path: '/olvide-password/$id'
+      fullPath: '/olvide-password/$id'
+      preLoaderRoute: typeof OlvidePasswordIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/perfil-usuario': {
       id: '/dashboard/perfil-usuario'
       path: '/perfil-usuario'
       fullPath: '/dashboard/perfil-usuario'
       preLoaderRoute: typeof DashboardPerfilUsuarioRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/actualizar/$id': {
+      id: '/actualizar/$id'
+      path: '/actualizar/$id'
+      fullPath: '/actualizar/$id'
+      preLoaderRoute: typeof ActualizarIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/dashboard/usuarios/': {
       id: '/dashboard/usuarios/'
@@ -495,9 +515,10 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ActualizarRoute: ActualizarRoute,
   DashboardRoute: DashboardRouteWithChildren,
   RecuperarRoute: RecuperarRoute,
+  ActualizarIdRoute: ActualizarIdRoute,
+  OlvidePasswordIdRoute: OlvidePasswordIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
