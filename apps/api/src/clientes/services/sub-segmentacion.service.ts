@@ -99,7 +99,7 @@ export class SubSegmentacionService {
       this.logger.error(error);
 
       if(error.errno == 1451){
-        throw new BadRequestException(`El tipo id ${subSegmentacion.descripcion} no se puede eliminar debido a que se esta usando en el sistema`); 
+        throw new BadRequestException(`La SubSegmentacion ${subSegmentacion.descripcion} no se puede eliminar debido a que se esta usando en el sistema`); 
       }
         
       throw new InternalServerErrorException(`Unexpected error, check server logs`);
