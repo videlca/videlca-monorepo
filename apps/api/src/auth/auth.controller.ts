@@ -34,8 +34,8 @@ export class AuthController {
     
     res.clearCookie(this.authToken, { 
       httpOnly: true, 
-      secure: true, 
-      sameSite: 'strict' 
+      secure: false, // true - solo cuando es por https
+      sameSite: 'lax' // para no borrar las cookies
     });
     
     return res.send({message: 'logout successfully'});
@@ -51,9 +51,9 @@ export class AuthController {
     // Configurar la cookie con el token
     res.cookie(this.authToken, loginResult.token, {
       httpOnly: true, // La cookie solo es accesible mediante HTTP
-      secure: true, // Solo se envía en HTTPS en producción
+      secure: false, // true - solo cuando es por https
       maxAge: 24 * 60 * 60 * 1000, // La cookie expirará en 1 hora (ajusta según tu necesidad)
-      sameSite: 'strict', // Protege contra ataques CSRF
+      sameSite: 'lax', // Protege contra ataques CSRF // para no borrar las cookies
     });
 
     // Enviar respuesta al cliente sin incluir el token directamente en el body
