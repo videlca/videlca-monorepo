@@ -20,7 +20,7 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
-    xl: "max-w-xl",
+    xl: "max-w-2xl",
   };
 
   return (
@@ -30,7 +30,7 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
       }`}
     >
       <div
-        className="absolute inset-0 bg-black/40 transition-opacity"
+        className="absolute inset-0 min-h-screen bg-black/40 transition-opacity"
         onClick={onClose}
       />
       <div

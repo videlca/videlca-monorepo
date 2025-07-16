@@ -4,14 +4,20 @@ export function ButtonAction({
   Icon,
   label,
   onClick,
+  color = "blue",
 }: {
   Icon: LucideIcon;
   label: string;
   onClick: () => void;
+  color?: "blue" | "red";
 }) {
   return (
     <button
-      className="flex cursor-pointer items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-500"
+      className={`flex cursor-pointer items-center gap-2 rounded-md px-4 py-2 text-white ${
+        color === "blue"
+          ? "bg-blue-600 hover:bg-blue-500"
+          : "bg-red-600 hover:bg-red-500"
+      }`}
       onClick={onClick}
     >
       <Icon className="h-4 w-4" />

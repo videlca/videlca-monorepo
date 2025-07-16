@@ -5,8 +5,9 @@ export interface CreateSegmentacionDto {
 }
 
 export interface UpdateSegmentacionDto {
-  descripcion?: string;
-  estado?: boolean;
+  descripcion: string;
+  subSegmentaciones?: { descripcion: string }[];
+  estado: boolean;
 }
 
 

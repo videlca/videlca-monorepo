@@ -21,7 +21,7 @@ function RouteComponent() {
     { id: "clientes" as ClientesTableType, label: "Clientes" },
     { id: "locaciones" as ClientesTableType, label: "Locaciones" },
     { id: "segmentacion" as ClientesTableType, label: "Segmentación" },
-    { id: "sub-segmentacion" as ClientesTableType, label: "Sub-Segmentación" },
+    // { id: "sub-segmentacion" as ClientesTableType, label: "Sub-Segmentación" },
   ];
 
   return (
@@ -49,7 +49,7 @@ function RouteComponent() {
         {activeTab === "clientes" && <ClientesTab />}
         {activeTab === "locaciones" && <LocacionesTab />}
         {activeTab === "segmentacion" && <SegmentacionTab />}
-        {activeTab === "sub-segmentacion" && <SubSegmentacionTab />}
+        {/* {activeTab === "sub-segmentacion" && <SubSegmentacionTab />} */}
       </div>
     </Section>
   );

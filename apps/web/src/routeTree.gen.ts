@@ -27,10 +27,10 @@ import { Route as DashboardPersonalNovedadesRouteImport } from './routes/dashboa
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
 import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
 import { Route as DashboardConfiguracionTipoPersonalRouteImport } from './routes/dashboard/configuracion/tipo-personal'
-import { Route as DashboardConfiguracionTipoOrdenServicioRouteImport } from './routes/dashboard/configuracion/tipo-orden-servicio'
 import { Route as DashboardConfiguracionTipoIdRouteImport } from './routes/dashboard/configuracion/tipo-id'
 import { Route as DashboardConfiguracionTipoGeneroRouteImport } from './routes/dashboard/configuracion/tipo-genero'
 import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/dashboard/configuracion/tipo-cliente'
+import { Route as DashboardConfiguracionEstadoOrdenServicioRouteImport } from './routes/dashboard/configuracion/estado-orden-servicio'
 
 const RecuperarRoute = RecuperarRouteImport.update({
   id: '/recuperar',
@@ -127,12 +127,6 @@ const DashboardConfiguracionTipoPersonalRoute =
     path: '/configuracion/tipo-personal',
     getParentRoute: () => DashboardRoute,
   } as any)
-const DashboardConfiguracionTipoOrdenServicioRoute =
-  DashboardConfiguracionTipoOrdenServicioRouteImport.update({
-    id: '/configuracion/tipo-orden-servicio',
-    path: '/configuracion/tipo-orden-servicio',
-    getParentRoute: () => DashboardRoute,
-  } as any)
 const DashboardConfiguracionTipoIdRoute =
   DashboardConfiguracionTipoIdRouteImport.update({
     id: '/configuracion/tipo-id',
@@ -151,6 +145,12 @@ const DashboardConfiguracionTipoClienteRoute =
     path: '/configuracion/tipo-cliente',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardConfiguracionEstadoOrdenServicioRoute =
+  DashboardConfiguracionEstadoOrdenServicioRouteImport.update({
+    id: '/configuracion/estado-orden-servicio',
+    path: '/configuracion/estado-orden-servicio',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -160,10 +160,10 @@ export interface FileRoutesByFullPath {
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
-  '/dashboard/configuracion/tipo-orden-servicio': typeof DashboardConfiguracionTipoOrdenServicioRoute
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
@@ -183,10 +183,10 @@ export interface FileRoutesByTo {
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
-  '/dashboard/configuracion/tipo-orden-servicio': typeof DashboardConfiguracionTipoOrdenServicioRoute
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
@@ -208,10 +208,10 @@ export interface FileRoutesById {
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
-  '/dashboard/configuracion/tipo-orden-servicio': typeof DashboardConfiguracionTipoOrdenServicioRoute
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
@@ -234,10 +234,10 @@ export interface FileRouteTypes {
     | '/dashboard/perfil-usuario'
     | '/olvide-password/$id'
     | '/dashboard/'
+    | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
-    | '/dashboard/configuracion/tipo-orden-servicio'
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
@@ -257,10 +257,10 @@ export interface FileRouteTypes {
     | '/dashboard/perfil-usuario'
     | '/olvide-password/$id'
     | '/dashboard'
+    | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
-    | '/dashboard/configuracion/tipo-orden-servicio'
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
@@ -281,10 +281,10 @@ export interface FileRouteTypes {
     | '/dashboard/perfil-usuario'
     | '/olvide-password/$id'
     | '/dashboard/'
+    | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
-    | '/dashboard/configuracion/tipo-orden-servicio'
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
@@ -434,13 +434,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardConfiguracionTipoPersonalRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/configuracion/tipo-orden-servicio': {
-      id: '/dashboard/configuracion/tipo-orden-servicio'
-      path: '/configuracion/tipo-orden-servicio'
-      fullPath: '/dashboard/configuracion/tipo-orden-servicio'
-      preLoaderRoute: typeof DashboardConfiguracionTipoOrdenServicioRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/dashboard/configuracion/tipo-id': {
       id: '/dashboard/configuracion/tipo-id'
       path: '/configuracion/tipo-id'
@@ -462,16 +455,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardConfiguracionTipoClienteRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/configuracion/estado-orden-servicio': {
+      id: '/dashboard/configuracion/estado-orden-servicio'
+      path: '/configuracion/estado-orden-servicio'
+      fullPath: '/dashboard/configuracion/estado-orden-servicio'
+      preLoaderRoute: typeof DashboardConfiguracionEstadoOrdenServicioRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
   DashboardPerfilUsuarioRoute: typeof DashboardPerfilUsuarioRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardConfiguracionEstadoOrdenServicioRoute: typeof DashboardConfiguracionEstadoOrdenServicioRoute
   DashboardConfiguracionTipoClienteRoute: typeof DashboardConfiguracionTipoClienteRoute
   DashboardConfiguracionTipoGeneroRoute: typeof DashboardConfiguracionTipoGeneroRoute
   DashboardConfiguracionTipoIdRoute: typeof DashboardConfiguracionTipoIdRoute
-  DashboardConfiguracionTipoOrdenServicioRoute: typeof DashboardConfiguracionTipoOrdenServicioRoute
   DashboardConfiguracionTipoPersonalRoute: typeof DashboardConfiguracionTipoPersonalRoute
   DashboardConfiguracionTiposNovedadRoute: typeof DashboardConfiguracionTiposNovedadRoute
   DashboardConfiguracionUbicacionRoute: typeof DashboardConfiguracionUbicacionRoute
@@ -488,12 +488,12 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardPerfilUsuarioRoute: DashboardPerfilUsuarioRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardConfiguracionEstadoOrdenServicioRoute:
+    DashboardConfiguracionEstadoOrdenServicioRoute,
   DashboardConfiguracionTipoClienteRoute:
     DashboardConfiguracionTipoClienteRoute,
   DashboardConfiguracionTipoGeneroRoute: DashboardConfiguracionTipoGeneroRoute,
   DashboardConfiguracionTipoIdRoute: DashboardConfiguracionTipoIdRoute,
-  DashboardConfiguracionTipoOrdenServicioRoute:
-    DashboardConfiguracionTipoOrdenServicioRoute,
   DashboardConfiguracionTipoPersonalRoute:
     DashboardConfiguracionTipoPersonalRoute,
   DashboardConfiguracionTiposNovedadRoute:

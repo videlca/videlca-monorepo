@@ -21,7 +21,7 @@ import { InputForm } from "../../../components/common/InputForm";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 
 export const Route = createFileRoute(
-  "/dashboard/configuracion/tipo-orden-servicio",
+  "/dashboard/configuracion/estado-orden-servicio",
 )({
   component: RouteComponent,
 });
@@ -142,7 +142,7 @@ function RouteComponent() {
         <div className="flex justify-end">
           <ButtonAction
             Icon={PlusIcon}
-            label="Agregar tipo de orden de servicio"
+            label="Agregar estado de orden de servicio"
             onClick={() => handleShowModal()}
           />
         </div>
@@ -162,7 +162,7 @@ function RouteComponent() {
           setIsModalOpen(false);
           resetForm();
         }}
-        title="Agregar tipo de orden de servicio"
+        title="Agregar estado de orden de servicio"
         size="md"
       >
         <div className="space-y-4">
@@ -206,7 +206,7 @@ function RouteComponent() {
           setIsEditModalOpen(false);
           resetForm();
         }}
-        title="Editar tipo de orden de servicio"
+        title="Editar estado de orden de servicio"
         size="md"
       >
         <div className="space-y-4">

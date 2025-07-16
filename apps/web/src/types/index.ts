@@ -79,13 +79,14 @@ export interface SubSegmentacion {
   idSubSegmentacion: number;
   descripcion: string;
   estado: boolean;
-  idSegmentacion: Segmentacion;
+  segmentacion: Segmentacion;
 }
 
 export interface Segmentacion {
   idSegmentacion: number;
   descripcion: string;
   estado: boolean;
+  subSegmentaciones?: SubSegmentacion[];
 }
 
 export interface Locacion {
