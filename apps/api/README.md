@@ -1,4 +1,4 @@
-<p align="center"> <a href="http://nestjs.com/" target="_blank"> <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="NestJS Logo" /> </a> <a href="https://dtime.com.co/" target="_blank"> <img src="" width="120" alt="videlca logo" /> </a> </p> <h1 align="center">Proyecto Backend VIDELCA v1.0.0</h1> <p align="center"> Backend para manejar los endpoints que sirven al aplicativo administrador de Videlca. </p>
+<p align="center"> <a href="http://nestjs.com/" target="_blank"> <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="NestJS Logo" /> </a> <a href="https://www.instagram.com/videlca_ltda/" target="_blank"> <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" width="120" alt="videlca logo" /> </a> </p> <h1 align="center">Proyecto Backend VIDELCA v1.0.0</h1> <p align="center"> Backend para manejar los endpoints que sirven al aplicativo administrador de Videlca. </p>
 
 # 🚀 Requisitos previos
 Este proyecto está basado en NestJS, así que se recomienda tener el CLI de NestJS instalado. Puedes instalarlo ejecutando el siguiente comando como administrador en tu terminal:
@@ -46,11 +46,15 @@ yarn install
 ⭐ La variable de entorno __HOST_FRONTEND__ hace referencia a la url del frontend, si tienes el frontend corriendo, puedes cambiar esta variable por el host del frontend.
 
 ⭐Las variables de entorno para servicio de Emails: 
- 1. __MAILER_EMAIL__: hace referencia al correo desde donde se van a mandar los correos, por ejemplo el de "confirmar cuenta".
- 2. __MAILER_SECRET_KEY__: hace referencia a la contraseña de aplicacion que genera google para poder utilizar nuestro correo en apps de terceros para el envio de mensajes.
- 3. __CONTACT_MAILER_TO__: hace referencia al correo donde van a caer las solicitudes de contacto de los usuarios.
+ 1. __MAILER_SERVICE__: hace referencia al servicio o gestor de emails, por ejemplo "gmail"
+ 2. __MAILER_EMAIL__: hace referencia al correo desde donde se van a mandar los correos, por ejemplo el de "confirmar cuenta".
+ 3. __MAILER_SECRET_KEY__: hace referencia a la contraseña de aplicacion que genera google para poder utilizar nuestro correo en apps de terceros para el envio de mensajes.
  
 ⭐ La variable de entorno __JWT_SECRET__ puede ser cualquier palabra al azar (que sea segura), esto es para firmar y validar los tokens del server, ej: ```ViDeLcAsEcReTWoRd```
+
+⭐ La variable de entorno __AUTH_TOKEN__ puede ser cualquier palabra al azar (que sea segura), esto es para validar la sesion del usuario, ej: ```auth_token_cookie```
+
+⭐ La variable de entorno __DEFAULT_LIMIT__ es para determinar cuantos resultados maximos se haran por busqueda a la BD, en caso que no se mande el numero de resultados deseados en el endpoint.
 
 ### 4. Levantar la base de datos (OPCIONAL)
 Si estas usando docker para utilizar la imagen de Mysql, entonces debes levnatar la BD

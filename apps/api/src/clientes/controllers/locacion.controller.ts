@@ -19,22 +19,16 @@ export class LocacionController {
         return this.locacionService.create(createLocacionDto);
     }
 
-    // RUTA PROTEGIDA: Obtener todas las locaciones
     @Get()
     findAll(@Query() paginationDto: PaginationDto) {
         return this.locacionService.findAll(paginationDto, paginationDto.pagination);
     }
 
-    // OBTENER TODAS LAS LOCACIONES ACTIVAS
+    // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODAS LAS LOCACIONES ACTIVAS
     @Get('actives')
     @ValidateJwtAuth()
     findAllActivas(@Query() paginationDto: PaginationDto) {
         return this.locacionService.findAllActives(paginationDto, paginationDto.pagination);
-    }
-
-    @Get('cliente/:idCliente')
-    findByCliente(@Param('idCliente', ParseIntPipe) idCliente: number) {
-        return this.locacionService.findByCliente(idCliente);
     }
 
     @Get(':id')

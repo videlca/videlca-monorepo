@@ -30,7 +30,10 @@ export class Departamento {
     @ManyToOne(
         () => Pais, 
         (pais) => pais.departamentos, 
-        { onDelete: 'CASCADE' }
+        { 
+            onDelete: 'CASCADE',
+            eager: true 
+        }
     )
     @JoinColumn({name: 'idPais'})
     pais: Pais;

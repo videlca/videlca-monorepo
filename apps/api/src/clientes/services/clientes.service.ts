@@ -15,7 +15,7 @@ import { CreateClienteDto, UpdateClienteDto } from '../dto';
 @Injectable()
 export class ClientesService {
 
-  private readonly logger = new Logger('PersonalService');
+  private readonly logger = new Logger('ClientesService');
         
   private defaultLimit: number; // valor de la cantidad por defecto que se va a retornar en una consulta 
 
@@ -230,6 +230,27 @@ export class ClientesService {
     this.logger.error(error);
 
     throw new InternalServerErrorException('Unexpected error, check server logs');
+
+  }
+
+  // ELIMINAR TODOS LOS CLIENTES -> LOCACIONES -> CORREOS -> CORREOS_ESTADO: SOLO SI NO HAY LOCACIONES ASOCIADAS A UNA ORDEN DE SERVICIO
+  // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA CLIENTES -> LOCACIONES -> CORREOS -> CORREOS_ESTADO
+  async deleteAllClientes(){
+  
+    const query = this.clienteRepository.createQueryBuilder('cliente');
+
+    try {
+      
+      return await query
+        .delete()
+        .where({})
+        .execute();
+
+    } catch (error) {
+      
+      this.handleDbExceptions(error);
+
+    }
 
   }
   

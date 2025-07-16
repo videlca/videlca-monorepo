@@ -54,7 +54,7 @@ export class NovedadService {
     // OBTENER PERSONAL
     const personal = await this.personalService.findOne(personalId);
 
-    if(!tipoNovedad.retirado && !createNovedadDto.fechaFin && !createNovedadDto.horaFin){
+    if(tipoNovedad.retirado == false && !createNovedadDto.fechaFin && !createNovedadDto.horaFin){
     
       throw new BadRequestException(`Fecha fin y Hora fin son requeridos para este tipo de novedad`);
 
@@ -77,7 +77,7 @@ export class NovedadService {
       
       await queryRunner.manager.save(novedad);
 
-      if(tipoNovedad.retirado){
+      if(tipoNovedad.retirado == true){
 
         // cambiar estado personal
         await this.personalService.updateState(personal.idPersonal, false, queryRunner)
@@ -188,21 +188,28 @@ export class NovedadService {
 
     if (!novedad) throw new NotFoundException(`Tipo Novedad con id "${id}" no se ha encontrado`);
 
-    // OBTENER TIPO DE NOVEDAD
-    const tipoNovedad = await this.tipoNovedadService.findOne(idTipoNovedad);
-
     const novedadesPersonal = await this.findAllByPersonal(novedad.idPersonal.idPersonal);
 
     // Verificar si tiene alguna novedad de tipo retirado
     const tieneNovedadRetirado = novedadesPersonal.some(novedad => 
         novedad.idTipoNovedad?.retirado === true
     );
+
+    let tipoNovedad = null;
+
+    if(idTipoNovedad){
+
+      // OBTENER TIPO DE NOVEDAD
+      tipoNovedad = await this.tipoNovedadService.findOne(idTipoNovedad);
+
+    }
     
-    if (tieneNovedadRetirado && tipoNovedad.retirado) {
+    if (idTipoNovedad && tieneNovedadRetirado && tipoNovedad.retirado == true) {
+      
         throw new BadRequestException('No puede actualizar esta novedad, no se pueden tener 2 novedades en retirado');
     }
 
-    if(!tipoNovedad.retirado && !updateNovedadDto.fechaFin && !updateNovedadDto.horaFin){
+    if (idTipoNovedad && tipoNovedad.retirado === false && !updateNovedadDto.fechaFin && !updateNovedadDto.horaFin){
     
       throw new BadRequestException(`Fecha fin y Hora fin son requeridos para este tipo de novedad`);
 
@@ -218,7 +225,7 @@ export class NovedadService {
       
       await queryRunner.manager.save(novedad);
 
-      if(tipoNovedad.retirado){
+      if(tipoNovedad.retirado === true){
 
         // cambiar estado personal
         await this.personalService.updateState(novedad.idPersonal.idPersonal, false, queryRunner)
@@ -253,7 +260,7 @@ export class NovedadService {
 
       await queryRunner.manager.remove(novedad);
 
-      if(novedad.idTipoNovedad.retirado){
+      if(novedad.idTipoNovedad.retirado == true){
 
         // cambiar estado personal
         await this.personalService.updateState(novedad.idPersonal.idPersonal, true, queryRunner)
@@ -309,9 +316,6 @@ export class NovedadService {
       horaInicio: hora,
       idPersonal,
       idTipoNovedad: tipoNovedad,
-      // Agrega otros campos según tu entidad
-      estado: true, // o según tu lógica
-      fechaCreacion: fechaActual,
     });
 
     // Guardar usando el queryRunner
@@ -343,8 +347,8 @@ export class NovedadService {
   }
   
   // ELIMINAR TODOS LOS TIPOS NOVEDAD
-  // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA TIPO-ESTADO
-  async deleteAllTiposEstado(){
+  // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA NOVEDAD
+  async deleteAllTiposNovedad(){
   
     const query = this.novedadRepository.createQueryBuilder('novedad');
 

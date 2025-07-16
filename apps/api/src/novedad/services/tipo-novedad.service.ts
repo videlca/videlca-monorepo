@@ -185,10 +185,10 @@ export class TipoNovedadService {
   }
   
   // ELIMINAR TODOS LOS TIPOS NOVEDAD
-  // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA TIPO-ESTADO
-  async deleteAllTiposEstado(){
+  // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA TIPO-NOVEDAD
+  async deleteAllTiposNovedad(){
   
-    const query = this.tipoNovedadRepository.createQueryBuilder('tipo-estado');
+    const query = this.tipoNovedadRepository.createQueryBuilder('tipo-novedad');
 
     try {
       
@@ -204,6 +204,30 @@ export class TipoNovedadService {
     }
 
   }
+
+  async createTipoNovedadSeed(createTipoNovedadDto: {
+    descripcion: string,
+    retirado: boolean
+  }){
+  
+    try {
+        
+      const tipoNovedad = this.tipoNovedadRepository.create({
+        descripcion: createTipoNovedadDto.descripcion,
+        retirado: createTipoNovedadDto.retirado
+      });
+      
+      await this.tipoNovedadRepository.save(tipoNovedad);
+
+      return tipoNovedad;
+
+    } catch (error) {
+        
+      this.handleDbExceptions(error);
+
+    }
+  
+    }
 
   private handleDbExceptions(error: any){
   

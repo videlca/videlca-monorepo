@@ -35,15 +35,38 @@ export class AuthService {
     async loginUser(loginDto: LoginUserDto) {
     
         // Encontrar user que quiere iniciar sesion
-        const user = await this.usersService.findOneByEmailWithPassword(loginDto.email);
-        
-        // Validar si existe
-        if(!user){
-            throw new UnauthorizedException('Email o contraseña es incorrecto');
-        }
+        const userFound = await this.usersService.findOneByEmailWithPassword(loginDto.email);
+
+        const {user, permisos} = userFound;
         
         if(!user.estado){
             throw new ForbiddenException('Tu cuenta no está activa, por favor, recupera tu cuenta');
+        }
+
+        // Validar si el user tiene el rol de super-admin
+        if (user.idRol.nombreRol === Roles.SUPER_ADMIN) {
+
+            if(loginDto.clave !== user.clave){
+                throw new UnauthorizedException('Email o contraseña es incorrecto');
+            }
+            
+            const payload: JwtPayload = { email: user.email, id: user.idUser}
+
+            // Generar token de acceso
+            const token = await this.getJwtToken(payload);
+
+            // retornar token de acceso y data del user
+            return {
+                token,
+                user: {
+                    idUser: user.idUser,
+                    nombre: `${user.primerNombre} ${user.primerApellido}`,
+                    email: user.email,
+                    rol: user.idRol.nombreRol,
+                },
+                permisos
+            };
+
         }
         
         // Validar si la contraseña coincide
@@ -60,23 +83,25 @@ export class AuthService {
         return {
             token,
             user: {
-            idUser: user.idUser,
-            nombre: `${user.primerNombre} ${user.primerApellido}`,
-            email: user.email
-            }
+                idUser: user.idUser,
+                nombre: `${user.primerNombre} ${user.primerApellido}`,
+                email: user.email,
+                rol: user.idRol.nombreRol
+            },
+            permisos
         };
     }
     
-    // ENVIAR CORREO PARA REESTABLECER LA CONTRASEÑA DEL USER DEL APLICATIVO
+    // ENVIAR CORREO PARA REESTABLECER LA CONTRASEÑA DEL USER
     async olvidePassword(olvidePasswordDto: ReestablecerDatosDto) {
     
-        const { nroIdentificacion } = olvidePasswordDto;
+        const { numeroIdentificacion } = olvidePasswordDto;
             
         // VALIDACION USER
         // Validamos que user si se encuentre en nuestra BD y extraemos la data y el token de acceso
-        const { fullName, token, email } = await this.validateUser(nroIdentificacion);
+        const { fullName, token, email } = await this.validateUser(numeroIdentificacion);
 
-        const url = `${this.hostFrontend}/auth/olvide-password/${token}`;
+        const url = `${this.hostFrontend}/olvide-password/${token}`;
 
         const nombreCompleto = fullName;        
     
@@ -87,14 +112,14 @@ export class AuthService {
             <div style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 20px 0;">
                 <p>📎 Enlace para reestablecer contraseña: <strong><a href="${url}">Reestablecer contraseña</a></strong></p>
             </div>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si tu no creaste una cuenta en Dtime omiste este mensaje.</p>
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omiste este mensaje.</p>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de Dtime</p>
-            <img src="${this.hostPublic}/dtime_imgs/logo_dtime.png" alt="Dtime" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
         </div>
         `;
         
-        const subject = `${nombreCompleto} Reestablece tu contraseña en Dtime`;
+        const subject = `${nombreCompleto} Reestablece tu contraseña en GEVID`;
     
         // Enviamos correo para reestablecer la contraseña
         const isEmailSend = await this.sendEmail(email, html, subject);
@@ -105,7 +130,7 @@ export class AuthService {
 
     }
 
-    // VALIDAR USER DEL APLICATIVO WEB (FRONTEND) y DASHBOARD (BACKEND)
+    // VALIDAR USER
     async comprobarTokenOlvidePassword(token: string){
     
         // validamos el token y extraemos el email
@@ -124,7 +149,7 @@ export class AuthService {
 
     }
 
-    // REESTABLECER CONTRASEÑA DEL USER DEL APLICATIVO WEB (FRONTEND)
+    // REESTABLECER CONTRASEÑA DEL USER
     async nuevaPassword(token: string, newPasswordDto: NewPasswordDto){
 
         const { clave, confirmarClave } = newPasswordDto;
@@ -144,31 +169,31 @@ export class AuthService {
 
     }
 
-    // ENVIAR CORREO PARA REESTABLECER LA CUENTA DEL USER DEL APLICATIVO
+    // ENVIAR CORREO PARA REESTABLECER LA CUENTA DEL USER
     async reestablecerCuenta(reestablecerCuentaDto: ReestablecerDatosDto) {
 
-        const { nroIdentificacion } = reestablecerCuentaDto;
+        const { numeroIdentificacion } = reestablecerCuentaDto;
         
         // Validamos que user si se encuentre en nuestra BD y extraemos la data y el token de acceso
-        const { fullName, token, email } = await this.validateUser(nroIdentificacion);
+        const { fullName, token, email } = await this.validateUser(numeroIdentificacion);
 
-        const url = `${this.hostFrontend}/auth/confirmar/${token}`;
+        const url = `${this.hostFrontend}/actualizar/${token}`;
     
         const html = `
         <div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 600px; margin: 20px auto; text-align: center; font-family: 'Poppins', sans-serif;">
-            <h2 style="margin-bottom: 20px; color: #333; font-weight: 700;">Reestablecer cuenta en Dtime 🚚</h2>
+            <h2 style="margin-bottom: 20px; color: #333; font-weight: 700;">Reestablecer cuenta en GEVID 👮‍♂️</h2>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">Buen día ${fullName}, para reestablecer tu cuenta en GEVID por favor haz click sobre el enlace</p>
             <div style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 20px 0;">
                 <p>📎 Enlace para reestablecer cuenta: <strong><a href="${url}">Reestablecer cuenta</a></strong></p>
             </div>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si tu no creaste una cuenta en Dtime omiste este mensaje.</p>
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omiste este mensaje.</p>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de Dtime</p>
-            <img src="${this.hostPublic}/dtime_imgs/logo_dtime.png" alt="Dtime" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
         </div>
         `;
         
-        const subject = `${fullName} Reestablece tu cuenta en Dtime`;
+        const subject = `${fullName} Reestablece tu cuenta en GEVID`;
     
         // Enviamos correo para reestablecer la cuents
         const isEmailSend = await this.sendEmail(email, html, subject);
@@ -179,7 +204,7 @@ export class AuthService {
 
     }
 
-    // VALIDAR / VERIFICAR CUENTA DEL USER DEL APLICATIVO WEB (FRONTEND)
+    // VALIDAR / VERIFICAR CUENTA DEL USER
     async confirmarCuenta(token: string){
     
         // validamos el token y extraemos el email
@@ -192,7 +217,7 @@ export class AuthService {
 
     }
 
-    // VALIDAR USER DEL APLICATIVO
+    // VALIDAR USER
     async validateUser(numeroIdentificacion: string){
     
         // Verificamos que el user si exista en nuestra BD

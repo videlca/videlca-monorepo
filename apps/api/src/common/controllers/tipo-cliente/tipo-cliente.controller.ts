@@ -18,32 +18,32 @@ export class TipoClienteController {
       return this.tipoClienteService.create(createTipoClienteDto);
   }
   
-  // RUTA PUBLICA: Obtener todos los tipos de cliente
+  // RUTA PROTEGIDA: Obtener todos los tipos de cliente
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.tipoClienteService.findAll(paginationDto, paginationDto.pagination);
   }
 
-  // OBTENER TODOS LOS TIPOS CLIENTE ACTIVOS
+  // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS CLIENTE ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
     return this.tipoClienteService.findAllActives(paginationDto, paginationDto.pagination);
   }
 
-  // OBTENER UN TIPO CLIENTE
+  // RUTA PROTEGIDA: OBTENER UN TIPO CLIENTE
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.tipoClienteService.findOne(id);
   }
 
-  // EDITAR UN TIPO CLIENTE
+  // RUTA PROTEGIDA: EDITAR UN TIPO CLIENTE
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateTipoClienteDto: UpdatetipoDto) {
     return this.tipoClienteService.update(id, updateTipoClienteDto);
   }
 
-  // ELIMINAR UN TIPO CLIENTE
+  // RUTA PROTEGIDA: ELIMINAR UN TIPO CLIENTE
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.tipoClienteService.remove(id);

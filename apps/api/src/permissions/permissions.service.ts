@@ -9,7 +9,7 @@ import { Roles } from '../auth/interfaces/roles.interface';
 
 
 import { Role, Permission } from './entities';
-import { CreateRoleDto, UpdateRoleDto, CreatePermissionDto, UpdatePermissionStateDto } from './dto';
+import { CreateRoleDto, UpdateRoleDto, CreatePermissionDto } from './dto';
 
 
 @Injectable()
@@ -72,20 +72,6 @@ export class PermissionsService {
 
   }
   
-  // OBTENER TODOS LOS PERMISOS QUE SE PUEDAN MODIFICAR
-  async findAllPermissionStatus() {
-
-    const permisos = await this.permissionRepository.find();
-
-    return permisos.map(permiso => {
-      
-      if(permiso.modificar){
-        return permiso;
-      }
-
-    });
-
-  }
   
   // OBTENER TODOS LOS PERMISOS
   async findAllPermissions(paginationDto: PaginationDto, pagination: boolean = true) {
@@ -131,28 +117,6 @@ export class PermissionsService {
     return permisos;
 
   }
-  
-  // ACTUALIZAR EL ESTADO DE UN PERMISO
-  async updatePermissionState(id: number, updatePermissionStateDto: UpdatePermissionStateDto){
-
-    const permission = await this.findOnePermission(id);
-
-    if(permission.activo == updatePermissionStateDto.activo) return;
-
-    permission.activo = updatePermissionStateDto.activo;
-
-    try {
-      
-      await this.permissionRepository.save(permission);
-
-    } catch (error) {
-      
-      this.handleDbExceptions(error);
-
-    }
-
-  }
-
 
   // ROLES
   

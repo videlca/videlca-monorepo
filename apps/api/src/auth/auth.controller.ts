@@ -26,11 +26,18 @@ export class AuthController {
   validate(){
     return true;
   }
-
+  
+  // RUTA PROTEGIDA: CERRAR SESION SOLO SI SE TIENE UN TOKEN
   @Get('logout')
   @ValidateJwtAuth()
   logout(@Res() res: Response) {
-    res.clearCookie(this.authToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+    
+    res.clearCookie(this.authToken, { 
+      httpOnly: true, 
+      secure: true, 
+      sameSite: 'strict' 
+    });
+    
     return res.send({message: 'logout successfully'});
   }
 
@@ -56,7 +63,7 @@ export class AuthController {
 
   }
 
-  // RUTA PUBLICA: ENVIAR CORREO PARA REESTABLECER CONTRASEÑA DEL USER DE APLICATIVO WEB (FRONTEND)
+  // RUTA PUBLICA: ENVIAR CORREO PARA REESTABLECER CONTRASEÑA DEL USER
   @HttpCode(HttpStatus.OK)
   @Post('olvide-password')
   olvidePassword(@Body() olvidePasswordDto: ReestablecerDatosDto) {

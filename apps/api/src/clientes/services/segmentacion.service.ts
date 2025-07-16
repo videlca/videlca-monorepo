@@ -255,9 +255,9 @@ export class SegmentacionService {
   }
 
   
-  // ELIMINAR TODOS LAS SEGMENTACIONES
+  // ELIMINAR TODOS LAS SEGMENTACIONES -> SUBSEGMENTACIONES
   // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA SEGMENTACIONES
-  async deleteAllTiposId(){
+  async deleteAllSegmentaciones(){
   
     const query = this.segmentacionRepository.createQueryBuilder('segmentacion');
 

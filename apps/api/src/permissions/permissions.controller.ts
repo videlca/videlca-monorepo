@@ -6,7 +6,7 @@ import { DescriptionRoutes } from '../auth/interfaces';
 import { PaginationDto } from '../common/dto';
 
 import { PermissionsService } from './permissions.service';
-import { CreateRoleDto, UpdateRoleDto, CreatePermissionDto, UpdatePermissionStateDto } from './dto';
+import { CreateRoleDto, UpdateRoleDto } from './dto';
 
 
 @Controller('permissions')
@@ -34,8 +34,14 @@ export class PermissionsController {
     return this.permissionsService.findAllRole(paginationDto, paginationDto.pagination);
   }
 
-  // RUTA PROTEGIDA (solo un user con permisos puede acceder): Obtener todos los roles ACTIVOS
-  //! RUTA PARA USAR EN OTRAS SECCIONES QUE TENGAN QUE COLOCAR UN ROL ACTIVO POR EJEMPLO SECCION PERMISOS
+  // RUTA PROTEGIDA (solo un user con permisos puede acceder): Obtener todos los roles con sus permisos
+  @Get('roles-permissions')
+  findAllRoleWithPermissions(@Query() paginationDto: PaginationDto) {
+    return this.permissionsService.findAllRoleWithPermissions(paginationDto, paginationDto.pagination);
+  }
+
+  // RUTA PUBLICA (para ver desde otra pantalla o dropdown):: Obtener todos los roles ACTIVOS
+  //! RUTA PARA USAR EN OTRAS SECCIONES QUE TENGAN QUE COLOCAR UN ROL ACTIVO POR EJEMPLO SECCION PERMISOS O CREAR UN USUARIO
   @Get('roles/activos')
   @ValidateJwtAuth()
   findAllRoleActivos(@Query() paginationDto: PaginationDto) {
@@ -55,12 +61,6 @@ export class PermissionsController {
     @Param('id', ParseIntPipe) id: number,
   ){
     return this.permissionsService.updateRole(id, updateRoleDto);
-  }
-
-  // RUTA PROTEGIDA (solo un user con permisos puede acceder): Obtener todos los roles con sus permisos
-  @Get('roles-permissions')
-  findAllRoleWithPermissions(@Query() paginationDto: PaginationDto) {
-    return this.permissionsService.findAllRoleWithPermissions(paginationDto, paginationDto.pagination);
   }
 
   // RUTA PROTEGIDA (solo un user con permisos puede acceder): Eliminar un Rol

@@ -191,6 +191,35 @@ export class EstadoOrdenServicioService {
 
   }
 
+  // CREAR ESTADO ORDEN SERVICIO
+  async createEstadoOrdenSeed(createEstadoOrdenDto: {
+    descripcion: string,
+    estado: boolean,
+    programable: boolean,
+    dias: number
+  }){
+  
+    try {
+        
+      const estadoOrden = this.estadoOrdenRepository.create({
+        descripcion: createEstadoOrdenDto.descripcion,
+        estado: createEstadoOrdenDto.estado,
+        programable: createEstadoOrdenDto.programable,
+        dias: createEstadoOrdenDto.dias
+      });
+      
+      await this.estadoOrdenRepository.save(estadoOrden);
+
+      return estadoOrden;
+
+    } catch (error) {
+        
+      this.handleDbExceptions(error);
+
+    }
+
+  }
+
   private handleDbExceptions(error: any){
   
     if (error.errno === 1062)
