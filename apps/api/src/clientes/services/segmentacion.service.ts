@@ -82,7 +82,10 @@ export class SegmentacionService {
       const segmentaciones = await this.segmentacionRepository.find({
           ...queryOptions,
           take: limit,
-          skip: offset
+          skip: offset,
+          relations: {
+            subSegmentaciones: true
+          }
       });
   
       return segmentaciones;
