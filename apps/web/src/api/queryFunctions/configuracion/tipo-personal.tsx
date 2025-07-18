@@ -10,6 +10,7 @@ import type { TipoPersonal } from "../../../types";
 import type { CreateTipoPersonal } from "../../types";
 import { queryClient } from "../../../App";
 import type { UpdateTipoPersonalDto } from "../../dtos";
+import { toast } from "sonner";
 
 export const useTipoPersonal = (): UseQueryResult<
   ApiResponse<TipoPersonal[]>,
@@ -28,11 +29,18 @@ export const useCrearTipoPersonal = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: (data: CreateTipoPersonal) => createTipoPersonal(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tipo-personal"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-personal"] });
+        toast.success("Tipo de personal creado exitosamente", {
+          description: "El tipo de personal ha sido creado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al crear tipo de personal");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al crear tipo de personal");
     },
   });
 };
@@ -45,11 +53,18 @@ export const useActualizarTipoPersonal = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateTipoPersonalDto }) =>
       updateTipoPersonal(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tipo-personal"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-personal"] });
+        toast.success("Tipo de personal actualizado exitosamente", {
+          description: "El tipo de personal ha sido actualizado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al actualizar tipo de personal");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al actualizar tipo de personal");
     },
   });
 };

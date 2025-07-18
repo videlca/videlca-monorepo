@@ -3,6 +3,7 @@ import {
   Calendar,
   ChevronRight,
   DollarSign,
+  FileText,
   LogOut,
   Menu,
   Settings,
@@ -79,6 +80,12 @@ export function Sidebar({
       label: "Reportes",
       icon: BarChart3,
       subItems: linksSideBar.reportes,
+    },
+    {
+      id: "ordenes-de-servicio",
+      label: "Ordenes de Servicio",
+      icon: FileText,
+      subItems: linksSideBar.ordenesDeServicio,
     },
   ];
 

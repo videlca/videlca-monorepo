@@ -26,6 +26,7 @@ import type {
   UpdatePaisDto,
   UpdateCiudadDto,
 } from "../../dtos/configuracion";
+import { toast } from "sonner";
 
 // Paises
 export const usePais = (): UseQueryResult<ApiResponse<Pais[]>, Error> => {
@@ -42,11 +43,18 @@ export const useCrearPais = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: (data: CreatePaisDto) => createPais(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pais"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["pais"] });
+        toast.success("País creado exitosamente", {
+          description: "El país ha sido creado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al crear país");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al actualizar país");
     },
   });
 };
@@ -59,11 +67,18 @@ export const useActualizarPais = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdatePaisDto }) =>
       updatePais(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pais"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["pais"] });
+        toast.success("País actualizado exitosamente", {
+          description: "El país ha sido actualizado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al actualizar país");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al actualizar país");
     },
   });
 };
@@ -87,11 +102,18 @@ export const useCrearDepartamento = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: (data: CreateDepartamentoDto) => createDepartamento(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["departamento"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["departamento"] });
+        toast.success("Departamento creado exitosamente", {
+          description: "El departamento ha sido creado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al crear departamento");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al crear departamento");
     },
   });
 };
@@ -104,11 +126,18 @@ export const useActualizarDepartamento = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateDepartamentoDto }) =>
       updateDepartamento(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["departamento"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["departamento"] });
+        toast.success("Departamento actualizado exitosamente", {
+          description: "El departamento ha sido actualizado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al actualizar departamento");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al actualizar departamento");
     },
   });
 };
@@ -128,11 +157,18 @@ export const useCrearCiudad = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: (data: CreateCiudadDto) => createCiudad(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ciudad"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["ciudad"] });
+        toast.success("Ciudad creada exitosamente", {
+          description: "La ciudad ha sido creada correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al crear ciudad");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al crear ciudad");
     },
   });
 };
@@ -145,11 +181,18 @@ export const useActualizarCiudad = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateCiudadDto }) =>
       updateCiudad(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ciudad"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["ciudad"] });
+        toast.success("Ciudad actualizada exitosamente", {
+          description: "La ciudad ha sido actualizada correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al actualizar ciudad");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al actualizar ciudad");
     },
   });
 };

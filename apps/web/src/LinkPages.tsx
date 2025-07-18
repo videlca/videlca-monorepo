@@ -15,6 +15,7 @@ interface LinksSideBar {
   programaciones: LinkSideBar[];
   tarifas: LinkSideBar[];
   reportes: LinkSideBar[];
+  ordenesDeServicio: LinkSideBar[];
 }
 
 export const linksSideBar: LinksSideBar = {
@@ -107,6 +108,13 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/reportes",
       label: "Reportes",
       description: "reportes",
+    },
+  ],
+  ordenesDeServicio: [
+    {
+      to: "/dashboard/ordenes-de-servicio",
+      label: "Ordenes de Servicio",
+      description: "ordenes-de-servicio",
     },
   ],
 };

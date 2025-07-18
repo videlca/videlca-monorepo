@@ -14,6 +14,7 @@ import { queryClient } from "../../../App";
 import type { UpdateEstadoOrdenDto } from "../../dtos";
 import type { ApiResponse } from "../../types/common";
 import type { TipoOrdenServicio } from "../../../types";
+import { toast } from "sonner";
 
 export const useEstadoOrden = (): UseQueryResult<
   ApiResponse<TipoOrdenServicio[]>,
@@ -32,11 +33,18 @@ export const useCrearEstadoOrden = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: (data: CrearEstadoOrden) => createEstadoOrden(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["estados-orden"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["estados-orden"] });
+        toast.success("Estado de orden creado exitosamente", {
+          description: "El estado de orden ha sido creado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al crear estado de orden");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al crear estado de orden");
     },
   });
 };
@@ -49,11 +57,18 @@ export const useActualizarEstadoOrden = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateEstadoOrdenDto }) =>
       updateEstadoOrden(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["estados-orden"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["estados-orden"] });
+        toast.success("Estado de orden actualizado exitosamente", {
+          description: "El estado de orden ha sido actualizado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al actualizar estado de orden");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al actualizar estado de orden");
     },
   });
 };

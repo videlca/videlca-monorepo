@@ -36,11 +36,11 @@ const personal: Personal[] = [
       descripcion: "Bogotá",
       estado: true,
       codigoCiudad: "1234567890",
-      idDepartamento: {
+      departamento: {
         idDepartamento: 1,
         descripcion: "Cundinamarca",
         codigoDepartamento: "1234567890",
-        idPais: {
+        pais: {
           idPais: 1,
           descripcion: "Colombia",
         },
@@ -81,11 +81,11 @@ const personal: Personal[] = [
       descripcion: "Medellín",
       estado: true,
       codigoCiudad: "1234567890",
-      idDepartamento: {
+      departamento: {
         idDepartamento: 2,
         descripcion: "Antioquia",
         codigoDepartamento: "1234567890",
-        idPais: {
+        pais: {
           idPais: 1,
           descripcion: "Colombia",
         },

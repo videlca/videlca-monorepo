@@ -1,16 +1,10 @@
-import {
-  createFileRoute,
-  Link,
-  redirect,
-  useRouter,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { AuthLayout } from "../components/layout/AuthLayout";
 import { Lock, User } from "lucide-react";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import { useLogin } from "../api/queryFunctions/auth";
 import { useForm } from "../hooks/useForm";
-import { useAuth } from "../context/AuthContext";
 
 export const Route = createFileRoute("/")({
   component: Index,

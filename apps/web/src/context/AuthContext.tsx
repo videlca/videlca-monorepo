@@ -21,7 +21,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       try {
         const response = await checkAuth();
-        console.log("Auth check response:", response);
         if (typeof response === "boolean") {
           setIsAuthenticated(response);
         } else if (response && typeof response === "object") {

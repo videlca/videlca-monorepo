@@ -105,14 +105,12 @@ function RouteComponent() {
   const [hasChanges, setHasChanges] = useState(false);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
-  // Initialize granted modules when role changes
   useEffect(() => {
     setGrantedModules([...selectedRole.modules]);
     setOriginalGrantedModules([...selectedRole.modules]);
     setHasChanges(false);
   }, [selectedRole]);
 
-  // Check for changes
   useEffect(() => {
     const hasChanged =
       JSON.stringify(grantedModules.sort()) !==
@@ -137,20 +135,9 @@ function RouteComponent() {
   };
 
   const savePermissions = () => {
-    console.log(
-      `Saving module access for role ${selectedRole.name}:`,
-      grantedModules,
-    );
-
-    // Update the original granted modules to reflect the saved state
     setOriginalGrantedModules([...grantedModules]);
     setHasChanges(false);
     setShowSaveConfirm(false);
-
-    // Show success message
-    alert(
-      `Permisos de módulos guardados exitosamente para el rol ${selectedRole.name}`,
-    );
   };
 
   return (

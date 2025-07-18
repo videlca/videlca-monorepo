@@ -115,7 +115,6 @@ export function SegmentacionTab() {
       descripcion: row.descripcion,
       estado: row.estado,
     });
-    console.log(row);
     setEditingSegmentacion(row);
     setIsEditModalOpen(true);
   };
@@ -318,11 +317,6 @@ export function SegmentacionTab() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  // setForm({
-                                  //   ...form,
-                                  //   subSegmentaciones:
-                                  //     form.subSegmentaciones.
-                                  // });
                                   setFormCreate({
                                     ...formCreate,
                                     subSegmentaciones:
@@ -330,7 +324,6 @@ export function SegmentacionTab() {
                                         (subSeg, i) => i !== index,
                                       ),
                                   });
-                                  console.log(index);
                                 }}
                                 className="cursor-pointer text-red-600 transition-colors hover:text-red-700"
                               >
@@ -501,7 +494,6 @@ export function SegmentacionTab() {
                                             (subSeg, i) => i !== index,
                                           ),
                                       });
-                                      console.log(index);
                                     }}
                                     className="cursor-pointer text-red-600 transition-colors hover:text-red-700"
                                   >

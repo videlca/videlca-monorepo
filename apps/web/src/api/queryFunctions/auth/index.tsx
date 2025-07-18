@@ -16,6 +16,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { queryClient } from "../../../App";
 import { useAuth } from "../../../context/AuthContext";
 import type { ApiResponse } from "../../types/common";
+import { toast } from "sonner";
 
 export const useLogin = (): UseMutationResult<
   ApiResponse,
@@ -29,16 +30,17 @@ export const useLogin = (): UseMutationResult<
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["login"] });
       setIsAuthenticated(true);
-      console.log(data);
       if (data.status === 200) {
-        console.log("success");
+        toast.success("Inicio de sesión exitoso", {
+          description: "Bienvenido de nuevo",
+        });
         navigate({ to: "/dashboard", replace: true });
       } else {
         throw new Error(data.message || "Error al iniciar sesión");
       }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al iniciar sesión");
     },
   });
 };
@@ -49,13 +51,16 @@ export const useLogout = (): UseMutationResult<ApiResponse, Error, void> => {
 
   return useMutation({
     mutationFn: () => logout(),
-    onSuccess: () => {
+    onSuccess: (data) => {
       setIsAuthenticated(false);
       queryClient.invalidateQueries({ queryKey: ["login"] });
+      toast.success("Cierre de sesión exitoso", {
+        description: "Gracias por usar nuestro sistema",
+      });
       navigate({ to: "/" });
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al iniciar sesión");
     },
   });
 };
@@ -69,10 +74,16 @@ export const useRecoverPassword = (): UseMutationResult<
     mutationFn: (data: { numeroIdentificacion: string }) =>
       recoverPassword(data),
     onSuccess: (data) => {
-      console.log(data);
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Recuperación de contraseña exitosa", {
+          description: "Se ha enviado un correo para recuperar su contraseña",
+        });
+      } else {
+        throw new Error(data.message || "Error al recuperar contraseña");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al recuperar contraseña");
     },
   });
 };
@@ -99,14 +110,17 @@ export const useUpdatePassword = (): UseMutationResult<
       data: { clave: string; confirmarClave: string };
     }) => updatePassword(data.token, data.data),
     onSuccess: (data) => {
-      if (data.status === 200) {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Contraseña actualizada exitosamente", {
+          description: "Por favor, inicie sesión con su nueva contraseña",
+        });
         navigate({ to: "/", replace: true });
       } else {
         throw new Error(data.message || "Error al actualizar contraseña");
       }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al actualizar contraseña");
     },
   });
 };

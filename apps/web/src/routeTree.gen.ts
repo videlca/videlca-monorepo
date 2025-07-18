@@ -22,6 +22,7 @@ import { Route as DashboardReportesIndexRouteImport } from './routes/dashboard/r
 import { Route as DashboardProgramacionesIndexRouteImport } from './routes/dashboard/programaciones/index'
 import { Route as DashboardPersonalIndexRouteImport } from './routes/dashboard/personal/index'
 import { Route as DashboardPermisosIndexRouteImport } from './routes/dashboard/permisos/index'
+import { Route as DashboardOrdenesDeServicioIndexRouteImport } from './routes/dashboard/ordenes-de-servicio/index'
 import { Route as DashboardClientesIndexRouteImport } from './routes/dashboard/clientes/index'
 import { Route as DashboardPersonalNovedadesRouteImport } from './routes/dashboard/personal/novedades'
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
@@ -98,6 +99,12 @@ const DashboardPermisosIndexRoute = DashboardPermisosIndexRouteImport.update({
   path: '/permisos/',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardOrdenesDeServicioIndexRoute =
+  DashboardOrdenesDeServicioIndexRouteImport.update({
+    id: '/ordenes-de-servicio/',
+    path: '/ordenes-de-servicio/',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardClientesIndexRoute = DashboardClientesIndexRouteImport.update({
   id: '/clientes/',
   path: '/clientes/',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
   '/dashboard/clientes': typeof DashboardClientesIndexRoute
+  '/dashboard/ordenes-de-servicio': typeof DashboardOrdenesDeServicioIndexRoute
   '/dashboard/permisos': typeof DashboardPermisosIndexRoute
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
@@ -192,6 +200,7 @@ export interface FileRoutesByTo {
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
   '/dashboard/clientes': typeof DashboardClientesIndexRoute
+  '/dashboard/ordenes-de-servicio': typeof DashboardOrdenesDeServicioIndexRoute
   '/dashboard/permisos': typeof DashboardPermisosIndexRoute
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
@@ -217,6 +226,7 @@ export interface FileRoutesById {
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
   '/dashboard/clientes/': typeof DashboardClientesIndexRoute
+  '/dashboard/ordenes-de-servicio/': typeof DashboardOrdenesDeServicioIndexRoute
   '/dashboard/permisos/': typeof DashboardPermisosIndexRoute
   '/dashboard/personal/': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/personal/novedades'
     | '/dashboard/clientes'
+    | '/dashboard/ordenes-de-servicio'
     | '/dashboard/permisos'
     | '/dashboard/personal'
     | '/dashboard/programaciones'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/personal/novedades'
     | '/dashboard/clientes'
+    | '/dashboard/ordenes-de-servicio'
     | '/dashboard/permisos'
     | '/dashboard/personal'
     | '/dashboard/programaciones'
@@ -290,6 +302,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/personal/novedades'
     | '/dashboard/clientes/'
+    | '/dashboard/ordenes-de-servicio/'
     | '/dashboard/permisos/'
     | '/dashboard/personal/'
     | '/dashboard/programaciones/'
@@ -399,6 +412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPermisosIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/ordenes-de-servicio/': {
+      id: '/dashboard/ordenes-de-servicio/'
+      path: '/ordenes-de-servicio'
+      fullPath: '/dashboard/ordenes-de-servicio'
+      preLoaderRoute: typeof DashboardOrdenesDeServicioIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/clientes/': {
       id: '/dashboard/clientes/'
       path: '/clientes'
@@ -477,6 +497,7 @@ interface DashboardRouteChildren {
   DashboardConfiguracionUbicacionRoute: typeof DashboardConfiguracionUbicacionRoute
   DashboardPersonalNovedadesRoute: typeof DashboardPersonalNovedadesRoute
   DashboardClientesIndexRoute: typeof DashboardClientesIndexRoute
+  DashboardOrdenesDeServicioIndexRoute: typeof DashboardOrdenesDeServicioIndexRoute
   DashboardPermisosIndexRoute: typeof DashboardPermisosIndexRoute
   DashboardPersonalIndexRoute: typeof DashboardPersonalIndexRoute
   DashboardProgramacionesIndexRoute: typeof DashboardProgramacionesIndexRoute
@@ -501,6 +522,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardConfiguracionUbicacionRoute: DashboardConfiguracionUbicacionRoute,
   DashboardPersonalNovedadesRoute: DashboardPersonalNovedadesRoute,
   DashboardClientesIndexRoute: DashboardClientesIndexRoute,
+  DashboardOrdenesDeServicioIndexRoute: DashboardOrdenesDeServicioIndexRoute,
   DashboardPermisosIndexRoute: DashboardPermisosIndexRoute,
   DashboardPersonalIndexRoute: DashboardPersonalIndexRoute,
   DashboardProgramacionesIndexRoute: DashboardProgramacionesIndexRoute,

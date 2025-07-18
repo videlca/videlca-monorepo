@@ -24,7 +24,6 @@ function RouteComponent() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(form);
     mutation.mutate({
       numeroIdentificacion: form.numeroIdentificacion,
     });
@@ -60,7 +59,6 @@ function RouteComponent() {
         <Link
           to="/"
           type="button"
-          onClick={() => console.log("volver a iniciar sesión")}
           className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
         >
           Volver a Iniciar Sesión

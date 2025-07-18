@@ -16,6 +16,7 @@ import type {
   CreateTipoIdentificacion,
 } from "../../types";
 import { queryClient } from "../../../App";
+import { toast } from "sonner";
 
 export const useTipoIdentificacion = (): UseQueryResult<
   ApiResponse<TipoIdentificacion[]>,
@@ -35,11 +36,20 @@ export const useCrearTipoIdentificacion = (): UseMutationResult<
   return useMutation({
     mutationFn: (data: CreateTipoIdentificacion) =>
       createTipoIdentificacion(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tipo-identificacion"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-identificacion"] });
+        toast.success("Tipo de identificación creado exitosamente", {
+          description: "El tipo de identificación ha sido creado correctamente",
+        });
+      } else {
+        throw new Error(
+          data.message || "Error al crear tipo de identificación",
+        );
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al crear tipo de identificación");
     },
   });
 };
@@ -57,11 +67,23 @@ export const useActualizarTipoIdentificacion = (): UseMutationResult<
       id: number;
       data: ActualizarTipoIdentificacion;
     }) => updateTipoIdentificacion(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tipo-identificacion"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-identificacion"] });
+        toast.success("Tipo de identificación actualizado exitosamente", {
+          description:
+            "El tipo de identificación ha sido actualizado correctamente",
+        });
+      } else {
+        throw new Error(
+          data.message || "Error al actualizar tipo de identificación",
+        );
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(
+        error.message || "Error al actualizar tipo de identificación",
+      );
     },
   });
 };

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Section } from "../../../components/ui/dashboard/Section";
 
 export const Route = createFileRoute("/dashboard/reportes/")({
   component: RouteComponent,
@@ -6,5 +7,11 @@ export const Route = createFileRoute("/dashboard/reportes/")({
 });
 
 function RouteComponent() {
-  return <div>Hello "/dashboard/reportes/"!</div>;
+  return (
+    <Section>
+      <div>
+        <h1>Reportes</h1>
+      </div>
+    </Section>
+  );
 }

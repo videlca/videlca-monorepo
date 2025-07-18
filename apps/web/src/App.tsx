@@ -11,6 +11,7 @@ import {
   useAuth,
   type AuthContextType,
 } from "./context/AuthContext";
+import { Toaster } from "sonner";
 
 const browserHistory = createBrowserHistory();
 
@@ -48,6 +49,7 @@ function RouterApp() {
   return (
     <BaseLayout>
       <RouterProvider router={router} context={{ auth, queryClient }} />
+      <Toaster position="bottom-right" richColors duration={2000} closeButton />
     </BaseLayout>
   );
 }

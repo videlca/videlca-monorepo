@@ -13,6 +13,7 @@ import type { ApiResponse } from "../../types/common";
 import type { TipoNovedad } from "../../../types";
 import type { ActualizarTipoNovedad, CreateTipoNovedad } from "../../types";
 import { queryClient } from "../../../App";
+import { toast } from "sonner";
 
 export const useTipoNovedad = (): UseQueryResult<
   ApiResponse<TipoNovedad[]>,
@@ -31,11 +32,18 @@ export const useCrearTipoNovedad = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: (data: CreateTipoNovedad) => createTipoNovedad(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tipo-novedad"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-novedad"] });
+        toast.success("Tipo de novedad creado exitosamente", {
+          description: "El tipo de novedad ha sido creado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al crear tipo de novedad");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al crear tipo de novedad");
     },
   });
 };
@@ -48,11 +56,18 @@ export const useActualizarTipoNovedad = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: ActualizarTipoNovedad }) =>
       updateTipoNovedad(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tipo-novedad"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-novedad"] });
+        toast.success("Tipo de novedad actualizado exitosamente", {
+          description: "El tipo de novedad ha sido actualizado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al actualizar tipo de novedad");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al actualizar tipo de novedad");
     },
   });
 };

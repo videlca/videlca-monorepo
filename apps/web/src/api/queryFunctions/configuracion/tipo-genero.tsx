@@ -13,6 +13,7 @@ import type { ApiResponse } from "../../types/common";
 import type { TipoGenero } from "../../../types";
 import type { ActualizarTipoGenero, CreateTipoGenero } from "../../types";
 import { queryClient } from "../../../App";
+import { toast } from "sonner";
 
 export const useTipoGenero = (): UseQueryResult<
   ApiResponse<TipoGenero[]>,
@@ -31,11 +32,18 @@ export const useCrearTipoGenero = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: (data: CreateTipoGenero) => createTipoGenero(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tipo-genero"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-genero"] });
+        toast.success("Tipo de género creado exitosamente", {
+          description: "El tipo de género ha sido creado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al crear tipo de género");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al crear tipo de género");
     },
   });
 };
@@ -48,11 +56,18 @@ export const useActualizarTipoGenero = (): UseMutationResult<
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: ActualizarTipoGenero }) =>
       updateTipoGenero(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tipo-genero"] });
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-genero"] });
+        toast.success("Tipo de género actualizado exitosamente", {
+          description: "El tipo de género ha sido actualizado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al actualizar tipo de género");
+      }
     },
     onError: (error) => {
-      console.log(error);
+      toast.error(error.message || "Error al actualizar tipo de género");
     },
   });
 };

@@ -64,7 +64,6 @@ function RouteComponent() {
         estado: String(formEditar.estado) === "true",
       },
     });
-    console.log(formEditar.estado);
     setIsModalOpenEditar(false);
     resetFormEditar();
   };
