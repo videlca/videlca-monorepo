@@ -33,7 +33,7 @@ async function main() {
   SwaggerModule.setup('docs', app, document);
 
   app.enableCors({
-    origin: process.env.HOST_FRONTEND,
+    origin: true,
     methods: 'GET,PUT,PATCH,POST,DELETE',
     credentials: true
   });
