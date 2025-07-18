@@ -9,6 +9,7 @@ export { UpdateSegmentacionDto } from "./segmentacion/update-segmentacion.dto";
 // LOCACION
 export { CreateLocacionDto } from "./locacion/create-locacion.dto";
 export { UpdateLocacionDto } from "./locacion/update-locacion.dto";
+export { CreateCorreoDto } from "./locacion/create-locacion.dto";
 
 
 // QUERY SEGMENTACIONES

@@ -78,11 +78,20 @@ export class Locacion {
     // TELEFONO 2 -> NULL
     @Column({
         type: 'varchar',
-        name: 'telefono_2',
+        name: 'segundoTelefono',
         length: 50,
         nullable: true
     })
-    segundo_telefono: string;
+    segundoTelefono: string;
+
+    // DIAS DE ANTICIPACION PARA NOTIFICAR CAMBIOS
+    @Column({
+        type: 'int',
+        name: 'diasAnticipaticionNotificacion',
+        nullable: false,
+        default: 0
+    })
+    diasAnticipaticionNotificacion: number;
 
     // CORREOS -> RELACION
     @OneToMany(
