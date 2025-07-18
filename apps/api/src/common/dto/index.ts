@@ -15,6 +15,7 @@ export { CreateTipoDto } from './tipo/create-tipo.dto';
 export { UpdatetipoDto } from './tipo/update-tipo.dto';
 
 // ESTADO ORDEN
+export { CreateEstadoOrdenDto } from './estado-orden-servicio/create-estado-orden-servicio.dto';
 export { UpdateEstadoOrdenDto } from './estado-orden-servicio/update-estado-orden-servicio.dto';
 
 // PAGINATION

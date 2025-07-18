@@ -25,10 +25,10 @@ interface Tipo {
 }
 
 interface EstadoOrdenServicio {
+    nombre: string,
     descripcion: string;
     estado: boolean;
     programable: boolean;
-    dias: number;
 }
 
 // tipo novedad
@@ -49,11 +49,21 @@ interface SeedData {
 export const initialData: SeedData = {
     
     estadosOrdenServicio: [
-        {descripcion: "programado", estado: true, programable: false, dias: 0},
-        {descripcion: "por iniciar", estado: true, programable: true, dias: 2},
-        {descripcion: "iniciado", estado: true, programable: false, dias: 0},
-        {descripcion: "por terminar", estado: true, programable: true, dias: 2},
-        {descripcion: "terminado", estado: true, programable: false, dias: 0}
+        {nombre: "programado", descripcion: "Estado para indicar que una orden de servicio ha sido programada", estado: true, programable: false},
+        {
+            nombre: "por iniciar", 
+            descripcion: "Estado para indicar que una orden servicio esta por iniciar, este estado se utiliza para notificar por medio de un email", 
+            estado: true, 
+            programable: true
+        },
+        {nombre: "iniciado", descripcion: "Estado para indicar que una orden servicio ha iniciado", estado: true, programable: false},
+        {
+            nombre: "por terminar", 
+            descripcion: "Estado para indicar que una orden servicio esta por terminar, este estado se utiliza para notificar por medio de un email", 
+            estado: true, 
+            programable: true
+        },
+        {nombre: "terminado", descripcion: "Estado para indicar que una orden servicio ha terminado", estado: true, programable: false}
     ],
 
     roles: [

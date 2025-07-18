@@ -4,7 +4,7 @@ import { AppAuth, ValidateJwtAuth } from '../../../auth/decorators';
 import { DescriptionRoutes } from '../../../auth/interfaces';
 
 import { EstadoOrdenServicioService } from '../../services';
-import { CreateTipoDto, UpdateEstadoOrdenDto, PaginationDto } from '../../dto';
+import { CreateEstadoOrdenDto, UpdateEstadoOrdenDto, PaginationDto } from '../../dto';
 
 @Controller('estado-orden')
 @AppAuth(DescriptionRoutes.CONFIGURACION) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -13,7 +13,7 @@ export class EstadoOrdenController {
   constructor(private readonly estadoOrdenService: EstadoOrdenServicioService) {}
   
   @Post()
-  create(@Body() createEstadoOrdenDto: CreateTipoDto) {
+  create(@Body() createEstadoOrdenDto: CreateEstadoOrdenDto) {
       return this.estadoOrdenService.create(createEstadoOrdenDto);
   }
   
