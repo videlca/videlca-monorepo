@@ -6,19 +6,20 @@ import Table from "../../../components/common/Table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import Button from "../../../components/common/Button";
-import type { TipoOrdenServicio } from "../../../types";
+import type { EstadoOrden } from "../../../types";
 import {
   useActualizarEstadoOrden,
   useCrearEstadoOrden,
   useEstadoOrden,
 } from "../../../api/queryFunctions/configuracion";
 import { useForm } from "../../../hooks/useForm";
-import type {
-  ActualizarEstadoOrden,
-  CrearEstadoOrden,
-} from "../../../api/types";
 import { InputForm } from "../../../components/common/InputForm";
 import { SimpleModal } from "../../../components/common/SimpleModal";
+import type {
+  CreateEstadoOrdenDto,
+  UpdateEstadoOrdenDto,
+} from "../../../api/dtos";
+import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 
 export const Route = createFileRoute(
   "/dashboard/configuracion/estado-orden-servicio",
@@ -27,7 +28,8 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  const { form, handleChange, resetForm } = useForm<CrearEstadoOrden>({
+  const { form, handleChange, resetForm } = useForm<CreateEstadoOrdenDto>({
+    nombre: "",
     descripcion: "",
   });
   const {
@@ -35,8 +37,8 @@ function RouteComponent() {
     handleChange: handleChangeEditar,
     resetForm: resetFormEditar,
     setForm: setFormEditar,
-  } = useForm<ActualizarEstadoOrden>({
-    dias: 0,
+  } = useForm<UpdateEstadoOrdenDto>({
+    estado: false,
   });
   const { data: estadosOrden } = useEstadoOrden();
   const { mutate: crearEstadoOrden, isPending: isCreatingEstadoOrden } =
@@ -46,11 +48,12 @@ function RouteComponent() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingRow, setEditingRow] = useState<TipoOrdenServicio | null>(null);
+  const [editingRow, setEditingRow] = useState<EstadoOrden | null>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     crearEstadoOrden({
+      nombre: form.nombre as string,
       descripcion: form.descripcion as string,
     });
     resetForm();
@@ -61,9 +64,9 @@ function RouteComponent() {
     setIsModalOpen(true);
   };
 
-  const handleShowModalEditar = (row: TipoOrdenServicio) => {
+  const handleShowModalEditar = (row: EstadoOrden) => {
     setFormEditar({
-      dias: row.dias,
+      estado: row.estado,
     });
     setEditingRow(row);
     setIsEditModalOpen(true);
@@ -74,14 +77,14 @@ function RouteComponent() {
     editarEstadoOrden({
       id: editingRow?.idEstadoOrdenServicio as number,
       data: {
-        dias: formEditar.dias,
+        estado: formEditar.estado as boolean,
       },
     });
     resetFormEditar();
     setIsEditModalOpen(false);
   };
 
-  const columns: ColumnDef<TipoOrdenServicio>[] = [
+  const columns: ColumnDef<EstadoOrden>[] = [
     {
       accessorKey: "idEstadoOrdenServicio",
       header: "ID",
@@ -92,71 +95,77 @@ function RouteComponent() {
       ),
     },
     {
+      accessorKey: "nombre",
+      header: "Nombre",
+      cell: ({ row }) => (
+        <span className="font-medium">{row.getValue("nombre")}</span>
+      ),
+    },
+    {
       accessorKey: "descripcion",
       header: "Descripción",
-      cell: ({ row }) => <span>{row.getValue("descripcion")}</span>,
-    },
-    {
-      accessorKey: "estado",
-      header: "Estado",
       cell: ({ row }) => (
-        <span className="rounded-md bg-green-500 px-2 py-1 text-white">
-          {row.getValue("estado") ? "Activo" : "Inactivo"}
-        </span>
+        <span className="font-medium">{row.getValue("descripcion")}</span>
       ),
     },
-    {
-      accessorKey: "programable",
-      header: "Programable",
-      cell: ({ row }) => (
-        <span>{row.getValue("programable") ? "Si" : "No"}</span>
-      ),
-    },
-    {
-      accessorKey: "dias",
-      header: "Días",
-      cell: ({ row }) => <span>{row.getValue("dias")}</span>,
-    },
-    {
-      accessorKey: "actions",
-      header: "Acciones",
-      cell: ({ row }) => {
-        if (row.getValue("programable")) {
-          return (
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
-                handleShowModalEditar(row.original);
-              }}
-            />
-          );
-        }
-        return <span>No disponible</span>;
-      },
-    },
+    // {
+    //   accessorKey: "estado",
+    //   header: "Estado",
+    //   cell: ({ row }) => (
+    //     <span className="rounded-md bg-green-500 px-2 py-1 text-white">
+    //       {row.getValue("estado") ? "Activo" : "Inactivo"}
+    //     </span>
+    //   ),
+    // },
+    // {
+    //   accessorKey: "programable",
+    //   header: "Programable",
+    //   cell: ({ row }) => (
+    //     <span>{row.getValue("programable") ? "Si" : "No"}</span>
+    //   ),
+    // },
+    // {
+    //   accessorKey: "actions",
+    //   header: "Acciones",
+    //   cell: ({ row }) => {
+    //     if (row.getValue("programable")) {
+    //       return (
+    //         <ButtonAction
+    //           Icon={PencilIcon}
+    //           label="Editar"
+    //           onClick={() => {
+    //             handleShowModalEditar(row.original);
+    //           }}
+    //         />
+    //       );
+    //     }
+    //     return <span>No disponible</span>;
+    //   },
+    // },
   ];
+
+  // TODO: revisar cambios de la tabla y actualizar por cambios nuevos
   return (
     <Section>
       <div className="flex flex-col gap-8">
-        <div className="flex justify-end">
+        {/* <div className="flex justify-end">
           <ButtonAction
             Icon={PlusIcon}
             label="Agregar estado de orden de servicio"
             onClick={() => handleShowModal()}
           />
-        </div>
+        </div> */}
         <Table
           data={estadosOrden?.data || []}
           columns={columns}
-          enablePagination={true}
-          pageSize={10}
-          enableSorting={true}
+          enablePagination={false}
+          pageSize={20}
+          enableSorting={false}
         />
       </div>
 
       {/* Modal para agregar un tipo de orden de servicio */}
-      <SimpleModal
+      {/* <SimpleModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
@@ -168,6 +177,15 @@ function RouteComponent() {
         <div className="space-y-4">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <InputForm
+              label="Nombre"
+              placeholder="Nombre"
+              type="text"
+              id="nombre"
+              value={form.nombre}
+              onChange={handleChange}
+              required
+            />
+            <InputForm
               label="Descripción"
               placeholder="Descripción"
               type="text"
@@ -175,7 +193,6 @@ function RouteComponent() {
               value={form.descripcion}
               onChange={handleChange}
               required
-              disabled={false}
             />
             <div className="flex justify-end space-x-2">
               <Button
@@ -197,10 +214,10 @@ function RouteComponent() {
             </div>
           </form>
         </div>
-      </SimpleModal>
+      </SimpleModal> */}
 
-      {/* Modal para editar un tipo de orden de servicio */}
-      <SimpleModal
+      {/* Modal para editar un estado de orden de servicio */}
+      {/* <SimpleModal
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
@@ -211,15 +228,12 @@ function RouteComponent() {
       >
         <div className="space-y-4">
           <form onSubmit={handleSubmitEditar} className="flex flex-col gap-4">
-            <InputForm
-              label="Días"
-              placeholder="Días"
-              type="number"
-              id="dias"
-              value={formEditar.dias.toString()}
+            <InputSelectStateBoolean
+              label="Estado"
+              placeholder="Estado"
+              id="estado"
+              value={formEditar.estado.toString()}
               onChange={handleChangeEditar}
-              required
-              disabled={false}
             />
             <div className="flex justify-end space-x-2">
               <Button
@@ -241,7 +255,7 @@ function RouteComponent() {
             </div>
           </form>
         </div>
-      </SimpleModal>
+      </SimpleModal> */}
     </Section>
   );
 }

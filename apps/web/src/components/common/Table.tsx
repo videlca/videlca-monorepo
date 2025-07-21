@@ -206,7 +206,7 @@ const Table = <TData, TValues>({
                           : undefined
                       }
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         {flexRender(
                           header.column.columnDef.header,
                           header.getContext(),
@@ -226,7 +226,10 @@ const Table = <TData, TValues>({
           <tbody className="divide-y divide-gray-200 bg-white">
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="transition-colors hover:bg-gray-50">
+                <tr
+                  key={row.id}
+                  className="text-center transition-colors hover:bg-gray-50"
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}

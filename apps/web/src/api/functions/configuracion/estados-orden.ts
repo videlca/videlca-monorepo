@@ -1,12 +1,11 @@
-import type { TipoOrdenServicio } from "../../../types"
+import type { EstadoOrden } from "../../../types"
 import { axiosClient } from "../../config"
-import type { UpdateEstadoOrdenDto } from "../../dtos"
+import type { CreateEstadoOrdenDto, UpdateEstadoOrdenDto } from "../../dtos"
 import type { PaginationDto } from "../../dtos/common"
-import type { CrearEstadoOrden } from "../../types"
 import type { ApiResponse } from "../../types/common"
 
 
-export const getEstadosOrden = async (pagination: PaginationDto): Promise<ApiResponse<TipoOrdenServicio[]>> => {
+export const getEstadosOrden = async (pagination: PaginationDto): Promise<ApiResponse<EstadoOrden[]>> => {
   const response = await axiosClient.get('/estado-orden', { params: pagination }).then((res) => {
     return {
       status: res.status,
@@ -21,7 +20,7 @@ export const getEstadosOrden = async (pagination: PaginationDto): Promise<ApiRes
   return response
 }
 
-export const createEstadoOrden = async (data: CrearEstadoOrden): Promise<ApiResponse> => {
+export const createEstadoOrden = async (data: CreateEstadoOrdenDto): Promise<ApiResponse> => {
   const response = await axiosClient.post('/estado-orden', data).then((res) => {
     return {
       status: res.status,

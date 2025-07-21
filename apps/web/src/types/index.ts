@@ -10,12 +10,22 @@ export interface TipoNovedad {
   retirado: boolean;
 }
 
-export interface TipoOrdenServicio {
+export interface Correo {
+  idCorreo: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  locacion: Locacion;
+  estados: EstadoOrden[];
+}
+
+export interface EstadoOrden {
   idEstadoOrdenServicio: number;
+  nombre: string;
   descripcion: string;
   estado: boolean;
   programable: boolean;
-  dias: number;
+  correo: Correo[];
 }
 
 export interface TipoGenero {
@@ -76,10 +86,10 @@ export interface Cliente {
 
 
 export interface SubSegmentacion {
-  idSubSegmentacion: number;
+  idSubSegmentacion?: number;
   descripcion: string;
-  estado: boolean;
-  segmentacion: Segmentacion;
+  estado?: boolean;
+  segmentacion?: Segmentacion;
 }
 
 export interface Segmentacion {
@@ -92,16 +102,18 @@ export interface Segmentacion {
 export interface Locacion {
   idLocacion: number;
   nombre: string;
+  idCiudad: Ciudad;
   direccion: string;
   latitud: number;
   longitud: number;
   primerNombreResponsable: string;
   primerApellidoResponsable: string;
   telefono: string;
-  telefono_2: string;
-  estado: boolean;
+  segundoTelefono: string;
+  diasAnticipacionNotificacion: number;
+  correos: Correo[];
   idCliente: Cliente;
-  idCiudad: Ciudad;
+  estado: boolean;
 }
 
 // Usuarios

@@ -22,7 +22,7 @@ export function DashboardLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-100">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -30,7 +30,7 @@ export function DashboardLayout() {
         onMenuToggle={toggleMenu}
         onLogout={onLogout}
       />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col">
         <Header />
         <MainContent />
       </div>

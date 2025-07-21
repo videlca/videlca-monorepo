@@ -34,6 +34,21 @@ export const getSegmentaciones = async (pagination: PaginationDto): Promise<ApiR
   return response
 }
 
+export const getSegmentacionById = async (id: number): Promise<ApiResponse<Segmentacion>> => {
+  const response = await axiosClient.get(`/segmentaciones/${id}`).then((res) => {
+    return {
+      status: res.status,
+      data: res.data
+    }
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || 'Error de conexión',
+    }
+  })
+  return response
+}
+
 export const updateSegmentacion = async (id: number, data: UpdateSegmentacionDto): Promise<ApiResponse> => {
   const response = await axiosClient.patch(`/segmentaciones/${id}`, data).then((res) => {
     return {
@@ -48,3 +63,53 @@ export const updateSegmentacion = async (id: number, data: UpdateSegmentacionDto
   })
   return response;
 };
+
+export const deleteSegmentacion = async (id: number): Promise<ApiResponse> => {
+  const response = await axiosClient.delete(`/segmentaciones/${id}`).then((res) => {
+    return {
+      status: res.status,
+      data: res.data
+    }
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || 'Error de conexión',
+    }
+  })
+  return response
+}
+
+
+// Subsegmentaciones
+export const deleteSubSegmentacion = async (id: number): Promise<ApiResponse> => {
+  const response = await axiosClient.delete(`/subsegmentaciones/${id}`).then((res) => {
+    return {
+      status: res.status,
+      data: res.data
+    }
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || 'Error de conexión',
+    }
+  })
+  return response
+}
+
+export const updateSubSegmentacion = async (
+  id: number,
+  data: { descripcion?: string; estado?: boolean },
+): Promise<ApiResponse> => {
+  const response = await axiosClient.patch(`/subsegmentaciones/${id}`, data).then((res) => {
+    return {
+      status: res.status,
+      data: res.data
+    }
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || 'Error de conexión',
+    }
+  })
+  return response
+}

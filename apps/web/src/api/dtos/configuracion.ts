@@ -1,6 +1,11 @@
 // Estados de orden
+export interface CreateEstadoOrdenDto {
+  nombre: string
+  descripcion: string
+}
+
 export interface UpdateEstadoOrdenDto {
-  dias: number
+  estado: boolean
 }
 
 export interface UpdateTipoPersonalDto {

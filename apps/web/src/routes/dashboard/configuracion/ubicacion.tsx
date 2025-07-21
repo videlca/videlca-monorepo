@@ -18,7 +18,7 @@ function RouteComponent() {
   const tabs = [
     { id: "ciudades" as TableType, label: "Ciudades" },
     { id: "departamentos" as TableType, label: "Departamentos" },
-    { id: "paises" as TableType, label: "Paises" },
+    // { id: "paises" as TableType, label: "Paises" },
   ];
 
   return (
@@ -45,7 +45,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         {activeTab === "ciudades" && <CiudadTab />}
         {activeTab === "departamentos" && <DepartamentoTab />}
-        {activeTab === "paises" && <PaisTab />}
+        {/* {activeTab === "paises" && <PaisTab />} */}
       </div>
     </Section>
   );

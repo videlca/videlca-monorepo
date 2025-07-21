@@ -18,6 +18,7 @@ import { Route as DashboardPerfilUsuarioRouteImport } from './routes/dashboard/p
 import { Route as ActualizarIdRouteImport } from './routes/actualizar.$id'
 import { Route as DashboardUsuariosIndexRouteImport } from './routes/dashboard/usuarios/index'
 import { Route as DashboardTarifasIndexRouteImport } from './routes/dashboard/tarifas/index'
+import { Route as DashboardServiciosIndexRouteImport } from './routes/dashboard/servicios/index'
 import { Route as DashboardReportesIndexRouteImport } from './routes/dashboard/reportes/index'
 import { Route as DashboardProgramacionesIndexRouteImport } from './routes/dashboard/programaciones/index'
 import { Route as DashboardPersonalIndexRouteImport } from './routes/dashboard/personal/index'
@@ -76,6 +77,11 @@ const DashboardUsuariosIndexRoute = DashboardUsuariosIndexRouteImport.update({
 const DashboardTarifasIndexRoute = DashboardTarifasIndexRouteImport.update({
   id: '/tarifas/',
   path: '/tarifas/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardServiciosIndexRoute = DashboardServiciosIndexRouteImport.update({
+  id: '/servicios/',
+  path: '/servicios/',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardReportesIndexRoute = DashboardReportesIndexRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
   '/dashboard/reportes': typeof DashboardReportesIndexRoute
+  '/dashboard/servicios': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
 }
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
   '/dashboard/reportes': typeof DashboardReportesIndexRoute
+  '/dashboard/servicios': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
 }
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/dashboard/personal/': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
   '/dashboard/reportes/': typeof DashboardReportesIndexRoute
+  '/dashboard/servicios/': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
 }
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
     | '/dashboard/personal'
     | '/dashboard/programaciones'
     | '/dashboard/reportes'
+    | '/dashboard/servicios'
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
   fileRoutesByTo: FileRoutesByTo
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/dashboard/personal'
     | '/dashboard/programaciones'
     | '/dashboard/reportes'
+    | '/dashboard/servicios'
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
   id:
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/dashboard/personal/'
     | '/dashboard/programaciones/'
     | '/dashboard/reportes/'
+    | '/dashboard/servicios/'
     | '/dashboard/tarifas/'
     | '/dashboard/usuarios/'
   fileRoutesById: FileRoutesById
@@ -382,6 +394,13 @@ declare module '@tanstack/react-router' {
       path: '/tarifas'
       fullPath: '/dashboard/tarifas'
       preLoaderRoute: typeof DashboardTarifasIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/servicios/': {
+      id: '/dashboard/servicios/'
+      path: '/servicios'
+      fullPath: '/dashboard/servicios'
+      preLoaderRoute: typeof DashboardServiciosIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/reportes/': {
@@ -502,6 +521,7 @@ interface DashboardRouteChildren {
   DashboardPersonalIndexRoute: typeof DashboardPersonalIndexRoute
   DashboardProgramacionesIndexRoute: typeof DashboardProgramacionesIndexRoute
   DashboardReportesIndexRoute: typeof DashboardReportesIndexRoute
+  DashboardServiciosIndexRoute: typeof DashboardServiciosIndexRoute
   DashboardTarifasIndexRoute: typeof DashboardTarifasIndexRoute
   DashboardUsuariosIndexRoute: typeof DashboardUsuariosIndexRoute
 }
@@ -527,6 +547,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardPersonalIndexRoute: DashboardPersonalIndexRoute,
   DashboardProgramacionesIndexRoute: DashboardProgramacionesIndexRoute,
   DashboardReportesIndexRoute: DashboardReportesIndexRoute,
+  DashboardServiciosIndexRoute: DashboardServiciosIndexRoute,
   DashboardTarifasIndexRoute: DashboardTarifasIndexRoute,
   DashboardUsuariosIndexRoute: DashboardUsuariosIndexRoute,
 }

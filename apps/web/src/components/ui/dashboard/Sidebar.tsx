@@ -3,7 +3,9 @@ import {
   Calendar,
   ChevronRight,
   DollarSign,
+  FileSpreadsheetIcon,
   FileText,
+  HomeIcon,
   LogOut,
   Menu,
   Settings,
@@ -33,6 +35,12 @@ export function Sidebar({
   const navigate = useNavigate();
   const pathname = useLocation();
   const navigationItems = [
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: HomeIcon,
+      subItems: linksSideBar.dashboard,
+    },
     {
       id: "configuracion",
       label: "Configuración",
@@ -85,7 +93,13 @@ export function Sidebar({
       id: "ordenes-de-servicio",
       label: "Ordenes de Servicio",
       icon: FileText,
-      subItems: linksSideBar.ordenesDeServicio,
+      subItems: linksSideBar["ordenes-de-servicio"],
+    },
+    {
+      id: "servicios",
+      label: "Servicios",
+      icon: FileSpreadsheetIcon,
+      subItems: linksSideBar.servicios,
     },
   ];
 
@@ -115,7 +129,8 @@ export function Sidebar({
               key={item.id}
               className={`${
                 pathname.pathname.includes(item.id) &&
-                item.subItems.length === 1
+                item.subItems.length === 1 &&
+                item.id !== "dashboard"
                   ? "bg-blue-500"
                   : ""
               }`}

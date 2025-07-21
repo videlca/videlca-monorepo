@@ -46,7 +46,7 @@ export function LocacionesTab() {
       header: "Teléfono",
     },
     {
-      accessorKey: "telefono_2",
+      accessorKey: "segundoTelefono",
       header: "Teléfono 2",
     },
     {

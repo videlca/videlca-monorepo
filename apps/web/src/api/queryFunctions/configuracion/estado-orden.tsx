@@ -9,15 +9,14 @@ import {
   getEstadosOrden,
   updateEstadoOrden,
 } from "../../functions/configuracion";
-import type { CrearEstadoOrden } from "../../types";
 import { queryClient } from "../../../App";
-import type { UpdateEstadoOrdenDto } from "../../dtos";
+import type { CreateEstadoOrdenDto, UpdateEstadoOrdenDto } from "../../dtos";
 import type { ApiResponse } from "../../types/common";
-import type { TipoOrdenServicio } from "../../../types";
+import type { EstadoOrden } from "../../../types";
 import { toast } from "sonner";
 
 export const useEstadoOrden = (): UseQueryResult<
-  ApiResponse<TipoOrdenServicio[]>,
+  ApiResponse<EstadoOrden[]>,
   Error
 > => {
   return useQuery({
@@ -29,10 +28,10 @@ export const useEstadoOrden = (): UseQueryResult<
 export const useCrearEstadoOrden = (): UseMutationResult<
   ApiResponse,
   Error,
-  CrearEstadoOrden
+  CreateEstadoOrdenDto
 > => {
   return useMutation({
-    mutationFn: (data: CrearEstadoOrden) => createEstadoOrden(data),
+    mutationFn: (data: CreateEstadoOrdenDto) => createEstadoOrden(data),
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         queryClient.invalidateQueries({ queryKey: ["estados-orden"] });
