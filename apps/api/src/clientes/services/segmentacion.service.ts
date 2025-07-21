@@ -58,6 +58,9 @@ export class SegmentacionService {
       where: {},
       order: {
         descripcion: 'ASC'
+      },
+      relations: {
+        subSegmentaciones: true
       }
     };
 
