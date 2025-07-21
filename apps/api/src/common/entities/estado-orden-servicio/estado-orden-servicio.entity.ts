@@ -9,12 +9,21 @@ export class EstadoOrdenServicio {
         name: 'idEstadoOrdenServicio',
     })
     idEstadoOrdenServicio: number;
-    
+
     @Column({
         type: 'varchar',
         length: 100,
+        name: 'nombre',
+        unique: true,
+        nullable: false
+    })
+    nombre: string;
+    
+    @Column({
+        type: 'varchar',
+        length: 255,
         name: 'descripcion',
-        unique: true
+        nullable: false
     })
     descripcion: string;
 
@@ -31,13 +40,6 @@ export class EstadoOrdenServicio {
         default: false
     })
     programable: boolean;
-    
-    @Column({
-        type: 'int',
-        name: 'dias',
-        default: 0,
-    })
-    dias: number;
 
     @ManyToMany(
         () => Correo, 

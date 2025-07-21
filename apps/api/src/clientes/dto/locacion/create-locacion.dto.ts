@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, Length, ValidateNested, ArrayMinSize, IsNumber, IsPositive, Min } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, Length, ValidateNested, ArrayMinSize, IsNumber, IsPositive, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 
@@ -71,7 +71,13 @@ export class CreateLocacionDto {
   @IsString()
   @IsOptional()
   @Length(1, 50)
-  segundo_telefono?: string;
+  segundoTelefono?: string;
+
+  @IsNumber({}, {message: 'El valor del campo dias de anticipacion debe ser un número'})
+  @IsPositive({message: 'El valor del campo dias de anticipacion debe ser un numero positivo'})
+  @Min(1, {message: 'El valor del campo dias de anticipacion debe ser minimo 1'})
+  @Max(10, {message: 'El valor del campo dias de anticipacion debe ser maximo 10'})
+  diasAnticipaticionNotificacion: number;
 
   @IsNumber({}, {message: 'El valor del campo Cliente debe ser un número'})
   @IsPositive({message: 'El valor del campo Cliente debe ser un numero positivo'})

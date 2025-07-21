@@ -1,14 +1,14 @@
-import { IsInt, Min, Max } from 'class-validator'
-import { Transform } from 'class-transformer';
+import { PartialType } from '@nestjs/mapped-types';
+import { IsBoolean, IsOptional } from "class-validator";
+
+import { CreateEstadoOrdenDto } from './create-estado-orden-servicio.dto';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdateEstadoOrdenDto {
+export class UpdateEstadoOrdenDto extends PartialType(CreateEstadoOrdenDto) {
     
-    @ApiProperty({ description: 'Número de días', example: 3, required:true})
-    @Transform(({ value }) => parseInt(value))
-    @IsInt({ message: 'Los días deben ser un número entero' })
-    @Min(0, { message: 'Los días no pueden ser negativos' })
-    @Max(10, { message: 'Los días no pueden exceder 10' })
-    dias: number;
+    @ApiProperty({ description: 'Identificador de estado activo', example: true, required:false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo estado debe ser boolean'})
+    estado?: boolean;
 
 }

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { EstadoOrdenServicio } from '../../entities';
-import { CreateTipoDto, UpdateEstadoOrdenDto, PaginationDto } from '../../dto';
+import { CreateEstadoOrdenDto, UpdateEstadoOrdenDto, PaginationDto } from '../../dto';
 
 @Injectable()
 export class EstadoOrdenServicioService {
@@ -22,11 +22,12 @@ export class EstadoOrdenServicioService {
   }
   
   // CREAR ESTADO ORDEN SERVICIO
-  async create(createEstadoOrdenDto: CreateTipoDto){
+  async create(createEstadoOrdenDto: CreateEstadoOrdenDto){
   
     try {
         
       const estadoOrden = this.estadoOrdenRepository.create({
+        nombre: createEstadoOrdenDto.nombre,
         descripcion: createEstadoOrdenDto.descripcion,
       });
       
@@ -193,19 +194,19 @@ export class EstadoOrdenServicioService {
 
   // CREAR ESTADO ORDEN SERVICIO
   async createEstadoOrdenSeed(createEstadoOrdenDto: {
+    nombre: string,
     descripcion: string,
     estado: boolean,
     programable: boolean,
-    dias: number
   }){
   
     try {
         
       const estadoOrden = this.estadoOrdenRepository.create({
+        nombre: createEstadoOrdenDto.nombre,
         descripcion: createEstadoOrdenDto.descripcion,
         estado: createEstadoOrdenDto.estado,
         programable: createEstadoOrdenDto.programable,
-        dias: createEstadoOrdenDto.dias
       });
       
       await this.estadoOrdenRepository.save(estadoOrden);
