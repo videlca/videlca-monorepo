@@ -79,6 +79,8 @@ export const initialData: SeedData = {
         {descripcion: 'permisos', nombre: 'Permisos'},
         {descripcion: 'usuarios', nombre: 'Usuarios'},
         {descripcion: 'clientes', nombre: 'Clientes'},
+        {descripcion: 'tarifas', nombre: 'Tarifas'},
+        {descripcion: 'servicios', nombre: 'Servciios'},
     ],
 
     paises: [

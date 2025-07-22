@@ -9,7 +9,7 @@ import { PeriodosService } from './periodos.service';
 import { CreatePeriodoDto, UpdatePeriodoDto } from './dto';
 
 @Controller('periodos')
-@AppAuth(DescriptionRoutes.CLIENTE) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+@AppAuth(DescriptionRoutes.TARIFAS) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class PeriodosController {
   constructor(private readonly periodosService: PeriodosService) {}
 
