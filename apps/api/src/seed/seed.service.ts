@@ -7,7 +7,7 @@ import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PersonalService, TipoGeneroService, TipoPersonalService } from '../personal/services';
 import { TipoNovedadService } from '../novedad/services';
-import { TipoDuracionService, TipoHorarioDescripcionService } from '../servicios/services';
+import { TipoDuracionService, TipoHorarioDescripcionService, TipoServicioService } from '../servicios/services';
 
 import { initialData } from './data/data_prueba';
 
@@ -32,6 +32,7 @@ export class SeedService {
         private readonly tipoPersonalService: TipoPersonalService,
         private readonly tipoDuracionService: TipoDuracionService,
         private readonly tipoHorarioDescripcionService: TipoHorarioDescripcionService,
+        private readonly tipoServicioService: TipoServicioService,
     ){
         this.environment = this.configService.get<string>('environment');
     }
@@ -100,6 +101,7 @@ export class SeedService {
         // ELIMINAR SERVICIO
 
         // ELIMINAR TIPO SERVICIO
+        await this.tipoServicioService.deleteAllTiposServicio();
 
         // ELIMINAR TIPO HORARIO
 
