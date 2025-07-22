@@ -23,11 +23,33 @@ export class TipoHorario {
     
     @Column({
         type: 'varchar',
-        length: 100,
-        name: 'descripcion',
-        unique: true
+        length: 8,
+        name: 'horaInicio',
+        nullable: false
     })
-    descripcion: string;
+    horaInicio: string; // Formato 'HH:mm:ss'
+    
+    @Column({
+        type: 'varchar',
+        length: 8,
+        name: 'horaFin',
+        nullable: false
+    })
+    horaFin: string; // Formato 'HH:mm:ss'
+
+    @Column({
+        type: 'date',
+        name: 'fechaVigenciaInicio',
+        nullable: false
+    })
+    fechaVigenciaInicio: Date;
+
+    @Column({
+        type: 'date',
+        name: 'fechaVigenciaFin',
+        nullable: true
+    })
+    fechaVigenciaFin: Date | null;
 
     @Column({
         type: 'boolean',
