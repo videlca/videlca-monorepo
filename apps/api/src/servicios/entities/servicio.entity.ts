@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 import { Max, Min } from "class-validator";
 import { TipoServicio, TipoDuracion, TipoHorarioDescripcion } from ".";
+import { Tarifa } from '../../tarifas/entities';
 
 @Entity({name: 'servicio'})
 export class Servicio {
@@ -94,5 +95,11 @@ export class Servicio {
         default: true
     })
     estado: boolean;
+
+    @OneToMany(
+        () => Tarifa, 
+        (tarifa) => tarifa.idServicio, 
+    )
+    tarifas: Tarifa[];
 
 }

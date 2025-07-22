@@ -5,8 +5,9 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
+
 import { IsNotEmpty, Min, Max, Length } from 'class-validator';
-// import { ServicioPeriodo } from './servicio-periodo.entity';
+import { Tarifa } from '../../tarifas/entities';
 
 @Entity('periodo')
 @Index(['mesInicio', 'anioInicio', 'mesFin', 'anioFin'], { unique: true })
@@ -86,14 +87,10 @@ export class Periodo {
     })
     periodoActivoFacturacion: boolean;
 
-    // @OneToMany(
-    //     () => ServicioPeriodo, 
-    //     (servicioPeriodo) => servicioPeriodo.periodo, 
-    //     {
-    //         cascade: true,
-    //         onDelete: 'CASCADE',
-    //     }
-    // )
-    // serviciosPeriodo: ServicioPeriodo[];
+    @OneToMany(
+        () => Tarifa, 
+        (tarifa) => tarifa.idPeriodo, 
+    )
+    tarifas: Tarifa[];
 
 }
