@@ -86,11 +86,34 @@ export class SeedService {
         // ELIMINAR TABLA PAIS -> DEPARTAMENTO -> CIUDAD: despues de borrar personal y locacion
         await this.ubicacionService.deleteAllPais();
 
+
+        // ELIMINAR TABLA SERVICIOS PERIODO
+
+        // ELIMINAR PERIODO
+
+        // ELIMINAR TIPO TARIFA
+
+        // ELIMINAR TIPO UNIDAD TIEMPO
+
+        // ELIMINAR SERVICIO
+
+        // ELIMINAR TIPO SERVICIO
+
+        // ELIMINAR TIPO HORARIO
+
+        // ELIMINAR TIPO HORARIO DESCRIPCION
+
+        // ELIMINAR TIPO DURACION
+
     }
 
     private async insertNewData() {
 
         const tiposId = initialData.tiposId;
+
+        const tiposGenero = initialData.tiposGenero;
+
+        const paises = initialData.paises;
         
         const tiposNovedad = initialData.tiposNovedad;
 
@@ -107,6 +130,20 @@ export class SeedService {
         tiposId.forEach(tipoId => {
             insertPromises.push(this.tipoIdService.create({
                 descripcion: tipoId.descripcion
+            }))
+        })
+
+        // Insertar tipos genero
+        tiposGenero.forEach(tipoGenero => {
+            insertPromises.push(this.tipoGeneroService.create({
+                descripcion: tipoGenero.descripcion
+            }))
+        })
+
+        // crear pais
+        paises.forEach(pais => {
+            insertPromises.push(this.ubicacionService.createPais({
+                descripcion: pais.descripcion
             }))
         })
 

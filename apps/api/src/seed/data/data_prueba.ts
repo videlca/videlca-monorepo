@@ -42,6 +42,8 @@ interface SeedData {
     roles: Role[],
     permissions: Permission[],
     tiposId: Tipo[],
+    tiposGenero: Tipo[],
+    paises: Tipo[],
     tiposNovedad: TipoNovedad[],
     estadosOrdenServicio: EstadoOrdenServicio[]
 }
@@ -79,13 +81,25 @@ export const initialData: SeedData = {
         {descripcion: 'clientes', nombre: 'Clientes'},
     ],
 
+    paises: [
+        {descripcion: "Colombia"}
+    ],
+
     tiposId: [
         {descripcion: 'Cedula Ciudadania'},
         {descripcion: 'NIT'},
     ],
 
+    tiposGenero: [
+        {descripcion: 'Masculino'},
+        {descripcion: 'Femenino'},
+    ],
+
     tiposNovedad: [
-        {descripcion: 'retirado', retirado: true}
+        {descripcion: 'retirado', retirado: true},
+        {descripcion: 'vacaciones', retirado: false},
+        {descripcion: 'permiso', retirado: false},
+        {descripcion: 'incapacidad', retirado: false},
     ],
     
     users: [

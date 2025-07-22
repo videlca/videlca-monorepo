@@ -20,7 +20,6 @@ import { User } from './entities/user.entity';
 
 import { CreateUserDto, UpdateUserDto, UpdateUserStateRolDto } from './dto';
 import { Role } from '../permissions/entities/role.entity';
-import { truncate } from 'fs';
 
 @Injectable()
 export class UsersService {
