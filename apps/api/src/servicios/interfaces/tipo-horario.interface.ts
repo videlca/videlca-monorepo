@@ -1,4 +1,4 @@
-export enum TipoHorario { 
+export enum TipoHorarioInterface { 
     
     // DIURNO
     DIURNO = "diurno",

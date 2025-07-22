@@ -17,14 +17,16 @@ import {
   ServiciosService,
   TipoDuracionService,
   TipoHorarioDescripcionService,
-  TipoServicioService 
+  TipoServicioService,
+  TipoHorarioService 
 } from './services';
 
 import { 
   ServiciosController,
   TipoDuracionController,
   TipoHorarioDescripcionController,
-  TipoServicioController 
+  TipoServicioController,
+  TipoHorarioController 
 } from './controllers';
 
 @Module({
@@ -46,20 +48,23 @@ import {
     ServiciosController,
     TipoDuracionController,
     TipoHorarioDescripcionController,
-    TipoServicioController
+    TipoServicioController,
+    TipoHorarioController
   ],
   providers: [
     ServiciosService,
     TipoDuracionService,
     TipoHorarioDescripcionService,
-    TipoServicioService
+    TipoServicioService,
+    TipoHorarioService
   ],
   exports: [
     TypeOrmModule,
     ServiciosService,
     TipoDuracionService,
     TipoHorarioDescripcionService,
-    TipoServicioService
+    TipoServicioService,
+    TipoHorarioService
   ]
 })
 export class ServiciosModule {}
