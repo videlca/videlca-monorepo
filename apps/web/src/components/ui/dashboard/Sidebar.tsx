@@ -42,6 +42,18 @@ export function Sidebar({
       subItems: linksSideBar.dashboard,
     },
     {
+      id: "usuarios",
+      label: "Usuarios",
+      icon: UserCog2,
+      subItems: linksSideBar.usuarios,
+    },
+    {
+      id: "permisos",
+      label: "Permisos",
+      icon: Shield,
+      subItems: linksSideBar.permisos,
+    },
+    {
       id: "configuracion",
       label: "Configuración",
       icon: Settings,
@@ -54,22 +66,10 @@ export function Sidebar({
       subItems: linksSideBar.clientes,
     },
     {
-      id: "permisos",
-      label: "Permisos",
-      icon: Shield,
-      subItems: linksSideBar.permisos,
-    },
-    {
       id: "personal",
       label: "Personal",
       icon: User2,
       subItems: linksSideBar.personal,
-    },
-    {
-      id: "usuarios",
-      label: "Usuarios",
-      icon: UserCog2,
-      subItems: linksSideBar.usuarios,
     },
     {
       id: "programaciones",
@@ -78,16 +78,16 @@ export function Sidebar({
       subItems: linksSideBar.programaciones,
     },
     {
+      id: "servicios",
+      label: "Servicios",
+      icon: FileSpreadsheetIcon,
+      subItems: linksSideBar.servicios,
+    },
+    {
       id: "tarifas",
       label: "Tarifas",
       icon: DollarSign,
       subItems: linksSideBar.tarifas,
-    },
-    {
-      id: "reportes",
-      label: "Reportes",
-      icon: BarChart3,
-      subItems: linksSideBar.reportes,
     },
     {
       id: "ordenes-de-servicio",
@@ -96,10 +96,10 @@ export function Sidebar({
       subItems: linksSideBar["ordenes-de-servicio"],
     },
     {
-      id: "servicios",
-      label: "Servicios",
-      icon: FileSpreadsheetIcon,
-      subItems: linksSideBar.servicios,
+      id: "reportes",
+      label: "Reportes",
+      icon: BarChart3,
+      subItems: linksSideBar.reportes,
     },
   ];
 

@@ -118,7 +118,7 @@ export interface Locacion {
 
 // Usuarios
 export interface Usuario {
-  idUsuario: number;
+  idUser: number;
   primerNombre: string;
   segundoNombre: string;
   primerApellido: string;
@@ -133,7 +133,7 @@ export interface Usuario {
 
 // Roles
 export interface Rol {
-  idRol: number;
+  id: number;
   nombreRol: string;
   descripcion: string;
   estado: boolean;

@@ -18,9 +18,32 @@ export const useForm = <T,>(initialState: T) => {
     }));
   };
 
+  const handleNumericChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [id]: Number(value) || 0,
+    }));
+  };
+
+  const handleBooleanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [id]: value === "true",
+    }));
+  };
+
   const resetForm = () => {
     setForm(initialState);
   };
 
-  return { form, handleChange, setForm, resetForm };
+  return {
+    form,
+    handleChange,
+    handleNumericChange,
+    handleBooleanChange,
+    setForm,
+    resetForm,
+  };
 };

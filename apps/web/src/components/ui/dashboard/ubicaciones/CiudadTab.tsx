@@ -153,6 +153,7 @@ export const CiudadTab = () => {
           enablePagination={true}
           pageSize={10}
           enableSorting={true}
+          enableFiltering={true}
         />
       </div>
 

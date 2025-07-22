@@ -152,15 +152,6 @@ function RouteComponent() {
     <div className="h-full space-y-6 overflow-y-auto p-6">
       {/* Page Header */}
       <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-        <div>
-          <div className="mb-1 flex items-center space-x-2">
-            <BarChartIcon size={20} className="text-gray-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Reportes</h1>
-          </div>
-          <p className="text-gray-600">
-            Análisis y métricas de órdenes de servicio
-          </p>
-        </div>
         <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-3">
           <select
             value={selectedPeriod}
@@ -172,18 +163,11 @@ function RouteComponent() {
             <option value="6-meses">Últimos 6 meses</option>
             <option value="1-año">Último año</option>
           </select>
-          <button
-            onClick={exportReport}
-            className="flex items-center justify-center space-x-2 rounded-lg border border-gray-300 px-4 py-2 transition-colors hover:bg-gray-50"
-          >
-            <Download size={16} />
-            <span>Exportar</span>
-          </button>
         </div>
       </div>
 
       {/* Métricas Principales */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -222,7 +206,7 @@ function RouteComponent() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        {/* <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">
@@ -260,11 +244,11 @@ function RouteComponent() {
               <BarChartIcon size={24} className="text-orange-600" />
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Gráficos Principales */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="lg:grid-col-3 grid grid-cols-1 gap-6">
         {/* Gráfico de Órdenes por Mes */}
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
@@ -340,43 +324,6 @@ function RouteComponent() {
         </div>
       </div>
 
-      {/* Gráfico de Ingresos */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold text-gray-900">
-          Ingresos vs Proyección
-        </h3>
-        <div className="h-[300px] min-h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={ingresosMensuales}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mes" />
-              <YAxis
-                tickFormatter={(value) => `$${(value / 1000000).toFixed(1)}M`}
-              />
-              <Tooltip
-                formatter={(value) => [formatCurrency(value as number), ""]}
-              />
-              <Area
-                type="monotone"
-                dataKey="proyectado"
-                stackId="1"
-                stroke="#94A3B8"
-                fill="#E2E8F0"
-                name="Proyectado"
-              />
-              <Area
-                type="monotone"
-                dataKey="ingresos"
-                stackId="2"
-                stroke="#3B82F6"
-                fill="#3B82F6"
-                name="Real"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
       {/* Tablas de Análisis */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Servicios Más Utilizados */}
@@ -445,35 +392,7 @@ function RouteComponent() {
       </div>
 
       {/* Métricas Adicionales */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
-              <Clock size={20} className="text-yellow-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Tiempo Promedio</h3>
-              <p className="text-sm text-gray-600">Completación de órdenes</p>
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900">12.5 días</p>
-          <p className="mt-1 text-sm text-green-600">-2 días vs mes anterior</p>
-        </div>
-
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
-              <AlertCircle size={20} className="text-red-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Órdenes Vencidas</h3>
-              <p className="text-sm text-gray-600">Requieren atención</p>
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900">8</p>
-          <p className="mt-1 text-sm text-red-600">+3 vs semana anterior</p>
-        </div>
-
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center space-x-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">

@@ -6,6 +6,7 @@ interface InputSelectProps {
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: { id: number; descripcion: string }[];
   required?: boolean;
+  disabled?: boolean;
 }
 
 export const InputSelect = ({
@@ -16,6 +17,7 @@ export const InputSelect = ({
   onChange,
   options,
   required = false,
+  disabled = false,
 }: InputSelectProps) => {
   return (
     <div className="flex flex-col gap-2">
@@ -28,6 +30,7 @@ export const InputSelect = ({
         onChange={onChange}
         className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
         required={required}
+        disabled={disabled}
       >
         <option value="" disabled>
           {placeholder}

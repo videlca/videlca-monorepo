@@ -1080,7 +1080,11 @@ function RouteComponent() {
             }}
           />
         </div>
-        <Table columns={columns} data={ordenesDeServicio} />
+        <Table
+          columns={columns}
+          data={ordenesDeServicio}
+          enableFiltering={true}
+        />
       </div>
 
       <SimpleModal
