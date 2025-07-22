@@ -18,7 +18,7 @@ export class TipoDuracionController {
       return this.tipoDuracionService.create(createTipoDuracionDto);
   }
   
-  // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS DURACIONs
+  // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS DURACION
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.tipoDuracionService.findAll(paginationDto, paginationDto.pagination);

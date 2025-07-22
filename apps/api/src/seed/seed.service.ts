@@ -7,7 +7,7 @@ import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PersonalService, TipoGeneroService, TipoPersonalService } from '../personal/services';
 import { TipoNovedadService } from '../novedad/services';
-import { TipoDuracionService } from '../servicios/services';
+import { TipoDuracionService, TipoHorarioDescripcionService } from '../servicios/services';
 
 import { initialData } from './data/data_prueba';
 
@@ -31,6 +31,7 @@ export class SeedService {
         private readonly tipoGeneroService: TipoGeneroService,
         private readonly tipoPersonalService: TipoPersonalService,
         private readonly tipoDuracionService: TipoDuracionService,
+        private readonly tipoHorarioDescripcionService: TipoHorarioDescripcionService,
     ){
         this.environment = this.configService.get<string>('environment');
     }
@@ -103,6 +104,7 @@ export class SeedService {
         // ELIMINAR TIPO HORARIO
 
         // ELIMINAR TIPO HORARIO DESCRIPCION
+        await this.tipoHorarioDescripcionService.deleteAllTiposHorariosDescripcion();
 
         // ELIMINAR TIPO DURACION
         await this.tipoDuracionService.deleteAllTiposDuracion();
@@ -116,6 +118,8 @@ export class SeedService {
         const tiposGenero = initialData.tiposGenero;
 
         const tiposDuracion = initialData.tiposDuracion;
+
+        const tiposHorario = initialData.tiposHorario;
 
         const paises = initialData.paises;
         
@@ -158,6 +162,13 @@ export class SeedService {
             }))
         })
 
+        // Insertar Tipo Horario Descripcion
+        tiposHorario.forEach(tipoHorario => {
+            insertPromises.push(this.tipoHorarioDescripcionService.create({
+                descripcion: tipoHorario.descripcion
+            }))
+        })
+
         // insertar tipos novedad
         tiposNovedad.forEach(tipoNovedad => {
             insertPromises.push(this.tipoNovedadService.createTipoNovedadSeed(tipoNovedad))
@@ -177,8 +188,6 @@ export class SeedService {
         permisos.forEach(permiso => {
             insertPromises.push(this.permissionsService.createPermission(permiso))
         })
-
-        // Insertar Tipo Horario Descripcion
 
         await Promise.all(insertPromises);
 

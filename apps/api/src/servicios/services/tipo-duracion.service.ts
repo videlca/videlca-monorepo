@@ -53,7 +53,7 @@ export class TipoDuracionService {
 
   }
   
-  // OBTENER UN TIPO DURACIONS por nombre
+  // OBTENER UN TIPO DURACION por nombre
   async findOneByName(name: string){
   
     const tipoDuracion = await this.tipoDuracionRepository.findOneBy({descripcion: name});
