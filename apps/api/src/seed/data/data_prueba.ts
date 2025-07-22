@@ -51,6 +51,7 @@ interface SeedData {
 export const initialData: SeedData = {
     
     estadosOrdenServicio: [
+        {nombre: "cancelada", descripcion: "Estado para indicar que una orden de sevricio ha sido cancelada", estado: true, programable: false},
         {nombre: "programado", descripcion: "Estado para indicar que una orden de servicio ha sido programada", estado: true, programable: false},
         {
             nombre: "por iniciar", 
