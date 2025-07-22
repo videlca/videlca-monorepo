@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../common/dto';
@@ -19,6 +19,7 @@ export class PeriodosService {
   constructor(
     @InjectRepository(Periodo)
     private readonly periodoRepository: Repository<Periodo>,
+    private readonly dataSource: DataSource, 
     private readonly configService: ConfigService,
   ) {
       this.defaultLimit = this.configService.get<number>('defaultLimit');
@@ -47,15 +48,60 @@ export class PeriodosService {
     // NOMBRE PERIODO
     const nombrePeriodo = `${nombreMesInicio} ${diaInicio} de ${añoInicio} a ${nombreMesFin} ${diaFin} de ${añoFin}`;
     
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
+
+      // Crear periodo
+      const periodo = queryRunner.manager.create(Periodo, {
+          nombre: nombrePeriodo,
+          mesInicio: mesInicio + 1,
+          anioInicio: añoInicio,
+          mesFin: mesFin + 1,
+          anioFin: añoFin,
+          fechaInicio: createPeriodoDto.fechaInicio,
+          fechaFin: createPeriodoDto.fechaFin,
+      });
+
+      const savedPeriodo = await queryRunner.manager.save(Periodo, periodo);
      
       // Validacion si el periodo a crear sera el que estara activo para facturacion
       if (createPeriodoDto.periodoActivoFacturacion == true){
+
+        await queryRunner.manager.update(
+          Periodo,
+          {periodoActivoFacturacion: true},
+          {periodoActivoFacturacion: false}
+        );
+
+        await queryRunner.manager.update(
+          Periodo,
+          {idPeriodo: savedPeriodo.idPeriodo},
+          {periodoActivoFacturacion: true}
+        );
   
       }
 
+      await queryRunner.commitTransaction();
+
+      return await this.periodoRepository.findOne({
+        where: {
+          idPeriodo: savedPeriodo.idPeriodo
+        }
+      })
+
     } catch (error) {
       
+      await queryRunner.rollbackTransaction();
+
+      throw error;
+
+    } finally {
+
+      await queryRunner.release();
+
     }
 
   }
@@ -88,19 +134,164 @@ export class PeriodosService {
 
   }
 
-  findAll() {
-    return `This action returns all periodos`;
+  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+    
+    if (pagination) {
+
+      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
+      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+      
+      // Se hace la consulta de manera paginada
+      const periodos = await this.periodoRepository.find({
+        take: limit,
+        skip: offset,
+        order: {
+            fechaInicio: 'DESC'
+        },
+      });
+
+      return periodos;
+
+    }    
+  
+    return await this.periodoRepository.find({
+      order: {
+          fechaInicio: 'DESC'
+      },
+    });
+
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} periodo`;
+  async findOne(id: number) {
+    
+    const periodo = await this.periodoRepository.findOne({
+      where: { 
+          idPeriodo: id, 
+      },
+    });
+  
+    if (!periodo) {
+        throw new NotFoundException(`Periodo con id "${id}" no encontrada`);
+    }
+    
+    return periodo;
+  
   }
 
-  update(id: number, updatePeriodoDto: UpdatePeriodoDto) {
-    return `This action updates a #${id} periodo`;
+  async update(id: number, updatePeriodoDto: UpdatePeriodoDto) {
+
+    const periodoExistente = await this.findOne(id);
+    
+    await this.validarPeriodo(updatePeriodoDto.fechaInicio, updatePeriodoDto.fechaFin);
+        
+    // Extraer componentes de la fecha de inicio
+    const diaInicio = updatePeriodoDto.fechaInicio.getDate();
+    
+    const mesInicio = updatePeriodoDto.fechaInicio.getMonth(); // getMonth() retorna 0-11
+    const nombreMesInicio = Meses[mesInicio].nombre;
+
+    const añoInicio = updatePeriodoDto.fechaInicio.getFullYear();
+        
+    // Extraer componentes de la fecha de fin
+    const diaFin = updatePeriodoDto.fechaFin.getDate();
+
+    const mesFin = updatePeriodoDto.fechaFin.getMonth(); // getMonth() retorna 0-11
+    const nombreMesFin = Meses[mesFin].nombre;
+
+    const añoFin = updatePeriodoDto.fechaFin.getFullYear();
+    
+    // NOMBRE PERIODO
+    const nombrePeriodo = `${nombreMesInicio} ${diaInicio} de ${añoInicio} a ${nombreMesFin} ${diaFin} de ${añoFin}`;
+    
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+
+      // Crear periodo
+      const periodo = await queryRunner.manager.update(Periodo, 
+        {idPeriodo: id},
+        {
+          nombre: nombrePeriodo,
+          mesInicio: mesInicio + 1,
+          anioInicio: añoInicio,
+          mesFin: mesFin + 1,
+          anioFin: añoFin,
+          fechaInicio: updatePeriodoDto.fechaInicio,
+          fechaFin: updatePeriodoDto.fechaFin,
+      });
+     
+      // Validacion si el periodo a crear sera el que estara activo para facturacion
+      if (updatePeriodoDto.periodoActivoFacturacion == true){
+
+        await queryRunner.manager.update(
+          Periodo,
+          {periodoActivoFacturacion: true},
+          {periodoActivoFacturacion: false}
+        );
+
+        await queryRunner.manager.update(
+          Periodo,
+          {idPeriodo: id},
+          {periodoActivoFacturacion: true}
+        );
+  
+      }
+
+      await queryRunner.commitTransaction();
+
+      return await this.periodoRepository.findOne({
+        where: {
+          idPeriodo: id
+        }
+      })
+
+    } catch (error) {
+      
+      await queryRunner.rollbackTransaction();
+
+      throw error;
+
+    } finally {
+
+      await queryRunner.release();
+
+    }
+
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} periodo`;
+  async obtenerPeriodoActivo() {
+
+    return await this.periodoRepository.findOne({
+      where: { 
+        periodoActivoFacturacion: true,
+        estado: true 
+      }
+    });
+
   }
+
+  async remove(id: number) {
+
+    const periodo = await this.findOne(id);
+        
+    try {
+
+      await this.periodoRepository.remove(periodo);
+      
+    } catch (error) {
+      
+      this.logger.error(error);
+
+      if(error.errno == 1451){
+        throw new BadRequestException(`El Periodo ${periodo.nombre} no se puede eliminar debido a que se esta usando en el sistema`); 
+      }
+        
+      throw new InternalServerErrorException(`Unexpected error, check server logs`);
+
+    }
+
+  }
+
 }

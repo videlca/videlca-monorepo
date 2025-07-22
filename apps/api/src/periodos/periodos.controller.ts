@@ -1,9 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+
+import { AppAuth, ValidateJwtAuth } from '../auth/decorators';
+import { DescriptionRoutes } from '../auth/interfaces';
+
+import { PaginationDto } from '../common/dto';
+
 import { PeriodosService } from './periodos.service';
-import { CreatePeriodoDto } from './dto/create-periodo.dto';
-import { UpdatePeriodoDto } from './dto/update-periodo.dto';
+import { CreatePeriodoDto, UpdatePeriodoDto } from './dto';
 
 @Controller('periodos')
+@AppAuth(DescriptionRoutes.CLIENTE) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class PeriodosController {
   constructor(private readonly periodosService: PeriodosService) {}
 
@@ -13,22 +19,28 @@ export class PeriodosController {
   }
 
   @Get()
-  findAll() {
-    return this.periodosService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.periodosService.findAll(paginationDto, paginationDto.pagination);
+  }
+  
+  @Get('activo')
+  @ValidateJwtAuth()
+  findPeriodoActivo() {
+    return this.periodosService.obtenerPeriodoActivo();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.periodosService.findOne(+id);
+  findOne(@Param('id') id: number) {
+    return this.periodosService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePeriodoDto: UpdatePeriodoDto) {
-    return this.periodosService.update(+id, updatePeriodoDto);
+  update(@Param('id') id: number, @Body() updatePeriodoDto: UpdatePeriodoDto) {
+    return this.periodosService.update(id, updatePeriodoDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.periodosService.remove(+id);
+  remove(@Param('id') id: number) {
+    return this.periodosService.remove(id);
   }
 }
