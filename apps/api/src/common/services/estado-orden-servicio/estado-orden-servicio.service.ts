@@ -27,6 +27,7 @@ export class EstadoOrdenServicioService {
     try {
         
       const estadoOrden = this.estadoOrdenRepository.create({
+        nombre: createEstadoOrdenDto.nombre,
         descripcion: createEstadoOrdenDto.descripcion,
       });
       
