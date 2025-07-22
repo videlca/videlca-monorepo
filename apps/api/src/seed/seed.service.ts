@@ -7,6 +7,7 @@ import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PersonalService, TipoGeneroService, TipoPersonalService } from '../personal/services';
 import { TipoNovedadService } from '../novedad/services';
+import { TipoDuracionService } from '../servicios/services';
 
 import { initialData } from './data/data_prueba';
 
@@ -29,6 +30,7 @@ export class SeedService {
         private readonly tipoNovedadService: TipoNovedadService,
         private readonly tipoGeneroService: TipoGeneroService,
         private readonly tipoPersonalService: TipoPersonalService,
+        private readonly tipoDuracionService: TipoDuracionService,
     ){
         this.environment = this.configService.get<string>('environment');
     }
@@ -86,7 +88,6 @@ export class SeedService {
         // ELIMINAR TABLA PAIS -> DEPARTAMENTO -> CIUDAD: despues de borrar personal y locacion
         await this.ubicacionService.deleteAllPais();
 
-
         // ELIMINAR TABLA SERVICIOS PERIODO
 
         // ELIMINAR PERIODO
@@ -104,6 +105,7 @@ export class SeedService {
         // ELIMINAR TIPO HORARIO DESCRIPCION
 
         // ELIMINAR TIPO DURACION
+        await this.tipoDuracionService.deleteAllTiposDuracion();
 
     }
 
@@ -112,6 +114,8 @@ export class SeedService {
         const tiposId = initialData.tiposId;
 
         const tiposGenero = initialData.tiposGenero;
+
+        const tiposDuracion = initialData.tiposDuracion;
 
         const paises = initialData.paises;
         
@@ -140,10 +144,17 @@ export class SeedService {
             }))
         })
 
-        // crear pais
+        // Insertar pais
         paises.forEach(pais => {
             insertPromises.push(this.ubicacionService.createPais({
                 descripcion: pais.descripcion
+            }))
+        })
+
+        // Insertar Tipo duracion
+        tiposDuracion.forEach(tipoDuracion => {
+            insertPromises.push(this.tipoDuracionService.create({
+                descripcion: tipoDuracion.descripcion
             }))
         })
 
@@ -166,6 +177,8 @@ export class SeedService {
         permisos.forEach(permiso => {
             insertPromises.push(this.permissionsService.createPermission(permiso))
         })
+
+        // Insertar Tipo Horario Descripcion
 
         await Promise.all(insertPromises);
 

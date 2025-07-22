@@ -43,6 +43,8 @@ interface SeedData {
     permissions: Permission[],
     tiposId: Tipo[],
     tiposGenero: Tipo[],
+    tiposDuracion: Tipo[],
+    tiposHorario: Tipo[],
     paises: Tipo[],
     tiposNovedad: TipoNovedad[],
     estadosOrdenServicio: EstadoOrdenServicio[]
@@ -96,6 +98,16 @@ export const initialData: SeedData = {
     tiposGenero: [
         {descripcion: 'Masculino'},
         {descripcion: 'Femenino'},
+    ],
+
+    tiposDuracion: [
+        {descripcion: "fija"},
+        {descripcion: "flexible"},
+    ],
+
+    tiposHorario: [
+        {descripcion: "diurno"},
+        {descripcion: "nocturno"},
     ],
 
     tiposNovedad: [

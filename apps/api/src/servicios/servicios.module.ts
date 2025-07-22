@@ -13,8 +13,15 @@ import {
   TipoServicio 
 } from './entities';
 
-import { ServiciosService } from './servicios.service';
-import { ServiciosController } from './servicios.controller';
+import { 
+  ServiciosService,
+  TipoDuracionService 
+} from './services';
+
+import { 
+  ServiciosController,
+  TipoDuracionController 
+} from './controllers';
 
 @Module({
   imports: [
@@ -31,11 +38,18 @@ import { ServiciosController } from './servicios.controller';
     ConfigModule,
   
   ],
-  controllers: [ServiciosController],
-  providers: [ServiciosService],
+  controllers: [
+    ServiciosController,
+    TipoDuracionController
+  ],
+  providers: [
+    ServiciosService,
+    TipoDuracionService
+  ],
   exports: [
     TypeOrmModule,
-    ServiciosService
+    ServiciosService,
+    TipoDuracionService
   ]
 })
 export class ServiciosModule {}
