@@ -1,4 +1,4 @@
-export enum TipoDuracion { 
+export enum TipoDuracionInterface { 
     
     // FIJA
     FIJA = "fija",
