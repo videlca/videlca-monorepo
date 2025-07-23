@@ -21,7 +21,7 @@ export class EstadoOrdenServicio {
     
     @Column({
         type: 'varchar',
-        length: 100,
+        length: 255,
         name: 'descripcion',
         nullable: false
     })
