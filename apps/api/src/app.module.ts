@@ -15,6 +15,7 @@ import { NovedadModule } from './novedad/novedad.module';
 import { TarifasModule } from './tarifas/tarifas.module';
 import { SeedModule } from './seed/seed.module';
 import { ServiciosModule } from './servicios/servicios.module';
+import { PeriodosModule } from './periodos/periodos.module';
 
 @Module({
   imports: [
@@ -47,9 +48,11 @@ import { ServiciosModule } from './servicios/servicios.module';
     
     NovedadModule,
     
-    TarifasModule, 
+    PeriodosModule, 
     
     ServiciosModule,
+    
+    TarifasModule, 
     
     CommonModule, 
     

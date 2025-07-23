@@ -42,6 +42,10 @@ interface SeedData {
     roles: Role[],
     permissions: Permission[],
     tiposId: Tipo[],
+    tiposGenero: Tipo[],
+    tiposDuracion: Tipo[],
+    tiposHorario: Tipo[],
+    paises: Tipo[],
     tiposNovedad: TipoNovedad[],
     estadosOrdenServicio: EstadoOrdenServicio[]
 }
@@ -49,6 +53,7 @@ interface SeedData {
 export const initialData: SeedData = {
     
     estadosOrdenServicio: [
+        {nombre: "cancelada", descripcion: "Estado para indicar que una orden de sevricio ha sido cancelada", estado: true, programable: false},
         {nombre: "programado", descripcion: "Estado para indicar que una orden de servicio ha sido programada", estado: true, programable: false},
         {
             nombre: "por iniciar", 
@@ -77,6 +82,12 @@ export const initialData: SeedData = {
         {descripcion: 'permisos', nombre: 'Permisos'},
         {descripcion: 'usuarios', nombre: 'Usuarios'},
         {descripcion: 'clientes', nombre: 'Clientes'},
+        {descripcion: 'tarifas', nombre: 'Tarifas'},
+        {descripcion: 'servicios', nombre: 'Servciios'},
+    ],
+
+    paises: [
+        {descripcion: "Colombia"}
     ],
 
     tiposId: [
@@ -84,8 +95,26 @@ export const initialData: SeedData = {
         {descripcion: 'NIT'},
     ],
 
+    tiposGenero: [
+        {descripcion: 'Masculino'},
+        {descripcion: 'Femenino'},
+    ],
+
+    tiposDuracion: [
+        {descripcion: "fija"},
+        {descripcion: "flexible"},
+    ],
+
+    tiposHorario: [
+        {descripcion: "diurno"},
+        {descripcion: "nocturno"},
+    ],
+
     tiposNovedad: [
-        {descripcion: 'retirado', retirado: true}
+        {descripcion: 'retirado', retirado: true},
+        {descripcion: 'vacaciones', retirado: false},
+        {descripcion: 'permiso', retirado: false},
+        {descripcion: 'incapacidad', retirado: false},
     ],
     
     users: [

@@ -7,6 +7,7 @@ import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PersonalService, TipoGeneroService, TipoPersonalService } from '../personal/services';
 import { TipoNovedadService } from '../novedad/services';
+import { ServiciosService, TipoDuracionService, TipoHorarioDescripcionService, TipoHorarioService, TipoServicioService } from '../servicios/services';
 
 import { initialData } from './data/data_prueba';
 
@@ -29,6 +30,11 @@ export class SeedService {
         private readonly tipoNovedadService: TipoNovedadService,
         private readonly tipoGeneroService: TipoGeneroService,
         private readonly tipoPersonalService: TipoPersonalService,
+        private readonly tipoDuracionService: TipoDuracionService,
+        private readonly tipoHorarioDescripcionService: TipoHorarioDescripcionService,
+        private readonly tipoServicioService: TipoServicioService,
+        private readonly tipoHorarioService: TipoHorarioService,
+        private readonly serviciosService: ServiciosService,
     ){
         this.environment = this.configService.get<string>('environment');
     }
@@ -86,11 +92,42 @@ export class SeedService {
         // ELIMINAR TABLA PAIS -> DEPARTAMENTO -> CIUDAD: despues de borrar personal y locacion
         await this.ubicacionService.deleteAllPais();
 
+        // ELIMINAR TABLA SERVICIOS PERIODO
+
+        // ELIMINAR PERIODO
+
+        // ELIMINAR TIPO TARIFA
+
+        // ELIMINAR TIPO UNIDAD TIEMPO
+
+        // ELIMINAR SERVICIOS
+        await this.serviciosService.deleteAllServicios();
+
+        // ELIMINAR TIPO SERVICIO
+        await this.tipoServicioService.deleteAllTiposServicio();
+
+        // ELIMINAR TIPO HORARIO
+        await this.tipoHorarioService.deleteAllTiposHorario();
+
+        // ELIMINAR TIPO HORARIO DESCRIPCION
+        await this.tipoHorarioDescripcionService.deleteAllTiposHorariosDescripcion();
+
+        // ELIMINAR TIPO DURACION
+        await this.tipoDuracionService.deleteAllTiposDuracion();
+
     }
 
     private async insertNewData() {
 
         const tiposId = initialData.tiposId;
+
+        const tiposGenero = initialData.tiposGenero;
+
+        const tiposDuracion = initialData.tiposDuracion;
+
+        const tiposHorario = initialData.tiposHorario;
+
+        const paises = initialData.paises;
         
         const tiposNovedad = initialData.tiposNovedad;
 
@@ -107,6 +144,34 @@ export class SeedService {
         tiposId.forEach(tipoId => {
             insertPromises.push(this.tipoIdService.create({
                 descripcion: tipoId.descripcion
+            }))
+        })
+
+        // Insertar tipos genero
+        tiposGenero.forEach(tipoGenero => {
+            insertPromises.push(this.tipoGeneroService.create({
+                descripcion: tipoGenero.descripcion
+            }))
+        })
+
+        // Insertar pais
+        paises.forEach(pais => {
+            insertPromises.push(this.ubicacionService.createPais({
+                descripcion: pais.descripcion
+            }))
+        })
+
+        // Insertar Tipo duracion
+        tiposDuracion.forEach(tipoDuracion => {
+            insertPromises.push(this.tipoDuracionService.create({
+                descripcion: tipoDuracion.descripcion
+            }))
+        })
+
+        // Insertar Tipo Horario Descripcion
+        tiposHorario.forEach(tipoHorario => {
+            insertPromises.push(this.tipoHorarioDescripcionService.create({
+                descripcion: tipoHorario.descripcion
             }))
         })
 
