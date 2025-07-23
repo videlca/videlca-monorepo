@@ -294,4 +294,36 @@ export class PeriodosService {
 
   }
 
+  // ELIMINAR TODOS LOS PERIODO
+  // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA PERIODO
+  async deleteAllPeriodo(){
+  
+    const query = this.periodoRepository.createQueryBuilder('periodo');
+
+    try {
+      
+      return await query
+        .delete()
+        .where({})
+        .execute();
+
+    } catch (error) {
+      
+      this.handleDbExceptions(error);
+
+    }
+
+  }
+
+  private handleDbExceptions(error: any){
+  
+    if (error.errno === 1062)
+      throw new BadRequestException(`El registro que intenta crear ya existe, no puede crear duplicados`);
+
+    this.logger.error(error);
+
+    throw new InternalServerErrorException('Unexpected error, check server logs');
+
+  }
+
 }

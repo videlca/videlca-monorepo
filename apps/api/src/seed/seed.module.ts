@@ -8,7 +8,8 @@ import { ClientesModule } from '../clientes/clientes.module';
 import { NovedadModule } from '../novedad/novedad.module';
 import { PersonalModule } from '../personal/personal.module';
 import { ServiciosModule } from '../servicios/servicios.module';
-import { TarifasModule } from 'src/tarifas/tarifas.module';
+import { PeriodosModule } from '../periodos/periodos.module';
+import { TarifasModule } from '../tarifas/tarifas.module';
 
 import { SeedService } from './seed.service';
 import { SeedController } from './seed.controller';
@@ -25,6 +26,7 @@ import { SeedController } from './seed.controller';
     PersonalModule,
     UsersModule,
     ServiciosModule,
+    PeriodosModule,
     TarifasModule
   ]
 })

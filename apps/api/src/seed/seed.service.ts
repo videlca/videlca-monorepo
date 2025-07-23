@@ -8,6 +8,7 @@ import { PermissionsService } from '../permissions/permissions.service';
 import { PersonalService, TipoGeneroService, TipoPersonalService } from '../personal/services';
 import { TipoNovedadService } from '../novedad/services';
 import { ServiciosService, TipoDuracionService, TipoHorarioDescripcionService, TipoHorarioService, TipoServicioService } from '../servicios/services';
+import { PeriodosService } from '../periodos/periodos.service';
 import { TipoUnidadTiempoService } from '../tarifas/services';
 
 import { initialData } from './data/data_prueba';
@@ -36,6 +37,7 @@ export class SeedService {
         private readonly tipoServicioService: TipoServicioService,
         private readonly tipoHorarioService: TipoHorarioService,
         private readonly serviciosService: ServiciosService,
+        private readonly periodosService: PeriodosService,
         private readonly tipoUnidadTiempoService: TipoUnidadTiempoService
     ){
         this.environment = this.configService.get<string>('environment');
@@ -97,6 +99,7 @@ export class SeedService {
         // ELIMINAR TABLA TARIFA
 
         // ELIMINAR PERIODO
+        await this.periodosService.deleteAllPeriodo();
 
         // ELIMINAR TIPO TARIFA
 
