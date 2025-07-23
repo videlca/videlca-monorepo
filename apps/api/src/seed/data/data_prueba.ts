@@ -24,6 +24,18 @@ interface Tipo {
     descripcion: string;
 }
 
+interface TipoTarifa {
+    nombre: string;
+    descripcion: string;
+    tipoUnidadTiempo: string;
+    cantidadTiempo?: number;
+}
+
+interface TipoUnidadTiempo {
+    descripcion: string;
+    requiereTiempo: boolean;
+}
+
 interface EstadoOrdenServicio {
     nombre: string,
     descripcion: string;
@@ -47,10 +59,24 @@ interface SeedData {
     tiposHorario: Tipo[],
     paises: Tipo[],
     tiposNovedad: TipoNovedad[],
-    estadosOrdenServicio: EstadoOrdenServicio[]
+    estadosOrdenServicio: EstadoOrdenServicio[],
+    tiposUnidadTiempo: TipoUnidadTiempo[],
+    tiposTarifa: TipoTarifa[]
 }
 
 export const initialData: SeedData = {
+
+    tiposUnidadTiempo: [
+        {descripcion: "dias", requiereTiempo: true},
+        {descripcion: "horas", requiereTiempo: true},
+        {descripcion: "no aplica", requiereTiempo: false},
+    ],
+
+    tiposTarifa: [
+        {nombre: "mes", descripcion: "El monto precio total del servicio equivale a un mes, se puede ajustar cantidad de dias que equivale el mes que cobran", tipoUnidadTiempo: "dias", cantidadTiempo: 30},
+        {nombre: "turno", descripcion: "El monto precio total del servicio equivale a un turno, se puede ajustar cantidad de horas que equivale el turno que cobran", tipoUnidadTiempo: "horas", cantidadTiempo: 8},
+        {nombre: "Servicio unico", descripcion: "El precio total del servicio es de unico cobro", tipoUnidadTiempo: "no aplica"},
+    ],
     
     estadosOrdenServicio: [
         {nombre: "cancelada", descripcion: "Estado para indicar que una orden de sevricio ha sido cancelada", estado: true, programable: false},
