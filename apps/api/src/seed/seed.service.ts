@@ -9,7 +9,7 @@ import { PersonalService, TipoGeneroService, TipoPersonalService } from '../pers
 import { TipoNovedadService } from '../novedad/services';
 import { ServiciosService, TipoDuracionService, TipoHorarioDescripcionService, TipoHorarioService, TipoServicioService } from '../servicios/services';
 import { PeriodosService } from '../periodos/periodos.service';
-import { TipoTarifaService, TipoUnidadTiempoService } from '../tarifas/services';
+import { TarifasService, TipoTarifaService, TipoUnidadTiempoService } from '../tarifas/services';
 
 import { initialData } from './data/data_prueba';
 
@@ -38,6 +38,7 @@ export class SeedService {
         private readonly tipoHorarioService: TipoHorarioService,
         private readonly serviciosService: ServiciosService,
         private readonly periodosService: PeriodosService,
+        private readonly tarifasService: TarifasService,
         private readonly tipoTarifaService: TipoTarifaService,
         private readonly tipoUnidadTiempoService: TipoUnidadTiempoService
     ){
@@ -98,6 +99,7 @@ export class SeedService {
         await this.ubicacionService.deleteAllPais();
 
         // ELIMINAR TABLA TARIFA
+        await this.tarifasService.deleteAllTarifas();
 
         // ELIMINAR PERIODO
         await this.periodosService.deleteAllPeriodo();
