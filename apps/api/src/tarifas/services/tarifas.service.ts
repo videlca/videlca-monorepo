@@ -9,7 +9,7 @@ import { PeriodosService } from '../../periodos/periodos.service';
 import { PaginationDto } from '../../common/dto';
 
 import { Tarifa } from '../entities';
-import { TipoTarifaService } from '.';
+import { TipoTarifaService } from '../services';
 
 import { CreateTarifaDto, UpdateTarifaDto } from '../dto';
 

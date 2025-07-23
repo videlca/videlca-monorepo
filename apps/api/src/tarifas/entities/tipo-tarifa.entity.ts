@@ -25,7 +25,7 @@ export class TipoTarifa {
     @Column({
         type: 'varchar',
         name: 'descripcion',
-        length: 100 
+        length: 255
     })
     descripcion: string;
 

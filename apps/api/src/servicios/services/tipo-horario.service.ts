@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { PaginationDto } from '../../common/dto';
 
 import { TipoHorario, TipoHorarioDescripcion } from '../entities';
-import { TipoHorarioDescripcionService } from '.';
+import { TipoHorarioDescripcionService } from '../services';
 import { TipoHorarioInterface } from '../interfaces/tipo-horario.interface';
 
 import { CreateTipoHorarioDto, UpdateTipoHorarioDto } from '../dto';
