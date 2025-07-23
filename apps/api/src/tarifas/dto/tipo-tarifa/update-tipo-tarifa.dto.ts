@@ -1,12 +1,13 @@
-import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { CreateTipoTarifaDto } from './create-tipo-tarifa.dto';
-import { IsBoolean, IsOptional } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber, IsOptional, IsPositive, Min } from 'class-validator';
 
-export class UpdateTipoTarifaDto extends PartialType(CreateTipoTarifaDto) {
+export class UpdateTipoTarifaDto {
 
-    @ApiProperty({ description: 'Identificador de estado activo', example: true, required:false})
+    @ApiProperty({ description: 'Cantidad de tiempo que representa el tipo de unidad de tiempo', example: 1, required:true})
     @IsOptional()
-    @IsBoolean({message: 'El campo estado debe ser boolean'})
-    estado?: boolean;
+    @IsNumber({}, {message: 'El valor del campo cantidad de tiempo debe ser un número'})
+    @IsPositive({message: 'El valor del campo cantidad de tiempo debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo cantidad de tiempo debe ser minimo 1'})
+    cantidadTiempo?: number;
 
 }

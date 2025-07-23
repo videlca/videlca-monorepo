@@ -9,7 +9,7 @@ import { PersonalService, TipoGeneroService, TipoPersonalService } from '../pers
 import { TipoNovedadService } from '../novedad/services';
 import { ServiciosService, TipoDuracionService, TipoHorarioDescripcionService, TipoHorarioService, TipoServicioService } from '../servicios/services';
 import { PeriodosService } from '../periodos/periodos.service';
-import { TipoUnidadTiempoService } from '../tarifas/services';
+import { TipoTarifaService, TipoUnidadTiempoService } from '../tarifas/services';
 
 import { initialData } from './data/data_prueba';
 
@@ -38,6 +38,7 @@ export class SeedService {
         private readonly tipoHorarioService: TipoHorarioService,
         private readonly serviciosService: ServiciosService,
         private readonly periodosService: PeriodosService,
+        private readonly tipoTarifaService: TipoTarifaService,
         private readonly tipoUnidadTiempoService: TipoUnidadTiempoService
     ){
         this.environment = this.configService.get<string>('environment');
@@ -102,6 +103,7 @@ export class SeedService {
         await this.periodosService.deleteAllPeriodo();
 
         // ELIMINAR TIPO TARIFA
+        await this.tipoTarifaService.deleteAllTiposTarifa();
 
         // ELIMINAR TIPO UNIDAD TIEMPO
         await this.tipoUnidadTiempoService.deleteAllTiposUnidadTiempo();
@@ -126,6 +128,8 @@ export class SeedService {
     private async insertNewData() {
 
         const tiposUnidadTiempo = initialData.tiposUnidadTiempo;
+
+        const tiposTarifa = initialData.tiposTarifa;
 
         const tiposId = initialData.tiposId;
 
@@ -214,6 +218,7 @@ export class SeedService {
         await Promise.all(usuarios.map(user => this.userService.createUserSeed(user)))
 
         // insertar tipos tarifa
+        await Promise.all(tiposTarifa.map(tipoTarifa => this.tipoTarifaService.createTipoTarifaSeed(tipoTarifa)))
 
         return true;
 

@@ -15,10 +15,10 @@ export class TipoUnidadTiempoController {
   constructor(private readonly tipoUnidadTiempoService: TipoUnidadTiempoService) {}
   
   // RUTA PROTEGIDA: Crear un tipo unidad tiempo
-  @Post()
-  create(@Body() createTipoUnidadTiempoDto: CreateTipoUnidadTiempoDto) {
-      return this.tipoUnidadTiempoService.create(createTipoUnidadTiempoDto);
-  }
+  // @Post()
+  // create(@Body() createTipoUnidadTiempoDto: CreateTipoUnidadTiempoDto) {
+  //     return this.tipoUnidadTiempoService.create(createTipoUnidadTiempoDto);
+  // }
   
   // RUTA PROTEGIDA: Obtener todos los tipos de unidad tiempo
   @Get()
@@ -33,15 +33,15 @@ export class TipoUnidadTiempoController {
   }
 
   // RUTA PROTEGIDA: EDITAR UN TIPO UNIDAD TIEMPO
-  @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateTipoUnidadTiempoDto: UpdateTipoUnidadTiempoDto) {
-    return this.tipoUnidadTiempoService.update(id, updateTipoUnidadTiempoDto);
-  }
+  // @Patch(':id')
+  // update(@Param('id', ParseIntPipe) id: number, @Body() updateTipoUnidadTiempoDto: UpdateTipoUnidadTiempoDto) {
+  //   return this.tipoUnidadTiempoService.update(id, updateTipoUnidadTiempoDto);
+  // }
 
-  // RUTA PROTEGIDA: ELIMINAR UN TIPO UNIDAD TIEMPO
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.tipoUnidadTiempoService.remove(id);
-  }
+  // // RUTA PROTEGIDA: ELIMINAR UN TIPO UNIDAD TIEMPO
+  // @Delete(':id')
+  // remove(@Param('id', ParseIntPipe) id: number) {
+  //   return this.tipoUnidadTiempoService.remove(id);
+  // }
 
 }
