@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { Periodo } from "../../periodos/entities/periodo.entity";
 import { Servicio } from "../../servicios/entities";
 import { TipoTarifa } from "./tipo-tarifa.entity";
@@ -46,15 +46,52 @@ export class Tarifa {
     idTipoTarifa: TipoTarifa;
 
     // PRECIO SIN IVA
+    @Column({
+        type: 'decimal',
+        name: 'precioSinIva',
+        precision: 15,
+        scale: 2
+    })
+    precioSinIva: number;
 
     // IVA
+    @Column({
+        type: 'decimal',
+        name: 'iva',
+        precision: 7,
+        scale: 2
+    })
+    iva: number;
 
     // PRECIO TOTAL CON IVA
+    @Column({
+        type: 'decimal',
+        name: 'precioTotal',
+        precision: 15,
+        scale: 2
+    })
+    precioTotal: number;
 
     // ESTADO
+    @Column({
+        type: 'boolean',
+        name: 'estado',
+        default: true
+    })
+    estado: boolean;
 
     // FECHA ASIGNACION
-
+    @CreateDateColumn({
+        type: 'timestamp',
+        name: 'fechaCreacion'
+    }) 
+    fechaCreacion: Date; 
+    
     // FECHA ACTUALIZACION
+    @UpdateDateColumn({
+        type: 'timestamp',
+        name: 'fechaActualizacion'
+    }) 
+    fechaActualizacion: Date;
 
 }

@@ -8,6 +8,7 @@ import { PermissionsService } from '../permissions/permissions.service';
 import { PersonalService, TipoGeneroService, TipoPersonalService } from '../personal/services';
 import { TipoNovedadService } from '../novedad/services';
 import { ServiciosService, TipoDuracionService, TipoHorarioDescripcionService, TipoHorarioService, TipoServicioService } from '../servicios/services';
+import { TipoUnidadTiempoService } from '../tarifas/services';
 
 import { initialData } from './data/data_prueba';
 
@@ -35,6 +36,7 @@ export class SeedService {
         private readonly tipoServicioService: TipoServicioService,
         private readonly tipoHorarioService: TipoHorarioService,
         private readonly serviciosService: ServiciosService,
+        private readonly tipoUnidadTiempoService: TipoUnidadTiempoService
     ){
         this.environment = this.configService.get<string>('environment');
     }
@@ -92,13 +94,14 @@ export class SeedService {
         // ELIMINAR TABLA PAIS -> DEPARTAMENTO -> CIUDAD: despues de borrar personal y locacion
         await this.ubicacionService.deleteAllPais();
 
-        // ELIMINAR TABLA SERVICIOS PERIODO
+        // ELIMINAR TABLA TARIFA
 
         // ELIMINAR PERIODO
 
         // ELIMINAR TIPO TARIFA
 
         // ELIMINAR TIPO UNIDAD TIEMPO
+        await this.tipoUnidadTiempoService.deleteAllTiposUnidadTiempo();
 
         // ELIMINAR SERVICIOS
         await this.serviciosService.deleteAllServicios();
@@ -118,6 +121,8 @@ export class SeedService {
     }
 
     private async insertNewData() {
+
+        const tiposUnidadTiempo = initialData.tiposUnidadTiempo;
 
         const tiposId = initialData.tiposId;
 
@@ -195,9 +200,17 @@ export class SeedService {
             insertPromises.push(this.permissionsService.createPermission(permiso))
         })
 
+        // insertar tipos unidad tiempo
+        tiposUnidadTiempo.forEach(tipoUnidadTiempo => {
+            insertPromises.push(this.tipoUnidadTiempoService.create(tipoUnidadTiempo))
+        })
+
         await Promise.all(insertPromises);
 
+        // insertar usuarios
         await Promise.all(usuarios.map(user => this.userService.createUserSeed(user)))
+
+        // insertar tipos tarifa
 
         return true;
 

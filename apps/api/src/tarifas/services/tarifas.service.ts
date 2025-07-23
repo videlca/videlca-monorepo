@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateTarifaDto } from './dto/create-tarifa.dto';
-import { UpdateTarifaDto } from './dto/update-tarifa.dto';
+import { CreateTarifaDto } from '../dto/tarifa/create-tarifa.dto';
+import { UpdateTarifaDto } from '../dto/tarifa/update-tarifa.dto';
 
 @Injectable()
 export class TarifasService {

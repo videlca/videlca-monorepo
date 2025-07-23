@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { TarifasService } from './tarifas.service';
-import { CreateTarifaDto } from './dto/create-tarifa.dto';
-import { UpdateTarifaDto } from './dto/update-tarifa.dto';
+import { TarifasService } from '../services/tarifas.service';
+import { CreateTarifaDto } from '../dto/tarifa/create-tarifa.dto';
+import { UpdateTarifaDto } from '../dto/tarifa/update-tarifa.dto';
 
 @Controller('tarifas')
 export class TarifasController {

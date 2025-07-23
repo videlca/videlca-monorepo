@@ -24,6 +24,11 @@ interface Tipo {
     descripcion: string;
 }
 
+interface TipoUnidadTiempo {
+    descripcion: string;
+    requiereTiempo: boolean;
+}
+
 interface EstadoOrdenServicio {
     nombre: string,
     descripcion: string;
@@ -47,10 +52,17 @@ interface SeedData {
     tiposHorario: Tipo[],
     paises: Tipo[],
     tiposNovedad: TipoNovedad[],
-    estadosOrdenServicio: EstadoOrdenServicio[]
+    estadosOrdenServicio: EstadoOrdenServicio[],
+    tiposUnidadTiempo: TipoUnidadTiempo[]
 }
 
 export const initialData: SeedData = {
+
+    tiposUnidadTiempo: [
+        {descripcion: "dias", requiereTiempo: true},
+        {descripcion: "horas", requiereTiempo: true},
+        {descripcion: "no aplica", requiereTiempo: false},
+    ],
     
     estadosOrdenServicio: [
         {nombre: "cancelada", descripcion: "Estado para indicar que una orden de sevricio ha sido cancelada", estado: true, programable: false},

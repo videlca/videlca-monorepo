@@ -9,9 +9,9 @@ import { ServiciosModule } from '../servicios/servicios.module';
 
 import { Tarifa, TipoTarifa, TipoUnidadTiempo } from './entities';
 
-import { TarifasService } from './tarifas.service';
+import { TarifasService, TipoUnidadTiempoService } from './services';
 
-import { TarifasController } from './tarifas.controller';
+import { TarifasController, TipoUnidadTiempoController } from './controllers';
 
 @Module({
   imports: [
@@ -29,14 +29,17 @@ import { TarifasController } from './tarifas.controller';
     
   ],
   controllers: [
-    TarifasController
+    TarifasController,
+    TipoUnidadTiempoController
   ],
   providers: [
-    TarifasService
+    TarifasService,
+    TipoUnidadTiempoService
   ],
   exports: [
     TypeOrmModule,
-    TarifasService
+    TarifasService,
+    TipoUnidadTiempoService
   ]
 })
 export class TarifasModule {}
