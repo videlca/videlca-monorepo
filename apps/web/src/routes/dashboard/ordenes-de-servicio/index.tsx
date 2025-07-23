@@ -27,6 +27,7 @@ import { StateLabel } from "../../../components/common/StateLabel";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 
 export const Route = createFileRoute("/dashboard/ordenes-de-servicio/")({
   component: RouteComponent,
@@ -1400,7 +1401,7 @@ function RouteComponent() {
         </div>
       </SimpleModal>
 
-      <SimpleModal
+      {/* <SimpleModal
         isOpen={isOpenDelete}
         onClose={() => {
           setIsOpenDelete(false);
@@ -1425,7 +1426,13 @@ function RouteComponent() {
             color="red"
           />
         </div>
-      </SimpleModal>
+      </SimpleModal> */}
+      <ConfirmarDelete
+        isOpenDelete={isOpenDelete}
+        text="¿Estás seguro de querer eliminar esta orden de servicio?"
+        onDelete={() => {}}
+        onClose={() => setIsOpenDelete(false)}
+      />
     </Section>
   );
 }

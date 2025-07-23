@@ -17,7 +17,7 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
 import { InputForm } from "../../../components/common/InputForm";
 import Button from "../../../components/common/Button";
-import { useTipoIdentificacion } from "../../../api/queryFunctions/configuracion/tipo-identificacion";
+import { useTipoIdentificacionActivo } from "../../../api/queryFunctions/configuracion/tipo-identificacion";
 import { useActiveRoles } from "../../../api/queryFunctions/permisos";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
@@ -39,7 +39,7 @@ function RouteComponent() {
     useUpdateUsuario();
 
   const { data: roles } = useActiveRoles();
-  const { data: tiposIdentificacion } = useTipoIdentificacion();
+  const { data: tiposIdentificacion } = useTipoIdentificacionActivo();
 
   // Formulario
   const {

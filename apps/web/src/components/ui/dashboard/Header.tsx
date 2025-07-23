@@ -1,13 +1,13 @@
-import { User, ChevronDown, UserCircle, LogOut } from "lucide-react";
+import { User, ChevronDown, UserCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useAuth } from "../../../context/AuthContext";
+import { useGetUsuarioByCookie } from "../../../api/queryFunctions/usuarios";
 
 export function Header() {
+  const { data: usuario } = useGetUsuarioByCookie();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { setIsAuthenticated } = useAuth();
 
   // Cerrar el dropdown cuando se hace clic fuera
   useEffect(() => {
@@ -39,7 +39,7 @@ export function Header() {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center space-x-2 rounded-lg px-3 py-2 text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
           >
-            <span className="font-medium">Admin</span>
+            <span className="font-medium">{usuario?.data?.primerNombre}</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600">
               <User className="h-4 w-4 text-white" />
             </div>

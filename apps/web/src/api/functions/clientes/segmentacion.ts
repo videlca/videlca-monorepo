@@ -1,4 +1,4 @@
-import type { Segmentacion } from "../../../types"
+import type { Segmentacion, SubSegmentacion } from "../../../types"
 import { axiosClient } from "../../config"
 import type { CreateSegmentacionDto, UpdateSegmentacionDto } from "../../dtos"
 import type { PaginationDto } from "../../dtos/common"
@@ -81,6 +81,21 @@ export const deleteSegmentacion = async (id: number): Promise<ApiResponse> => {
 
 
 // Subsegmentaciones
+export const getSubSegmentaciones = async (pagination: PaginationDto): Promise<ApiResponse<SubSegmentacion[]>> => {
+  const response = await axiosClient.get('/subsegmentaciones', { params: pagination }).then((res) => {
+    return {
+      status: res.status,
+      data: res.data
+    }
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || 'Error de conexión',
+    }
+  })
+  return response
+}
+
 export const deleteSubSegmentacion = async (id: number): Promise<ApiResponse> => {
   const response = await axiosClient.delete(`/subsegmentaciones/${id}`).then((res) => {
     return {

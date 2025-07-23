@@ -47,6 +47,11 @@ export interface CreateClienteDto {
 }
 
 export interface UpdateClienteDto {
+  numeroIdentificacion?: string;
+  idTipoIdentificacion?: number;
+  nombre?: string;
+  idTipoCliente?: number;
+  idSubSegmentacion?: number;
   estado?: boolean;
 }
 

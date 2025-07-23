@@ -7,6 +7,7 @@ import {
 import {
   createTipoIdentificacion,
   getTipoIdentificacion,
+  getTipoIdentificacionActivo,
   updateTipoIdentificacion,
 } from "../../functions/configuracion/";
 import type { ApiResponse } from "../../types/common";
@@ -25,6 +26,16 @@ export const useTipoIdentificacion = (): UseQueryResult<
   return useQuery({
     queryKey: ["tipo-identificacion"],
     queryFn: () => getTipoIdentificacion({ pagination: false }),
+  });
+};
+
+export const useTipoIdentificacionActivo = (): UseQueryResult<
+  ApiResponse<TipoIdentificacion[]>,
+  Error
+> => {
+  return useQuery({
+    queryKey: ["tipo-identificacion-activo"],
+    queryFn: () => getTipoIdentificacionActivo({ pagination: false }),
   });
 };
 

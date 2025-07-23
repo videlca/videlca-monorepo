@@ -10,13 +10,14 @@ import {
   deleteSubSegmentacion,
   getSegmentacionById,
   getSegmentaciones,
+  getSubSegmentaciones,
   updateSegmentacion,
   updateSubSegmentacion,
 } from "../../functions/clientes/segmentacion";
 import type { CreateSegmentacionDto, UpdateSegmentacionDto } from "../../dtos";
 import { queryClient } from "../../../App";
 import type { ApiResponse } from "../../types/common";
-import type { Segmentacion } from "../../../types";
+import type { Segmentacion, SubSegmentacion } from "../../../types";
 import { toast } from "sonner";
 
 export const useSegmentaciones = (): UseQueryResult<
@@ -123,6 +124,16 @@ export const useEliminarSegmentacion = (): UseMutationResult<
 };
 
 // Subsegmentaciones
+export const useSubSegmentaciones = (): UseQueryResult<
+  ApiResponse<SubSegmentacion[]>,
+  Error
+> => {
+  return useQuery({
+    queryKey: ["subsegmentaciones"],
+    queryFn: () => getSubSegmentaciones({ pagination: false }),
+  });
+};
+
 export const useActualizarSubSegmentacion = (): UseMutationResult<
   ApiResponse,
   Error,

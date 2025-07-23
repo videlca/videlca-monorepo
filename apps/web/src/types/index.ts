@@ -102,7 +102,6 @@ export interface Segmentacion {
 export interface Locacion {
   idLocacion: number;
   nombre: string;
-  idCiudad: Ciudad;
   direccion: string;
   latitud: number;
   longitud: number;
@@ -111,9 +110,9 @@ export interface Locacion {
   telefono: string;
   segundoTelefono: string;
   diasAnticipacionNotificacion: number;
-  correos: Correo[];
-  idCliente: Cliente;
   estado: boolean;
+  idCiudad: Ciudad;
+  idCliente: Cliente;
 }
 
 // Usuarios
