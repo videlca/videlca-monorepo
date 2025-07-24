@@ -28,8 +28,11 @@ import { Route as DashboardClientesIndexRouteImport } from './routes/dashboard/c
 import { Route as DashboardPersonalNovedadesRouteImport } from './routes/dashboard/personal/novedades'
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
 import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
+import { Route as DashboardConfiguracionTipoTarifaRouteImport } from './routes/dashboard/configuracion/tipo-tarifa'
+import { Route as DashboardConfiguracionTipoServicioRouteImport } from './routes/dashboard/configuracion/tipo-servicio'
 import { Route as DashboardConfiguracionTipoPersonalRouteImport } from './routes/dashboard/configuracion/tipo-personal'
 import { Route as DashboardConfiguracionTipoIdRouteImport } from './routes/dashboard/configuracion/tipo-id'
+import { Route as DashboardConfiguracionTipoHorarioRouteImport } from './routes/dashboard/configuracion/tipo-horario'
 import { Route as DashboardConfiguracionTipoGeneroRouteImport } from './routes/dashboard/configuracion/tipo-genero'
 import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/dashboard/configuracion/tipo-cliente'
 import { Route as DashboardConfiguracionEstadoOrdenServicioRouteImport } from './routes/dashboard/configuracion/estado-orden-servicio'
@@ -134,6 +137,18 @@ const DashboardConfiguracionTiposNovedadRoute =
     path: '/configuracion/tipos-novedad',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardConfiguracionTipoTarifaRoute =
+  DashboardConfiguracionTipoTarifaRouteImport.update({
+    id: '/configuracion/tipo-tarifa',
+    path: '/configuracion/tipo-tarifa',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionTipoServicioRoute =
+  DashboardConfiguracionTipoServicioRouteImport.update({
+    id: '/configuracion/tipo-servicio',
+    path: '/configuracion/tipo-servicio',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardConfiguracionTipoPersonalRoute =
   DashboardConfiguracionTipoPersonalRouteImport.update({
     id: '/configuracion/tipo-personal',
@@ -144,6 +159,12 @@ const DashboardConfiguracionTipoIdRoute =
   DashboardConfiguracionTipoIdRouteImport.update({
     id: '/configuracion/tipo-id',
     path: '/configuracion/tipo-id',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionTipoHorarioRoute =
+  DashboardConfiguracionTipoHorarioRouteImport.update({
+    id: '/configuracion/tipo-horario',
+    path: '/configuracion/tipo-horario',
     getParentRoute: () => DashboardRoute,
   } as any)
 const DashboardConfiguracionTipoGeneroRoute =
@@ -176,8 +197,11 @@ export interface FileRoutesByFullPath {
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
+  '/dashboard/configuracion/tipo-horario': typeof DashboardConfiguracionTipoHorarioRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipo-servicio': typeof DashboardConfiguracionTipoServicioRoute
+  '/dashboard/configuracion/tipo-tarifa': typeof DashboardConfiguracionTipoTarifaRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
@@ -201,8 +225,11 @@ export interface FileRoutesByTo {
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
+  '/dashboard/configuracion/tipo-horario': typeof DashboardConfiguracionTipoHorarioRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipo-servicio': typeof DashboardConfiguracionTipoServicioRoute
+  '/dashboard/configuracion/tipo-tarifa': typeof DashboardConfiguracionTipoTarifaRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
@@ -228,8 +255,11 @@ export interface FileRoutesById {
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
+  '/dashboard/configuracion/tipo-horario': typeof DashboardConfiguracionTipoHorarioRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipo-servicio': typeof DashboardConfiguracionTipoServicioRoute
+  '/dashboard/configuracion/tipo-tarifa': typeof DashboardConfiguracionTipoTarifaRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
@@ -256,8 +286,11 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
+    | '/dashboard/configuracion/tipo-horario'
     | '/dashboard/configuracion/tipo-id'
     | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipo-servicio'
+    | '/dashboard/configuracion/tipo-tarifa'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/personal/novedades'
@@ -281,8 +314,11 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
+    | '/dashboard/configuracion/tipo-horario'
     | '/dashboard/configuracion/tipo-id'
     | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipo-servicio'
+    | '/dashboard/configuracion/tipo-tarifa'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/personal/novedades'
@@ -307,8 +343,11 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
+    | '/dashboard/configuracion/tipo-horario'
     | '/dashboard/configuracion/tipo-id'
     | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipo-servicio'
+    | '/dashboard/configuracion/tipo-tarifa'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/personal/novedades'
@@ -466,6 +505,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardConfiguracionTiposNovedadRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/configuracion/tipo-tarifa': {
+      id: '/dashboard/configuracion/tipo-tarifa'
+      path: '/configuracion/tipo-tarifa'
+      fullPath: '/dashboard/configuracion/tipo-tarifa'
+      preLoaderRoute: typeof DashboardConfiguracionTipoTarifaRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion/tipo-servicio': {
+      id: '/dashboard/configuracion/tipo-servicio'
+      path: '/configuracion/tipo-servicio'
+      fullPath: '/dashboard/configuracion/tipo-servicio'
+      preLoaderRoute: typeof DashboardConfiguracionTipoServicioRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/configuracion/tipo-personal': {
       id: '/dashboard/configuracion/tipo-personal'
       path: '/configuracion/tipo-personal'
@@ -478,6 +531,13 @@ declare module '@tanstack/react-router' {
       path: '/configuracion/tipo-id'
       fullPath: '/dashboard/configuracion/tipo-id'
       preLoaderRoute: typeof DashboardConfiguracionTipoIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion/tipo-horario': {
+      id: '/dashboard/configuracion/tipo-horario'
+      path: '/configuracion/tipo-horario'
+      fullPath: '/dashboard/configuracion/tipo-horario'
+      preLoaderRoute: typeof DashboardConfiguracionTipoHorarioRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/configuracion/tipo-genero': {
@@ -510,8 +570,11 @@ interface DashboardRouteChildren {
   DashboardConfiguracionEstadoOrdenServicioRoute: typeof DashboardConfiguracionEstadoOrdenServicioRoute
   DashboardConfiguracionTipoClienteRoute: typeof DashboardConfiguracionTipoClienteRoute
   DashboardConfiguracionTipoGeneroRoute: typeof DashboardConfiguracionTipoGeneroRoute
+  DashboardConfiguracionTipoHorarioRoute: typeof DashboardConfiguracionTipoHorarioRoute
   DashboardConfiguracionTipoIdRoute: typeof DashboardConfiguracionTipoIdRoute
   DashboardConfiguracionTipoPersonalRoute: typeof DashboardConfiguracionTipoPersonalRoute
+  DashboardConfiguracionTipoServicioRoute: typeof DashboardConfiguracionTipoServicioRoute
+  DashboardConfiguracionTipoTarifaRoute: typeof DashboardConfiguracionTipoTarifaRoute
   DashboardConfiguracionTiposNovedadRoute: typeof DashboardConfiguracionTiposNovedadRoute
   DashboardConfiguracionUbicacionRoute: typeof DashboardConfiguracionUbicacionRoute
   DashboardPersonalNovedadesRoute: typeof DashboardPersonalNovedadesRoute
@@ -534,9 +597,14 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardConfiguracionTipoClienteRoute:
     DashboardConfiguracionTipoClienteRoute,
   DashboardConfiguracionTipoGeneroRoute: DashboardConfiguracionTipoGeneroRoute,
+  DashboardConfiguracionTipoHorarioRoute:
+    DashboardConfiguracionTipoHorarioRoute,
   DashboardConfiguracionTipoIdRoute: DashboardConfiguracionTipoIdRoute,
   DashboardConfiguracionTipoPersonalRoute:
     DashboardConfiguracionTipoPersonalRoute,
+  DashboardConfiguracionTipoServicioRoute:
+    DashboardConfiguracionTipoServicioRoute,
+  DashboardConfiguracionTipoTarifaRoute: DashboardConfiguracionTipoTarifaRoute,
   DashboardConfiguracionTiposNovedadRoute:
     DashboardConfiguracionTiposNovedadRoute,
   DashboardConfiguracionUbicacionRoute: DashboardConfiguracionUbicacionRoute,

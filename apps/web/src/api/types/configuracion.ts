@@ -50,3 +50,17 @@ export interface CreateTipoNovedad {
 export interface ActualizarTipoNovedad {
   estado: boolean
 }
+
+// Tipo tarifa
+export interface TipoTarifa {
+  idTipoTarifa: number;
+  nombre: string;
+  descripcion: string;
+  idTipoUnidadTiempo: {
+    descripcion: string;
+    estado: boolean;
+    idTipoUnidadTiempo: number;
+    requiereTiempo: boolean;
+  };
+  cantidadTiempo?: number;
+}

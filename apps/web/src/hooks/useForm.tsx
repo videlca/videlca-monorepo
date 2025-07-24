@@ -12,9 +12,13 @@ export const useForm = <T,>(initialState: T) => {
     >,
   ) => {
     const { id, value } = e.target;
+    const inputValue =
+      e.target instanceof HTMLInputElement && e.target.type === "checkbox"
+        ? e.target.checked
+        : value;
     setForm((prev) => ({
       ...prev,
-      [id]: value,
+      [id]: inputValue,
     }));
   };
 

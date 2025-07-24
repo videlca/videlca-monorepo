@@ -2,6 +2,7 @@ import type { LinkProps } from "@tanstack/react-router";
 import {
   CalendarIcon,
   ChartColumn,
+  ClockIcon,
   DollarSignIcon,
   FileArchive,
   FileCogIcon,
@@ -71,6 +72,24 @@ export const linksSideBar: LinksSideBar = {
       label: "Tipo de Identificación",
       description: "tipo-id",
       icon: <IdCardIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/configuracion/tipo-horario",
+      label: "Tipo de Horario",
+      description: "tipo-horario",
+      icon: <ClockIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/configuracion/tipo-servicio",
+      label: "Tipo de Servicio",
+      description: "tipo-servicio",
+      icon: <FileSpreadsheetIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/configuracion/tipo-tarifa",
+      label: "Tipo de Tarifa",
+      description: "tipo-tarifa",
+      icon: <DollarSignIcon className="h-6 w-6" />,
     },
     // {
     //   to: "/dashboard/configuracion/tipo-genero",
