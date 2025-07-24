@@ -188,6 +188,7 @@ export function ClientesTab() {
             createCliente(formCreateCliente, {
               onSuccess: () => {
                 setIsAddModalOpen(false);
+                resetFormCreateCliente();
               },
             });
           }}

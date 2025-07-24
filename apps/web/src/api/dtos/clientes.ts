@@ -21,12 +21,12 @@ export interface CreateLocacionDto {
   primerApellidoResponsable: string;
   telefono: string;
   segundoTelefono?: string;
-  diasAnticipacionNotificacion: number;
+  diasAnticipaticionNotificacion: number;
   idCliente: number;
   correos: CreateCorreoDto[];
 }
 
-export interface UpdateLocacionDto {
+export interface UpdateLocacionDto extends Partial<CreateLocacionDto> {
   estado?: boolean;
 }
 

@@ -33,12 +33,12 @@ declare module "@tanstack/react-router" {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
       retry: false,
-      staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 5,
+      staleTime: 1000 * 60 * 1, // 1 minuto
+      gcTime: 1000 * 60 * 1, // 1 minuto
     },
   },
 });

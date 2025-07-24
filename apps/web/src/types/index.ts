@@ -113,6 +113,7 @@ export interface Locacion {
   estado: boolean;
   idCiudad: Ciudad;
   idCliente: Cliente;
+  correos: Correo[];
 }
 
 // Usuarios
