@@ -8,6 +8,7 @@ import { PaginationDto } from '../common/dto';
 import { Periodo } from './entities/periodo.entity';
 
 import { CreatePeriodoDto, UpdatePeriodoDto } from './dto';
+import { Meses } from './interfaces/meses.interface';
 
 @Injectable()
 export class PeriodosService {
@@ -27,26 +28,37 @@ export class PeriodosService {
 
   async create(createPeriodoDto: CreatePeriodoDto) {
 
+    console.log("createPeriodoDto: ", createPeriodoDto);
+
     await this.validarPeriodo(createPeriodoDto.fechaInicio, createPeriodoDto.fechaFin);
-        
+    console.log("createPeriodoDto.fechaInicio: ", createPeriodoDto.fechaInicio);
+    const fechaInicioSplit = createPeriodoDto.fechaInicio.toISOString().split('T')[0];
+    console.log("fechaInicioSplit: ", fechaInicioSplit);
+
+    const [year, month, day] = fechaInicioSplit.split('-').map(Number);
+    console.log("year: ", year);
+    console.log("month: ", month);
+    console.log("day: ", day);
+    const nombreMesInicio = Meses[month - 1].nombre;
+    const fechaInicio = new Date(year, month - 1, day);
+    console.log("fechaInicio: ", fechaInicio);
     // Extraer componentes de la fecha de inicio
-    const diaInicio = createPeriodoDto.fechaInicio.getDate();
+    // const diaInicio = createPeriodoDto.fechaInicio.getDate();
+    // console.log("diaInicio createPeriodoDto: ", diaInicio);
+    // const mesInicio = createPeriodoDto.fechaInicio.getMonth(); // getMonth() retorna 0-11
     
-    const mesInicio = createPeriodoDto.fechaInicio.getMonth(); // getMonth() retorna 0-11
-    const nombreMesInicio = Meses[mesInicio].nombre;
-
-    const añoInicio = createPeriodoDto.fechaInicio.getFullYear();
-        
+    // const añoInicio = createPeriodoDto.fechaInicio.getFullYear();
+    
     // Extraer componentes de la fecha de fin
-    const diaFin = createPeriodoDto.fechaFin.getDate();
+    // const diaFin = createPeriodoDto.fechaFin.getDate();
 
-    const mesFin = createPeriodoDto.fechaFin.getMonth(); // getMonth() retorna 0-11
-    const nombreMesFin = Meses[mesFin].nombre;
+    // const mesFin = createPeriodoDto.fechaFin.getMonth(); // getMonth() retorna 0-11
+    const nombreMesFin = Meses[month - 1].nombre;
 
-    const añoFin = createPeriodoDto.fechaFin.getFullYear();
+    // const añoFin = createPeriodoDto.fechaFin.getFullYear();
     
     // NOMBRE PERIODO
-    const nombrePeriodo = `${nombreMesInicio} ${diaInicio} de ${añoInicio} a ${nombreMesFin} ${diaFin} de ${añoFin}`;
+    const nombrePeriodo = `${nombreMesInicio} ${day} de ${year} a ${nombreMesFin} ${day} de ${year}`;
     
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -57,11 +69,11 @@ export class PeriodosService {
       // Crear periodo
       const periodo = queryRunner.manager.create(Periodo, {
           nombre: nombrePeriodo,
-          mesInicio: mesInicio + 1,
-          anioInicio: añoInicio,
-          mesFin: mesFin + 1,
-          anioFin: añoFin,
-          fechaInicio: createPeriodoDto.fechaInicio,
+          mesInicio: month,
+          anioInicio: year,
+          mesFin: month,
+          anioFin: year,
+          fechaInicio: fechaInicio,
           fechaFin: createPeriodoDto.fechaFin,
       });
 
@@ -106,12 +118,14 @@ export class PeriodosService {
 
   }
 
-  private async validarPeriodo(fechaInicio: Date,fechaFin: Date){
+  private async validarPeriodo(fechaInicio: Date, fechaFin: Date, idPeriodoExcluir?: number){
 
     // Validar que el período sea lógicamente correcto
     if (fechaInicio >= fechaFin) {
       throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
     }
+
+    console.log(fechaInicio, fechaFin);
 
     // Validar solapamientos
     let query = this.periodoRepository
@@ -119,14 +133,21 @@ export class PeriodosService {
       .where('periodo.estado = :estado', { estado: true })
       .andWhere(
         `(
-          (:fechaInicio BETWEEN periodo.fecha_inicio AND periodo.fecha_fin) OR
-          (:fechaFin BETWEEN periodo.fecha_inicio AND periodo.fecha_fin) OR
-          (:fechaInicio <= periodo.fecha_inicio AND :fechaFin >= periodo.fecha_fin)
+          (:fechaInicio BETWEEN periodo.fechaInicio AND periodo.fechaFin) OR
+          (:fechaFin BETWEEN periodo.fechaInicio AND periodo.fechaFin) OR
+          (:fechaInicio <= periodo.fechaInicio AND :fechaFin >= periodo.fechaFin)
         )`,
         { fechaInicio, fechaFin }
       );
 
+    // Excluir el periodo que se está actualizando
+    if (idPeriodoExcluir) {
+      query = query.andWhere('periodo.idPeriodo != :idPeriodoExcluir', { idPeriodoExcluir });
+    }
+
     const periodosSolapados = await query.getMany();
+
+    console.log("periodosSolapados: ", periodosSolapados);
 
     if (periodosSolapados.length > 0) {
       throw new BadRequestException(`El período se solapa con: ${periodosSolapados.map(p => p.nombre).join(', ')}`);
@@ -180,9 +201,10 @@ export class PeriodosService {
 
   async update(id: number, updatePeriodoDto: UpdatePeriodoDto) {
 
+    console.log(updatePeriodoDto);
     const periodoExistente = await this.findOne(id);
     
-    await this.validarPeriodo(updatePeriodoDto.fechaInicio, updatePeriodoDto.fechaFin);
+    await this.validarPeriodo(updatePeriodoDto.fechaInicio, updatePeriodoDto.fechaFin, id);
         
     // Extraer componentes de la fecha de inicio
     const diaInicio = updatePeriodoDto.fechaInicio.getDate();

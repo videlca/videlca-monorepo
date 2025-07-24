@@ -1,4 +1,4 @@
-const Meses = Object.freeze([
+export const Meses = Object.freeze([
   { nombre: "Enero", dias: 31 },
   { nombre: "Febrero", dias: 28 }, // 29 en años bisiestos
   { nombre: "Marzo", dias: 31 },

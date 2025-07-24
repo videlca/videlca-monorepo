@@ -6,10 +6,13 @@ import { ConfigService } from '@nestjs/config';
 import { PaginationDto } from '../../common/dto';
 
 import { Servicio } from '../entities';
-import { TipoServicioService, TipoDuracionService, TipoHorarioDescripcionService } from '../services';
+
 
 import { CreateServicioDto, UpdateServicioDto } from '../dto';
 import { TipoDuracionInterface } from '../interfaces/tipo-duracion.interface';
+import { TipoServicioService } from './tipo-servicio.service';
+import { TipoDuracionService } from './tipo-duracion.service';
+import { TipoHorarioDescripcionService } from './tipo-horario-descripcion.service';
 
 @Injectable()
 export class ServiciosService {
