@@ -43,12 +43,38 @@ export class TipoHorarioService {
             throw new BadRequestException(`Antes de crear un nuevo horario ${tipoHorarioDescripcion.descripcion} debes agregar fecha de finalizacion al que aun esta vigente`)
         }
 
+        // FECHA VIGENCIA INICIO
+            
+        const fechaVigenciaInicioSplit = createTipoHorarioDto.fechaVigenciaInicio.toISOString().split('T')[0];
+    
+        const [añoInicio, mesInicio, diaInicio] = fechaVigenciaInicioSplit.split('-').map(Number);
+        
+        const fechaVigenciaInicio = new Date(añoInicio, mesInicio - 1, diaInicio);
+
+        // FECHA VIGENCIA FIN
+
+        let fechaVigenciaFin = new Date();
+
         // Validar que el período sea lógicamente correcto
-        if (createTipoHorarioDto.fechaVigenciaFin && createTipoHorarioDto.fechaVigenciaInicio >= createTipoHorarioDto.fechaVigenciaFin) {
-          throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        if (createTipoHorarioDto.fechaVigenciaFin) {
+            
+            // FECHA VIGENCIA FIN
+    
+            const fechaVigenciaFinSplit = createTipoHorarioDto.fechaVigenciaFin.toISOString().split('T')[0];
+        
+            const [añoFin, mesFin, diaFin] = fechaVigenciaFinSplit.split('-').map(Number);
+                    
+            fechaVigenciaFin = new Date(añoFin, mesFin - 1, diaFin);
+
+            if (fechaVigenciaInicio >= fechaVigenciaFin){
+
+                throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+            
+            }
+
         }
 
-        await this.validarFechasVigencia(createTipoHorarioDto.fechaVigenciaInicio, tipoHorarioDescripcion);
+        await this.validarFechasVigencia(fechaVigenciaInicio, tipoHorarioDescripcion);
     
         if (
             tipoHorarioDescripcion.descripcion == TipoHorarioInterface.DIURNO && 
@@ -73,6 +99,8 @@ export class TipoHorarioService {
           const tipoHorario = this.tipoHorarioRepository.create({
             ...createTipoHorarioDto,
             idTipoHorarioDescripcion: tipoHorarioDescripcion,
+            fechaVigenciaInicio: fechaVigenciaInicio,
+            fechaVigenciaFin: createTipoHorarioDto.fechaVigenciaFin ? fechaVigenciaFin : null
           });
     
           await this.tipoHorarioRepository.save(tipoHorario);
@@ -174,12 +202,27 @@ export class TipoHorarioService {
 
     async update(id: number, updateTipoHorarioDto: UpdateTipoHorarioDto) {
     
-        const { idTipoHorarioDescripcion, ...tipoHorarioData } = updateTipoHorarioDto;
+        const { idTipoHorarioDescripcion, fechaVigenciaInicio, fechaVigenciaFin, ...tipoHorarioData } = updateTipoHorarioDto;
+
+        // FECHA VIGENCIA INICIO
+            
+        const fechaVigenciaInicioSplit = updateTipoHorarioDto.fechaVigenciaInicio.toISOString().split('T')[0];
     
-        const tipoHorario = await this.tipoHorarioRepository.preload({idTipoHorario: id, ...tipoHorarioData});
+        const [añoInicio, mesInicio, diaInicio] = fechaVigenciaInicioSplit.split('-').map(Number);
+        
+        const fechaInicio = new Date(añoInicio, mesInicio - 1, diaInicio);
+
+        // OBTENER TIPO HORARIO
+
+        const tipoHorario = await this.tipoHorarioRepository.preload({
+            idTipoHorario: id,
+            fechaVigenciaInicio: fechaInicio, 
+            ...tipoHorarioData
+        });
     
         if(!tipoHorario) throw new NotFoundException(`Tipo Horario con id "${id}" no encontrado`);
     
+
         if (updateTipoHorarioDto.idTipoHorarioDescripcion){
             
             // OBTENER TIPO DE HORARIO DESCRIPCION
@@ -189,16 +232,37 @@ export class TipoHorarioService {
             
         }
 
+        // FECHA VIGENCIA FIN
+
+        let fechaFin = new Date();
+
         // Validar que el período sea lógicamente correcto
-        if (tipoHorario.fechaVigenciaInicio >= tipoHorario.fechaVigenciaFin) {
-          throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        if (updateTipoHorarioDto.fechaVigenciaFin) {
+            
+            // FECHA VIGENCIA FIN
+    
+            const fechaVigenciaFinSplit = updateTipoHorarioDto.fechaVigenciaFin.toISOString().split('T')[0];
+        
+            const [añoFin, mesFin, diaFin] = fechaVigenciaFinSplit.split('-').map(Number);
+                    
+            fechaFin = new Date(añoFin, mesFin - 1, diaFin);
+
+            if (fechaInicio >= fechaFin){
+
+                throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+            
+            }
+
+            tipoHorario.fechaVigenciaFin = fechaFin;
+
         }
+
 
         // 4. Validar solapamiento con otros registros del mismo tipo de descripción
         const tienesSolapamiento = await this.validarSolapamientoFechasVigencia(
             tipoHorario.idTipoHorarioDescripcion,
-            tipoHorario.fechaVigenciaInicio,
-            tipoHorario.fechaVigenciaFin,
+            fechaInicio,
+            updateTipoHorarioDto.fechaVigenciaFin ? fechaFin : null,
             id // Excluir el registro actual de la validación
         );
     

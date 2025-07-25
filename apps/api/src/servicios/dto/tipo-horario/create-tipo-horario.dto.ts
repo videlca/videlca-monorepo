@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsDateString, IsOptional, IsBoolean, Matches, IsInt, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsOptional, Matches, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength, IsDate } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateTipoHorarioDto {
@@ -29,16 +29,14 @@ export class CreateTipoHorarioDto {
     horaFin: string;
 
     @ApiProperty({ description: 'Fecha de inicio de la vigencia del horario', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
-    @IsNotEmpty()
-    @IsDateString()
     @Transform(({ value }) => new Date(value))
+    @IsDate()
     fechaVigenciaInicio: Date;
     
     @ApiProperty({ description: 'Fecha de fin de la vigencia del horario', example: 'ISO String 2024-03-15T00:00:00.000Z', required: false}) 
     @IsOptional()   
-    @IsNotEmpty()
-    @IsDateString()
     @Transform(({ value }) => new Date(value))
+    @IsDate()
     fechaVigenciaFin?: Date;
 
 }
