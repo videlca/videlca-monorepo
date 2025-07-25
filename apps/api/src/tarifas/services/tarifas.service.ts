@@ -128,6 +128,38 @@ export class TarifasService {
     });
 
   }
+  
+  async findAllActivesByPeriodoActivo(paginationDto: PaginationDto, pagination: boolean = true) {
+
+    const periodoActivoFacturacion = await this.periodoService.obtenerPeriodoActivo();
+    
+    if (pagination) {
+
+      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
+      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+      
+      // Se hace la consulta de manera paginada
+      const servicios = await this.tarifaRepository.find({
+        take: limit,
+        skip: offset,
+        where: {
+          estado: true,
+          idPeriodo: periodoActivoFacturacion
+        }
+      });
+  
+      return servicios;
+
+    }
+    
+    return await this.tarifaRepository.find({
+      where: {
+        estado: true,
+        idPeriodo: periodoActivoFacturacion
+      }
+    });
+
+  }
 
   async findOne(id: number) {
     

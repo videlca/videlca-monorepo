@@ -31,6 +31,13 @@ export class TarifasController {
   findAllActivesByPeriodo(@Param('idPeriodo') id: number, @Query() paginationDto: PaginationDto){
     return this.tarifasService.findAllActivesByPeriodo(id, paginationDto, paginationDto.pagination);
   }
+  
+  // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO ACTIVO DE FACTURACION
+  @Get('periodo-activo')
+  @ValidateJwtAuth()
+  findAllActivesByPeriodoActivo(@Query() paginationDto: PaginationDto){
+    return this.tarifasService.findAllActivesByPeriodoActivo(paginationDto, paginationDto.pagination);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: number) {
