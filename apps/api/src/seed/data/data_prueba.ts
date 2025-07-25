@@ -75,7 +75,7 @@ export const initialData: SeedData = {
     tiposTarifa: [
         {nombre: "mes", descripcion: "El monto precio total del servicio equivale a un mes, se puede ajustar cantidad de dias que equivale el mes que cobran", tipoUnidadTiempo: "dias", cantidadTiempo: 30},
         {nombre: "turno", descripcion: "El monto precio total del servicio equivale a un turno, se puede ajustar cantidad de horas que equivale el turno que cobran", tipoUnidadTiempo: "horas", cantidadTiempo: 8},
-        {nombre: "Servicio unico", descripcion: "El precio total del servicio es de unico cobro", tipoUnidadTiempo: "no aplica"},
+        {nombre: "servicio unico", descripcion: "El precio total del servicio es de unico cobro", tipoUnidadTiempo: "no aplica"},
     ],
     
     estadosOrdenServicio: [
