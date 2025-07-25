@@ -9,3 +9,8 @@ export interface UpdatePeriodoDto {
   fechaFin: string;
   periodoActivoFacturacion: boolean;
 }
+
+// tipo tarifa
+export interface UpdateTipoTarifaDto {
+  cantidadTiempo: number;
+}

@@ -233,7 +233,7 @@ const Table = <TData, TValues>({
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-6 py-4 text-sm whitespace-nowrap text-gray-900"
+                      className="max-w-xs px-6 py-4 text-sm break-words text-gray-900"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

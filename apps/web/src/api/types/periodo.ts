@@ -1,6 +1,5 @@
 // Periodos / Tarifas
 
-import type { TipoTarifa } from "./configuracion";
 import type { Servicio } from "./servicio";
 
 export interface Periodo {
@@ -28,4 +27,18 @@ export interface Tarifa {
   estado: boolean;
   fechaCreacion: string;
   fechaActualizacion: string;
+}
+
+// Tipo tarifa
+export interface TipoTarifa {
+  idTipoTarifa: number;
+  nombre: string;
+  descripcion: string;
+  idTipoUnidadTiempo: {
+    descripcion: string;
+    estado: boolean;
+    idTipoUnidadTiempo: number;
+    requiereTiempo: boolean;
+  };
+  cantidadTiempo?: number;
 }

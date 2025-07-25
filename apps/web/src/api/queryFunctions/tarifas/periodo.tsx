@@ -11,7 +11,7 @@ import {
   getPeriodos,
   getPeriodosActivo,
   updatePeriodo,
-} from "../../functions/periodos";
+} from "../../functions/tarifas/periodo";
 import type { ApiResponse } from "../../types";
 import type { Periodo } from "../../types/periodo";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../dtos";

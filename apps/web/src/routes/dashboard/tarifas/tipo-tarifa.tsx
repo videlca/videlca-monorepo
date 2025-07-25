@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   useActualizarTipoTarifa,
   useTipoTarifa,
-} from "../../../api/queryFunctions/configuracion/tipo-tarifa";
+} from "../../../api/queryFunctions/tarifas/tipo-tarifa";
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { TipoTarifa } from "../../../api/types/configuracion";
+import type { TipoTarifa } from "../../../api/types/periodo";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { PencilIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
@@ -16,7 +16,7 @@ import { InputForm } from "../../../components/common/InputForm";
 import Button from "../../../components/common/Button";
 import { Section } from "../../../components/ui/dashboard/Section";
 
-export const Route = createFileRoute("/dashboard/configuracion/tipo-tarifa")({
+export const Route = createFileRoute("/dashboard/tarifas/tipo-tarifa")({
   component: RouteComponent,
 });
 

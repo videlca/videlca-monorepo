@@ -24,14 +24,14 @@ export interface TipoServicio {
   estado: boolean;
 }
 
-interface TipoDuracion {
+export interface TipoDuracion {
   idTipoDuracion: number;
   descripcion: string;
   estado: boolean;
   servicios: Servicio[];
 }
 
-interface TipoHorarioDescripcion {
+export interface TipoHorarioDescripcion {
   idTipoHorarioDescripcion: number;
   descripcion: string;
   estado: boolean;
@@ -39,7 +39,7 @@ interface TipoHorarioDescripcion {
   horarios: TipoHorario[];
 }
 
-interface TipoHorario {
+export interface TipoHorario {
   idTipoHorario: number;
   idTipoHorarioDescripcion: TipoHorarioDescripcion;
   horaInicio: string;

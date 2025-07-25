@@ -73,24 +73,6 @@ export const linksSideBar: LinksSideBar = {
       description: "tipo-id",
       icon: <IdCardIcon className="h-6 w-6" />,
     },
-    {
-      to: "/dashboard/configuracion/tipo-horario",
-      label: "Tipo de Horario",
-      description: "tipo-horario",
-      icon: <ClockIcon className="h-6 w-6" />,
-    },
-    {
-      to: "/dashboard/configuracion/tipo-servicio",
-      label: "Tipo de Servicio",
-      description: "tipo-servicio",
-      icon: <FileSpreadsheetIcon className="h-6 w-6" />,
-    },
-    {
-      to: "/dashboard/configuracion/tipo-tarifa",
-      label: "Tipo de Tarifa",
-      description: "tipo-tarifa",
-      icon: <DollarSignIcon className="h-6 w-6" />,
-    },
     // {
     //   to: "/dashboard/configuracion/tipo-genero",
     //   label: "Tipo de Género",
@@ -162,6 +144,18 @@ export const linksSideBar: LinksSideBar = {
       description: "tarifas",
       icon: <DollarSignIcon className="h-6 w-6" />,
     },
+    {
+      to: "/dashboard/tarifas/periodo",
+      label: "Periodo",
+      description: "periodo",
+      icon: <CalendarIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/tarifas/tipo-tarifa",
+      label: "Tipo de Tarifa",
+      description: "tipo-tarifa",
+      icon: <DollarSignIcon className="h-6 w-6" />,
+    },
   ],
   reportes: [
     {
@@ -184,6 +178,18 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/servicios",
       label: "Servicios",
       description: "servicios",
+      icon: <FileSpreadsheetIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/servicios/tipo-horario",
+      label: "Tipo de Horario",
+      description: "tipo-horario",
+      icon: <ClockIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/servicios/tipo-servicio",
+      label: "Tipo de Servicio",
+      description: "tipo-servicio",
       icon: <FileSpreadsheetIcon className="h-6 w-6" />,
     },
   ],

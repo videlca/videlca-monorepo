@@ -30,7 +30,7 @@ export function DashboardLayout() {
         onMenuToggle={toggleMenu}
         onLogout={onLogout}
       />
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
         <Header />
         <MainContent />
       </div>

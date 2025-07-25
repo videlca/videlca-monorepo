@@ -45,8 +45,3 @@ export interface UpdateDepartamentoDto {
   pais?: number
   codigoDepartamento?: string
 }
-
-// tipo tarifa
-export interface UpdateTipoTarifaDto {
-  cantidadTiempo: number;
-}
