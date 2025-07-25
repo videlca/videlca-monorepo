@@ -16,6 +16,7 @@ import { TarifasModule } from './tarifas/tarifas.module';
 import { SeedModule } from './seed/seed.module';
 import { ServiciosModule } from './servicios/servicios.module';
 import { PeriodosModule } from './periodos/periodos.module';
+import { OrdenServicioModule } from './orden-servicio/orden-servicio.module';
 
 @Module({
   imports: [
@@ -41,6 +42,8 @@ import { PeriodosModule } from './periodos/periodos.module';
     UsersModule, 
     
     PermissionsModule,
+
+    OrdenServicioModule, 
     
     ClientesModule, 
     
@@ -56,7 +59,7 @@ import { PeriodosModule } from './periodos/periodos.module';
     
     CommonModule, 
     
-    SeedModule, 
+    SeedModule,
     
   ],
   controllers: [],
