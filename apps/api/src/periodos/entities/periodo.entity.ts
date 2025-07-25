@@ -10,8 +10,8 @@ import { IsNotEmpty, Min, Max, Length } from 'class-validator';
 import { Tarifa } from '../../tarifas/entities';
 
 @Entity('periodo')
-@Index(['mesInicio', 'anioInicio', 'mesFin', 'anioFin'], { unique: true })
-@Index(['fechaInicio', 'fechaFin'])
+@Index(['mesInicio', 'anioInicio', 'mesFin', 'anioFin'])
+@Index(['fechaInicio', 'fechaFin'], { unique: true })
 @Index(['estado'])
 @Index(['periodoActivoFacturacion'])
 export class Periodo {

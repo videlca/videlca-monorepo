@@ -32,12 +32,14 @@ export class TipoHorarioService {
         // OBTENER TIPO DE HORARIO DESCRIPCION
         const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOne(createTipoHorarioDto.idTipoHorarioDescripcion);
         
-        const existTipoHorario = await this.tipoHorarioRepository.findOne({
-            where: {
-                idTipoHorarioDescripcion: tipoHorarioDescripcion,
-                fechaVigenciaFin: null
-            }
-        });
+        const existTipoHorario = await this.tipoHorarioRepository
+            .createQueryBuilder('th')
+            .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
+            .where('th.idTipoHorarioDescripcion = :tipoHorarioDescripcion', { 
+                tipoHorarioDescripcion 
+            })
+            .andWhere('th.fechaVigenciaFin IS NULL')
+            .getOne();
     
         if (existTipoHorario){
             throw new BadRequestException(`Antes de crear un nuevo horario ${tipoHorarioDescripcion.descripcion} debes agregar fecha de finalizacion al que aun esta vigente`)
@@ -138,30 +140,17 @@ export class TipoHorarioService {
     }
 
     async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
-    
-        if (pagination) {
-    
-            // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
-            const { limit = this.defaultLimit, offset = 0 } = paginationDto;
-            
-            // Se hace la consulta de manera paginada
-            const tiposHorario = await this.tipoHorarioRepository.find({
-                take: limit,
-                skip: offset,
-                order: {
-                    fechaVigenciaInicio: 'DESC'
-                }
-            });
+
+        const queryBuilder = this.tipoHorarioRepository.createQueryBuilder('th')
+            .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
+            .orderBy('th.fechaVigenciaInicio', 'DESC')
         
-            return tiposHorario;
-    
+        if (pagination) {
+            const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+            queryBuilder.take(limit).skip(offset);
         }
-    
-        return await this.tipoHorarioRepository.find({
-            order: {
-                fechaVigenciaInicio: 'DESC'
-            }
-        });
+        
+        return await queryBuilder.getMany();
 
     }
 
@@ -171,6 +160,9 @@ export class TipoHorarioService {
         const tipoHorario = await this.tipoHorarioRepository.findOne({
             where: {
                 idTipoHorario: id
+            },
+            relations: {
+                idTipoHorarioDescripcion: true
             }
         });
             

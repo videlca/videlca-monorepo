@@ -103,7 +103,7 @@ export class PeriodosService {
       
       await queryRunner.rollbackTransaction();
 
-      throw error;
+      this.handleDbExceptions(error);
 
     } finally {
 
@@ -336,7 +336,7 @@ export class PeriodosService {
   private handleDbExceptions(error: any){
   
     if (error.errno === 1062)
-      throw new BadRequestException(`El registro que intenta crear ya existe, no puede crear duplicados`);
+      throw new BadRequestException(`El registro que intenta crear ya existe, no puede crear periodos duplicados`);
 
     this.logger.error(error);
 

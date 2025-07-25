@@ -14,9 +14,9 @@ export class TipoHorario {
     @ManyToOne(
         () => TipoHorarioDescripcion,
         (tipoHorarioDescripcion) => tipoHorarioDescripcion.horarios,
-        {
-            eager: true
-        }
+        // {
+        //     eager: true
+        // }
     )
     @JoinColumn({name: 'idTipoHorarioDescripcion'})
     idTipoHorarioDescripcion: TipoHorarioDescripcion;
