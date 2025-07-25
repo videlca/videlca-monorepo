@@ -1,17 +1,15 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsDateString, IsOptional, IsBoolean, IsDate } from "class-validator";
+import { IsBoolean, IsDate } from "class-validator";
 import { Transform } from 'class-transformer';
 
 export class CreatePeriodoDto {
     
     @ApiProperty({ description: 'Fecha de inicio del periodo', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
-    // @IsNotEmpty()
     @Transform(({ value }) => new Date(value))
     @IsDate()
     fechaInicio: Date;
 
     @ApiProperty({ description: 'Fecha de Fin del periodo', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
-    // @IsNotEmpty()
     @Transform(({ value }) => new Date(value))
     @IsDate()
     fechaFin: Date;

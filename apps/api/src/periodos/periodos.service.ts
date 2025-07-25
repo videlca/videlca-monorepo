@@ -27,38 +27,33 @@ export class PeriodosService {
   }
 
   async create(createPeriodoDto: CreatePeriodoDto) {
-
-    console.log("createPeriodoDto: ", createPeriodoDto);
-
-    await this.validarPeriodo(createPeriodoDto.fechaInicio, createPeriodoDto.fechaFin);
-    console.log("createPeriodoDto.fechaInicio: ", createPeriodoDto.fechaInicio);
+    
+    // FECHA INICIO
+    
     const fechaInicioSplit = createPeriodoDto.fechaInicio.toISOString().split('T')[0];
-    console.log("fechaInicioSplit: ", fechaInicioSplit);
 
-    const [year, month, day] = fechaInicioSplit.split('-').map(Number);
-    console.log("year: ", year);
-    console.log("month: ", month);
-    console.log("day: ", day);
-    const nombreMesInicio = Meses[month - 1].nombre;
-    const fechaInicio = new Date(year, month - 1, day);
-    console.log("fechaInicio: ", fechaInicio);
-    // Extraer componentes de la fecha de inicio
-    // const diaInicio = createPeriodoDto.fechaInicio.getDate();
-    // console.log("diaInicio createPeriodoDto: ", diaInicio);
-    // const mesInicio = createPeriodoDto.fechaInicio.getMonth(); // getMonth() retorna 0-11
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
+
+    const nombreMesInicio = Meses[mesInicio - 1].nombre;
     
-    // const añoInicio = createPeriodoDto.fechaInicio.getFullYear();
+    const fechaInicio = new Date(añoInicio, mesInicio - 1, diaInicio);
     
-    // Extraer componentes de la fecha de fin
-    // const diaFin = createPeriodoDto.fechaFin.getDate();
+    // FECHA FIN
 
-    // const mesFin = createPeriodoDto.fechaFin.getMonth(); // getMonth() retorna 0-11
-    const nombreMesFin = Meses[month - 1].nombre;
+    const fechaFinSplit = createPeriodoDto.fechaFin.toISOString().split('T')[0];
 
-    // const añoFin = createPeriodoDto.fechaFin.getFullYear();
+    const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+
+    const nombreMesFin = Meses[mesFin - 1].nombre;
+    
+    const fechaFin = new Date(añoFin, mesFin - 1, diaFin);
+    
+    // VALIDAR PERIODOS 
+
+    await this.validarPeriodo(fechaInicio, fechaFin);
     
     // NOMBRE PERIODO
-    const nombrePeriodo = `${nombreMesInicio} ${day} de ${year} a ${nombreMesFin} ${day} de ${year}`;
+    const nombrePeriodo = `${nombreMesInicio} ${diaInicio} de ${añoInicio} a ${nombreMesFin} ${diaFin} de ${añoFin}`;
     
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -69,12 +64,12 @@ export class PeriodosService {
       // Crear periodo
       const periodo = queryRunner.manager.create(Periodo, {
           nombre: nombrePeriodo,
-          mesInicio: month,
-          anioInicio: year,
-          mesFin: month,
-          anioFin: year,
+          mesInicio: mesInicio,
+          anioInicio: añoInicio,
+          mesFin: mesFin,
+          anioFin: añoFin,
           fechaInicio: fechaInicio,
-          fechaFin: createPeriodoDto.fechaFin,
+          fechaFin: fechaFin,
       });
 
       const savedPeriodo = await queryRunner.manager.save(Periodo, periodo);
@@ -125,8 +120,6 @@ export class PeriodosService {
       throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
     }
 
-    console.log(fechaInicio, fechaFin);
-
     // Validar solapamientos
     let query = this.periodoRepository
       .createQueryBuilder('periodo')
@@ -146,8 +139,6 @@ export class PeriodosService {
     }
 
     const periodosSolapados = await query.getMany();
-
-    console.log("periodosSolapados: ", periodosSolapados);
 
     if (periodosSolapados.length > 0) {
       throw new BadRequestException(`El período se solapa con: ${periodosSolapados.map(p => p.nombre).join(', ')}`);
@@ -201,27 +192,32 @@ export class PeriodosService {
 
   async update(id: number, updatePeriodoDto: UpdatePeriodoDto) {
 
-    console.log(updatePeriodoDto);
     const periodoExistente = await this.findOne(id);
+
+    // FECHA INICIO
     
-    await this.validarPeriodo(updatePeriodoDto.fechaInicio, updatePeriodoDto.fechaFin, id);
+    const fechaInicioSplit = updatePeriodoDto.fechaInicio.toISOString().split('T')[0];
+
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
+
+    const nombreMesInicio = Meses[mesInicio - 1].nombre;
+    
+    const fechaInicio = new Date(añoInicio, mesInicio - 1, diaInicio);
+    
+    // FECHA FIN
+
+    const fechaFinSplit = updatePeriodoDto.fechaFin.toISOString().split('T')[0];
+
+    const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+
+    const nombreMesFin = Meses[mesFin - 1].nombre;
+    
+    const fechaFin = new Date(añoFin, mesFin - 1, diaFin);
+    
+    // VALIDAR PERIODOS 
+    
+    await this.validarPeriodo(fechaInicio, fechaFin, id);
         
-    // Extraer componentes de la fecha de inicio
-    const diaInicio = updatePeriodoDto.fechaInicio.getDate();
-    
-    const mesInicio = updatePeriodoDto.fechaInicio.getMonth(); // getMonth() retorna 0-11
-    const nombreMesInicio = Meses[mesInicio].nombre;
-
-    const añoInicio = updatePeriodoDto.fechaInicio.getFullYear();
-        
-    // Extraer componentes de la fecha de fin
-    const diaFin = updatePeriodoDto.fechaFin.getDate();
-
-    const mesFin = updatePeriodoDto.fechaFin.getMonth(); // getMonth() retorna 0-11
-    const nombreMesFin = Meses[mesFin].nombre;
-
-    const añoFin = updatePeriodoDto.fechaFin.getFullYear();
-    
     // NOMBRE PERIODO
     const nombrePeriodo = `${nombreMesInicio} ${diaInicio} de ${añoInicio} a ${nombreMesFin} ${diaFin} de ${añoFin}`;
     
