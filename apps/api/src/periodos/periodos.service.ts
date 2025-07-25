@@ -232,12 +232,12 @@ export class PeriodosService {
         {idPeriodo: id},
         {
           nombre: nombrePeriodo,
-          mesInicio: mesInicio + 1,
+          mesInicio: mesInicio,
           anioInicio: añoInicio,
-          mesFin: mesFin + 1,
+          mesFin: mesFin,
           anioFin: añoFin,
-          fechaInicio: updatePeriodoDto.fechaInicio,
-          fechaFin: updatePeriodoDto.fechaFin,
+          fechaInicio: fechaInicio,
+          fechaFin: fechaFin,
       });
      
       // Validacion si el periodo a crear sera el que estara activo para facturacion
