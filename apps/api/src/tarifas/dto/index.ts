@@ -1,4 +1,5 @@
 // TARIFA
+export { SaveTarifaDto } from "./tarifa/save-tarifa.dto";
 export { CreateTarifaDto } from "./tarifa/create-tarifa.dto";
 export { UpdateTarifaDto } from "./tarifa/update-tarifa.dto";
 

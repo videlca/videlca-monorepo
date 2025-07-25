@@ -6,7 +6,7 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { PaginationDto } from '../../common/dto';
 
 import { TarifasService } from '../services/tarifas.service';
-import { CreateTarifaDto, UpdateTarifaDto } from '../dto';
+import { CreateTarifaDto, UpdateTarifaDto, SaveTarifaDto } from '../dto';
 
 @Controller('tarifas')
 @AppAuth(DescriptionRoutes.TARIFAS) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -19,7 +19,7 @@ export class TarifasController {
     return this.tarifasService.create(createTarifaDto);
   }
   
-  // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO
+  // RUTA PROTEGIDA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO
   @Get('periodo/:idPeriodo')
   findAllByPeriodo(@Param('idPeriodo') id: number, @Query() paginationDto: PaginationDto) {
     return this.tarifasService.findAllByPeriodo(id, paginationDto, paginationDto.pagination);
@@ -30,6 +30,12 @@ export class TarifasController {
   @ValidateJwtAuth()
   findAllActivesByPeriodo(@Param('idPeriodo') id: number, @Query() paginationDto: PaginationDto){
     return this.tarifasService.findAllActivesByPeriodo(id, paginationDto, paginationDto.pagination);
+  }
+
+  // RUTA PROTEGIDA: guardar tarifas para un periodo
+  @Post('guardar-tarifas')
+  bulk(@Body() bulkCreateTarifaDto: SaveTarifaDto) {
+    return this.tarifasService.bulkCreateUpdate(bulkCreateTarifaDto);
   }
   
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO ACTIVO DE FACTURACION

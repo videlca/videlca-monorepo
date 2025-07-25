@@ -16,9 +16,9 @@ export class Tarifa {
     @ManyToOne(
         () => Periodo,
         (periodo) => periodo.tarifas,
-        {
-            eager: true
-        }
+        // {
+        //     eager: true
+        // }
     )
     @JoinColumn({name: 'idPeriodo'})
     idPeriodo: Periodo;

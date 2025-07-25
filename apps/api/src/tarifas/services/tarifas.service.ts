@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { ServiciosService } from '../../servicios/services';
@@ -10,7 +10,7 @@ import { PaginationDto } from '../../common/dto';
 
 import { Tarifa } from '../entities';
 
-import { CreateTarifaDto, UpdateTarifaDto } from '../dto';
+import { CreateTarifaDto, UpdateTarifaDto, SaveTarifaDto } from '../dto';
 import { TipoTarifaService } from './tipo-tarifa.service';
 
 @Injectable()
@@ -23,12 +23,96 @@ export class TarifasService {
   constructor(
     @InjectRepository(Tarifa)
     private readonly tarifaRepository: Repository<Tarifa>,
+    private readonly dataSource: DataSource, 
     private readonly tipoTarifaService: TipoTarifaService,
     private readonly servicioService: ServiciosService,
     private readonly periodoService: PeriodosService,
     private readonly configService: ConfigService,
   ) {
       this.defaultLimit = this.configService.get<number>('defaultLimit');
+  }
+
+  async bulkCreateUpdate(bulkCreateTarifaDto: SaveTarifaDto) {
+
+    const { idPeriodo, tarifas } = bulkCreateTarifaDto;
+    
+    // Crear QueryRunner para manejar la transacción
+    const queryRunner = this.dataSource.createQueryRunner();
+    
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
+    try {
+
+        // 1. Verificar que el periodo existe
+        const periodo = await this.periodoService.findOne(idPeriodo);
+
+        if (!periodo) {
+            throw new NotFoundException(`Periodo con ID ${idPeriodo} no encontrado`);
+        }
+        
+        // 2. Eliminar todas las tarifas existentes para este periodo
+        await queryRunner.manager.delete(Tarifa, { idPeriodo: periodo });
+        
+        // 3. Validar y obtener las entidades relacionadas para todas las tarifas
+        const tarifasToCreate = [];
+        
+        for (const tarifaDto of tarifas) {
+
+            // Verificar que el idPeriodo coincida
+            if (tarifaDto.idPeriodo !== idPeriodo) {
+
+                throw new BadRequestException(
+                    `La tarifa con servicio ${tarifaDto.idServicio} tiene un periodo diferente al especificado`
+                );
+
+            }
+            
+            // Obtener servicio
+            const servicio = await this.servicioService.findOne(tarifaDto.idServicio);
+            
+            // Obtener tipo de tarifa
+            const tipoTarifa = await this.tipoTarifaService.findOne(tarifaDto.idTipoTarifa);
+            
+            // Crear la entidad tarifa
+            const tarifa = queryRunner.manager.create('Tarifa', {
+                ...tarifaDto,
+                idTipoTarifa: tipoTarifa,
+                idServicio: servicio,
+                idPeriodo: periodo
+            });
+            
+            tarifasToCreate.push(tarifa);
+        }
+        
+        // 4. Guardar todas las tarifas de una vez
+        const savedTarifas = await queryRunner.manager.save('Tarifa', tarifasToCreate);
+        
+        // 5. Confirmar la transacción
+        await queryRunner.commitTransaction();
+        
+        return {
+            message: `Se guardaron ${savedTarifas.length} tarifas exitosamente`,
+            tarifas: savedTarifas,
+            idPeriodo: idPeriodo
+        };
+        
+    } catch (error) {
+        // Rollback en caso de error
+        await queryRunner.rollbackTransaction();
+        
+        // Manejar errores específicos
+        if (error instanceof NotFoundException || error instanceof BadRequestException) {
+            throw error;
+        }
+        
+        // Para otros errores, usar tu método existente
+        this.handleDbExceptions(error);
+        
+    } finally {
+        // Liberar el QueryRunner
+        await queryRunner.release();
+    }
   }
 
   async create(createTarifaDto: CreateTarifaDto) {
@@ -65,67 +149,36 @@ export class TarifasService {
 
   async findAllByPeriodo(id: number, paginationDto: PaginationDto, pagination: boolean = true) {
     
+    const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
+      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .where('tarifa.idPeriodo = :id', { id })
+
     if (pagination) {
-
-      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
-      
-      // Se hace la consulta de manera paginada
-      const tarifas = await this.tarifaRepository.find({
-        take: limit,
-        skip: offset,
-        where: {
-          idPeriodo: {
-            idPeriodo: id
-          }
-        }
-      });
-  
-      return tarifas;
-
+      queryBuilder.take(limit).skip(offset);
     }
 
-    return await this.tarifaRepository.find({
-      where: {
-        idPeriodo: {
-          idPeriodo: id
-        }
-      }
-    });
+    return await queryBuilder.getMany();
 
   }
   
   async findAllActivesByPeriodo(id: number, paginationDto: PaginationDto, pagination: boolean = true) {
     
+    const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
+      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .where('tarifa.idPeriodo = :id', { id })
+      .andWhere('tarifa.estado = :estado', { estado: true })
+
     if (pagination) {
-
-      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
-      
-      // Se hace la consulta de manera paginada
-      const servicios = await this.tarifaRepository.find({
-        take: limit,
-        skip: offset,
-        where: {
-          estado: true,
-          idPeriodo: {
-            idPeriodo: id
-          }
-        }
-      });
-  
-      return servicios;
-
+      queryBuilder.take(limit).skip(offset);
     }
-    
-    return await this.tarifaRepository.find({
-      where: {
-        estado: true,
-        idPeriodo: {
-          idPeriodo: id
-        }
-      }
-    });
+
+    return await queryBuilder.getMany();
 
   }
   
@@ -133,31 +186,18 @@ export class TarifasService {
 
     const periodoActivoFacturacion = await this.periodoService.obtenerPeriodoActivo();
     
+    const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
+      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .where('tarifa.idPeriodo = :id', { id: periodoActivoFacturacion.idPeriodo })
+
     if (pagination) {
-
-      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
-      
-      // Se hace la consulta de manera paginada
-      const servicios = await this.tarifaRepository.find({
-        take: limit,
-        skip: offset,
-        where: {
-          estado: true,
-          idPeriodo: periodoActivoFacturacion
-        }
-      });
-  
-      return servicios;
-
+      queryBuilder.take(limit).skip(offset);
     }
-    
-    return await this.tarifaRepository.find({
-      where: {
-        estado: true,
-        idPeriodo: periodoActivoFacturacion
-      }
-    });
+
+    return await queryBuilder.getMany();
 
   }
 
@@ -166,6 +206,9 @@ export class TarifasService {
     const tarifa = await this.tarifaRepository.findOne({
       where: {
         idTarifa: id
+      },
+      relations: {
+        idPeriodo: true
       }
     });
         
