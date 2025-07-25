@@ -45,13 +45,43 @@ export class PersonalService {
       throw new BadRequestException(`Personal con identificacion ${createPersonalDto.numeroIdentificacion} ya existe`);
     }
 
-    // Validar que la fecha de inicio no sea mayor que la de fin
-    const fechaInicioContrato = new Date(createPersonalDto.fechaInicioContrato);
-    const fechaFinContrato = createPersonalDto.fechaFinContrato ? new Date(createPersonalDto.fechaFinContrato) : null;
+    // FECHA INICIO
+        
+    const fechaInicioContratoSplit = createPersonalDto.fechaInicioContrato.toISOString().split('T')[0];
+
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioContratoSplit.split('-').map(Number);
     
-    if (fechaFinContrato && fechaInicioContrato > fechaFinContrato) {
-      throw new BadRequestException('La fecha de inicio del contrato no puede ser mayor que la fecha de fin del contrato');
+    const fechaInicioContrato = new Date(añoInicio, mesInicio - 1, diaInicio);
+
+    // FECHA VIGENCIA FIN CONTRATO
+
+    let fechaFinContrato = new Date();
+
+    // Validar que el período del contrato sea lógicamente correcto
+    if (createPersonalDto.fechaFinContrato) {
+        
+        // FECHA VIGENCIA FIN CONTRATO
+
+        const fechaFinContratoSplit = createPersonalDto.fechaFinContrato.toISOString().split('T')[0];
+    
+        const [añoFin, mesFin, diaFin] = fechaFinContratoSplit.split('-').map(Number);
+                
+        fechaFinContrato = new Date(añoFin, mesFin - 1, diaFin);
+
+        if (fechaInicioContrato >= fechaFinContrato){
+
+            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        
+        }
+
     }
+
+    // FECHA NACIMIENTO
+    const fechaNacimientoSplit = createPersonalDto.fechaNacimiento.toISOString().split('T')[0];
+
+    const [añoNacimiento, mesNacimiento, diaNacimiento] = fechaNacimientoSplit.split('-').map(Number);
+    
+    const fechaNacimiento = new Date(añoNacimiento, mesNacimiento - 1, diaNacimiento);
 
     // OBTENER TIPO DE ID
     const tipoIdentificacion = await this.tipoIdentificacionService.findOne(createPersonalDto.idTipoIdentificacion);
@@ -65,13 +95,10 @@ export class PersonalService {
     // OBTENER TIPO DE PERSONAL
     const tipoPersonal = await this.tipoPersonalService.findOne(createPersonalDto.idTipoPersonal);
 
-    // FECHA DE NACIMIENTO
-    const fechaNacimiento = new Date(createPersonalDto.fechaNacimiento);
-
     const empleado = this.personalRepository.create({
       ...createPersonalDto,
       fechaInicioContrato,
-      fechaFinContrato,
+      fechaFinContrato: createPersonalDto.fechaFinContrato ? fechaFinContrato : null,
       fechaNacimiento,
       idTipoIdentificacion: tipoIdentificacion,
       idCiudad: ciudad,
@@ -199,6 +226,9 @@ export class PersonalService {
       idTipoGenero,
       idTipoPersonal,
       idCiudad, 
+      fechaInicioContrato,
+      fechaFinContrato,
+      fechaNacimiento,
       ...toUpdate} = updatePersonalDto;
 
     const empleado = await this.personalRepository.preload({idPersonal: id, ...toUpdate});
@@ -210,13 +240,58 @@ export class PersonalService {
     await queryRunner.connect();
 
     await queryRunner.startTransaction();
+
+    // FECHA INICIO
+
+    let fechaInicioContratoUpdate = new Date();
+
+    if (updatePersonalDto.fechaInicioContrato){
     
-    // Validar que la fecha de inicio no sea mayor que la de fin
-    const fechaInicioContrato = updatePersonalDto.fechaInicioContrato ? new Date(updatePersonalDto.fechaInicioContrato) : empleado.fechaInicioContrato;
-    const fechaFinContrato = updatePersonalDto.fechaFinContrato ? new Date(updatePersonalDto.fechaFinContrato) : empleado.fechaFinContrato;
+      const fechaInicioContratoSplit = updatePersonalDto.fechaInicioContrato.toISOString().split('T')[0];
+
+      const [añoInicio, mesInicio, diaInicio] = fechaInicioContratoSplit.split('-').map(Number);
+
+      fechaInicioContratoUpdate = new Date(añoInicio, mesInicio - 1, diaInicio);
+      
+      empleado.fechaInicioContrato = fechaInicioContratoUpdate;
+
+    }
+
+    // FECHA VIGENCIA FIN CONTRATO
+
+    let fechaFinContratoUpdate = new Date();
+
+    // Validar que el período del contrato sea lógicamente correcto
+    if (updatePersonalDto.fechaFinContrato) {
+        
+        // FECHA VIGENCIA FIN CONTRATO
+
+        const fechaFinContratoSplit = updatePersonalDto.fechaFinContrato.toISOString().split('T')[0];
     
-    if (fechaFinContrato && fechaInicioContrato > fechaFinContrato) {
-      throw new BadRequestException('La fecha de inicio del contrato no puede ser mayor que la fecha de fin del contrato');
+        const [añoFin, mesFin, diaFin] = fechaFinContratoSplit.split('-').map(Number);
+                
+        fechaFinContratoUpdate = new Date(añoFin, mesFin - 1, diaFin);
+
+        if (empleado.fechaInicioContrato >= fechaFinContratoUpdate){
+
+            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        
+        }
+
+        empleado.fechaFinContrato = fechaFinContratoUpdate;
+
+    }
+
+    // FECHA NACIMIENTO
+
+    if (updatePersonalDto.fechaNacimiento){
+
+      const fechaNacimientoSplit = updatePersonalDto.fechaNacimiento.toISOString().split('T')[0];
+  
+      const [añoNacimiento, mesNacimiento, diaNacimiento] = fechaNacimientoSplit.split('-').map(Number);
+      
+      empleado.fechaNacimiento = new Date(añoNacimiento, mesNacimiento - 1, diaNacimiento);
+
     }
     
     if (updatePersonalDto.idTipoIdentificacion){
@@ -252,15 +327,6 @@ export class PersonalService {
       const tipoPersonal = await this.tipoPersonalService.findOne(updatePersonalDto.idTipoPersonal);
     
       empleado.idTipoPersonal = tipoPersonal;
-
-    }
-
-    if (updatePersonalDto.fechaNacimiento){
-      
-      // FECHA DE NACIMIENTO
-      const fechaNacimiento = new Date(updatePersonalDto.fechaNacimiento);
-      
-      empleado.fechaNacimiento = fechaNacimiento;
 
     }
 

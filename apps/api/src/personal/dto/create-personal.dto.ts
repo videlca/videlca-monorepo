@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, MaxLength, Min, IsDateString } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, MaxLength, Min, IsDateString, IsDate } from "class-validator";
 
 export class CreatePersonalDto {
     
@@ -39,18 +40,21 @@ export class CreatePersonalDto {
     @Min(1, {message: 'El valor del campo Tipo de identificacion debe ser minimo 1'})
     idTipoIdentificacion: number;
 
-    @ApiProperty({ description: 'Fecha de inicio del contrato', example: '15/01/2025', required:true})
-    @IsDateString({}, { message: 'fechaInicio debe ser una fecha válida' })
-    fechaInicioContrato: string;
+    @ApiProperty({ description: 'Fecha de inicio de la vigencia del contrato', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
+    @Transform(({ value }) => new Date(value))
+    @IsDate()
+    fechaInicioContrato: Date;
     
-    @ApiProperty({ description: 'Fecha de finalización del contrato', example: '20/05/2025', required:false})
-    @IsDateString({}, { message: 'fechaFin debe ser una fecha válida' })
+    @ApiProperty({ description: 'Fecha de inicio de la vigencia del contrato', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
     @IsOptional()
-    fechaFinContrato?: string;
+    @Transform(({ value }) => new Date(value))
+    @IsDate()
+    fechaFinContrato?: Date;
 
     @ApiProperty({ description: 'Fecha de nacimiento del personal', example: '15/01/1995', required:true})
-    @IsDateString()
-    fechaNacimiento: string;
+    @Transform(({ value }) => new Date(value))
+    @IsDate()
+    fechaNacimiento: Date;
     
     @ApiProperty({ description: 'Dirección de residencia del personal', example: 'Calle 1 # 2 - 3', required:true})
     @IsString({ message: 'El campo direccion residencia debe ser un string'})
