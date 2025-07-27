@@ -32,7 +32,7 @@ export const InputSelect = ({
         required={required}
         disabled={disabled}
       >
-        <option value="" disabled>
+        <option value="" disabled defaultValue={value}>
           {placeholder}
         </option>
         {options.map((option) => (
