@@ -51,6 +51,22 @@ export class ServiciosService {
       throw new BadRequestException("El tipo de duracion requiere que se ingresen las horas minimas")
     }
 
+    if (createServicioDto.horasMaximas && createServicioDto.horasMaximas < createServicioDto.horasMinimas){
+      throw new BadRequestException("El campo horas maximas no puede ser menor que el campo horas minimas");
+    }
+
+    if (createServicioDto.horasFijas && createServicioDto.horasFijas < 1){
+      throw new BadRequestException("El campo horas fijas debe ser mayor a 0");
+    }
+
+    if (createServicioDto.horasMinimas && createServicioDto.horasMinimas < 1){
+      throw new BadRequestException("El campo horas minimas debe ser mayor a 0");
+    }
+
+    if (createServicioDto.horasMaximas && createServicioDto.horasMaximas < 1){
+      throw new BadRequestException("El campo horas maximas debe ser mayor a 0");
+    }
+
     try {
 
       const servicio = this.servicioRepository.create({

@@ -36,16 +36,12 @@ export class CreateServicioDto {
     @ApiProperty({ description: 'Horas fijas que debe cumplir un servicio si el tipo de duracion es fijo', example: 2, required: false})
     @IsOptional()
     @IsNumber({}, {message: 'El valor del campo horas fijas debe ser un número'})
-    @IsPositive({message: 'El valor del campo horas fijas debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo horas fijas debe ser minimo 1'})
     @Max(24, {message: 'El valor del campo horas fijas debe ser maximo 24'})
     horasFijas?: number;
     
     @ApiProperty({ description: 'Horas minimas que debe cumplir un servicio si el tipo de duracion es flexible', example: 2, required: false})
     @IsOptional()
     @IsNumber({}, {message: 'El valor del campo horas minimas debe ser un número'})
-    @IsPositive({message: 'El valor del campo horas minimas debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo horas minimas debe ser minimo 1'})
     @Max(24, {message: 'El valor del campo horas minimas debe ser maximo 24'})
     horasMinimas?: number;
     
