@@ -1,0 +1,1 @@
+export { OrdenServicio } from "./orden-servicio.entity";

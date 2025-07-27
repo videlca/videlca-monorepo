@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMan
 import { Periodo } from "../../periodos/entities/periodo.entity";
 import { Servicio } from "../../servicios/entities";
 import { TipoTarifa } from "./tipo-tarifa.entity";
+import { OrdenServicio } from "../../orden-servicio/entities/orden-servicio.entity";
 
 @Entity({name: 'tarifa'})
 export class Tarifa {
@@ -93,5 +94,11 @@ export class Tarifa {
         name: 'fechaActualizacion'
     }) 
     fechaActualizacion: Date;
+
+    @OneToMany(
+        () => OrdenServicio,
+        (ordenServicio) => ordenServicio.idTarifa
+    )
+    ordenesServicio: OrdenServicio[];
 
 }
