@@ -13,7 +13,7 @@ export function ButtonAction({
 }) {
   return (
     <button
-      className={`flex cursor-pointer items-center gap-2 rounded-md px-4 py-2 text-white ${
+      className={`flex h-fit cursor-pointer items-center gap-2 rounded-md px-4 py-2 whitespace-nowrap text-white ${
         color === "blue"
           ? "bg-blue-600 hover:bg-blue-500"
           : "bg-red-600 hover:bg-red-500"

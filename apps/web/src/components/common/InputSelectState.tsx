@@ -28,7 +28,7 @@ export const InputSelectStateBoolean = ({
         onChange={onChange}
         className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
       >
-        <option value="" disabled>
+        <option value="" disabled selected>
           {placeholder}
         </option>
         {options.map((option) => (

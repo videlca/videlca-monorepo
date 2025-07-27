@@ -14,3 +14,16 @@ export interface UpdatePeriodoDto {
 export interface UpdateTipoTarifaDto {
   cantidadTiempo: number;
 }
+
+export interface CreateTarifaDto {
+  idPeriodo: number;
+  idServicio: number;
+  idTipoTarifa: number;
+  precioSinIva: number;
+  iva: number;
+  precioTotal: number;
+}
+
+export interface UpdateTarifaDto extends Partial<CreateTarifaDto> {
+  estado?: boolean;
+}

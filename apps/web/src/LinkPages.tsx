@@ -138,16 +138,16 @@ export const linksSideBar: LinksSideBar = {
     },
   ],
   tarifas: [
-    {
-      to: "/dashboard/tarifas",
-      label: "Tarifas",
-      description: "tarifas",
-      icon: <DollarSignIcon className="h-6 w-6" />,
-    },
+    // {
+    //   to: "/dashboard/tarifas",
+    //   label: "Tarifas",
+    //   description: "tarifas",
+    //   icon: <DollarSignIcon className="h-6 w-6" />,
+    // },
     {
       to: "/dashboard/tarifas/periodo",
-      label: "Periodo",
-      description: "periodo",
+      label: "Tarifa",
+      description: "tarifa",
       icon: <CalendarIcon className="h-6 w-6" />,
     },
     {

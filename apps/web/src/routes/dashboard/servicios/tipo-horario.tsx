@@ -4,11 +4,12 @@ import type { TipoHorario } from "../../../api/types/servicio";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import { useState } from "react";
 import {
   useCreateTipoHorario,
+  useDeleteTipoHorario,
   useTipoHorarioDescripcion,
   useTipoHorarios,
   useUpdateTipoHorario,
@@ -22,6 +23,7 @@ import type {
 } from "../../../api/dtos";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputForm } from "../../../components/common/InputForm";
+import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 
 export const Route = createFileRoute("/dashboard/servicios/tipo-horario")({
   component: RouteComponent,
@@ -31,6 +33,8 @@ function RouteComponent() {
   // Estados
   const [isOpenAddTipoHorario, setIsOpenAddTipoHorario] = useState(false);
   const [isOpenEditTipoHorario, setIsOpenEditTipoHorario] = useState(false);
+  const [isOpenDeleteTipoHorario, setIsOpenDeleteTipoHorario] = useState(false);
+  const [idTipoHorario, setIdTipoHorario] = useState(0);
   // Queries y mutaciones
   const { data: tipoHorarios } = useTipoHorarios();
   const { data: tipoHorarioDescripcion } = useTipoHorarioDescripcion();
@@ -39,6 +43,7 @@ function RouteComponent() {
     useCreateTipoHorario();
   const { mutate: editarTipoHorario, isPending: isLoadingEditarTipoHorario } =
     useUpdateTipoHorario();
+  const { mutate: eliminarTipoHorario } = useDeleteTipoHorario();
 
   // Formularios
   const {
@@ -89,32 +94,44 @@ function RouteComponent() {
       header: "Fecha de vigencia de fin",
       accessorKey: "fechaVigenciaFin",
     },
-    {
-      header: "Estado",
-      accessorKey: "estado",
-      cell: ({ row }) => {
-        return <StateLabel state={row.original.estado} />;
-      },
-    },
+    // {
+    //   header: "Estado",
+    //   accessorKey: "estado",
+    //   cell: ({ row }) => {
+    //     return <StateLabel state={row.original.estado} />;
+    //   },
+    // },
     {
       header: "Acciones",
       cell: ({ row }) => {
         return (
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              setIsOpenEditTipoHorario(true);
-              formEditTipoHorario.idTipoHorarioDescripcion =
-                row.original.idTipoHorarioDescripcion.idTipoHorarioDescripcion;
-              formEditTipoHorario.horaInicio = row.original.horaInicio;
-              formEditTipoHorario.horaFin = row.original.horaFin;
-              formEditTipoHorario.fechaVigenciaInicio =
-                row.original.fechaVigenciaInicio;
-              formEditTipoHorario.fechaVigenciaFin =
-                row.original.fechaVigenciaFin || "";
-            }}
-          />
+          <div className="flex gap-2">
+            <ButtonAction
+              Icon={PencilIcon}
+              label="Editar"
+              onClick={() => {
+                setIsOpenEditTipoHorario(true);
+                setIdTipoHorario(row.original.idTipoHorario);
+                formEditTipoHorario.idTipoHorarioDescripcion =
+                  row.original.idTipoHorarioDescripcion.idTipoHorarioDescripcion;
+                formEditTipoHorario.horaInicio = row.original.horaInicio;
+                formEditTipoHorario.horaFin = row.original.horaFin;
+                formEditTipoHorario.fechaVigenciaInicio =
+                  row.original.fechaVigenciaInicio;
+                formEditTipoHorario.fechaVigenciaFin =
+                  row.original.fechaVigenciaFin || "";
+              }}
+            />
+            <ButtonAction
+              Icon={TrashIcon}
+              label="Eliminar"
+              onClick={() => {
+                setIdTipoHorario(row.original.idTipoHorario);
+                setIsOpenDeleteTipoHorario(true);
+              }}
+              color="red"
+            />
+          </div>
         );
       },
     },
@@ -282,7 +299,7 @@ function RouteComponent() {
 
             editarTipoHorario(
               {
-                id: 1,
+                id: idTipoHorario,
                 data: formattedData,
               },
               {
@@ -360,6 +377,20 @@ function RouteComponent() {
           </div>
         </form>
       </SimpleModal>
+
+      <ConfirmarDelete
+        isOpenDelete={isOpenDeleteTipoHorario}
+        text="¿Estás seguro de querer eliminar este tipo de horario?"
+        onDelete={() => {
+          eliminarTipoHorario(idTipoHorario, {
+            onSuccess: () => {
+              setIsOpenDeleteTipoHorario(false);
+              setIdTipoHorario(0);
+            },
+          });
+        }}
+        onClose={() => setIsOpenDeleteTipoHorario(false)}
+      />
     </Section>
   );
 }

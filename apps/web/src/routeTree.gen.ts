@@ -37,6 +37,8 @@ import { Route as DashboardConfiguracionTipoIdRouteImport } from './routes/dashb
 import { Route as DashboardConfiguracionTipoGeneroRouteImport } from './routes/dashboard/configuracion/tipo-genero'
 import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/dashboard/configuracion/tipo-cliente'
 import { Route as DashboardConfiguracionEstadoOrdenServicioRouteImport } from './routes/dashboard/configuracion/estado-orden-servicio'
+import { Route as DashboardTarifasVerTarifasIdPeriodoRouteImport } from './routes/dashboard/tarifas/ver-tarifas.$id-periodo'
+import { Route as DashboardTarifasConfigurarServiciosIdPeriodoRouteImport } from './routes/dashboard/tarifas/configurar-servicios.$id-periodo'
 
 const RecuperarRoute = RecuperarRouteImport.update({
   id: '/recuperar',
@@ -191,6 +193,18 @@ const DashboardConfiguracionEstadoOrdenServicioRoute =
     path: '/configuracion/estado-orden-servicio',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardTarifasVerTarifasIdPeriodoRoute =
+  DashboardTarifasVerTarifasIdPeriodoRouteImport.update({
+    id: '/tarifas/ver-tarifas/$id-periodo',
+    path: '/tarifas/ver-tarifas/$id-periodo',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardTarifasConfigurarServiciosIdPeriodoRoute =
+  DashboardTarifasConfigurarServiciosIdPeriodoRouteImport.update({
+    id: '/tarifas/configurar-servicios/$id-periodo',
+    path: '/tarifas/configurar-servicios/$id-periodo',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -221,6 +235,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/servicios': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
+  '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
+  '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -250,6 +266,8 @@ export interface FileRoutesByTo {
   '/dashboard/servicios': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
+  '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
+  '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -281,6 +299,8 @@ export interface FileRoutesById {
   '/dashboard/servicios/': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
+  '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
+  '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -313,6 +333,8 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
+    | '/dashboard/tarifas/configurar-servicios/$id-periodo'
+    | '/dashboard/tarifas/ver-tarifas/$id-periodo'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -342,6 +364,8 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
+    | '/dashboard/tarifas/configurar-servicios/$id-periodo'
+    | '/dashboard/tarifas/ver-tarifas/$id-periodo'
   id:
     | '__root__'
     | '/'
@@ -372,6 +396,8 @@ export interface FileRouteTypes {
     | '/dashboard/servicios/'
     | '/dashboard/tarifas/'
     | '/dashboard/usuarios/'
+    | '/dashboard/tarifas/configurar-servicios/$id-periodo'
+    | '/dashboard/tarifas/ver-tarifas/$id-periodo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -580,6 +606,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardConfiguracionEstadoOrdenServicioRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/tarifas/ver-tarifas/$id-periodo': {
+      id: '/dashboard/tarifas/ver-tarifas/$id-periodo'
+      path: '/tarifas/ver-tarifas/$id-periodo'
+      fullPath: '/dashboard/tarifas/ver-tarifas/$id-periodo'
+      preLoaderRoute: typeof DashboardTarifasVerTarifasIdPeriodoRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/tarifas/configurar-servicios/$id-periodo': {
+      id: '/dashboard/tarifas/configurar-servicios/$id-periodo'
+      path: '/tarifas/configurar-servicios/$id-periodo'
+      fullPath: '/dashboard/tarifas/configurar-servicios/$id-periodo'
+      preLoaderRoute: typeof DashboardTarifasConfigurarServiciosIdPeriodoRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
@@ -607,6 +647,8 @@ interface DashboardRouteChildren {
   DashboardServiciosIndexRoute: typeof DashboardServiciosIndexRoute
   DashboardTarifasIndexRoute: typeof DashboardTarifasIndexRoute
   DashboardUsuariosIndexRoute: typeof DashboardUsuariosIndexRoute
+  DashboardTarifasConfigurarServiciosIdPeriodoRoute: typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
+  DashboardTarifasVerTarifasIdPeriodoRoute: typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
@@ -637,6 +679,10 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardServiciosIndexRoute: DashboardServiciosIndexRoute,
   DashboardTarifasIndexRoute: DashboardTarifasIndexRoute,
   DashboardUsuariosIndexRoute: DashboardUsuariosIndexRoute,
+  DashboardTarifasConfigurarServiciosIdPeriodoRoute:
+    DashboardTarifasConfigurarServiciosIdPeriodoRoute,
+  DashboardTarifasVerTarifasIdPeriodoRoute:
+    DashboardTarifasVerTarifasIdPeriodoRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

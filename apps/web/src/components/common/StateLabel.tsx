@@ -1,8 +1,8 @@
 export const StateLabel = ({ state }: { state: boolean }) => {
   return (
     <span
-      className={`rounded-full px-2 py-1 text-xs ${
-        state ? "bg-green-500 text-white" : "bg-red-500 text-white"
+      className={`rounded-full px-2 py-1 text-sm font-semibold ${
+        state ? "bg-green-200 text-green-600" : "bg-red-200 text-red-600"
       }`}
     >
       {state ? "Activo" : "Inactivo"}

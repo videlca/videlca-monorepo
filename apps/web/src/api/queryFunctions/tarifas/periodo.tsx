@@ -38,14 +38,12 @@ export const usePeriodosActivo = (): UseQueryResult<
   });
 };
 
-export const usePeriodoById = (): UseMutationResult<
-  ApiResponse<Periodo>,
-  Error,
-  number
-> => {
-  return useMutation({
-    mutationKey: ["periodo-by-id"],
-    mutationFn: (id: number) => getPeriodoById(id),
+export const usePeriodoById = (
+  id: number,
+): UseQueryResult<ApiResponse<Periodo>, Error> => {
+  return useQuery({
+    queryKey: ["periodo-by-id", id],
+    queryFn: () => getPeriodoById(id),
   });
 };
 

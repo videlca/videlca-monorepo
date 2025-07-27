@@ -28,6 +28,7 @@ export const CheckboxForm = ({
           checked={checked}
           onChange={onChange}
           required={required}
+          value={checked.toString()}
           className="focus:ring-opacity-20 rounded border border-gray-300 text-blue-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100"
           disabled={disabled}
         />

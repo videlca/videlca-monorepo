@@ -1,8 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 import Table from "../../../components/common/Table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import {
+  EyeIcon,
+  PencilIcon,
+  PlusIcon,
+  SettingsIcon,
+  TrashIcon,
+} from "lucide-react";
 import type { Periodo } from "../../../api/types/periodo";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
@@ -28,6 +34,8 @@ function RouteComponent() {
   const [isOpenAddTarifa, setIsOpenAddTarifa] = useState(false);
   const [isOpenEditTarifa, setIsOpenEditTarifa] = useState(false);
   const [editingRow, setEditingRow] = useState<Periodo | null>(null);
+
+  const navigate = useNavigate();
   // Mutaciones y queries
   const { data: periodos } = usePeriodos();
   const { mutate: crearPeriodo, isPending: isLoadingCrearPeriodo } =
@@ -60,6 +68,13 @@ function RouteComponent() {
     {
       header: "Periodo",
       accessorKey: "nombre",
+      cell: ({ row }) => {
+        return (
+          <span className="font-semibold whitespace-nowrap">
+            {row.original.nombre}
+          </span>
+        );
+      },
     },
     {
       header: "Fecha de inicio",
@@ -80,19 +95,53 @@ function RouteComponent() {
       header: "Acciones",
       cell: ({ row }) => {
         return (
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              setIsOpenEditTarifa(true);
-              setEditingRow(row.original);
-              setFormEditPeriodo({
-                fechaFin: row.original.fechaFin,
-                fechaInicio: row.original.fechaInicio,
-                periodoActivoFacturacion: row.original.periodoActivoFacturacion,
-              });
-            }}
-          />
+          <div className="flex gap-2">
+            <ButtonAction
+              Icon={PencilIcon}
+              label="Editar"
+              onClick={() => {
+                setIsOpenEditTarifa(true);
+                setEditingRow(row.original);
+                setFormEditPeriodo({
+                  fechaFin: row.original.fechaFin,
+                  fechaInicio: row.original.fechaInicio,
+                  periodoActivoFacturacion:
+                    row.original.periodoActivoFacturacion,
+                });
+              }}
+            />
+            <ButtonAction
+              Icon={EyeIcon}
+              label="Ver tarifas"
+              onClick={() => {
+                // setIsOpenSeeTarifa(true);
+                navigate({
+                  to: "/dashboard/tarifas/ver-tarifas/$id-periodo",
+                  params: {
+                    "id-periodo": row.original.idPeriodo.toString(),
+                  },
+                });
+              }}
+            />
+            <ButtonAction
+              Icon={SettingsIcon}
+              label="Configurar servicios"
+              onClick={() => {
+                navigate({
+                  to: "/dashboard/tarifas/configurar-servicios/$id-periodo",
+                  params: {
+                    "id-periodo": row.original.idPeriodo.toString(),
+                  },
+                });
+              }}
+            />
+            <ButtonAction
+              Icon={TrashIcon}
+              label="Eliminar"
+              onClick={() => {}}
+              color="red"
+            />
+          </div>
         );
       },
     },
@@ -112,8 +161,8 @@ function RouteComponent() {
           data={periodos?.data || []}
           columns={columns}
           pageSize={10}
-          enableSorting={true}
-          enablePagination={false}
+          enableSorting={false}
+          enablePagination={true}
         />
       </div>
       <SimpleModal
