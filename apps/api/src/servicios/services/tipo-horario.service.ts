@@ -28,19 +28,19 @@ export class TipoHorarioService {
     }
 
     async create(createTipoHorarioDto: CreateTipoHorarioDto) {
-
+        
         // OBTENER TIPO DE HORARIO DESCRIPCION
         const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOne(createTipoHorarioDto.idTipoHorarioDescripcion);
         
         const existTipoHorario = await this.tipoHorarioRepository
-            .createQueryBuilder('th')
-            .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
-            .where('th.idTipoHorarioDescripcion = :tipoHorarioDescripcion', { 
-                tipoHorarioDescripcion 
-            })
-            .andWhere('th.fechaVigenciaFin IS NULL')
-            .getOne();
-    
+        .createQueryBuilder('th')
+        .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
+        .where('th.idTipoHorarioDescripcion = :idTipoHorarioDescripcion', { 
+            idTipoHorarioDescripcion: tipoHorarioDescripcion.idTipoHorarioDescripcion 
+        })
+        .andWhere('th.fechaVigenciaFin IS NULL')
+        .getOne();
+
         if (existTipoHorario){
             throw new BadRequestException(`Antes de crear un nuevo horario ${tipoHorarioDescripcion.descripcion} debes agregar fecha de finalizacion al que aun esta vigente`)
         }
@@ -122,7 +122,7 @@ export class TipoHorarioService {
         // Validar solapamientos
         let query = this.tipoHorarioRepository
           .createQueryBuilder('th')
-          .where('th.idTipoHorarioDescripcion = :idTipoHorarioDescripcion', { idTipoHorarioDescripcion: tipoHorarioDescripcion })
+          .where('th.idTipoHorarioDescripcion = :idTipoHorarioDescripcion', { idTipoHorarioDescripcion: tipoHorarioDescripcion.idTipoHorarioDescripcion })
           .andWhere(
             `(
               (:fechaInicio BETWEEN th.fechaVigenciaInicio AND th.fechaVigenciaFin) OR
@@ -181,7 +181,7 @@ export class TipoHorarioService {
             .createQueryBuilder('th')
             .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
             .where('th.idTipoHorarioDescripcion = :idTipoHorarioDescripcion', { idTipoHorarioDescripcion })
-            .andWhere('th.activo = :activo', { activo: true })
+            .andWhere('th.estado = :estado', { estado: true })
             .andWhere('th.fechaVigenciaInicio <= :fecha', { fecha })
             .andWhere('(th.fechaVigenciaFin IS NULL OR th.fechaVigenciaFin >= :fecha)', { fecha })
             .getOne();
@@ -306,8 +306,8 @@ export class TipoHorarioService {
         const query = this.tipoHorarioRepository
             .createQueryBuilder('th')
             .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
-            .where('th.idTipoHorarioDescripcion = :idTipoHorarioDescripcion', { tipoHorarioDescripcion })
-            .andWhere('th.activo = :activo', { activo: true });
+            .where('th.idTipoHorarioDescripcion = :idTipoHorarioDescripcion', { idTipoHorarioDescripcion: tipoHorarioDescripcion.idTipoHorarioDescripcion })
+            .andWhere('th.estado = :estado', { estado: true });
     
         // Excluir el registro actual si se está actualizando
         if (excluirId) {
