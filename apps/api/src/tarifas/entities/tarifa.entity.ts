@@ -59,7 +59,7 @@ export class Tarifa {
     @Column({
         type: 'decimal',
         name: 'iva',
-        precision: 7,
+        precision: 15,
         scale: 2
     })
     iva: number;
