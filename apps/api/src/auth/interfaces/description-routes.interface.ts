@@ -21,4 +21,7 @@ export enum DescriptionRoutes {
     // SERVICIOS
     SERVICIOS = "servicios"
 
+    // ORDENES SERVICIO
+    , ORDENES_SERVICIO = "ordenes-servicio",
+
 }

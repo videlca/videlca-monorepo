@@ -109,7 +109,8 @@ export const initialData: SeedData = {
         {descripcion: 'usuarios', nombre: 'Usuarios'},
         {descripcion: 'clientes', nombre: 'Clientes'},
         {descripcion: 'tarifas', nombre: 'Tarifas'},
-        {descripcion: 'servicios', nombre: 'Servciios'},
+        {descripcion: 'servicios', nombre: 'Servicios'},
+        {descripcion: 'ordenes-servicio', nombre: 'Ordenes Servicio'},
     ],
 
     paises: [
