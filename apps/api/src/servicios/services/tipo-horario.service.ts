@@ -191,6 +191,25 @@ export class TipoHorarioService {
         return tipoHorario;
 
     }
+    
+    async findOneVigenteByName(tipoHorarioDescripcionDescription: string) {
+
+        // OBTENER TIPO DE HORARIO DESCRIPCION
+        const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOneByName(tipoHorarioDescripcionDescription);
+    
+        const tipoHorario = await this.tipoHorarioRepository
+            .createQueryBuilder('th')
+            .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
+            .where('th.idTipoHorarioDescripcion = :idTipoHorarioDescripcion', { idTipoHorarioDescripcion: tipoHorarioDescripcion.idTipoHorarioDescripcion })
+            .andWhere('th.estado = :estado', { estado: true })
+            .andWhere('(th.fechaVigenciaFin IS NULL')
+            .getOne();
+            
+        if(!tipoHorario) throw new NotFoundException(`Tipo Horario vigente "${tipoHorarioDescripcion.descripcion}" no se ha encontrado`);
+    
+        return tipoHorario;
+
+    }
 
     async update(id: number, updateTipoHorarioDto: UpdateTipoHorarioDto) {
     

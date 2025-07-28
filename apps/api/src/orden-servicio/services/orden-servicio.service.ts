@@ -10,8 +10,12 @@ import { User } from '../../users/entities/user.entity';
 import { EstadoOrdenServicioService } from '../../common/services';
 import { LocacionService } from '../../clientes/services';
 import { TarifasService } from '../../tarifas/services';
+import { TipoHorarioService } from '../../servicios/services';
 
 import { EstadoOrdenServicio } from '../../common/interfaces/estado-orden-servicio.interface';
+import { TipoHorarioInterface } from '../../servicios/interfaces/tipo-horario.interface';
+import { TipoDuracionInterface } from '../../servicios/interfaces/tipo-duracion.interface';
+
 
 import { OrdenServicio } from '../entities';
 import { CreateOrdenServicioDto, TercerPasoDto } from '../dto';
@@ -29,6 +33,7 @@ export class OrdenServicioService {
       private readonly estadoOrdenService: EstadoOrdenServicioService,
       private readonly locacionService: LocacionService,
       private readonly tarifasService: TarifasService,
+      private readonly tipoHorarioService: TipoHorarioService,
       private readonly configService: ConfigService,
   ) {
       this.defaultLimit = this.configService.get<number>('defaultLimit');
@@ -115,6 +120,7 @@ export class OrdenServicioService {
     
     }
 
+    // envio de correos que s etengan registrados en la locacion
 
     try {
 
@@ -181,6 +187,84 @@ export class OrdenServicioService {
   }
 
   async validacionHorarios(tercerPasoDto: TercerPasoDto){
+
+    const { idTarifa, horaInicio, horaFin } = tercerPasoDto;
+
+    // Validar que la tarifa exista
+    const tarifa = await this.tarifasService.findOne(idTarifa);
+
+    const servicio = tarifa.idServicio;
+
+    const tipohorarioDescripcion = servicio.idTipoHorarioDescripcion;
+
+    const tipoDuracion = servicio.idTipoDuracion;
+
+    const tipoHorario = await this.tipoHorarioService.findOneVigenteByName(tipohorarioDescripcion.descripcion);
+
+    const { horaInicio: tipoHorariohoraInicio, horaFin: tipoHorarioHoraFin } = tipoHorario;
+
+    if (horaInicio < tipoHorariohoraInicio || horaFin > tipoHorarioHoraFin) {
+
+      throw new BadRequestException(`El horario ${tipohorarioDescripcion.descripcion} debe estar dentro del rango de ${tipoHorariohoraInicio} a ${tipoHorarioHoraFin}`);
+    
+    }
+
+    const duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
+
+    // Validar que la duracion del servicio sea correcta
+    if (tipoDuracion.descripcion === TipoDuracionInterface.FIJA) {
+      
+      const horasFijas = servicio.horasFijas;
+
+      if (duracionServicio !== horasFijas) {
+
+        throw new BadRequestException(`La duracion del servicio debe ser de ${horasFijas} horas`);
+
+      }
+
+    }
+
+    // Validar que la duracion del servicio sea correcta
+    if (tipoDuracion.descripcion === TipoDuracionInterface.FLEXIBLE) {
+
+      const horasMinimas = servicio.horasMinimas;
+      const horasMaximas = servicio.horasMaximas;
+
+      if (duracionServicio < horasMinimas) {
+
+        throw new BadRequestException(`La duracion del servicio debe ser de al menos ${horasMinimas} horas`);
+
+      }
+
+      if (duracionServicio > horasMaximas) {
+
+        throw new BadRequestException(`La duracion del servicio no puede ser mayor a ${horasMaximas} horas`);
+
+      }
+
+    }
+
+  }
+
+  async calcularDuracionServicio(horaInicio: string, horaFin: string) {
+
+    // Convertir a minutos totales
+    function horaAMinutos(hora: string): number {
+        const [h, m, s] = hora.split(':').map(Number);
+        return h * 60 + m + s / 60;
+    }
+
+    let minutosInicio = horaAMinutos(horaInicio);
+    let minutosFin = horaAMinutos(horaFin);
+
+    // Si la hora de fin es menor, cruza medianoche
+    if (minutosFin < minutosInicio) {
+        minutosFin += 24 * 60; // Agregar 24 horas
+    }
+    
+    const duracionMinutos = minutosFin - minutosInicio;
+    return duracionMinutos / 60; // Convertir a horas
+  
 
   }
 
