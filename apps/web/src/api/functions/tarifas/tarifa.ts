@@ -1,11 +1,15 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { PaginationDto } from "../../dtos/common";
-import type { CreateTarifaDto, UpdateTarifaDto } from "../../dtos/tarifas";
+import type { CreateTarifaDto, SaveTarifaDto, UpdateTarifaDto } from "../../dtos/tarifas";
 import type { ApiResponse } from "../../types";
 import type { Tarifa } from "../../types/periodo";
 
 export const createTarifa = async (data: CreateTarifaDto): Promise<ApiResponse> => {
   return await apiPost<Tarifa>("/tarifas", data);
+};
+
+export const saveTarifas = async (data: SaveTarifaDto): Promise<ApiResponse> => {
+  return await apiPost<Tarifa>("/tarifas/guardar-tarifas", data);
 };
 
 export const getTarifasByPeriodo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<Tarifa[]>> => {

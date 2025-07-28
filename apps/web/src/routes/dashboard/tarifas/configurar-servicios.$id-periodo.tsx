@@ -13,6 +13,7 @@ import {
   PlusIcon,
   Search,
   UserCheck,
+  X,
 } from "lucide-react";
 import { usePeriodoById } from "../../../api/queryFunctions/tarifas/periodo";
 import {
@@ -23,6 +24,19 @@ import { InputPrice } from "../../../components/common/InputPrice";
 import { InputSelect } from "../../../components/common/InputSelect";
 import type { Servicio } from "../../../api/types/servicio";
 import { useState } from "react";
+import { useGuardarTarifas } from "../../../api/queryFunctions/tarifas/tarifa";
+import { useTipoTarifa } from "../../../api/queryFunctions/tarifas";
+import type { CreateTarifaDto } from "../../../api/dtos/tarifas";
+import { toast } from "sonner";
+
+// Interfaz para manejar servicios configurados localmente
+interface ServicioConfigurado {
+  servicio: Servicio;
+  idTipoTarifa: number | null;
+  precioBase: number;
+  iva: number;
+  precioTotal: number;
+}
 
 export const Route = createFileRoute(
   "/dashboard/tarifas/configurar-servicios/$id-periodo",
@@ -37,19 +51,164 @@ function RouteComponent() {
   });
 
   // Estados
-  const [itemSeleccionado, setItemSeleccionado] = useState<Servicio | null>(
+  const [serviciosConfigurados, setServiciosConfigurados] = useState<
+    ServicioConfigurado[]
+  >([]);
+  const [servicioEnEdicion, setServicioEnEdicion] = useState<number | null>(
     null,
   );
   const [mostrarSoloSeleccionados, setMostrarSoloSeleccionados] =
     useState(false);
-  const [serviciosSeleccionados, setServiciosSeleccionados] = useState<
-    Servicio[]
-  >([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filtroTipoServicio, setFiltroTipoServicio] = useState<number | null>(
+    null,
+  );
 
   // Queries y mutaciones
   const { data: periodo } = usePeriodoById(Number(idPeriodoParam));
   const { data: servicios } = useServicios();
   const { data: tiposServicios } = useTipoServicios();
+  const { data: tiposTarifa } = useTipoTarifa();
+  const { mutate: guardarTarifas, isPending: isLoadingGuardarTarifas } =
+    useGuardarTarifas();
+
+  // Función para calcular IVA y precio total automáticamente
+  const calcularPrecios = (precioBase: number) => {
+    const iva = precioBase * 0.19; // IVA del 19%
+    const precioTotal = precioBase + iva;
+    return { iva, precioTotal };
+  };
+
+  // Función para verificar si un servicio está configurado
+  const isServicioConfigurado = (idServicio: number) => {
+    return serviciosConfigurados.some(
+      (sc) => sc.servicio.idServicio === idServicio,
+    );
+  };
+
+  // Función para obtener la configuración de un servicio
+  const getServicioConfigurado = (idServicio: number) => {
+    return serviciosConfigurados.find(
+      (sc) => sc.servicio.idServicio === idServicio,
+    );
+  };
+
+  // Función para agregar/actualizar un servicio configurado
+  const actualizarServicioConfigurado = (
+    servicio: Servicio,
+    campo: keyof Omit<ServicioConfigurado, "servicio">,
+    valor: number | null,
+  ) => {
+    setServiciosConfigurados((prev) => {
+      const existeIndex = prev.findIndex(
+        (sc) => sc.servicio.idServicio === servicio.idServicio,
+      );
+
+      if (existeIndex >= 0) {
+        // Actualizar servicio existente
+        const updated = [...prev];
+        const servicioActual = updated[existeIndex];
+
+        if (campo === "precioBase") {
+          const { iva, precioTotal } = calcularPrecios(valor as number);
+          updated[existeIndex] = {
+            ...servicioActual,
+            precioBase: valor as number,
+            iva,
+            precioTotal,
+          };
+        } else {
+          updated[existeIndex] = {
+            ...servicioActual,
+            [campo]: valor,
+          };
+        }
+
+        return updated;
+      } else {
+        // Agregar nuevo servicio
+        const { iva, precioTotal } =
+          campo === "precioBase"
+            ? calcularPrecios(valor as number)
+            : { iva: 0, precioTotal: 0 };
+
+        return [
+          ...prev,
+          {
+            servicio,
+            idTipoTarifa: campo === "idTipoTarifa" ? (valor as number) : null,
+            precioBase: campo === "precioBase" ? (valor as number) : 0,
+            iva,
+            precioTotal,
+          },
+        ];
+      }
+    });
+  };
+
+  // Función para remover un servicio configurado
+  const removerServicioConfigurado = (idServicio: number) => {
+    setServiciosConfigurados((prev) =>
+      prev.filter((sc) => sc.servicio.idServicio !== idServicio),
+    );
+    setServicioEnEdicion(null);
+  };
+
+  // Función para enviar las tarifas al endpoint
+  const handleAgregarServiciosSeleccionados = () => {
+    if (serviciosConfigurados.length === 0) {
+      toast.error("No hay servicios configurados para agregar");
+      return;
+    }
+
+    // Validar que todos los servicios tengan datos completos
+    const serviciosCompletos = serviciosConfigurados.filter(
+      (sc) => sc.idTipoTarifa !== null && sc.precioBase > 0,
+    );
+
+    if (serviciosCompletos.length === 0) {
+      toast.error(
+        "Debe configurar completamente al menos un servicio (tipo de tarifa y precio base)",
+      );
+      return;
+    }
+
+    // Crear el DTO para enviar al endpoint
+    const tarifasData: CreateTarifaDto[] = serviciosCompletos.map((sc) => ({
+      idPeriodo: Number(idPeriodoParam),
+      idServicio: sc.servicio.idServicio,
+      idTipoTarifa: sc.idTipoTarifa!,
+      precioSinIva: sc.precioBase,
+      iva: sc.iva,
+      precioTotal: sc.precioTotal,
+    }));
+
+    guardarTarifas({
+      idPeriodo: Number(idPeriodoParam),
+      tarifas: tarifasData,
+    });
+  };
+
+  // Filtrar servicios según búsqueda y filtros
+  const serviciosFiltrados =
+    servicios?.data?.filter((servicio) => {
+      const matchSearch =
+        !searchTerm ||
+        servicio.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        servicio.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        servicio.idTipoServicio?.descripcion
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+
+      const matchTipo =
+        !filtroTipoServicio ||
+        servicio.idTipoServicio?.idTipoServicio === filtroTipoServicio;
+
+      const matchSeleccionados =
+        !mostrarSoloSeleccionados || isServicioConfigurado(servicio.idServicio);
+
+      return matchSearch && matchTipo && matchSeleccionados;
+    }) || [];
 
   // TODO: Buscar servicios disponibles para asignar a un periodo
 
@@ -89,7 +248,8 @@ function RouteComponent() {
           <ButtonAction
             Icon={PlusIcon}
             label="Agregar Servicios seleccionados"
-            onClick={() => {}}
+            onClick={handleAgregarServiciosSeleccionados}
+            disabled={isLoadingGuardarTarifas}
           />
         </div>
       </div>
@@ -99,22 +259,16 @@ function RouteComponent() {
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded-full bg-blue-500"></div>
               <span className="text-sm font-medium text-gray-700">
-                Servicios Seleccionados: 1
+                Servicios Configurados: {serviciosConfigurados.length}
               </span>
             </div>
-            {/* <div className="flex items-center gap-2">
-                      <Calculator className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-gray-700">
-                        Total Estimado: $ {totalPrecioEstimado.toLocaleString("es-ES")}
-                      </span>
-                    </div> */}
           </div>
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id="mostrarSoloSeleccionados"
-              // checked={mostrarSoloSeleccionados}
-              // onChange={(e) => setMostrarSoloSeleccionados(e.target.checked)}
+              checked={mostrarSoloSeleccionados}
+              onChange={(e) => setMostrarSoloSeleccionados(e.target.checked)}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <label
@@ -133,16 +287,20 @@ function RouteComponent() {
               <input
                 type="text"
                 placeholder="Buscar servicios por código, descripción o tipo..."
-                // value={searchTerm}
-                // onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
           </div>
           <div className="relative w-48">
             <select
-              // value={filtroTipoServicio || ""}
-              // onChange={(e) => setFiltroTipoServicio(e.target.value ? Number(e.target.value) : null)}
+              value={filtroTipoServicio || ""}
+              onChange={(e) =>
+                setFiltroTipoServicio(
+                  e.target.value ? Number(e.target.value) : null,
+                )
+              }
               className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
               <option value="">Todos los tipos</option>
@@ -156,6 +314,72 @@ function RouteComponent() {
           </div>
         </div>
       </div>
+
+      {/* Lista de servicios configurados */}
+      {serviciosConfigurados.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-200 px-6 py-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              Servicios Configurados
+            </h3>
+            <p className="mt-1 text-sm text-gray-600">
+              Servicios listos para ser agregados al período
+            </p>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {serviciosConfigurados.map((sc) => (
+              <div key={sc.servicio.idServicio} className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-1 items-center gap-4">
+                    <div className="flex-1">
+                      <div className="mb-1 flex items-center gap-3">
+                        <span className="font-medium text-gray-900">
+                          {sc.servicio.codigo}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                          {sc.servicio.idTipoServicio?.descripcion}
+                        </span>
+                        {sc.servicio.idTipoServicio?.requierePersonal && (
+                          <UserCheck className="h-4 w-4 text-blue-500" />
+                        )}
+                      </div>
+                      <p className="mb-2 text-sm text-gray-600">
+                        {sc.servicio.descripcion}
+                      </p>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span>
+                          Tipo:{" "}
+                          {
+                            tiposTarifa?.data?.find(
+                              (t) => t.idTipoTarifa === sc.idTipoTarifa,
+                            )?.nombre
+                          }
+                        </span>
+                        <span>
+                          Precio Base: ${sc.precioBase.toLocaleString("es-ES")}
+                        </span>
+                        <span>IVA: ${sc.iva.toLocaleString("es-ES")}</span>
+                        <span className="font-semibold">
+                          Total: ${sc.precioTotal.toLocaleString("es-ES")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() =>
+                      removerServicioConfigurado(sc.servicio.idServicio)
+                    }
+                    className="ml-4 text-red-500 hover:text-red-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="border-b border-gray-200 px-6 py-4">
           <h3 className="text-lg font-medium text-gray-900">
@@ -168,95 +392,106 @@ function RouteComponent() {
         </div>
 
         <div className="divide-y divide-gray-200">
-          {servicios?.data?.length === 0 ? (
+          {serviciosFiltrados.length === 0 ? (
             <div className="px-6 py-8 text-center text-gray-500">
-              No hay servicios disponibles
+              No hay servicios disponibles con los filtros aplicados
             </div>
           ) : (
-            servicios?.data?.map((item) => (
-              <div key={item.idServicio} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-1 items-center gap-4">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={
-                          itemSeleccionado?.idServicio === item.idServicio
-                        }
-                        onChange={(e) => {
-                          if (
-                            itemSeleccionado?.idServicio === item.idServicio
-                          ) {
-                            setItemSeleccionado(null);
-                          } else {
-                            setItemSeleccionado(item);
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
+            serviciosFiltrados.map((item) => {
+              const servicioConfig = getServicioConfigurado(item.idServicio);
+              const isEnEdicion = servicioEnEdicion === item.idServicio;
+
+              return (
+                <div key={item.idServicio} className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-1 items-center gap-4">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={isServicioConfigurado(item.idServicio)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setServicioEnEdicion(item.idServicio);
+                            } else {
+                              removerServicioConfigurado(item.idServicio);
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="mb-1 flex items-center gap-3">
+                          <span className="font-medium text-gray-900">
+                            {item.codigo}
+                          </span>
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                            {item.idTipoServicio?.descripcion}
+                          </span>
+                          {item.idTipoServicio?.requierePersonal && (
+                            <UserCheck className="h-4 w-4 text-blue-500" />
+                          )}
+                        </div>
+                        <p className="mb-2 text-sm text-gray-600">
+                          {item.descripcion}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex-1">
-                      <div className="mb-1 flex items-center gap-3">
-                        <span className="font-medium text-gray-900">
-                          {item.codigo}
-                        </span>
-                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                          {item.idTipoServicio?.descripcion}
-                        </span>
-                        {item.idTipoServicio?.requierePersonal && (
-                          <UserCheck
-                            className="h-4 w-4 text-blue-500"
-                            // title="Requiere Personal"
+                    <div className="flex items-center gap-4">
+                      {(isEnEdicion || servicioConfig) && (
+                        <div className="flex items-center gap-2">
+                          <InputSelect
+                            label="Tipo de tarifa:"
+                            options={
+                              tiposTarifa?.data?.map((tipo) => ({
+                                id: tipo.idTipoTarifa,
+                                descripcion: tipo.nombre,
+                              })) || []
+                            }
+                            placeholder="Selecciona un tipo de tarifa"
+                            id={`tipoTarifa-${item.idServicio}`}
+                            value={
+                              servicioConfig?.idTipoTarifa?.toString() || ""
+                            }
+                            onChange={(e) => {
+                              actualizarServicioConfigurado(
+                                item,
+                                "idTipoTarifa",
+                                Number(e.target.value),
+                              );
+                            }}
                           />
-                        )}
-                      </div>
-                      <p className="mb-2 text-sm text-gray-600">
-                        {item.descripcion}
-                      </p>
+                          <InputPrice
+                            label="Precio Base:"
+                            value={servicioConfig?.precioBase || 0}
+                            onChange={(value) => {
+                              actualizarServicioConfigurado(
+                                item,
+                                "precioBase",
+                                value,
+                              );
+                            }}
+                          />
+                          <InputPrice
+                            label="Precio con IVA:"
+                            value={servicioConfig?.iva || 0}
+                            disabled
+                            readOnly
+                          />
+                          <InputPrice
+                            label="Precio Total:"
+                            value={servicioConfig?.precioTotal || 0}
+                            disabled
+                            readOnly
+                          />
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    {itemSeleccionado?.idServicio === item.idServicio && (
-                      <div className="flex items-center gap-2">
-                        <InputSelect
-                          label="Tipo de tarifa:"
-                          options={[]}
-                          placeholder="Selecciona un tipo de tarifa"
-                          id="tipoTarifa"
-                          value={""}
-                          onChange={(value) => {
-                            console.log(value);
-                          }}
-                        />
-                        <InputPrice
-                          label="Precio Base:"
-                          value={0}
-                          onChange={(value) => {
-                            console.log(value);
-                          }}
-                        />
-                        <InputPrice
-                          label="Precio Base:"
-                          value={0}
-                          onChange={(value) => {
-                            console.log(value);
-                          }}
-                        />
-                        <InputPrice
-                          label="Precio Base:"
-                          value={0}
-                          onChange={(value) => {
-                            console.log(value);
-                          }}
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

@@ -10,9 +10,14 @@ import {
   getTarifaById,
   getTarifasActivo,
   getTarifasByPeriodo,
+  saveTarifas,
   updateTarifa,
 } from "../../functions/tarifas/tarifa";
-import type { CreateTarifaDto, UpdateTarifaDto } from "../../dtos/tarifas";
+import type {
+  CreateTarifaDto,
+  SaveTarifaDto,
+  UpdateTarifaDto,
+} from "../../dtos/tarifas";
 import type { ApiResponse } from "../../types";
 import type { Tarifa } from "../../types/periodo";
 import { toast } from "sonner";
@@ -22,7 +27,7 @@ export const useTarifas = (
   idPeriodo: number,
 ): UseQueryResult<ApiResponse<Tarifa[]>, Error> => {
   return useQuery({
-    queryKey: ["tarifas", idPeriodo],
+    queryKey: ["tarifas"],
     queryFn: () => getTarifasByPeriodo(idPeriodo, { pagination: false }),
   });
 };
@@ -69,6 +74,30 @@ export const useCrearTarifa = (): UseMutationResult<
   });
 };
 
+export const useGuardarTarifas = (): UseMutationResult<
+  ApiResponse,
+  Error,
+  SaveTarifaDto
+> => {
+  return useMutation({
+    mutationKey: ["guardar-tarifas"],
+    mutationFn: (data: SaveTarifaDto) => saveTarifas(data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Tarifas guardadas correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["tarifas", data.data.idPeriodo],
+        });
+      } else {
+        throw new Error(data.message || "Error al guardar las tarifas");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al guardar las tarifas");
+    },
+  });
+};
+
 export const useActualizarTarifa = (): UseMutationResult<
   ApiResponse,
   Error,
@@ -79,14 +108,19 @@ export const useActualizarTarifa = (): UseMutationResult<
     mutationFn: ({ id, data }: { id: number; data: UpdateTarifaDto }) =>
       updateTarifa(id, data),
     onSuccess: (data) => {
-      if (data.status === 200 || data.status === 201) {
-        toast.success("Tarifa actualizada correctamente");
-        queryClient.invalidateQueries({
-          queryKey: ["tarifas", data.data.idPeriodo],
-        });
-      } else {
-        throw new Error(data.message || "Error al actualizar la tarifa");
-      }
+      // if (data.status === 200 || data.status === 201) {
+      //   toast.success("Tarifa actualizada correctamente");
+      //   queryClient.invalidateQueries({
+      //     queryKey: ["tarifas", data.data.idPeriodo],
+      //   });
+      // } else {
+      //   throw new Error(data.message || "Error al actualizar la tarifa");
+      // }
+      // TODO: revisar esto
+      toast.success("Tarifa actualizada correctamente");
+      queryClient.invalidateQueries({
+        queryKey: ["tarifas", data.data.idPeriodo],
+      });
     },
     onError: (error) => {
       toast.error(error.message || "Error al actualizar la tarifa");
@@ -103,14 +137,19 @@ export const useEliminarTarifa = (): UseMutationResult<
     mutationKey: ["eliminar-tarifa"],
     mutationFn: (id: number) => deleteTarifa(id),
     onSuccess: (data) => {
-      if (data.status === 200 || data.status === 201) {
-        toast.success("Tarifa eliminada correctamente");
-        queryClient.invalidateQueries({
-          queryKey: ["tarifas", data.data.idPeriodo],
-        });
-      } else {
-        throw new Error(data.message || "Error al eliminar la tarifa");
-      }
+      // if (data.status === 200 || data.status === 201) {
+      //   toast.success("Tarifa eliminada correctamente");
+      //   queryClient.invalidateQueries({
+      //     queryKey: ["tarifas", data.data.idPeriodo],
+      //   });
+      // } else {
+      //   throw new Error(data.message || "Error al eliminar la tarifa");
+      // }
+      // TODO: revisar esto
+      toast.success("Tarifa eliminada correctamente");
+      queryClient.invalidateQueries({
+        queryKey: ["tarifas"],
+      });
     },
     onError: (error) => {
       toast.error(error.message || "Error al eliminar la tarifa");

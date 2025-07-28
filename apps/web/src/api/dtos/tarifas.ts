@@ -15,6 +15,11 @@ export interface UpdateTipoTarifaDto {
   cantidadTiempo: number;
 }
 
+export interface SaveTarifaDto {
+  idPeriodo: number;
+  tarifas: CreateTarifaDto[];
+}
+
 export interface CreateTarifaDto {
   idPeriodo: number;
   idServicio: number;

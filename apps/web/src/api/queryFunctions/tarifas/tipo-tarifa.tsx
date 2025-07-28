@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { getTipoTarifa, updateTipoTarifa } from "../../functions/tarifas";
 import type { ApiResponse } from "../../types/common";
-import type { TipoTarifa } from "../../types";
+import type { TipoTarifa } from "../../types/periodo";
 import type { UpdateTipoTarifaDto } from "../../dtos/tarifas";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";

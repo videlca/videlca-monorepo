@@ -15,6 +15,7 @@ import { StateLabel } from "../../../components/common/StateLabel";
 import {
   useActualizarPeriodo,
   useCrearPeriodo,
+  useEliminarPeriodo,
   usePeriodos,
 } from "../../../api/queryFunctions/tarifas/periodo";
 import { useState } from "react";
@@ -24,24 +25,26 @@ import { CheckboxForm } from "../../../components/common/CheckboxForm";
 import { useForm } from "../../../hooks/useForm";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../../api/dtos";
 import Button from "../../../components/common/Button";
+import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 
 export const Route = createFileRoute("/dashboard/tarifas/periodo")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const navigate = useNavigate();
   // Estados
   const [isOpenAddTarifa, setIsOpenAddTarifa] = useState(false);
   const [isOpenEditTarifa, setIsOpenEditTarifa] = useState(false);
-  const [editingRow, setEditingRow] = useState<Periodo | null>(null);
-
-  const navigate = useNavigate();
+  const [selectedPeriodo, setSelectedPeriodo] = useState<Periodo | null>(null);
+  const [isOpenDeleteTarifa, setIsOpenDeleteTarifa] = useState(false);
   // Mutaciones y queries
   const { data: periodos } = usePeriodos();
   const { mutate: crearPeriodo, isPending: isLoadingCrearPeriodo } =
     useCrearPeriodo();
   const { mutate: actualizarPeriodo, isPending: isLoadingActualizarPeriodo } =
     useActualizarPeriodo();
+  const { mutate: eliminarPeriodo } = useEliminarPeriodo();
   // Formularios
   const {
     form: formAddPeriodo,
@@ -79,10 +82,20 @@ function RouteComponent() {
     {
       header: "Fecha de inicio",
       accessorKey: "fechaInicio",
+      cell: ({ row }) => {
+        return (
+          <span className="whitespace-nowrap">{row.original.fechaInicio}</span>
+        );
+      },
     },
     {
       header: "Fecha de fin",
       accessorKey: "fechaFin",
+      cell: ({ row }) => {
+        return (
+          <span className="whitespace-nowrap">{row.original.fechaFin}</span>
+        );
+      },
     },
     {
       header: "Activo para facturación",
@@ -101,7 +114,7 @@ function RouteComponent() {
               label="Editar"
               onClick={() => {
                 setIsOpenEditTarifa(true);
-                setEditingRow(row.original);
+                setSelectedPeriodo(row.original);
                 setFormEditPeriodo({
                   fechaFin: row.original.fechaFin,
                   fechaInicio: row.original.fechaInicio,
@@ -114,7 +127,6 @@ function RouteComponent() {
               Icon={EyeIcon}
               label="Ver tarifas"
               onClick={() => {
-                // setIsOpenSeeTarifa(true);
                 navigate({
                   to: "/dashboard/tarifas/ver-tarifas/$id-periodo",
                   params: {
@@ -138,7 +150,10 @@ function RouteComponent() {
             <ButtonAction
               Icon={TrashIcon}
               label="Eliminar"
-              onClick={() => {}}
+              onClick={() => {
+                setIsOpenDeleteTarifa(true);
+                setSelectedPeriodo(row.original);
+              }}
               color="red"
             />
           </div>
@@ -247,7 +262,7 @@ function RouteComponent() {
             e.preventDefault();
             actualizarPeriodo(
               {
-                id: editingRow?.idPeriodo || 0,
+                id: selectedPeriodo?.idPeriodo || 0,
                 data: {
                   fechaInicio: new Date(formEditPeriodo.fechaInicio)
                     .toISOString()
@@ -310,6 +325,19 @@ function RouteComponent() {
           </div>
         </form>
       </SimpleModal>
+      <ConfirmarDelete
+        isOpenDelete={isOpenDeleteTarifa}
+        text="¿Estás seguro de querer eliminar este periodo?"
+        onDelete={() => {
+          eliminarPeriodo(selectedPeriodo?.idPeriodo || 0, {
+            onSuccess: () => {
+              setIsOpenDeleteTarifa(false);
+              setSelectedPeriodo(null);
+            },
+          });
+        }}
+        onClose={() => setIsOpenDeleteTarifa(false)}
+      />
     </Section>
   );
 }

@@ -5,11 +5,13 @@ export function ButtonAction({
   label,
   onClick,
   color = "blue",
+  disabled = false,
 }: {
   Icon: LucideIcon;
   label: string;
   onClick: () => void;
   color?: "blue" | "red";
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -17,8 +19,9 @@ export function ButtonAction({
         color === "blue"
           ? "bg-blue-600 hover:bg-blue-500"
           : "bg-red-600 hover:bg-red-500"
-      }`}
+      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
       onClick={onClick}
+      disabled={disabled}
     >
       <Icon className="h-4 w-4" />
       {label}
