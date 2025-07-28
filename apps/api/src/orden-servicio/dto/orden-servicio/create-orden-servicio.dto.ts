@@ -28,9 +28,9 @@ export class CreateOrdenServicioDto {
     
     @ApiProperty({ description: 'Fecha de fin de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: false}) 
     @IsOptional()   
-    @Transform(({ value }) => new Date(value))
+    @Transform(({ value }) => value ? new Date(value) : null)
     @IsDate()
-    fechaFin?: Date;
+    fechaFin?: Date | null;
     
     @ApiProperty({ description: 'Hora de inicio por dia del servicio', example: '06:00:00', required:true})
     @IsString({ message: 'El campo Hora de inicio debe ser un string'})

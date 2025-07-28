@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { PaginationDto } from '../../common/dto';
 
 import { User } from '../../users/entities/user.entity';
+import { EstadoOrdenServicio as EstadoOrdenEntity} from "../../common/entities";
 
 import { EstadoOrdenServicioService } from '../../common/services';
 import { LocacionService } from '../../clientes/services';
@@ -13,12 +14,11 @@ import { TarifasService } from '../../tarifas/services';
 import { TipoHorarioService } from '../../servicios/services';
 
 import { EstadoOrdenServicio } from '../../common/interfaces/estado-orden-servicio.interface';
-import { TipoHorarioInterface } from '../../servicios/interfaces/tipo-horario.interface';
 import { TipoDuracionInterface } from '../../servicios/interfaces/tipo-duracion.interface';
-
+import { TipoTarifaInterface } from '../../tarifas/interfaces/tipo-tarifa.interface';
 
 import { OrdenServicio } from '../entities';
-import { CreateOrdenServicioDto, TercerPasoDto } from '../dto';
+import { CreateOrdenServicioDto, TercerPasoDto, PrecioOrdenDto } from '../dto';
 
 @Injectable()
 export class OrdenServicioService {
@@ -57,10 +57,10 @@ export class OrdenServicioService {
 
     // FECHA FIN ORDEN SERVICIO
 
-    let fechaFinOrden = new Date();
+    let fechaFinOrden = createOrdenServicioDto.fechaFin != null ? new Date(createOrdenServicioDto.fechaFin) : null;
 
     // Validar que las fechas sean lógicamente correcto
-    if (createOrdenServicioDto.fechaFin) {
+    if (createOrdenServicioDto.fechaFin != null) {
         
         // FECHA FIN ORDEN SERVICIO
 
@@ -88,39 +88,30 @@ export class OrdenServicioService {
 
     // OBTENER ID ESTADO ORDEN SERVICIO
     //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
-    let estadoOrdenServicio;
+    let estadoOrdenServicio: EstadoOrdenEntity;
 
-    if( fechaInicioOrden > fechaCreacionOrden ){
-     
+    if (createOrdenServicioDto.fechaFin != null && fechaFinOrden < fechaCreacionOrden) {
+     // Caso 1: Ya terminó (fecha fin es anterior a fecha creación)
+      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.TERMINADO);
+    
+    }
+
+    else if (fechaInicioOrden > fechaCreacionOrden) {
+      // Caso 2: Está programado para el futuro
       estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.PROGRAMADO);
-      
-    }
-    
-    if( fechaInicioOrden == fechaCreacionOrden ){
-     
-      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.INICIADO);
-      
+
     }
 
-    if( fechaInicioOrden < fechaCreacionOrden ){
-
+    else {
+      // Caso 3: Ya inició o debe iniciar (fechaInicio <= fechaCreacion)
+      // Esto incluye cuando fechaInicio == fechaCreacion 
       estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.INICIADO);
 
     }
 
-    if (createOrdenServicioDto.fechaFin && fechaFinOrden < fechaCreacionOrden) {
-     
-      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.TERMINADO);
-    
-    }
+    // envio de correos que se tengan registrados en la locacion
 
-    if (createOrdenServicioDto.fechaFin && fechaFinOrden == fechaCreacionOrden) {
-
-      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.TERMINADO);
-    
-    }
-
-    // envio de correos que s etengan registrados en la locacion
+    // validar si la orden requiere personal y agregar el personal si es necesario
 
     try {
 
@@ -265,6 +256,80 @@ export class OrdenServicioService {
     const duracionMinutos = minutosFin - minutosInicio;
     return duracionMinutos / 60; // Convertir a horas
   
+
+  }
+
+  async obtenerPrecio(validarPrecioOrdenDto: PrecioOrdenDto){
+
+    const { idTarifa, horaInicio, horaFin, fechaInicio, fechaFin, cantidadPersonal } = validarPrecioOrdenDto;
+
+    // Validar que la tarifa exista
+    const tarifa = await this.tarifasService.findOne(idTarifa);
+
+    if (!fechaFin) {
+  
+      return {
+        "message": "La orden de servicio es indefinida, el precio se calculara al momento de hacer la liquidacion o al finalizar el servicio",
+        "precio": tarifa.precioTotal
+      }
+        
+    }
+    
+    //! DESESTRUCTURAR FECHAS PARA EL MANEJO CORRECTO
+
+    // FECHA INICIO ORDEN SERVICIO
+                
+    const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
+
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
+    
+    const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
+    
+    // FECHA FIN ORDEN SERVICIO
+                
+    const fechaFinSplit = fechaFin.toISOString().split('T')[0];
+
+    const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+    
+    const fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
+
+
+    // VALIDAR SI SE ESTA PIDIENDO SERVICIO POR UN MES
+    if (this.esMesCompleto(fechaInicioOrden, fechaFinOrden)) {
+
+      // SI EL TIPO DE TARIFA ES POR MES
+      if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES){
+        
+        return {
+          "message": "El servicio es por un mes completo",
+          "precio": tarifa.precioTotal
+        }
+
+      }
+
+    }
+    
+
+  }
+
+  private esMesCompleto(fechaInicio: Date, fechaFin: Date): boolean {
+    
+    // Verificar que sean del mismo mes y año
+    if (fechaInicio.getFullYear() !== fechaFin.getFullYear() || 
+        fechaInicio.getMonth() !== fechaFin.getMonth()) {
+      return false;
+    }
+    
+    // Verificar que la fecha de inicio sea el día 1
+    if (fechaInicio.getDate() !== 1) {
+      return false;
+    }
+    
+    // Obtener el último día del mes
+    const ultimoDiaDelMes = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + 1, 0).getDate();
+    
+    // Verificar que la fecha fin sea el último día del mes
+    return fechaFin.getDate() === ultimoDiaDelMes;
 
   }
 
