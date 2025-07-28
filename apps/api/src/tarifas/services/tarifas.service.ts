@@ -153,6 +153,7 @@ export class TarifasService {
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
       .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
       .where('tarifa.idPeriodo = :id', { id })
 
     if (pagination) {
@@ -170,6 +171,7 @@ export class TarifasService {
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
       .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
       .where('tarifa.idPeriodo = :id', { id })
       .andWhere('tarifa.estado = :estado', { estado: true })
 
@@ -190,6 +192,7 @@ export class TarifasService {
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
       .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
       .where('tarifa.idPeriodo = :id', { id: periodoActivoFacturacion.idPeriodo })
 
     if (pagination) {
