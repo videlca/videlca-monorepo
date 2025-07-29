@@ -260,10 +260,10 @@ export class TipoHorarioService {
 
         // FECHA VIGENCIA FIN
 
-        let fechaFin = new Date();
+        let fechaFin = updateTipoHorarioDto.fechaVigenciaFin != null ? new Date(updateTipoHorarioDto.fechaVigenciaFin) : null;;
 
         // Validar que el período sea lógicamente correcto
-        if (updateTipoHorarioDto.fechaVigenciaFin) {
+        if (updateTipoHorarioDto.fechaVigenciaFin != null) {
             
             // FECHA VIGENCIA FIN
     
