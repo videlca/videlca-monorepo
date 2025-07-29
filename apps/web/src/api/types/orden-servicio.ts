@@ -1,9 +1,12 @@
+import type { EstadoOrden, Locacion, Usuario } from "../../types";
+import type { Tarifa } from "./periodo";
+
 export interface OrdenServicio {
   idOrdenServicio: number;
-  idUsuarioCreacion: number;
-  idEstadoOrdenServicio: number;
-  idLocacion: number;
-  idTarifa: number;
+  idUsuarioCreacion: Usuario;
+  idEstadoOrdenServicio: EstadoOrden;
+  idLocacion: Locacion;
+  idTarifa: Tarifa;
   cantidadPersonal: number;
   fechaInicio: string;
   fechaFin: string;

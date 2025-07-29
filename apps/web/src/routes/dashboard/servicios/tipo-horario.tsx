@@ -93,6 +93,9 @@ function RouteComponent() {
     {
       header: "Fecha de vigencia de fin",
       accessorKey: "fechaVigenciaFin",
+      cell: ({ row }) => {
+        return <span>{row.original.fechaVigenciaFin || "Vigente"}</span>;
+      },
     },
     // {
     //   header: "Estado",

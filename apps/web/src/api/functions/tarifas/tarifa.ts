@@ -31,3 +31,9 @@ export const updateTarifa = async (id: number, data: UpdateTarifaDto): Promise<A
 export const deleteTarifa = async (id: number): Promise<ApiResponse> => {
   return await apiDelete<Tarifa>(`/tarifas/${id}`);
 };
+
+export const getTarifasPeriodoActivo = async (
+  pagination: PaginationDto,
+): Promise<ApiResponse<Tarifa[]>> => {
+  return await apiGet<Tarifa[]>(`/tarifas/periodo-activo`, pagination);
+};

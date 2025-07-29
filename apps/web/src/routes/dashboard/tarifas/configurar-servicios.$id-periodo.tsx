@@ -74,7 +74,7 @@ function RouteComponent() {
 
   // Función para calcular IVA y precio total automáticamente
   const calcularPrecios = (precioBase: number) => {
-    const iva = precioBase * 0.19; // IVA del 19%
+    const iva = precioBase * 0.019; // IVA del 19%
     const precioTotal = precioBase + iva;
     return { iva, precioTotal };
   };
@@ -183,10 +183,23 @@ function RouteComponent() {
       precioTotal: sc.precioTotal,
     }));
 
-    guardarTarifas({
-      idPeriodo: Number(idPeriodoParam),
-      tarifas: tarifasData,
-    });
+    guardarTarifas(
+      {
+        idPeriodo: Number(idPeriodoParam),
+        tarifas: tarifasData,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Tarifas agregadas correctamente");
+          navigate({
+            to: "/dashboard/tarifas/ver-tarifas/$id-periodo",
+            params: {
+              "id-periodo": idPeriodoParam as string,
+            },
+          });
+        },
+      },
+    );
   };
 
   // Filtrar servicios según búsqueda y filtros

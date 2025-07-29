@@ -10,6 +10,7 @@ import {
   getTarifaById,
   getTarifasActivo,
   getTarifasByPeriodo,
+  getTarifasPeriodoActivo,
   saveTarifas,
   updateTarifa,
 } from "../../functions/tarifas/tarifa";
@@ -95,6 +96,16 @@ export const useGuardarTarifas = (): UseMutationResult<
     onError: (error) => {
       toast.error(error.message || "Error al guardar las tarifas");
     },
+  });
+};
+
+export const useTarifasPeriodoActivo = (): UseQueryResult<
+  ApiResponse<Tarifa[]>,
+  Error
+> => {
+  return useQuery({
+    queryKey: ["tarifas-periodo-activo"],
+    queryFn: () => getTarifasPeriodoActivo({ pagination: false }),
   });
 };
 

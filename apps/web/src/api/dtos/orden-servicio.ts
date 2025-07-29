@@ -3,7 +3,7 @@ export interface CreateOrdenServicioDto {
   idTarifa: number;
   cantidadPersonal: number;
   fechaInicio: string;
-  fechaFin: string;
+  fechaFin: string | null;
   horaInicio: string;
   horaFin: string;
   fechaCreacion: string;
