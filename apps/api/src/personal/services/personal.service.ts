@@ -55,10 +55,10 @@ export class PersonalService {
 
     // FECHA VIGENCIA FIN CONTRATO
 
-    let fechaFinContrato = new Date();
+    let fechaFinContrato = createPersonalDto.fechaFinContrato != null ? new Date(createPersonalDto.fechaFinContrato) : null;
 
     // Validar que el período del contrato sea lógicamente correcto
-    if (createPersonalDto.fechaFinContrato) {
+    if (createPersonalDto.fechaFinContrato != null) {
         
         // FECHA VIGENCIA FIN CONTRATO
 
@@ -259,10 +259,10 @@ export class PersonalService {
 
     // FECHA VIGENCIA FIN CONTRATO
 
-    let fechaFinContratoUpdate = new Date();
+    let fechaFinContratoUpdate = updatePersonalDto.fechaFinContrato != null ? new Date(updatePersonalDto.fechaFinContrato) : null;;
 
     // Validar que el período del contrato sea lógicamente correcto
-    if (updatePersonalDto.fechaFinContrato) {
+    if (updatePersonalDto.fechaFinContrato != null) {
         
         // FECHA VIGENCIA FIN CONTRATO
 

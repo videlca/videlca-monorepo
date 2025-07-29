@@ -47,9 +47,9 @@ export class CreatePersonalDto {
     
     @ApiProperty({ description: 'Fecha de inicio de la vigencia del contrato', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
     @IsOptional()
-    @Transform(({ value }) => new Date(value))
+    @Transform(({ value }) => value ? new Date(value) : null)
     @IsDate()
-    fechaFinContrato?: Date;
+    fechaFinContrato?: Date | null;
 
     @ApiProperty({ description: 'Fecha de nacimiento del personal', example: '15/01/1995', required:true})
     @Transform(({ value }) => new Date(value))
