@@ -135,6 +135,7 @@ export const initialData: SeedData = {
     tiposHorario: [
         {descripcion: "diurno"},
         {descripcion: "nocturno"},
+        {descripcion: "24 horas"},
     ],
 
     tiposNovedad: [

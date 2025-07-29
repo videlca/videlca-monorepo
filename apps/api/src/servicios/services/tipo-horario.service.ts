@@ -41,6 +41,14 @@ export class TipoHorarioService {
         .andWhere('th.fechaVigenciaFin IS NULL')
         .getOne();
 
+        const existTiposHorario = await this.tipoHorarioRepository
+        .createQueryBuilder('th')
+        .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
+        .where('th.idTipoHorarioDescripcion = :idTipoHorarioDescripcion', { 
+            idTipoHorarioDescripcion: tipoHorarioDescripcion.idTipoHorarioDescripcion 
+        })
+        .getMany();
+
         if (existTipoHorario){
             throw new BadRequestException(`Antes de crear un nuevo horario ${tipoHorarioDescripcion.descripcion} debes agregar fecha de finalizacion al que aun esta vigente`)
         }
@@ -55,10 +63,10 @@ export class TipoHorarioService {
 
         // FECHA VIGENCIA FIN
 
-        let fechaVigenciaFin = new Date();
+        let fechaVigenciaFin = createTipoHorarioDto.fechaVigenciaFin != null ? new Date(createTipoHorarioDto.fechaVigenciaFin) : null;
 
         // Validar que el período sea lógicamente correcto
-        if (createTipoHorarioDto.fechaVigenciaFin) {
+        if (createTipoHorarioDto.fechaVigenciaFin != null) {
             
             // FECHA VIGENCIA FIN
     
@@ -77,6 +85,13 @@ export class TipoHorarioService {
         }
 
         await this.validarFechasVigencia(fechaVigenciaInicio, tipoHorarioDescripcion);
+        
+        // VALIDAR QUE CUANDO SE CREE EL PRIMERO TIPO DE HORARIO NO SE PUEDA CREAR CON FECHA DE FIN
+        if(existTiposHorario.length == 0 && fechaVigenciaFin != null){
+    
+            throw new BadRequestException(`No se puede crear un horario ${tipoHorarioDescripcion.descripcion} con fecha de fin si no hay uno vigente, por favor, crea un horario sin fecha de fin primero`);
+            
+        }
     
         if (
             tipoHorarioDescripcion.descripcion == TipoHorarioInterface.DIURNO && 

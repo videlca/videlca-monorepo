@@ -35,8 +35,8 @@ export class CreateTipoHorarioDto {
     
     @ApiProperty({ description: 'Fecha de fin de la vigencia del horario', example: 'ISO String 2024-03-15T00:00:00.000Z', required: false}) 
     @IsOptional()   
-    @Transform(({ value }) => new Date(value))
+    @Transform(({ value }) => value ? new Date(value) : null)
     @IsDate()
-    fechaVigenciaFin?: Date;
+    fechaVigenciaFin?: Date | null;
 
 }

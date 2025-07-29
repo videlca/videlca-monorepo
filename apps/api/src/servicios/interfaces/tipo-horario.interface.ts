@@ -5,5 +5,8 @@ export enum TipoHorarioInterface {
 
     // NOCTURNO
     NOCTURNO = "nocturno",
+    
+    // 24 HORAS
+    VEINTICUATRO_HORAS = "24 horas",
 
 }
