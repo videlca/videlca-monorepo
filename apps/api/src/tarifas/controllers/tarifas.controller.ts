@@ -35,7 +35,7 @@ export class TarifasController {
   // RUTA PROTEGIDA: guardar tarifas para un periodo
   @Post('guardar-tarifas')
   bulk(@Body() bulkCreateTarifaDto: SaveTarifaDto) {
-    return this.tarifasService.bulkCreateUpdate(bulkCreateTarifaDto);
+    return this.tarifasService.bulkCreate(bulkCreateTarifaDto);
   }
   
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO ACTIVO DE FACTURACION

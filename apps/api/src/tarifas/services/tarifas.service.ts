@@ -32,7 +32,7 @@ export class TarifasService {
       this.defaultLimit = this.configService.get<number>('defaultLimit');
   }
 
-  async bulkCreateUpdate(bulkCreateTarifaDto: SaveTarifaDto) {
+  async bulkCreate(bulkCreateTarifaDto: SaveTarifaDto) {
 
     const { idPeriodo, tarifas } = bulkCreateTarifaDto;
     
@@ -50,9 +50,6 @@ export class TarifasService {
         if (!periodo) {
             throw new NotFoundException(`Periodo con ID ${idPeriodo} no encontrado`);
         }
-        
-        // 2. Eliminar todas las tarifas existentes para este periodo
-        await queryRunner.manager.delete(Tarifa, { idPeriodo: periodo });
         
         // 3. Validar y obtener las entidades relacionadas para todas las tarifas
         const tarifasToCreate = [];
@@ -110,9 +107,12 @@ export class TarifasService {
         this.handleDbExceptions(error);
         
     } finally {
+
         // Liberar el QueryRunner
         await queryRunner.release();
+
     }
+
   }
 
   async create(createTarifaDto: CreateTarifaDto) {
