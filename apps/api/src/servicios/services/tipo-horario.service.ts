@@ -59,7 +59,7 @@ export class TipoHorarioService {
         .getMany();
 
         if (existTipoHorario){
-            throw new BadRequestException(`Antes de crear un nuevo horario ${tipoHorarioDescripcion.descripcion} debes agregar fecha de finalizacion al que aun esta vigente`)
+            throw new BadRequestException(`Antes de crear un nuevo horario ${tipoHorarioDescripcion.nombre} debes agregar fecha de finalizacion al que aun esta vigente`)
         }
 
         // FECHA VIGENCIA INICIO
@@ -98,12 +98,12 @@ export class TipoHorarioService {
         // VALIDAR QUE CUANDO SE CREE EL PRIMERO TIPO DE HORARIO NO SE PUEDA CREAR CON FECHA DE FIN
         if(existTiposHorario.length == 0 && fechaVigenciaFin != null){
     
-            throw new BadRequestException(`No se puede crear un horario ${tipoHorarioDescripcion.descripcion} con fecha de fin si no hay uno vigente, por favor, crea un horario sin fecha de fin primero`);
+            throw new BadRequestException(`No se puede crear un horario ${tipoHorarioDescripcion.nombre} con fecha de fin si no hay uno vigente, por favor, crea un horario sin fecha de fin primero`);
             
         }
     
         if (
-            tipoHorarioDescripcion.descripcion == TipoHorarioInterface.DIURNO && 
+            tipoHorarioDescripcion.nombre == TipoHorarioInterface.DIURNO && 
             createTipoHorarioDto.horaInicio >= createTipoHorarioDto.horaFin
         ){
     
@@ -112,7 +112,7 @@ export class TipoHorarioService {
         }
         
         if (
-            tipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO && 
+            tipoHorarioDescripcion.nombre == TipoHorarioInterface.NOCTURNO && 
             createTipoHorarioDto.horaFin >= createTipoHorarioDto.horaInicio
         ){
     
@@ -219,7 +219,7 @@ export class TipoHorarioService {
             .andWhere('(th.fechaVigenciaFin IS NULL OR th.fechaVigenciaFin >= :fecha)', { fecha })
             .getOne();
             
-        if(!tipoHorario) throw new NotFoundException(`Tipo Horario vigente "${tipoHorarioDescripcion.descripcion}" no se ha encontrado`);
+        if(!tipoHorario) throw new NotFoundException(`Tipo Horario vigente "${tipoHorarioDescripcion.nombre}" no se ha encontrado`);
     
         return tipoHorario;
 
@@ -247,7 +247,7 @@ export class TipoHorarioService {
             .andWhere('(th.fechaVigenciaFin IS NULL')
             .getOne();
             
-        if(!tipoHorario) throw new NotFoundException(`Tipo Horario vigente "${tipoHorarioDescripcion.descripcion}" no se ha encontrado`);
+        if(!tipoHorario) throw new NotFoundException(`Tipo Horario vigente "${tipoHorarioDescripcion.nombre}" no se ha encontrado`);
     
         return tipoHorario;
 
@@ -336,7 +336,7 @@ export class TipoHorarioService {
 
         // VALIDAR HORARIOS
         if (
-            tipoHorario.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.DIURNO && 
+            tipoHorario.idTipoHorarioDescripcion.nombre == TipoHorarioInterface.DIURNO && 
             tipoHorario.horaInicio >= tipoHorario.horaFin
         ){
     
@@ -345,7 +345,7 @@ export class TipoHorarioService {
         }
         
         if (
-            tipoHorario.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO && 
+            tipoHorario.idTipoHorarioDescripcion.nombre == TipoHorarioInterface.NOCTURNO && 
             tipoHorario.horaFin >= tipoHorario.horaInicio
         ){
     
@@ -422,7 +422,7 @@ export class TipoHorarioService {
         if (registrosEnConflicto.length > 0) {
             const conflicto = registrosEnConflicto[0];
             const descripcionConflicto = 
-            `Registro ID ${conflicto.idTipoHorario} (${conflicto.idTipoHorarioDescripcion.descripcion}) ` +
+            `Registro ID ${conflicto.idTipoHorario} (${conflicto.idTipoHorarioDescripcion.nombre}) ` +
             `con vigencia desde ${conflicto.fechaVigenciaInicio.toISOString().split('T')[0]} ` +
             `hasta ${conflicto.fechaVigenciaFin ? conflicto.fechaVigenciaFin.toISOString().split('T')[0] : 'indefinido'}`;
     
@@ -449,7 +449,7 @@ export class TipoHorarioService {
             this.logger.error(error);
     
             if(error.errno == 1451){
-            throw new BadRequestException(`El Tipo horario ${tipoHorario.idTipoHorarioDescripcion.descripcion} no se puede eliminar debido a que se esta usando en el sistema`); 
+            throw new BadRequestException(`El Tipo horario ${tipoHorario.idTipoHorarioDescripcion.nombre} no se puede eliminar debido a que se esta usando en el sistema`); 
             }
             
             throw new InternalServerErrorException(`Unexpected error, check server logs`);
