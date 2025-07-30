@@ -190,7 +190,6 @@ function RouteComponent() {
       },
       {
         onSuccess: () => {
-          toast.success("Tarifas agregadas correctamente");
           navigate({
             to: "/dashboard/tarifas/ver-tarifas/$id-periodo",
             params: {

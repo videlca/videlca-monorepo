@@ -8,6 +8,17 @@ export interface CreateSegmentacionDto {
 
 export interface UpdateSegmentacionDto {
   estado?: boolean;
+  descripcion?: string;
+}
+
+
+export interface CreateSubSegmentacionDto {
+  descripcion: string;
+}
+
+export interface UpdateSubSegmentacionDto {
+  descripcion?: string;
+  estado?: boolean;
 }
 
 // Locaciones

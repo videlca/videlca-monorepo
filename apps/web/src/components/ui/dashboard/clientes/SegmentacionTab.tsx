@@ -17,25 +17,30 @@ import { useForm } from "../../../../hooks/useForm";
 import type {
   CreateSegmentacionDto,
   UpdateSegmentacionDto,
+  UpdateSubSegmentacionDto,
 } from "../../../../api/dtos";
 import Button from "../../../common/Button";
 import {
   useActualizarSegmentacion,
   useActualizarSubSegmentacion,
   useCrearSegmentacion,
+  useCrearSubSegmentacion,
   useEliminarSegmentacion,
   useEliminarSubSegmentacion,
   useSegmentacionById,
   useSegmentaciones,
 } from "../../../../api/queryFunctions/clientes";
 import { InputSelectStateBoolean } from "../../../common/InputSelectState";
+import { toast } from "sonner";
 
 export function SegmentacionTab() {
+  // Estados
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showSubSegmentations, setShowSubSegmentations] = useState(false);
-  const [editingSegmentacion, setEditingSegmentacion] =
-    useState<Segmentacion | null>(null);
+  const [showAddSubSegmentationModal, setShowAddSubSegmentationModal] =
+    useState(false);
+  const [idSegmentacion, setIdSegmentacion] = useState(0);
 
   // Segmentaciones
   const { data: segmentaciones } = useSegmentaciones();
@@ -50,7 +55,9 @@ export function SegmentacionTab() {
   // Subsegmentaciones
   const { mutate: eliminarSubSegmentacion } = useEliminarSubSegmentacion();
   const { mutate: actualizarSubSegmentacion } = useActualizarSubSegmentacion();
+  const { mutate: crearSubSegmentacion } = useCrearSubSegmentacion();
 
+  // Formularios
   const {
     form: formCreate,
     handleChange: handleChangeCreate,
@@ -67,6 +74,7 @@ export function SegmentacionTab() {
     setForm: setFormEdit,
   } = useForm<UpdateSegmentacionDto>({
     estado: false,
+    descripcion: "",
   });
   const [subSegmentaciones, setSubSegmentaciones] = useState<SubSegmentacion>({
     descripcion: "",
@@ -101,6 +109,27 @@ export function SegmentacionTab() {
     });
   };
 
+  const handleAddSubSegmentacionToSegmentacion = (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+    console.log(idSegmentacion);
+    console.log(subSegmentaciones);
+    crearSubSegmentacion(
+      { id: idSegmentacion, data: subSegmentaciones },
+      {
+        onSuccess: () => {
+          setShowAddSubSegmentationModal(false);
+          setSubSegmentaciones({
+            idSubSegmentacion: 0,
+            descripcion: "",
+            estado: undefined,
+          });
+        },
+      },
+    );
+  };
+
   const handleUpdateSegmentacion = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     actualizarSegmentacion(
@@ -127,9 +156,10 @@ export function SegmentacionTab() {
   const handleShowEditSegmentacionModal = (id: number) => {
     setIsEditModalOpen(true);
     obtenerSegmentacionById(id, {
-      onSuccess: () => {
+      onSettled: (data) => {
         setFormEdit({
-          estado: segmentacionById?.data?.estado,
+          estado: data?.data?.estado,
+          descripcion: data?.data?.descripcion || "",
         });
       },
     });
@@ -175,13 +205,25 @@ export function SegmentacionTab() {
 
   const handleUpdateSubSegmentacion = (
     id: number,
-    data: { descripcion?: string; estado?: boolean },
+    data: UpdateSubSegmentacionDto,
   ) => {
+    if (data.descripcion === "") {
+      toast.error(
+        "Debe ingresar una descripción para actualizar la sub-segmentación",
+      );
+      return;
+    }
+    if (id === 0) {
+      toast.error("Debe seleccionar una sub-segmentación para actualizar");
+      return;
+    }
     actualizarSubSegmentacion(
       { id, data },
       {
         onSuccess: () => {
           resetFormEdit();
+          setIsEditModalOpen(false);
+          setShowSubSegmentations(false);
         },
       },
     );
@@ -234,11 +276,24 @@ export function SegmentacionTab() {
       cell: ({ row }) => (
         <div className="flex gap-2">
           <ButtonAction
+            Icon={PlusIcon}
+            label="Agregar Sub-segmentación"
+            onClick={() => {
+              setShowAddSubSegmentationModal(true);
+              setIdSegmentacion(row.original.idSegmentacion);
+            }}
+          />
+          <ButtonAction
             Icon={PencilIcon}
             label="Editar"
-            onClick={() =>
-              handleShowEditSegmentacionModal(row.original.idSegmentacion)
-            }
+            onClick={() => {
+              handleShowEditSegmentacionModal(row.original.idSegmentacion);
+              setSubSegmentaciones({
+                idSubSegmentacion: 0,
+                descripcion: "",
+                estado: undefined,
+              });
+            }}
           />
           <ButtonAction
             Icon={TrashIcon}
@@ -439,11 +494,21 @@ export function SegmentacionTab() {
       >
         <form onSubmit={handleUpdateSegmentacion} className="space-y-4">
           <div className="space-y-6">
+            <InputForm
+              label="Descripción *"
+              placeholder="Ej: Segmentación por Industria"
+              type="text"
+              id="descripcion"
+              required={true}
+              value={formEdit.descripcion || ""}
+              onChange={handleChangeEdit}
+            />
+
             <InputSelectStateBoolean
               label="Estado"
               id="estado"
               placeholder="Selecciona el estado"
-              value={segmentacionById?.data?.estado?.toString() || ""}
+              value={formEdit.estado?.toString() || ""}
               onChange={handleChangeEdit}
             />
 
@@ -483,8 +548,12 @@ export function SegmentacionTab() {
                       id="descripcion"
                       required={false}
                       value={subSegmentaciones?.descripcion || ""}
-                      onChange={() => {}}
-                      disabled={true}
+                      onChange={(e) => {
+                        setSubSegmentaciones({
+                          ...subSegmentaciones,
+                          descripcion: e.target.value,
+                        });
+                      }}
                     />
 
                     <InputSelectStateBoolean
@@ -494,9 +563,7 @@ export function SegmentacionTab() {
                       value={subSegmentaciones?.estado?.toString() || ""}
                       onChange={(e) =>
                         setSubSegmentaciones({
-                          idSubSegmentacion:
-                            subSegmentaciones?.idSubSegmentacion || 0,
-                          descripcion: subSegmentaciones?.descripcion || "",
+                          ...subSegmentaciones,
                           estado: e.target.value === "true",
                         })
                       }
@@ -519,7 +586,11 @@ export function SegmentacionTab() {
                             console.log(subSegmentaciones);
                             handleUpdateSubSegmentacion(
                               subSegmentaciones?.idSubSegmentacion || 0,
-                              subSegmentaciones,
+                              {
+                                descripcion:
+                                  subSegmentaciones?.descripcion || "",
+                                estado: subSegmentaciones?.estado,
+                              },
                             );
                           }}
                         >
@@ -607,6 +678,49 @@ export function SegmentacionTab() {
             <Button type="submit" disabled={false}>
               Actualizar Segmentación
             </Button>
+          </div>
+        </form>
+      </SimpleModal>
+
+      {/* Modal para agregar sub-segmentación */}
+      <SimpleModal
+        isOpen={showAddSubSegmentationModal}
+        onClose={() => setShowAddSubSegmentationModal(false)}
+        title="Agregar Sub-segmentación"
+        size="xl"
+      >
+        <form
+          onSubmit={handleAddSubSegmentacionToSegmentacion}
+          className="space-y-4"
+        >
+          <div className="space-y-6">
+            <InputForm
+              label="Descripción *"
+              placeholder="Ej: Sub-segmentación por Industria"
+              type="text"
+              id="descripcion"
+              required={false}
+              value={subSegmentaciones?.descripcion}
+              onChange={handleChangeSubSegmentacion}
+            />
+            <div className="mt-6 flex justify-end space-x-3 pt-6">
+              <Button
+                onClick={() => {
+                  setShowAddSubSegmentationModal(false);
+                  setSubSegmentaciones({
+                    idSubSegmentacion: 0,
+                    descripcion: "",
+                    estado: undefined,
+                  });
+                }}
+                className="w-auto bg-gray-500 hover:bg-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={false}>
+                Agregar Sub-segmentación
+              </Button>
+            </div>
           </div>
         </form>
       </SimpleModal>

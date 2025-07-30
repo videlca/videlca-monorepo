@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import {
   createSegmentacion,
+  createSubSegmentacion,
   deleteSegmentacion,
   deleteSubSegmentacion,
   getSegmentacionById,
@@ -14,7 +15,11 @@ import {
   updateSegmentacion,
   updateSubSegmentacion,
 } from "../../functions/clientes/segmentacion";
-import type { CreateSegmentacionDto, UpdateSegmentacionDto } from "../../dtos";
+import type {
+  CreateSegmentacionDto,
+  CreateSubSegmentacionDto,
+  UpdateSegmentacionDto,
+} from "../../dtos";
 import { queryClient } from "../../../App";
 import type { ApiResponse } from "../../types/common";
 import type { Segmentacion, SubSegmentacion } from "../../../types";
@@ -131,6 +136,35 @@ export const useSubSegmentaciones = (): UseQueryResult<
   return useQuery({
     queryKey: ["subsegmentaciones"],
     queryFn: () => getSubSegmentaciones({ pagination: false }),
+  });
+};
+
+export const useCrearSubSegmentacion = (): UseMutationResult<
+  ApiResponse,
+  Error,
+  { id: number; data: CreateSubSegmentacionDto }
+> => {
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: CreateSubSegmentacionDto;
+    }) => createSubSegmentacion(id, data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["segmentaciones"] });
+        toast.success("Subsegmentación creada exitosamente", {
+          description: "La subsegmentación ha sido creada correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al crear subsegmentación");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al crear subsegmentación");
+    },
   });
 };
 
