@@ -15,6 +15,7 @@ import { TipoHorarioService } from '../../servicios/services';
 
 import { EstadoOrdenServicio } from '../../common/interfaces/estado-orden-servicio.interface';
 import { TipoDuracionInterface } from '../../servicios/interfaces/tipo-duracion.interface';
+import { TipoHorarioInterface } from 'src/servicios/interfaces/tipo-horario.interface';
 import { TipoTarifaInterface } from '../../tarifas/interfaces/tipo-tarifa.interface';
 
 import { OrdenServicio } from '../entities';
@@ -188,19 +189,43 @@ export class OrdenServicioService {
 
     const tipohorarioDescripcion = servicio.idTipoHorarioDescripcion;
 
-    const tipoDuracion = servicio.idTipoDuracion;
+    if (tipohorarioDescripcion.nombre === TipoHorarioInterface.DIA_COMPLETO) {
 
-    const tipoHorario = await this.tipoHorarioService.findOneVigenteByName(tipohorarioDescripcion.descripcion);
+      // Si el tipo de horario es 24 horas, no se valida el horario
+      return;
 
-    const { horaInicio: tipoHorariohoraInicio, horaFin: tipoHorarioHoraFin } = tipoHorario;
-
-    if (horaInicio < tipoHorariohoraInicio || horaFin > tipoHorarioHoraFin) {
-
-      throw new BadRequestException(`El horario ${tipohorarioDescripcion.descripcion} debe estar dentro del rango de ${tipoHorariohoraInicio} a ${tipoHorarioHoraFin}`);
-    
     }
 
-    const duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
+    if (tipohorarioDescripcion.nombre === TipoHorarioInterface.DIURNO || tipohorarioDescripcion.nombre === TipoHorarioInterface.NOCTURNO) {
+
+      const tipoHorario = await this.tipoHorarioService.findOneVigenteByName(tipohorarioDescripcion.nombre);
+
+      const { horaInicio: tipoHorariohoraInicio, horaFin: tipoHorarioHoraFin } = tipoHorario;
+  
+      if (horaInicio < tipoHorariohoraInicio || horaFin > tipoHorarioHoraFin) {
+  
+        throw new BadRequestException(`El horario ${tipohorarioDescripcion.nombre} debe estar dentro del rango de ${tipoHorariohoraInicio} a ${tipoHorarioHoraFin}`);
+      
+      }
+
+    }
+
+    let duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
+
+    if (tercerPasoDto.horasDescanso != null && tercerPasoDto.horasDescanso > 0) {
+
+      // Si hay horas de descanso, se resta la duracion del servicio
+      duracionServicio -= tercerPasoDto.horasDescanso;
+
+      if (duracionServicio <= 0) {
+
+        throw new BadRequestException(`La duracion del servicio no puede ser menor o igual a 0 horas`);
+
+      }
+
+    }
+
+    const tipoDuracion = servicio.idTipoDuracion;
 
     // Validar que la duracion del servicio sea correcta
     if (tipoDuracion.descripcion === TipoDuracionInterface.FIJA) {

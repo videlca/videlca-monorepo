@@ -93,6 +93,13 @@ export class OrdenServicio {
         nullable: false
     })
     horaFin: string; // Formato 'HH:mm:ss'
+    
+    @Column({
+        type: 'int',
+        name: 'horasDescanso',
+        default: 0,
+    })
+    horasDescanso: number;
 
     // FECHA CREACION
     @Column({

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, Matches, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, Matches, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength, IsOptional } from 'class-validator';
 
 export class TercerPasoDto {
     
@@ -26,5 +26,10 @@ export class TercerPasoDto {
         message: 'horaFin debe tener formato HH:mm:ss'
     })
     horaFin: string;
+
+    @ApiProperty({ description: 'Horas de descanso por dia del servicio', example: 2, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo horas descanso debe ser un número'})
+    horasDescanso?: number;
 
 }
