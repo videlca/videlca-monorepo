@@ -49,6 +49,12 @@ interface TipoNovedad {
     retirado: boolean;
 }
 
+// Tipo horario descripcion
+interface TipoHorarioDescripcion {
+    nombre: string;
+    descripcion: string;
+}
+
 interface SeedData {
     users: User[],
     roles: Role[],
@@ -56,7 +62,7 @@ interface SeedData {
     tiposId: Tipo[],
     tiposGenero: Tipo[],
     tiposDuracion: Tipo[],
-    tiposHorario: Tipo[],
+    tiposHorario: TipoHorarioDescripcion[],
     paises: Tipo[],
     tiposNovedad: TipoNovedad[],
     estadosOrdenServicio: EstadoOrdenServicio[],
@@ -133,9 +139,10 @@ export const initialData: SeedData = {
     ],
 
     tiposHorario: [
-        {descripcion: "diurno"},
-        {descripcion: "nocturno"},
-        {descripcion: "24 horas"},
+        {nombre: "diurno", descripcion: "Horario que se realiza durante el dia, este horario va ligado a la ley de horas laborales"},
+        {nombre: "nocturno", descripcion: "Horario que se realiza durante la noche, este horario va ligado a la ley de horas laborales"},
+        {nombre: "dia completo (24 horas)", descripcion: "Horario que se realiza durante todo el dia, servicio que se presta las 24 horas"},
+        {nombre: "mixto", descripcion: "Horario que se realiza durante el dia o la noche, dependiendo de la necesidad del cliente, por ejemplo Recogida de dinero"},
     ],
 
     tiposNovedad: [

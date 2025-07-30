@@ -9,3 +9,7 @@ export { UpdateTipoServicioDto } from "./tipo-servicio/update-tipo-servicio.dto"
 // TIPO HORARIO
 export { CreateTipoHorarioDto } from "./tipo-horario/create-tipo-horario.dto";
 export { UpdateTipoHorarioDto } from "./tipo-horario/update-tipo-horario.dto";
+
+// TIPO HORARIO DESCRIPCION
+export { CreateTipoHorarioDescripcionDto } from "./tipo-horario-descripcion/create-tipo-horario-descripcion.dto";
+export { UpdatetipoHorarioDescripcionDto } from "./tipo-horario-descripcion/update-tipo-horario-descripcion.dto";

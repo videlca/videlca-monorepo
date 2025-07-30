@@ -31,6 +31,15 @@ export class TipoHorarioService {
         
         // OBTENER TIPO DE HORARIO DESCRIPCION
         const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOne(createTipoHorarioDto.idTipoHorarioDescripcion);
+
+        if(tipoHorarioDescripcion.nombre == TipoHorarioInterface.DIA_COMPLETO ||
+           tipoHorarioDescripcion.nombre == TipoHorarioInterface.MIXTO){
+            
+            // Si es DIA COMPLETO o MIXTO, no se requiere hora de inicio y fin
+            throw new BadRequestException(`Para el tipo de horario ${tipoHorarioDescripcion.nombre}, no se deben especificar horas de inicio y fin.`);
+            
+
+        }
         
         const existTipoHorario = await this.tipoHorarioRepository
         .createQueryBuilder('th')
@@ -191,6 +200,15 @@ export class TipoHorarioService {
 
         // OBTENER TIPO DE HORARIO DESCRIPCION
         const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOne(idTipoHorarioDescripcion);
+
+        if(tipoHorarioDescripcion.nombre == TipoHorarioInterface.DIA_COMPLETO ||
+           tipoHorarioDescripcion.nombre == TipoHorarioInterface.MIXTO){
+            
+            // Si es DIA COMPLETO o MIXTO, no se requiere hora de inicio y fin
+            throw new BadRequestException(`Para el tipo de horario ${tipoHorarioDescripcion.nombre}, no se deben especificar horas de inicio y fin.`);
+            
+
+        }
     
         const tipoHorario = await this.tipoHorarioRepository
             .createQueryBuilder('th')
@@ -211,6 +229,15 @@ export class TipoHorarioService {
 
         // OBTENER TIPO DE HORARIO DESCRIPCION
         const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOneByName(tipoHorarioDescripcionDescription);
+
+        if(tipoHorarioDescripcion.nombre == TipoHorarioInterface.DIA_COMPLETO ||
+           tipoHorarioDescripcion.nombre == TipoHorarioInterface.MIXTO){
+            
+            // Si es DIA COMPLETO o MIXTO, no se requiere hora de inicio y fin
+            throw new BadRequestException(`Para el tipo de horario ${tipoHorarioDescripcion.nombre}, no se deben especificar horas de inicio y fin.`);
+            
+
+        }
     
         const tipoHorario = await this.tipoHorarioRepository
             .createQueryBuilder('th')
@@ -253,6 +280,14 @@ export class TipoHorarioService {
             
             // OBTENER TIPO DE HORARIO DESCRIPCION
             const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOne(idTipoHorarioDescripcion);
+
+            if(tipoHorarioDescripcion.nombre == TipoHorarioInterface.DIA_COMPLETO ||
+               tipoHorarioDescripcion.nombre == TipoHorarioInterface.MIXTO){
+            
+                // Si es DIA COMPLETO o MIXTO, no se requiere hora de inicio y fin
+                throw new BadRequestException(`Para el tipo de horario ${tipoHorarioDescripcion.nombre}, no se deben especificar horas de inicio y fin.`);
+
+            }
     
             tipoHorario.idTipoHorarioDescripcion = tipoHorarioDescripcion;
             

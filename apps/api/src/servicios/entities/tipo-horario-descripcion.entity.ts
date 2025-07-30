@@ -9,12 +9,21 @@ export class TipoHorarioDescripcion {
         name: 'idTipoHorarioDescripcion',
     })
     idTipoHorarioDescripcion: number;
-    
+
+    // nombre
     @Column({
         type: 'varchar',
-        length: 100,
-        name: 'descripcion',
+        name: 'nombre',
+        length: 30,
         unique: true
+    })
+    nombre: string;
+    
+    // descripcion
+    @Column({
+        type: 'varchar',
+        name: 'descripcion',
+        length: 255
     })
     descripcion: string;
 

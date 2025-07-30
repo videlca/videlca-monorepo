@@ -6,7 +6,10 @@ export enum TipoHorarioInterface {
     // NOCTURNO
     NOCTURNO = "nocturno",
     
-    // 24 HORAS
-    VEINTICUATRO_HORAS = "24 horas",
+    // DIA COMPLETO 24 HORAS
+    DIA_COMPLETO = "dia completo (24 horas)",
+
+    // MIXTO
+    MIXTO = "mixto",
 
 }

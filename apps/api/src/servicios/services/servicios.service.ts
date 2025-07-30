@@ -5,11 +5,13 @@ import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
 
-import { Servicio } from '../entities';
-
+import { Servicio, TipoHorarioDescripcion } from '../entities';
 
 import { CreateServicioDto, UpdateServicioDto } from '../dto';
+
 import { TipoDuracionInterface } from '../interfaces/tipo-duracion.interface';
+import { TipoHorarioInterface } from '../interfaces/tipo-horario.interface';
+
 import { TipoServicioService } from './tipo-servicio.service';
 import { TipoDuracionService } from './tipo-duracion.service';
 import { TipoHorarioDescripcionService } from './tipo-horario-descripcion.service';
@@ -33,15 +35,21 @@ export class ServiciosService {
   }
 
   async create(createServicioDto: CreateServicioDto) {
+    
+    // OBTENER TIPO HORARIO DESCRIPCION
+    const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOne(createServicioDto.idTipoHorarioDescripcion);
+    
+    if(tipoHorarioDescripcion.nombre == TipoHorarioInterface.DIA_COMPLETO){
+
+      return await this.createServicioDiaCompleto(createServicioDto, tipoHorarioDescripcion);
+
+    }
 
     // OBTENER TIPO DE SERVICIO
     const tipoServicio = await this.tipoServicioService.findOne(createServicioDto.idTipoServicio);
-    
+
     // OBTENER TIPO DE DURACION
     const tipoDuracion = await this.tipoDuracionService.findOne(createServicioDto.idTipoDuracion);
-
-    // OBTENER TIPO HORARIO DESCRIPCION
-    const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOne(createServicioDto.idTipoHorarioDescripcion);
     
     if (tipoDuracion.descripcion == TipoDuracionInterface.FIJA && !createServicioDto.horasFijas){
       throw new BadRequestException("El tipo de duracion requiere que se ingresen las horas fijas del servicio")
@@ -74,6 +82,38 @@ export class ServiciosService {
         idTipoServicio: tipoServicio,
         idTipoDuracion: tipoDuracion,
         idTipoHorarioDescripcion: tipoHorarioDescripcion
+      });
+
+      await this.servicioRepository.save(servicio);
+
+      return servicio;
+      
+    } catch (error) {
+
+      this.handleDbExceptions(error);
+      
+    }
+
+  }
+
+  private async createServicioDiaCompleto(createServicioDto: CreateServicioDto, tipoHorarioDescripcion: TipoHorarioDescripcion) {
+
+    // OBTENER TIPO DE SERVICIO
+    const tipoServicio = await this.tipoServicioService.findOne(createServicioDto.idTipoServicio);
+
+    // OBTENER TIPO DE DURACION
+    const tipoDuracion = await this.tipoDuracionService.findOneByName(TipoDuracionInterface.FIJA);
+
+    const horasFijas = 24;
+    
+    try {
+
+      const servicio = this.servicioRepository.create({
+        ...createServicioDto,
+        idTipoServicio: tipoServicio,
+        idTipoDuracion: tipoDuracion,
+        idTipoHorarioDescripcion: tipoHorarioDescripcion,
+        horasFijas: horasFijas
       });
 
       await this.servicioRepository.save(servicio);
@@ -179,6 +219,27 @@ export class ServiciosService {
 
     if(!servicio) throw new NotFoundException(`Servicio con id "${id}" no encontrado`);
 
+
+    if (updateServicioDto.idTipoHorarioDescripcion){
+      
+      // OBTENER TIPO HORARIO DESCRIPCION
+      const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOne(idTipoHorarioDescripcion);
+
+      servicio.idTipoHorarioDescripcion = tipoHorarioDescripcion;
+
+      if(tipoHorarioDescripcion.nombre == TipoHorarioInterface.DIA_COMPLETO){
+        
+        // OBTENER TIPO DE DURACION
+        const tipoDuracion = await this.tipoDuracionService.findOneByName(TipoDuracionInterface.FIJA);
+
+        servicio.idTipoDuracion = tipoDuracion;
+
+        servicio.horasFijas = 24;
+
+      }
+      
+    }
+
     if (updateServicioDto.idTipoServicio){
       
       // OBTENER TIPO DE SERVICIO
@@ -188,7 +249,7 @@ export class ServiciosService {
       
     }
     
-    if (updateServicioDto.idTipoDuracion){
+    if (updateServicioDto.idTipoDuracion && servicio.idTipoHorarioDescripcion.nombre != TipoHorarioInterface.DIA_COMPLETO){
       
       // OBTENER TIPO DE DURACION
       const tipoDuracion = await this.tipoDuracionService.findOne(idTipoDuracion);
@@ -202,15 +263,6 @@ export class ServiciosService {
       }
 
       servicio.idTipoDuracion = tipoDuracion;
-      
-    }
-    
-    if (updateServicioDto.idTipoHorarioDescripcion){
-      
-      // OBTENER TIPO HORARIO DESCRIPCION
-      const tipoHorarioDescripcion = await this.tipoHorarioDescripcionService.findOne(idTipoHorarioDescripcion);
-
-      servicio.idTipoHorarioDescripcion = tipoHorarioDescripcion;
       
     }
 

@@ -3,8 +3,10 @@ import { Body, Controller, Get, Post, Param, Patch, ParseIntPipe, Query, Delete 
 import { AppAuth, ValidateJwtAuth } from '../../auth/decorators';
 import { DescriptionRoutes } from '../../auth/interfaces';
 
+import { PaginationDto } from '../../common/dto';
+
 import { TipoHorarioDescripcionService } from '../services';
-import { CreateTipoDto, UpdatetipoDto, PaginationDto } from '../../common/dto';
+import { CreateTipoHorarioDescripcionDto, UpdatetipoHorarioDescripcionDto } from '../dto';
 
 @Controller('tipo-horario-descripcion')
 @AppAuth(DescriptionRoutes.SERVICIOS) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -14,14 +16,20 @@ export class TipoHorarioDescripcionController {
   
   // RUTA PROTEGIDA: Crear un tipo horario descripcion
   @Post()
-  create(@Body() createTipoHorarioDescripcionDto: CreateTipoDto) {
+  create(@Body() createTipoHorarioDescripcionDto: CreateTipoHorarioDescripcionDto) {
       return this.tipoHorarioDescripcionService.create(createTipoHorarioDescripcionDto);
   }
   
-  // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS HORARIO DESCRIPCION
+  // RUTA PROTEGIDA: OBTENER TODOS LOS TIPOS HORARIO DESCRIPCION
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.tipoHorarioDescripcionService.findAll(paginationDto, paginationDto.pagination);
+  }
+  
+  // RUTA PROTEGIDA: OBTENER TODOS LOS HORARIOS DIURNOS Y NOCTURNOS
+  @Get('horario-diurno-nocturno')
+  findAllHorarioDiurnoNocturno(@Query() paginationDto: PaginationDto) {
+    return this.tipoHorarioDescripcionService.findAllHorarioDirunoNocturno(paginationDto, paginationDto.pagination);
   }
 
   // RUTA PROTEGIDA: OBTENER UN TIPO HORARIO DESCRIPCION
@@ -32,7 +40,7 @@ export class TipoHorarioDescripcionController {
 
   // RUTA PROTEGIDA: EDITAR UN TIPO HORARIO DESCRIPCION
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateTipoHorarioDescripcionDto: UpdatetipoDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateTipoHorarioDescripcionDto: UpdatetipoHorarioDescripcionDto) {
     return this.tipoHorarioDescripcionService.update(id, updateTipoHorarioDescripcionDto);
   }
 

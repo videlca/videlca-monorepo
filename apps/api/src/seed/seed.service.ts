@@ -185,6 +185,7 @@ export class SeedService {
         // Insertar Tipo Horario Descripcion
         tiposHorario.forEach(tipoHorario => {
             insertPromises.push(this.tipoHorarioDescripcionService.create({
+                nombre: tipoHorario.nombre,
                 descripcion: tipoHorario.descripcion
             }))
         })
