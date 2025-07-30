@@ -137,6 +137,26 @@ export class ServiciosService {
 
   }
 
+  async findAllByPeriodo(idPeriodo: number, paginationDto: PaginationDto, pagination: boolean = true){
+
+    const queryBuilder = this.servicioRepository .createQueryBuilder('servicio') 
+      .leftJoin('tarifa', 'tarifa', 'tarifa.idServicio = servicio.idServicio AND tarifa.idPeriodo = :periodoId', { idPeriodo }) 
+      // .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio') 
+      // .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion') 
+      // .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion') 
+      .where('tarifa.idTarifa IS NULL') 
+      .andWhere('servicio.estado = :estado', { estado: true }) 
+      .orderBy('servicio.codigoServicio', 'ASC') 
+
+      if (pagination) {
+        const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+        queryBuilder.take(limit).skip(offset);
+      }
+
+    return await queryBuilder.getMany();
+
+  }
+
   async findOne(id: number) {
     
     const servicio = await this.servicioRepository.findOne({

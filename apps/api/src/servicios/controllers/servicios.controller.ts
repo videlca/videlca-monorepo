@@ -26,6 +26,13 @@ export class ServiciosController {
     return this.serviciosService.findAll(paginationDto, paginationDto.pagination);
   }
 
+  // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO
+  @Get('periodo/:idPeriodo')
+  @ValidateJwtAuth()
+  findAllByPeriodo(@Param('idPeriodo') id: number, @Query() paginationDto: PaginationDto) {
+    return this.serviciosService.findAllByPeriodo(id, paginationDto, paginationDto.pagination);
+  }
+
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS SERVICIOS ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
