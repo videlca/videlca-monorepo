@@ -28,6 +28,11 @@ export class PrecioOrdenDto {
     })
     horaFin: string;
 
+    @ApiProperty({ description: 'Horas de descanso por dia del servicio', example: 2, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo horas descanso debe ser un número'})
+    horasDescanso?: number;
+
     @ApiProperty({ description: 'cantidad personal', example: 1, required:true})
     @IsOptional()
     @IsNumber({}, {message: 'El valor del campo cantidad personal debe ser un número'})
