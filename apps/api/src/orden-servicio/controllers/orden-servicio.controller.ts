@@ -9,7 +9,7 @@ import { User } from '../../users/entities/user.entity';
 
 import { OrdenServicioService } from '../services/orden-servicio.service';
 
-import { CreateOrdenServicioDto, TercerPasoDto } from '../dto';
+import { CreateOrdenServicioDto, TercerPasoDto, PrecioOrdenDto } from '../dto';
 
 @Controller('orden-servicio')
 @AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -32,6 +32,11 @@ export class OrdenServicioController {
   @Post('validacion-horarios')
   validacionHorarios(@Body() tercerPasoDto: TercerPasoDto) {
     return this.ordenServicioService.validacionHorarios(tercerPasoDto);
+  }
+
+  @Post('obtener-precio')
+  obtenerPrecioOrden(@Body() obtenerPrecioOrdenDto: PrecioOrdenDto){
+    return this.ordenServicioService.obtenerPrecio(obtenerPrecioOrdenDto);
   }
 
   @Get(':id')
