@@ -101,6 +101,16 @@ export class OrdenServicio {
     })
     horasDescanso: number;
 
+    // PRECIO TOTAL CON IVA
+    @Column({
+        type: 'decimal',
+        name: 'precio',
+        precision: 20,
+        scale: 2,
+        nullable: true
+    })
+    precio: number | null;
+
     // FECHA CREACION
     @Column({
         type: 'date',
