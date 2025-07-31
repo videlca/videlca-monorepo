@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, BeforeInsert, BeforeUpdate, OneToMany } from "typeorm";
 import { TipoIdentificacion } from "../../common/entities";
 import { Role } from "../../permissions/entities";
-import { OrdenServicio } from "../../orden-servicio/entities/orden-servicio.entity";
+import { OrdenServicio, ObservacionOrdenServicio } from "../../orden-servicio/entities";
 
 @Entity({name: 'usuario'})
 export class User {
@@ -94,6 +94,13 @@ export class User {
         (ordenServicio) => ordenServicio.idUsuarioCreacion
     )
     ordenesServicio: OrdenServicio[];
+
+    @OneToMany(
+        () => ObservacionOrdenServicio,
+        (observacionOrdenServicio) => observacionOrdenServicio.idUsuario,
+        {cascade: true}
+    )
+    observacionesOrdenServicio: ObservacionOrdenServicio[];
 
     @BeforeInsert()
     checkFieldsBeforeInsert(){

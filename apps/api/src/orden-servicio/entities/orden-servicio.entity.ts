@@ -3,6 +3,7 @@ import { User } from "../../users/entities/user.entity";
 import { EstadoOrdenServicio } from "../../common/entities";
 import { Locacion } from "../../clientes/entities";
 import { Tarifa } from "../../tarifas/entities";
+import { ObservacionOrdenServicio } from "./observaciones-orden.entity";
 
 @Entity({name: "orden-servicio"})
 export class OrdenServicio {
@@ -118,5 +119,12 @@ export class OrdenServicio {
         nullable: false
     }) 
     fechaCreacion: Date; 
+
+    @OneToMany(
+        () => ObservacionOrdenServicio,
+        (observacionOrdenServicio) => observacionOrdenServicio.idOrdenServicio,
+        {cascade: true}
+    )
+    observacionesOrdenServicio: ObservacionOrdenServicio[];
 
 }

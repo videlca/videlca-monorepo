@@ -10,7 +10,7 @@ import { ClientesModule } from '../clientes/clientes.module';
 import { TarifasModule } from '../tarifas/tarifas.module';
 import { ServiciosModule } from '../servicios/servicios.module';
 
-import { OrdenServicio } from './entities';
+import { OrdenServicio, ObservacionOrdenServicio } from './entities';
 
 import { OrdenServicioService } from './services';
 
@@ -20,7 +20,8 @@ import { OrdenServicioController } from './controllers';
   imports: [
 
     TypeOrmModule.forFeature([
-      OrdenServicio
+      OrdenServicio,
+      ObservacionOrdenServicio
     ]),
     ConfigModule,
     CommonModule,
