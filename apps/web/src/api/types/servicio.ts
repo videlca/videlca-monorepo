@@ -33,10 +33,9 @@ export interface TipoDuracion {
 
 export interface TipoHorarioDescripcion {
   idTipoHorarioDescripcion: number;
+  nombre: string;
   descripcion: string;
   estado: boolean;
-  servicios: Servicio[];
-  horarios: TipoHorario[];
 }
 
 export interface TipoHorario {

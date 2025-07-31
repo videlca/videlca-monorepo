@@ -18,6 +18,7 @@ import {
 import { usePeriodoById } from "../../../api/queryFunctions/tarifas/periodo";
 import {
   useServicios,
+  useServiciosByPeriodo,
   useTipoServicios,
 } from "../../../api/queryFunctions/servicios";
 import { InputPrice } from "../../../components/common/InputPrice";
@@ -66,7 +67,7 @@ function RouteComponent() {
 
   // Queries y mutaciones
   const { data: periodo } = usePeriodoById(Number(idPeriodoParam));
-  const { data: servicios } = useServicios();
+  const { data: servicios } = useServiciosByPeriodo(Number(idPeriodoParam));
   const { data: tiposServicios } = useTipoServicios();
   const { data: tiposTarifa } = useTipoTarifa();
   const { mutate: guardarTarifas, isPending: isLoadingGuardarTarifas } =

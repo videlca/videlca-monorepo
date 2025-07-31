@@ -50,6 +50,9 @@ function RouteComponent() {
   const [isOpenViewModal, setIsOpenViewModal] = useState(false);
   const [servicioId, setServicioId] = useState<number | null>(null);
   const [tipoDuracion, setTipoDuracion] = useState<string | null>(null);
+  const [tipoHorarioDescripcion, setTipoHorarioDescripcion] = useState<
+    boolean | null
+  >(null);
 
   // Queries y Mutaciones
   const { data: servicios } = useServicios();
@@ -117,7 +120,7 @@ function RouteComponent() {
     },
     {
       header: "Horario",
-      accessorKey: "idTipoHorarioDescripcion.descripcion",
+      accessorKey: "idTipoHorarioDescripcion.nombre",
     },
     {
       header: "Horas",
@@ -221,6 +224,7 @@ function RouteComponent() {
           setIsOpenAddModal(false);
           resetFormAgregarServicio();
           setTipoDuracion(null);
+          setTipoHorarioDescripcion(null);
         }}
         title="Agregar Servicio"
         size="xl"
@@ -232,13 +236,21 @@ function RouteComponent() {
               {
                 ...formAgregarServicio,
                 idTipoServicio: Number(formAgregarServicio.idTipoServicio),
-                idTipoDuracion: Number(formAgregarServicio.idTipoDuracion),
+                idTipoDuracion: tipoHorarioDescripcion
+                  ? 0
+                  : Number(formAgregarServicio.idTipoDuracion),
                 idTipoHorarioDescripcion: Number(
                   formAgregarServicio.idTipoHorarioDescripcion,
                 ),
-                horasFijas: Number(formAgregarServicio.horasFijas),
-                horasMinimas: Number(formAgregarServicio.horasMinimas),
-                horasMaximas: Number(formAgregarServicio.horasMaximas),
+                horasFijas: tipoHorarioDescripcion
+                  ? 0
+                  : Number(formAgregarServicio.horasFijas),
+                horasMinimas: tipoHorarioDescripcion
+                  ? 0
+                  : Number(formAgregarServicio.horasMinimas),
+                horasMaximas: tipoHorarioDescripcion
+                  ? 0
+                  : Number(formAgregarServicio.horasMaximas),
               },
               {
                 onSuccess: () => {
@@ -286,48 +298,57 @@ function RouteComponent() {
               required={true}
             />
             <InputSelect
-              label="Tipo de duración"
-              placeholder="Tipo de duración"
-              options={
-                tiposDuraciones?.data?.map((tipo) => ({
-                  id: tipo.idTipoDuracion,
-                  descripcion: tipo.descripcion,
-                })) || []
-              }
-              id="idTipoDuracion"
-              value={formAgregarServicio.idTipoDuracion}
-              onChange={(e) => {
-                handleChangeAgregarServicio(e);
-                if (
-                  tiposDuraciones?.data?.find(
-                    (tipo) => tipo.idTipoDuracion === Number(e.target.value),
-                  )?.descripcion === "flexible"
-                ) {
-                  setTipoDuracion("flexible");
-                } else {
-                  setTipoDuracion("fija");
-                }
-              }}
-              required={true}
-            />
-            <InputSelect
               label="Tipo de horario"
               placeholder="Tipo de horario"
               options={
                 tiposHorarios?.data?.map((tipo) => ({
                   id: tipo.idTipoHorarioDescripcion,
-                  descripcion: tipo.descripcion,
+                  descripcion: tipo.nombre,
                 })) || []
               }
               id="idTipoHorarioDescripcion"
               value={formAgregarServicio.idTipoHorarioDescripcion}
-              onChange={handleChangeAgregarServicio}
+              onChange={(e) => {
+                handleChangeAgregarServicio(e);
+                if (e.target.selectedOptions[0].text.includes("dia completo")) {
+                  setTipoHorarioDescripcion(true);
+                } else {
+                  setTipoHorarioDescripcion(false);
+                }
+              }}
               required={true}
             />
+            {!tipoHorarioDescripcion && (
+              <InputSelect
+                label="Tipo de duración"
+                placeholder="Tipo de duración"
+                options={
+                  tiposDuraciones?.data?.map((tipo) => ({
+                    id: tipo.idTipoDuracion,
+                    descripcion: tipo.descripcion,
+                  })) || []
+                }
+                id="idTipoDuracion"
+                value={formAgregarServicio.idTipoDuracion}
+                onChange={(e) => {
+                  handleChangeAgregarServicio(e);
+                  if (
+                    tiposDuraciones?.data?.find(
+                      (tipo) => tipo.idTipoDuracion === Number(e.target.value),
+                    )?.descripcion === "flexible"
+                  ) {
+                    setTipoDuracion("flexible");
+                  } else {
+                    setTipoDuracion("fija");
+                  }
+                }}
+                required={true}
+              />
+            )}
           </div>
           <div className="col-span-1 space-y-2">
             <h3 className="text-lg font-semibold">Configuración de horas</h3>
-            {tipoDuracion === "fija" && (
+            {!tipoHorarioDescripcion && tipoDuracion === "fija" && (
               <InputForm
                 label="Horas fijas"
                 placeholder="Horas fijas"
@@ -338,7 +359,7 @@ function RouteComponent() {
                 required={true}
               />
             )}
-            {tipoDuracion === "flexible" && (
+            {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
               <>
                 <InputForm
                   label="Horas mínimas"
@@ -367,6 +388,7 @@ function RouteComponent() {
                 setIsOpenAddModal(false);
                 resetFormAgregarServicio();
                 setTipoDuracion(null);
+                setTipoHorarioDescripcion(null);
               }}
               className="w-auto bg-gray-500 hover:bg-gray-600"
             >
@@ -385,6 +407,7 @@ function RouteComponent() {
           setIsOpenEditModal(false);
           resetFormEditarServicio();
           setTipoDuracion(null);
+          setTipoHorarioDescripcion(null);
         }}
         title="Editar Servicio"
         size="xl"
@@ -398,13 +421,20 @@ function RouteComponent() {
             } else {
               formEditarServicio.horasFijas = 0;
             }
+            if (tipoHorarioDescripcion) {
+              formEditarServicio.horasFijas = 0;
+              formEditarServicio.horasMinimas = 0;
+              formEditarServicio.horasMaximas = 0;
+            }
             actualizarServicio(
               {
                 id: servicioId || 0,
                 data: {
                   ...formEditarServicio,
                   idTipoServicio: Number(formEditarServicio.idTipoServicio),
-                  idTipoDuracion: Number(formEditarServicio.idTipoDuracion),
+                  idTipoDuracion: tipoHorarioDescripcion
+                    ? 0
+                    : Number(formEditarServicio.idTipoDuracion),
                   idTipoHorarioDescripcion: Number(
                     formEditarServicio.idTipoHorarioDescripcion,
                   ),
@@ -457,46 +487,55 @@ function RouteComponent() {
               required={true}
             />
             <InputSelect
-              label="Tipo de duración"
-              placeholder="Tipo de duración"
-              options={
-                tiposDuraciones?.data?.map((tipo) => ({
-                  id: tipo.idTipoDuracion,
-                  descripcion: tipo.descripcion,
-                })) || []
-              }
-              id="idTipoDuracion"
-              value={formEditarServicio.idTipoDuracion?.toString() || ""}
-              onChange={(e) => {
-                handleChangeEditarServicio(e);
-                if (
-                  tiposDuraciones?.data?.find(
-                    (tipo) => tipo.idTipoDuracion === Number(e.target.value),
-                  )?.descripcion === "flexible"
-                ) {
-                  setTipoDuracion("flexible");
-                } else {
-                  setTipoDuracion("fija");
-                }
-              }}
-              required={true}
-            />
-            <InputSelect
               label="Tipo de horario"
               placeholder="Tipo de horario"
               options={
                 tiposHorarios?.data?.map((tipo) => ({
                   id: tipo.idTipoHorarioDescripcion,
-                  descripcion: tipo.descripcion,
+                  descripcion: tipo.nombre,
                 })) || []
               }
               id="idTipoHorarioDescripcion"
               value={
                 formEditarServicio.idTipoHorarioDescripcion?.toString() || ""
               }
-              onChange={handleChangeEditarServicio}
+              onChange={(e) => {
+                handleChangeEditarServicio(e);
+                if (e.target.selectedOptions[0].text.includes("dia completo")) {
+                  setTipoHorarioDescripcion(true);
+                } else {
+                  setTipoHorarioDescripcion(false);
+                }
+              }}
               required={true}
             />
+            {!tipoHorarioDescripcion && (
+              <InputSelect
+                label="Tipo de duración"
+                placeholder="Tipo de duración"
+                options={
+                  tiposDuraciones?.data?.map((tipo) => ({
+                    id: tipo.idTipoDuracion,
+                    descripcion: tipo.descripcion,
+                  })) || []
+                }
+                id="idTipoDuracion"
+                value={formEditarServicio.idTipoDuracion?.toString() || ""}
+                onChange={(e) => {
+                  handleChangeEditarServicio(e);
+                  if (
+                    tiposDuraciones?.data?.find(
+                      (tipo) => tipo.idTipoDuracion === Number(e.target.value),
+                    )?.descripcion === "flexible"
+                  ) {
+                    setTipoDuracion("flexible");
+                  } else {
+                    setTipoDuracion("fija");
+                  }
+                }}
+                required={true}
+              />
+            )}
             <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
@@ -507,7 +546,7 @@ function RouteComponent() {
           </div>
           <div className="col-span-1 space-y-2">
             <h3 className="text-lg font-semibold">Configuración de horas</h3>
-            {tipoDuracion === "fija" && (
+            {!tipoHorarioDescripcion && tipoDuracion === "fija" && (
               <InputForm
                 label="Horas fijas"
                 placeholder="Horas fijas"
@@ -518,7 +557,7 @@ function RouteComponent() {
                 required={true}
               />
             )}
-            {tipoDuracion === "flexible" && (
+            {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
               <>
                 <InputForm
                   label="Horas mínimas"
@@ -548,6 +587,7 @@ function RouteComponent() {
                 setIsOpenEditModal(false);
                 resetFormEditarServicio();
                 setTipoDuracion(null);
+                setTipoHorarioDescripcion(null);
               }}
               className="w-auto bg-gray-500 hover:bg-gray-600"
             >

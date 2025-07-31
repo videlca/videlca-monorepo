@@ -28,7 +28,7 @@ export interface CreateTipoHorarioDto {
   horaInicio: string;
   horaFin: string;
   fechaVigenciaInicio: string;
-  fechaVigenciaFin?: string;
+  fechaVigenciaFin?: string | null;
 }
 
 export interface UpdateTipoHorarioDto extends Partial<CreateTipoHorarioDto> {}

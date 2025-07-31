@@ -34,7 +34,7 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: true,
-      refetchOnMount: true,
+      refetchOnMount: "always",
       refetchOnReconnect: true,
       retry: false,
       staleTime: 1000 * 60 * 1, // 1 minuto

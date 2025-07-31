@@ -10,6 +10,7 @@ import {
   getServicioById,
   getServicios,
   getServiciosActivo,
+  getServiciosByPeriodo,
   updateServicio,
 } from "../../functions/servicios";
 import type { ApiResponse } from "../../types/common";
@@ -25,6 +26,17 @@ export const useServicios = (): UseQueryResult<
   return useQuery({
     queryKey: ["servicios"],
     queryFn: () => getServicios({ pagination: false }),
+  });
+};
+
+export const useServiciosByPeriodo = (
+  idPeriodo: number,
+): UseQueryResult<ApiResponse<Servicio[]>, Error> => {
+  return useQuery({
+    queryKey: ["servicios-by-periodo", idPeriodo],
+    queryFn: () => getServiciosByPeriodo(idPeriodo, { pagination: false }),
+    // refetchOnMount: "always",
+    // staleTime: 0,
   });
 };
 

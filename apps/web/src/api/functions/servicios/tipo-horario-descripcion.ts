@@ -6,3 +6,7 @@ import type { TipoHorarioDescripcion } from "../../types/servicio";
 export const getTipoHorarioDescripcion = async (pagination: PaginationDto): Promise<ApiResponse<TipoHorarioDescripcion[]>> => {
   return await apiGet<TipoHorarioDescripcion[]>("/tipo-horario-descripcion", pagination);
 };
+
+export const getTipoHorarioDescripcionDiurnoNocturno = async (pagination: PaginationDto): Promise<ApiResponse<TipoHorarioDescripcion[]>> => {
+  return await apiGet<TipoHorarioDescripcion[]>("/tipo-horario-descripcion/horario-diurno-nocturno", pagination);
+};

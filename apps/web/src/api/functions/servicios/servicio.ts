@@ -8,6 +8,10 @@ export const getServicios = async (pagination: PaginationDto): Promise<ApiRespon
   return await apiGet<Servicio[]>("/servicios", pagination);
 };
 
+export const getServiciosByPeriodo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<Servicio[]>> => {
+  return await apiGet<Servicio[]>(`/servicios/periodo/${idPeriodo}`, pagination);
+};
+
 export const getServicioById = async (id: number): Promise<ApiResponse<Servicio>> => {
   return await apiGet<Servicio>(`/servicios/${id}`);
 };

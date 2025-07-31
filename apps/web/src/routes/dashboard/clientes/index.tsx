@@ -5,7 +5,6 @@ import {
   ClientesTab,
   LocacionesTab,
   SegmentacionTab,
-  SubSegmentacionTab,
 } from "../../../components/ui/dashboard/clientes";
 import { useState } from "react";
 import { NavTabs } from "../../../components/ui/common/NavTabs";
@@ -37,7 +36,6 @@ function RouteComponent() {
         {activeTab === "clientes" && <ClientesTab />}
         {activeTab === "locaciones" && <LocacionesTab />}
         {activeTab === "segmentacion" && <SegmentacionTab />}
-        {/* {activeTab === "sub-segmentacion" && <SubSegmentacionTab />} */}
       </div>
     </Section>
   );
