@@ -12,9 +12,9 @@ import { ServiciosModule } from '../servicios/servicios.module';
 
 import { OrdenServicio, ObservacionOrdenServicio } from './entities';
 
-import { OrdenServicioService } from './services';
+import { OrdenServicioService, ObservacionesOrdenServicioService } from './services';
 
-import { OrdenServicioController } from './controllers';
+import { OrdenServicioController, ObservacionesOrdenServicioController } from './controllers';
 
 @Module({
   imports: [
@@ -34,14 +34,17 @@ import { OrdenServicioController } from './controllers';
 
   ],
   controllers: [
-    OrdenServicioController
+    OrdenServicioController,
+    ObservacionesOrdenServicioController
   ],
   providers: [
-    OrdenServicioService
+    OrdenServicioService,
+    ObservacionesOrdenServicioService
   ],
   exports: [
     TypeOrmModule,
-    OrdenServicioService
+    OrdenServicioService,
+    ObservacionesOrdenServicioService
   ]
 })
 export class OrdenServicioModule {}
