@@ -9,6 +9,7 @@ import { TipoTarifa } from '../entities';
 
 import { TipoUnidadTiempoService } from './tipo-unidad-tiempo.service';
 import { CreateTipoTarifaDto, UpdateTipoTarifaDto } from '../dto';
+import { TipoUnidadTiempoInterface } from '../interfaces/tipo-unidad-tiempo.interface';
 
 @Injectable()
 export class TipoTarifaService {
@@ -31,6 +32,18 @@ export class TipoTarifaService {
 
     // OBTENER TIPO DE TIPO UNIDAD TIEMPO
     const tipoUnidadTiempo = await this.tipoUnidadTiempoService.findOne(createTipoTarifaDto.idTipoUnidadTiempo);
+
+    if (tipoUnidadTiempo.descripcion == TipoUnidadTiempoInterface.DIAS && createTipoTarifaDto.cantidadTiempo > 31){
+
+      throw new BadRequestException(`No se puede seleccionar esta cantidad de tiempo para un mes`);
+
+    }
+    
+    if (tipoUnidadTiempo.descripcion == TipoUnidadTiempoInterface.HORAS && createTipoTarifaDto.cantidadTiempo > 24){
+
+      throw new BadRequestException(`No se puede seleccionar esta cantidad de tiempo para horas`);
+
+    }
   
     try {
         
@@ -111,6 +124,18 @@ export class TipoTarifaService {
     if (!tipoTarifa) throw new NotFoundException(`Tipo de tarifa con id "${id}" no se ha encontrado`);
 
     try {
+
+      if (tipoTarifa.idTipoUnidadTiempo.descripcion == TipoUnidadTiempoInterface.DIAS && updateTipoTarifaDto.cantidadTiempo > 31){
+
+        throw new BadRequestException(`No se puede seleccionar esta cantidad de tiempo para un mes`);
+
+      }
+    
+      if (tipoTarifa.idTipoUnidadTiempo.descripcion == TipoUnidadTiempoInterface.HORAS && updateTipoTarifaDto.cantidadTiempo > 24){
+
+        throw new BadRequestException(`No se puede seleccionar esta cantidad de tiempo para horas`);
+
+      }
       
       await this.tipoTarifaRepository.save(tipoTarifa);
 

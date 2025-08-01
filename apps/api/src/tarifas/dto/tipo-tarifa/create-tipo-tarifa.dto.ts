@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, MaxLength, Min } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Max, MaxLength, Min } from "class-validator";
 
 export class CreateTipoTarifaDto {
 
@@ -26,6 +26,7 @@ export class CreateTipoTarifaDto {
     @IsNumber({}, {message: 'El valor del campo cantidad de tiempo debe ser un número'})
     @IsPositive({message: 'El valor del campo cantidad de tiempo debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo cantidad de tiempo debe ser minimo 1'})
+    @Max(31, {message: 'El valor del campo cantidad de tiempo debe ser maximo 31'})
     cantidadTiempo?: number;
     
 }
