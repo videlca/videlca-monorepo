@@ -6,7 +6,7 @@ interface SimpleModalProps {
   onClose: () => void;
   children: ReactNode;
   title?: string;
-  size?: "sm" | "md" | "lg" | "xl" | "2xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
 }
 
 export const SimpleModal: React.FC<SimpleModalProps> = ({
@@ -22,6 +22,8 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
     lg: "max-w-lg",
     xl: "max-w-2xl",
     "2xl": "max-w-3xl",
+    "3xl": "max-w-4xl",
+    "4xl": "max-w-5xl",
   };
 
   return (

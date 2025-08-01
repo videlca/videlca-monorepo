@@ -1,15 +1,16 @@
 import { ButtonAction } from "../../../common/ButtonAction";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, TrashIcon, XIcon } from "lucide-react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
-import type { Correo, Locacion } from "../../../../types";
+import type { Correo, EstadoOrden, Locacion } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { useState } from "react";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 import {
   useClientesActivo,
   useCreateLocacion,
+  useDeleteLocacion,
   useLocacionById,
   useLocaciones,
   useUpdateLocacion,
@@ -20,22 +21,39 @@ import type {
   CreateLocacionDto,
   UpdateLocacionDto,
 } from "../../../../api/dtos";
-import { useCiudad } from "../../../../api/queryFunctions/configuracion";
+import {
+  useCiudad,
+  useEstadoOrden,
+} from "../../../../api/queryFunctions/configuracion";
 import { InputForm } from "../../../common/InputForm";
 import { InputSelect } from "../../../common/InputSelect";
 import Button from "../../../common/Button";
+import { toast } from "sonner";
 
 export function LocacionesTab() {
   // Estados
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingLocacion, setEditingLocacion] = useState<Locacion | null>(null);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
+  const [correoInput, setCorreoInput] = useState<{
+    nombre: string;
+    apellido: string;
+    correo: string;
+  }>({
+    nombre: "",
+    apellido: "",
+    correo: "",
+  });
+  const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
+  const [idLocationSelected, setIdLocationSelected] = useState<number | null>(
+    null,
+  );
 
   // Mutaciones y Queries
   const { data: locaciones } = useLocaciones();
   const { data: ciudades } = useCiudad();
   const { data: clientes } = useClientesActivo();
+  const { data: estadosOrdenServicio } = useEstadoOrden();
 
   const { mutate: createLocacion, isPending: isCreatingLocacion } =
     useCreateLocacion();
@@ -43,6 +61,8 @@ export function LocacionesTab() {
     useUpdateLocacion();
   const { mutate: getLocacionById, isPending: isGettingLocacionById } =
     useLocacionById();
+  const { mutate: deleteLocacion, isPending: isDeletingLocacion } =
+    useDeleteLocacion();
 
   // Formularios
 
@@ -55,23 +75,16 @@ export function LocacionesTab() {
     resetForm: resetFormAddLocacion,
   } = useForm<CreateLocacionDto>({
     idCliente: 0,
-    nombre: "Locación 1",
+    nombre: "",
     idCiudad: 0,
-    direccion: "Calle 123",
+    direccion: "",
     latitud: 0,
     longitud: 0,
-    primerNombreResponsable: "Juan",
-    primerApellidoResponsable: "Perez",
-    telefono: "1234567890",
-    diasAnticipaticionNotificacion: 10,
-    correos: [
-      {
-        email: "juan.perez@gmail.com",
-        nombre: "Juan",
-        apellido: "Perez",
-        estados: [12, 13, 14, 15, 16],
-      },
-    ],
+    primerNombreResponsable: "",
+    primerApellidoResponsable: "",
+    telefono: "",
+    diasAnticipaticionNotificacion: 0,
+    correos: [],
   });
 
   // TODO: Agregar correos
@@ -81,6 +94,7 @@ export function LocacionesTab() {
     handleChange: handleChangeEditLocacion,
     handleNumericChange: handleNumericChangeEditLocacion,
     setForm: setFormEditLocacion,
+    resetForm: resetFormEditLocacion,
   } = useForm<UpdateLocacionDto>({
     idCliente: 0,
     nombre: "",
@@ -91,7 +105,7 @@ export function LocacionesTab() {
     primerNombreResponsable: "",
     primerApellidoResponsable: "",
     telefono: "",
-    diasAnticipaticionNotificacion: 10,
+    diasAnticipaticionNotificacion: 0,
     correos: [],
     estado: true,
   });
@@ -99,10 +113,10 @@ export function LocacionesTab() {
   // Handlers
 
   const handleShowEditLocacionModal = (row: Row<Locacion>) => {
-    setEditingLocacion(row.original);
     getLocacionById(row.original.idLocacion, {
       onSuccess: (data) => {
         if (data.data) {
+          console.log(data.data);
           setFormEditLocacion({
             idCliente: data.data.idCliente.idCliente,
             nombre: data.data.nombre,
@@ -114,24 +128,15 @@ export function LocacionesTab() {
             primerApellidoResponsable: data.data.primerApellidoResponsable,
             telefono: data.data.telefono,
             diasAnticipaticionNotificacion:
-              data.data.diasAnticipacionNotificacion,
+              data.data.diasAnticipaticionNotificacion,
             estado: data.data.estado,
             correos: [...data.data.correos] as unknown as CreateCorreoDto[],
           });
+          setCorreos(data.data.correos as unknown as CreateCorreoDto[]);
         }
       },
     });
     setIsEditModalOpen(true);
-  };
-
-  const handleAddCorreo = () => {
-    // setFormAddLocacion({
-    //   ...formAddLocacion,
-    //   correos: [
-    //     ...formAddLocacion.correos,
-    //     { email: "", nombre: "", apellido: "", estados: [] },
-    //   ],
-    // });
   };
 
   const columnsLocaciones: ColumnDef<Locacion>[] = [
@@ -192,13 +197,16 @@ export function LocacionesTab() {
           <ButtonAction
             Icon={PencilIcon}
             label="Editar"
-            onClick={() => handleShowEditLocacionModal(row)}
+            onClick={() => {
+              handleShowEditLocacionModal(row);
+              setIdLocationSelected(row.original.idLocacion);
+            }}
           />
           <ButtonAction
             Icon={TrashIcon}
             label="Eliminar"
             onClick={() => {
-              // setEditingLocacion(row.original);
+              setIdLocationSelected(row.original.idLocacion);
               setIsOpenDelete(true);
             }}
             color="red"
@@ -207,6 +215,28 @@ export function LocacionesTab() {
       ),
     },
   ];
+
+  const handleCloseAddLocacion = () => {
+    setIsAddModalOpen(false);
+    resetFormAddLocacion();
+    setCorreos([]);
+    setCorreoInput({
+      nombre: "",
+      apellido: "",
+      correo: "",
+    });
+  };
+
+  const handleCloseEditLocacion = () => {
+    setIsEditModalOpen(false);
+    resetFormEditLocacion();
+    setCorreos([]);
+    setCorreoInput({
+      nombre: "",
+      apellido: "",
+      correo: "",
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -229,23 +259,33 @@ export function LocacionesTab() {
       {/* Modal para agregar locación */}
       <SimpleModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          handleCloseAddLocacion();
+        }}
         title="Agregar locación"
-        size="xl"
+        size="4xl"
       >
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            createLocacion(formAddLocacion, {
-              onSuccess: () => {
-                setIsAddModalOpen(false);
-                resetFormAddLocacion();
+            createLocacion(
+              {
+                ...formAddLocacion,
+                correos: correos,
               },
-            });
+              {
+                onSuccess: () => {
+                  handleCloseAddLocacion();
+                },
+              },
+            );
           }}
-          className="flex flex-col gap-4"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="col-span-1">
+            <h5 className="mb-3 text-sm font-medium text-gray-900 md:text-base">
+              Información Básica
+            </h5>
             <InputForm
               label="Nombre*"
               placeholder="Nombre"
@@ -255,77 +295,6 @@ export function LocacionesTab() {
               onChange={handleChangeAddLocacion}
               required
             />
-            <InputForm
-              label="Dirección*"
-              placeholder="Dirección"
-              type="text"
-              id="direccion"
-              value={formAddLocacion.direccion}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <InputForm
-              label="Latitud*"
-              placeholder="Latitud"
-              type="number"
-              id="latitud"
-              value={formAddLocacion.latitud.toString()}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-            <InputForm
-              label="Longitud*"
-              placeholder="Longitud"
-              type="number"
-              id="longitud"
-              value={formAddLocacion.longitud.toString()}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <InputForm
-              label="Primer nombre responsable*"
-              placeholder="Primer nombre responsable"
-              type="text"
-              id="primerNombreResponsable"
-              value={formAddLocacion.primerNombreResponsable}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-            <InputForm
-              label="Primer apellido responsable*"
-              placeholder="Primer apellido responsable"
-              type="text"
-              id="primerApellidoResponsable"
-              value={formAddLocacion.primerApellidoResponsable}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <InputForm
-              label="Teléfono*"
-              placeholder="Teléfono"
-              type="number"
-              id="telefono"
-              value={formAddLocacion.telefono}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-            <InputForm
-              label="Teléfono 2"
-              placeholder="Teléfono 2"
-              type="number"
-              id="segundoTelefono"
-              value={formAddLocacion.segundoTelefono || ""}
-              onChange={handleChangeAddLocacion}
-              required={false}
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <InputSelect
               label="Cliente*"
               placeholder="Cliente"
@@ -354,8 +323,15 @@ export function LocacionesTab() {
               }
               required
             />
-          </div>
-          {/* <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <InputForm
+              label="Dirección*"
+              placeholder="Dirección"
+              type="text"
+              id="direccion"
+              value={formAddLocacion.direccion}
+              onChange={handleChangeAddLocacion}
+              required
+            />
             <InputForm
               label="Días de anticipación de notificación*"
               placeholder="Días de anticipación de notificación"
@@ -365,41 +341,254 @@ export function LocacionesTab() {
               onChange={handleChangeAddLocacion}
               required
             />
-          </div> */}
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <h5 className="mb-3 text-sm font-medium text-gray-900">
-              Es necesario agregar al menos un correo para poder enviar
-              notificaciones.
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <InputForm
+                label="Latitud*"
+                placeholder="Latitud"
+                type="number"
+                id="latitud"
+                value={formAddLocacion.latitud.toString()}
+                onChange={handleChangeAddLocacion}
+                required
+              />
+              <InputForm
+                label="Longitud*"
+                placeholder="Longitud"
+                type="number"
+                id="longitud"
+                value={formAddLocacion.longitud.toString()}
+                onChange={handleChangeAddLocacion}
+                required
+              />
+            </div>
+          </div>
+          <div className="col-span-1">
+            <h5 className="mb-3 text-sm font-medium text-gray-900 md:text-base">
+              Información de contacto
             </h5>
-
             <InputForm
-              label="Correo *"
-              placeholder="Correo"
-              type="email"
-              id="correo"
-              required={false}
-              value={""}
-              onChange={() => {}}
+              label="Primer nombre responsable*"
+              placeholder="Primer nombre responsable"
+              type="text"
+              id="primerNombreResponsable"
+              value={formAddLocacion.primerNombreResponsable}
+              onChange={handleChangeAddLocacion}
+              required
             />
+            <InputForm
+              label="Primer apellido responsable*"
+              placeholder="Primer apellido responsable"
+              type="text"
+              id="primerApellidoResponsable"
+              value={formAddLocacion.primerApellidoResponsable}
+              onChange={handleChangeAddLocacion}
+              required
+            />
+            <InputForm
+              label="Teléfono*"
+              placeholder="Teléfono"
+              type="number"
+              id="telefono"
+              value={formAddLocacion.telefono}
+              onChange={handleChangeAddLocacion}
+              required
+            />
+            <InputForm
+              label="Teléfono 2"
+              placeholder="Teléfono 2"
+              type="number"
+              id="segundoTelefono"
+              value={formAddLocacion.segundoTelefono || ""}
+              onChange={handleChangeAddLocacion}
+              required={false}
+            />
+            <div className="mt-4 mb-4 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-900">
+                  Correos electrónicos *
+                </p>
+              </div>
+              <div className="col-span-2 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <div className="">
+                  <label
+                    htmlFor="correo"
+                    className="space-y-2 text-base font-medium text-gray-700"
+                  >
+                    Nuevo correo electrónico
+                    <div className="flex flex-col items-center gap-2">
+                      <input
+                        type="text"
+                        id="nombre"
+                        placeholder="Nombre"
+                        className="w-full rounded-md border border-gray-300 p-2"
+                        value={correoInput.nombre}
+                        onChange={(e) =>
+                          setCorreoInput({
+                            ...correoInput,
+                            nombre: e.target.value,
+                          })
+                        }
+                      />
+                      <input
+                        type="email"
+                        id="apellido"
+                        placeholder="Apellido"
+                        className="w-full rounded-md border border-gray-300 p-2"
+                        value={correoInput.apellido}
+                        onChange={(e) =>
+                          setCorreoInput({
+                            ...correoInput,
+                            apellido: e.target.value,
+                          })
+                        }
+                      />
+                      <input
+                        type="email"
+                        id="correo"
+                        placeholder="Correo"
+                        className="w-full rounded-md border border-gray-300 p-2"
+                        value={correoInput.correo}
+                        onChange={(e) =>
+                          setCorreoInput({
+                            ...correoInput,
+                            correo: e.target.value,
+                          })
+                        }
+                      />
+                      <ButtonAction
+                        Icon={PlusIcon}
+                        label="Añadir"
+                        type="button"
+                        onClick={() => {
+                          if (correoInput.correo.trim() === "") {
+                            toast.error(
+                              "El correo electrónico no puede estar vacío",
+                            );
+                            return;
+                          }
+                          setCorreos([
+                            ...correos,
+                            {
+                              email: correoInput.correo,
+                              nombre: correoInput.nombre,
+                              apellido: correoInput.apellido,
+                              estados: [],
+                            },
+                          ]);
+                          setCorreoInput({
+                            nombre: "",
+                            apellido: "",
+                            correo: "",
+                          });
+                        }}
+                      />
+                    </div>
+                  </label>
+                </div>
+                <span className="text-sm text-gray-500">
+                  Presione el botón de "Añadir" para agregar un nuevo correo a
+                  la lista
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-gray-900">
+                  Correos configurados ({correos.length})
+                </p>
 
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex space-x-2">
-                <button
-                  type="button"
-                  className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700 disabled:bg-blue-300"
-                  onClick={handleAddCorreo}
-                >
-                  Agregar
-                </button>
+                {correos.length > 0 &&
+                  correos.map((correo) => (
+                    <div
+                      key={correo.email}
+                      className="flex flex-col gap-2 rounded-md border border-gray-200 bg-gray-50 px-4 py-4"
+                    >
+                      <div className="flex flex-row items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-gray-900">
+                          {correo.email}
+                        </p>
+                        <button
+                          className="cursor-pointer rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-200 hover:text-red-500"
+                          onClick={() => {
+                            setCorreos(
+                              correos.filter((c) => c.email !== correo.email),
+                            );
+                          }}
+                        >
+                          <XIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Estados de Notificación
+                        <span className="ml-1 text-xs text-gray-500">
+                          ({correo.estados.length || 0} seleccionados)
+                        </span>
+                      </label>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {estadosOrdenServicio?.data
+                          ?.filter((estado) => estado.estado) // Solo estados activos
+                          .map((estado, index) => (
+                            <div
+                              key={estado.idEstadoOrdenServicio}
+                              className="flex items-start space-x-2 rounded-md p-2 hover:bg-gray-50"
+                            >
+                              <input
+                                type="checkbox"
+                                id={`estado-${index}-${estado.idEstadoOrdenServicio}`}
+                                checked={correo.estados?.includes(
+                                  estado.idEstadoOrdenServicio,
+                                )}
+                                // Manejo de estados asignados al correo
+                                onChange={(e) => {
+                                  console.log(e.target.checked);
+                                  setCorreos(
+                                    correos.map((c) =>
+                                      c.email === correo.email
+                                        ? {
+                                            ...c,
+                                            estados: e.target.checked
+                                              ? [
+                                                  ...c.estados,
+                                                  estado.idEstadoOrdenServicio,
+                                                ]
+                                              : c.estados.filter(
+                                                  (id) =>
+                                                    id !==
+                                                    estado.idEstadoOrdenServicio,
+                                                ),
+                                          }
+                                        : c,
+                                    ),
+                                  );
+                                }}
+                                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <div className="flex-1">
+                                <label
+                                  htmlFor={`estado-${index}-${estado.idEstadoOrdenServicio}`}
+                                  className="cursor-pointer text-sm font-medium text-gray-700 capitalize"
+                                >
+                                  {estado.nombre}
+                                </label>
+                                <p className="mt-0.5 text-xs text-gray-500">
+                                  {estado.descripcion}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                {correos.length === 0 && (
+                  <div className="rounded-md border border-gray-200 bg-gray-50 p-2 text-sm text-gray-500">
+                    No hay correos configurados
+                  </div>
+                )}
               </div>
             </div>
           </div>
-          <div className="flex justify-end space-x-2">
+          <div className="col-span-2 flex justify-end space-x-2">
             <Button
-              onClick={() => {
-                setIsAddModalOpen(false);
-                resetFormAddLocacion();
-              }}
+              onClick={() => handleCloseAddLocacion()}
               className="w-auto bg-gray-500 hover:bg-gray-600"
             >
               Cancelar
@@ -418,22 +607,367 @@ export function LocacionesTab() {
       {/* Modal para editar locación */}
       <SimpleModal
         isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
+        onClose={() => handleCloseEditLocacion()}
         title="Editar locación"
-        size="xl"
+        size="4xl"
       >
-        <div className="space-y-4">
-          <p className="text-gray-600">Formulario para editar una locación</p>
-          {formEditLocacion && (
-            <pre>{JSON.stringify(formEditLocacion, null, 2)}</pre>
-          )}
-        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            updateLocacion(
+              {
+                id: idLocationSelected as number,
+                data: {
+                  ...formEditLocacion,
+                  correos: correos,
+                },
+              },
+              {
+                onSuccess: () => {
+                  handleCloseEditLocacion();
+                },
+              },
+            );
+          }}
+          className="grid grid-cols-1 gap-4 md:grid-cols-2"
+        >
+          <div className="col-span-1">
+            <h5 className="mb-3 text-sm font-medium text-gray-900 md:text-base">
+              Información Básica
+            </h5>
+            <InputForm
+              label="Nombre*"
+              placeholder="Nombre"
+              type="text"
+              id="nombre"
+              value={formEditLocacion.nombre || ""}
+              onChange={handleChangeEditLocacion}
+              required
+            />
+            <InputSelect
+              label="Cliente*"
+              placeholder="Cliente"
+              id="idCliente"
+              value={formEditLocacion.idCliente || 0}
+              onChange={handleNumericChangeEditLocacion}
+              options={
+                clientes?.data?.map((cliente) => ({
+                  id: cliente.idCliente,
+                  descripcion: cliente.nombre,
+                })) || []
+              }
+              required
+            />
+            <InputSelect
+              label="Ciudad*"
+              placeholder="Ciudad"
+              id="idCiudad"
+              value={formEditLocacion.idCiudad || 0}
+              onChange={handleNumericChangeEditLocacion}
+              options={
+                ciudades?.data?.map((ciudad) => ({
+                  id: ciudad.idCiudad,
+                  descripcion: ciudad.descripcion,
+                })) || []
+              }
+              required
+            />
+            <InputForm
+              label="Dirección*"
+              placeholder="Dirección"
+              type="text"
+              id="direccion"
+              value={formEditLocacion.direccion || ""}
+              onChange={handleChangeEditLocacion}
+              required
+            />
+            <InputForm
+              label="Días de anticipación de notificación*"
+              placeholder="Días de anticipación de notificación"
+              type="number"
+              id="diasAnticipaticionNotificacion"
+              value={
+                formEditLocacion.diasAnticipaticionNotificacion?.toString() ||
+                "0"
+              }
+              onChange={handleChangeEditLocacion}
+              required
+            />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <InputForm
+                label="Latitud*"
+                placeholder="Latitud"
+                type="number"
+                id="latitud"
+                value={formEditLocacion.latitud?.toString() || ""}
+                onChange={handleChangeEditLocacion}
+                required
+              />
+              <InputForm
+                label="Longitud*"
+                placeholder="Longitud"
+                type="number"
+                id="longitud"
+                value={formEditLocacion.longitud?.toString() || ""}
+                onChange={handleChangeEditLocacion}
+                required
+              />
+            </div>
+          </div>
+          <div className="col-span-1">
+            <h5 className="mb-3 text-sm font-medium text-gray-900 md:text-base">
+              Información de contacto
+            </h5>
+            <InputForm
+              label="Primer nombre responsable*"
+              placeholder="Primer nombre responsable"
+              type="text"
+              id="primerNombreResponsable"
+              value={formEditLocacion.primerNombreResponsable || ""}
+              onChange={handleChangeEditLocacion}
+              required
+            />
+            <InputForm
+              label="Primer apellido responsable*"
+              placeholder="Primer apellido responsable"
+              type="text"
+              id="primerApellidoResponsable"
+              value={formEditLocacion.primerApellidoResponsable || ""}
+              onChange={handleChangeEditLocacion}
+              required
+            />
+            <InputForm
+              label="Teléfono*"
+              placeholder="Teléfono"
+              type="number"
+              id="telefono"
+              value={formEditLocacion.telefono || ""}
+              onChange={handleChangeEditLocacion}
+              required
+            />
+            <InputForm
+              label="Teléfono 2"
+              placeholder="Teléfono 2"
+              type="number"
+              id="segundoTelefono"
+              value={formEditLocacion.segundoTelefono || ""}
+              onChange={handleChangeEditLocacion}
+              required={false}
+            />
+            <div className="mt-4 mb-4 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-900">
+                  Correos electrónicos *
+                </p>
+              </div>
+              <div className="col-span-2 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <div className="">
+                  <label
+                    htmlFor="correo"
+                    className="space-y-2 text-base font-medium text-gray-700"
+                  >
+                    Nuevo correo electrónico
+                    <div className="flex flex-col items-center gap-2">
+                      <input
+                        type="text"
+                        id="nombre"
+                        placeholder="Nombre"
+                        className="w-full rounded-md border border-gray-300 p-2"
+                        value={correoInput.nombre}
+                        onChange={(e) =>
+                          setCorreoInput({
+                            ...correoInput,
+                            nombre: e.target.value,
+                          })
+                        }
+                      />
+                      <input
+                        type="text"
+                        id="apellido"
+                        placeholder="Apellido"
+                        className="w-full rounded-md border border-gray-300 p-2"
+                        value={correoInput.apellido}
+                        onChange={(e) =>
+                          setCorreoInput({
+                            ...correoInput,
+                            apellido: e.target.value,
+                          })
+                        }
+                      />
+                      <input
+                        type="email"
+                        id="correo"
+                        placeholder="Correo"
+                        className="w-full rounded-md border border-gray-300 p-2"
+                        value={correoInput.correo}
+                        onChange={(e) =>
+                          setCorreoInput({
+                            ...correoInput,
+                            correo: e.target.value,
+                          })
+                        }
+                      />
+                      <ButtonAction
+                        Icon={PlusIcon}
+                        label="Añadir"
+                        type="button"
+                        onClick={() => {
+                          if (correoInput.correo.trim() === "") {
+                            toast.error(
+                              "El correo electrónico no puede estar vacío",
+                            );
+                            return;
+                          }
+                          setCorreos([
+                            ...correos,
+                            {
+                              email: correoInput.correo,
+                              nombre: correoInput.nombre,
+                              apellido: correoInput.apellido,
+                              estados: [],
+                            },
+                          ]);
+                          setCorreoInput({
+                            nombre: "",
+                            apellido: "",
+                            correo: "",
+                          });
+                        }}
+                      />
+                    </div>
+                  </label>
+                </div>
+                <span className="text-sm text-gray-500">
+                  Presione el botón de "Añadir" para agregar un nuevo correo a
+                  la lista
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                <p className="text-sm font-medium text-gray-900">
+                  Correos configurados ({correos.length || 0})
+                </p>
+
+                {correos.length > 0 &&
+                  correos.map((correo) => (
+                    <div
+                      key={correo.email}
+                      className="flex flex-col gap-2 rounded-md border border-gray-200 bg-gray-50 px-4 py-4"
+                    >
+                      <div className="flex flex-row items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-gray-900">
+                          {correo.email}
+                        </p>
+                        <button
+                          className="cursor-pointer rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-200 hover:text-red-500"
+                          onClick={() => {
+                            setCorreos(
+                              correos.filter((c) => c.email !== correo.email) ||
+                                [],
+                            );
+                          }}
+                        >
+                          <XIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Estados de Notificación
+                        <span className="ml-1 text-xs text-gray-500">
+                          ({correo.estados?.length || 0} seleccionados)
+                        </span>
+                      </label>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {estadosOrdenServicio?.data
+                          ?.filter((estado) => estado.estado) // Solo estados activos
+                          .map((estado, index) => (
+                            <div
+                              key={estado.idEstadoOrdenServicio}
+                              className="flex items-start space-x-2 rounded-md p-2 hover:bg-gray-50"
+                            >
+                              <input
+                                type="checkbox"
+                                id={`estado-${index}-${estado.idEstadoOrdenServicio}`}
+                                checked={correo.estados?.includes(
+                                  estado.idEstadoOrdenServicio,
+                                )}
+                                // Manejo de estados asignados al correo
+                                onChange={(e) => {
+                                  console.log(e.target.checked);
+                                  setCorreos(
+                                    correos.map((c) =>
+                                      c.email === correo.email
+                                        ? {
+                                            ...c,
+                                            estados: e.target.checked
+                                              ? [
+                                                  ...c.estados,
+                                                  estado.idEstadoOrdenServicio,
+                                                ]
+                                              : c.estados.filter(
+                                                  (id) =>
+                                                    id !==
+                                                    estado.idEstadoOrdenServicio,
+                                                ),
+                                          }
+                                        : c,
+                                    ),
+                                  );
+                                }}
+                                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <div className="flex-1">
+                                <label
+                                  htmlFor={`estado-${index}-${estado.idEstadoOrdenServicio}`}
+                                  className="cursor-pointer text-sm font-medium text-gray-700 capitalize"
+                                >
+                                  {estado.nombre}
+                                </label>
+                                <p className="mt-0.5 text-xs text-gray-500">
+                                  {estado.descripcion}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                {correos.length === 0 && (
+                  <div className="rounded-md border border-gray-200 bg-gray-50 p-2 text-sm text-gray-500">
+                    No hay correos configurados
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="col-span-2 flex justify-end space-x-2">
+            <Button
+              onClick={() => handleCloseEditLocacion()}
+              className="w-auto bg-gray-500 hover:bg-gray-600"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={isUpdatingLocacion}
+              className="w-auto"
+            >
+              {isUpdatingLocacion ? "Actualizando..." : "Actualizar"}
+            </Button>
+          </div>
+        </form>
       </SimpleModal>
 
       <ConfirmarDelete
         isOpenDelete={isOpenDelete}
-        text="¿Estás seguro de querer eliminar este cliente?"
-        onDelete={() => {}}
+        text="¿Estás seguro de querer eliminar esta locación?"
+        onDelete={() => {
+          deleteLocacion(idLocationSelected as number, {
+            onSuccess: () => {
+              setIsOpenDelete(false);
+              setIdLocationSelected(null);
+            },
+          });
+        }}
         onClose={() => setIsOpenDelete(false)}
       />
     </div>

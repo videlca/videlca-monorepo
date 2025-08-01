@@ -37,8 +37,8 @@ export const queryClient = new QueryClient({
       refetchOnMount: "always",
       refetchOnReconnect: true,
       retry: false,
-      staleTime: 1000 * 60 * 1, // 1 minuto
-      gcTime: 1000 * 60 * 1, // 1 minuto
+      staleTime: 1000 * 60 * 5, // 5 minutos
+      gcTime: 1000 * 60 * 5, // 5 minutos
     },
   },
 });

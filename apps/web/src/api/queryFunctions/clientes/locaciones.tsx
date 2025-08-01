@@ -74,6 +74,8 @@ export const useCreateLocacion = (): UseMutationResult<
         toast.success("Locación creada exitosamente", {
           description: "La locación ha sido creada correctamente",
         });
+      } else {
+        throw new Error(data.message || "Error al crear locación");
       }
     },
     onError: (error) => {
@@ -96,6 +98,8 @@ export const useUpdateLocacion = (): UseMutationResult<
         toast.success("Locación actualizada exitosamente", {
           description: "La locación ha sido actualizada correctamente",
         });
+      } else {
+        throw new Error(data.message || "Error al actualizar locación");
       }
     },
     onError: (error) => {
@@ -117,6 +121,8 @@ export const useDeleteLocacion = (): UseMutationResult<
         toast.success("Locación eliminada exitosamente", {
           description: "La locación ha sido eliminada correctamente",
         });
+      } else {
+        throw new Error(data.message || "Error al eliminar locación");
       }
     },
     onError: (error) => {

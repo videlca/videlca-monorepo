@@ -55,7 +55,6 @@ export const useClientesActivo = (): UseQueryResult<
   ApiResponse<Cliente[]>,
   Error
 > => {
-  queryClient.invalidateQueries({ queryKey: ["clientes-activo"] });
   return useQuery({
     queryKey: ["clientes-activo"],
     queryFn: () => getClientesActivo({ pagination: false }),

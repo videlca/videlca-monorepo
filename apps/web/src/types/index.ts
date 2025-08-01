@@ -15,7 +15,7 @@ export interface Correo {
   nombre: string;
   apellido: string;
   email: string;
-  locacion: Locacion;
+  locacion?: Locacion;
   estados: EstadoOrden[];
 }
 
@@ -109,7 +109,7 @@ export interface Locacion {
   primerApellidoResponsable: string;
   telefono: string;
   segundoTelefono: string;
-  diasAnticipacionNotificacion: number;
+  diasAnticipaticionNotificacion: number;
   estado: boolean;
   idCiudad: Ciudad;
   idCliente: Cliente;
