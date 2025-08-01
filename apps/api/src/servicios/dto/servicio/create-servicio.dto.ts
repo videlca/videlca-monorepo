@@ -24,8 +24,6 @@ export class CreateServicioDto {
     @ApiProperty({ description: 'Id del tipo de duracion de un servicio', example: 2, required: false})
     @IsOptional()
     @IsNumber({}, {message: 'El valor del campo tipo duracion debe ser un número'})
-    @IsPositive({message: 'El valor del campo tipo duracion debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo tipo duracion debe ser minimo 1'})
     idTipoDuracion?: number;
     
     @ApiProperty({ description: 'id del tipo de horario descripcion de un servicio', example: 2, required:true})

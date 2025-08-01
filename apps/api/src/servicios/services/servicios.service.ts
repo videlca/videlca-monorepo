@@ -180,13 +180,13 @@ export class ServiciosService {
   async findAllByPeriodo(idPeriodo: number, paginationDto: PaginationDto, pagination: boolean = true){
 
     const queryBuilder = this.servicioRepository .createQueryBuilder('servicio') 
-      .leftJoin('tarifa', 'tarifa', 'tarifa.idServicio = servicio.idServicio AND tarifa.idPeriodo = :periodoId', { idPeriodo }) 
+      .leftJoin('servicio.tarifas', 'tarifa', 'tarifa.idPeriodo = :idPeriodo', { idPeriodo }) 
       // .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio') 
       // .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion') 
       // .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion') 
       .where('tarifa.idTarifa IS NULL') 
       .andWhere('servicio.estado = :estado', { estado: true }) 
-      .orderBy('servicio.codigoServicio', 'ASC') 
+      .orderBy('servicio.codigo', 'ASC') 
 
       if (pagination) {
         const { limit = this.defaultLimit, offset = 0 } = paginationDto;
