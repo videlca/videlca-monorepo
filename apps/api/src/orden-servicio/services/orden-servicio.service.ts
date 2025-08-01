@@ -366,6 +366,14 @@ export class OrdenServicioService {
 
     // VALIDAR SI SE ESTA PIDIENDO SERVICIO POR UN MES EXACTO, ES DECIR TODO ENERO, TODO FEBRERO, ...
     if (this.esMesCompleto(fechaInicioOrden, fechaFinOrden)) {
+      
+      // let diaFinmes: number;
+
+      // if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
+
+      //   diaFinmes = diaFin - 1;
+
+      // } 
 
       // SI EL TIPO DE TARIFA ES POR MES
       if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES){
@@ -401,7 +409,15 @@ export class OrdenServicioService {
     }
 
     // VALIDACIONES POR DIA
-    const duracionServicioDias = this.calcularDuracionServicioDias(fechaInicioOrden, fechaFinOrden);
+    let duracionServicioDias = this.calcularDuracionServicioDias(fechaInicioOrden, fechaFinOrden);
+
+    // if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
+
+    //   duracionServicioDias -= 1
+
+    //   duracionServicioDias = duracionServicioDias != 0 ? duracionServicioDias : 1;
+
+    // }
 
     // SI EL TIPO DE TARIFA ES POR MES
     if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES){
