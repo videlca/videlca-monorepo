@@ -113,6 +113,21 @@ export const getCiudad = async (pagination: PaginationDto): Promise<ApiResponse<
   return response;
 };
 
+export const getCiudadActiva = async (): Promise<ApiResponse<Ciudad[]>> => {
+  const response = await axiosClient.get("/ubicacion/ciudad/activas", { params: { pagination: false } }).then((res) => {
+    return {
+      status: res.status,
+      data: res.data,
+    };
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || "Error de conexión",
+    };
+  });
+  return response;
+};
+
 export const createCiudad = async (data: CreateCiudadDto): Promise<ApiResponse> => {
   const response = await axiosClient.post("/ubicacion/ciudad", data).then((res) => {
     return {

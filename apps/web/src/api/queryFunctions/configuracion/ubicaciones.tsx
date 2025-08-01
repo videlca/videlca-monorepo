@@ -9,6 +9,7 @@ import {
   createDepartamento,
   createPais,
   getCiudad,
+  getCiudadActiva,
   getDepartamento,
   getPais,
   updateCiudad,
@@ -147,6 +148,16 @@ export const useCiudad = (): UseQueryResult<ApiResponse<Ciudad[]>, Error> => {
   return useQuery({
     queryKey: ["ciudad"],
     queryFn: () => getCiudad({ pagination: false }),
+  });
+};
+
+export const useCiudadActiva = (): UseQueryResult<
+  ApiResponse<Ciudad[]>,
+  Error
+> => {
+  return useQuery({
+    queryKey: ["ciudad-activa"],
+    queryFn: () => getCiudadActiva(),
   });
 };
 

@@ -3,6 +3,7 @@ import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import {
   createTipoPersonal,
   getTipoPersonal,
+  getTipoPersonalActivo,
   updateTipoPersonal,
 } from "../../functions/configuracion/tipo-personal";
 import type { ApiResponse } from "../../types/common";
@@ -18,7 +19,17 @@ export const useTipoPersonal = (): UseQueryResult<
 > => {
   return useQuery({
     queryKey: ["tipo-personal"],
-    queryFn: () => getTipoPersonal({ pagination: false }),
+    queryFn: () => getTipoPersonal(),
+  });
+};
+
+export const useTipoPersonalActivo = (): UseQueryResult<
+  ApiResponse<TipoPersonal[]>,
+  Error
+> => {
+  return useQuery({
+    queryKey: ["tipo-personal-activo"],
+    queryFn: () => getTipoPersonalActivo(),
   });
 };
 
