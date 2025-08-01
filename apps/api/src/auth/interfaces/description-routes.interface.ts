@@ -13,6 +13,15 @@ export enum DescriptionRoutes {
     USUARIOS = "usuarios",
 
     // CLIENTES
-    CLIENTE = "clientes"
+    CLIENTE = "clientes",
+
+    // TARIFAS
+    TARIFAS = "tarifas",
+
+    // SERVICIOS
+    SERVICIOS = "servicios"
+
+    // ORDENES SERVICIO
+    , ORDENES_SERVICIO = "ordenes-servicio",
 
 }

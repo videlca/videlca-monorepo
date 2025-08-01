@@ -409,8 +409,12 @@ export class LocacionService {
 
             // 2. Obtener correos existentes con sus estados
             const correosExistentes = await queryRunner.manager.find(Correo, {
-                where: { locacion: locacionExistente },
-                relations: ['correoEstados']
+                where: { 
+                    locacion: {
+                        idLocacion: locacionExistente.idLocacion
+                    } 
+                },
+                relations: ['estados']
             });
 
             const crearCorreos = await this.analizarCambiosCorreos(correosExistentes, uniqueCorreos);

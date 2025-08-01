@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMan
 import { Ciudad } from "../../common/entities";
 import { Correo } from "./correo.entity";
 import { Cliente } from "./cliente.entity";
+import { OrdenServicio } from "../../orden-servicio/entities/orden-servicio.entity";
 
 @Entity({name: 'locacion'})
 export class Locacion {
@@ -122,5 +123,11 @@ export class Locacion {
         default: true
     })
     estado: boolean;
+
+    @OneToMany(
+        () => OrdenServicio,
+        (ordenServicio) => ordenServicio.idLocacion
+    )
+    ordenesServicio: OrdenServicio[];
 
 }

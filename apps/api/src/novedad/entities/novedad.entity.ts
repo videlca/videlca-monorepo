@@ -28,7 +28,9 @@ export class Novedad {
 
     @Column({
         type: 'varchar',
-        name: 'horaInicio'
+        name: 'horaInicio',
+        length: 8,
+        nullable: false
     })
     horaInicio: string
 
@@ -38,14 +40,15 @@ export class Novedad {
         name: 'fechaFin',
         nullable: true
     })
-    fechaFin: Date;
+    fechaFin: Date | null;
 
     @Column({
         type: 'varchar',
         name: 'horaFin',
+        length: 8,
         nullable: true
     })
-    horaFin: string
+    horaFin: string | null
 
     // ID PERSONAL
     @ManyToOne(

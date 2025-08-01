@@ -24,6 +24,18 @@ interface Tipo {
     descripcion: string;
 }
 
+interface TipoTarifa {
+    nombre: string;
+    descripcion: string;
+    tipoUnidadTiempo: string;
+    cantidadTiempo?: number;
+}
+
+interface TipoUnidadTiempo {
+    descripcion: string;
+    requiereTiempo: boolean;
+}
+
 interface EstadoOrdenServicio {
     nombre: string,
     descripcion: string;
@@ -37,18 +49,43 @@ interface TipoNovedad {
     retirado: boolean;
 }
 
+// Tipo horario descripcion
+interface TipoHorarioDescripcion {
+    nombre: string;
+    descripcion: string;
+}
+
 interface SeedData {
     users: User[],
     roles: Role[],
     permissions: Permission[],
     tiposId: Tipo[],
+    tiposGenero: Tipo[],
+    tiposDuracion: Tipo[],
+    tiposHorario: TipoHorarioDescripcion[],
+    paises: Tipo[],
     tiposNovedad: TipoNovedad[],
-    estadosOrdenServicio: EstadoOrdenServicio[]
+    estadosOrdenServicio: EstadoOrdenServicio[],
+    tiposUnidadTiempo: TipoUnidadTiempo[],
+    tiposTarifa: TipoTarifa[]
 }
 
 export const initialData: SeedData = {
+
+    tiposUnidadTiempo: [
+        {descripcion: "dias", requiereTiempo: true},
+        {descripcion: "horas", requiereTiempo: true},
+        {descripcion: "no aplica", requiereTiempo: false},
+    ],
+
+    tiposTarifa: [
+        {nombre: "mes", descripcion: "El monto precio total del servicio equivale a un mes, se puede ajustar cantidad de dias que equivale el mes que cobran", tipoUnidadTiempo: "dias", cantidadTiempo: 30},
+        {nombre: "turno", descripcion: "El monto precio total del servicio equivale a un turno, se puede ajustar cantidad de horas que equivale el turno que cobran", tipoUnidadTiempo: "horas", cantidadTiempo: 8},
+        {nombre: "servicio unico", descripcion: "El precio total del servicio es de unico cobro", tipoUnidadTiempo: "no aplica"},
+    ],
     
     estadosOrdenServicio: [
+        {nombre: "cancelada", descripcion: "Estado para indicar que una orden de sevricio ha sido cancelada", estado: true, programable: false},
         {nombre: "programado", descripcion: "Estado para indicar que una orden de servicio ha sido programada", estado: true, programable: false},
         {
             nombre: "por iniciar", 
@@ -77,6 +114,13 @@ export const initialData: SeedData = {
         {descripcion: 'permisos', nombre: 'Permisos'},
         {descripcion: 'usuarios', nombre: 'Usuarios'},
         {descripcion: 'clientes', nombre: 'Clientes'},
+        {descripcion: 'tarifas', nombre: 'Tarifas'},
+        {descripcion: 'servicios', nombre: 'Servicios'},
+        {descripcion: 'ordenes-servicio', nombre: 'Ordenes Servicio'},
+    ],
+
+    paises: [
+        {descripcion: "Colombia"}
     ],
 
     tiposId: [
@@ -84,8 +128,28 @@ export const initialData: SeedData = {
         {descripcion: 'NIT'},
     ],
 
+    tiposGenero: [
+        {descripcion: 'Masculino'},
+        {descripcion: 'Femenino'},
+    ],
+
+    tiposDuracion: [
+        {descripcion: "fija"},
+        {descripcion: "flexible"},
+    ],
+
+    tiposHorario: [
+        {nombre: "diurno", descripcion: "Horario que se realiza durante el dia, este horario va ligado a la ley de horas laborales"},
+        {nombre: "nocturno", descripcion: "Horario que se realiza durante la noche, este horario va ligado a la ley de horas laborales"},
+        {nombre: "dia completo (24 horas)", descripcion: "Horario que se realiza durante todo el dia, servicio que se presta las 24 horas"},
+        {nombre: "mixto", descripcion: "Horario que se realiza durante el dia o la noche, dependiendo de la necesidad del cliente, por ejemplo Recogida de dinero"},
+    ],
+
     tiposNovedad: [
-        {descripcion: 'retirado', retirado: true}
+        {descripcion: 'retirado', retirado: true},
+        {descripcion: 'vacaciones', retirado: false},
+        {descripcion: 'permiso', retirado: false},
+        {descripcion: 'incapacidad', retirado: false},
     ],
     
     users: [

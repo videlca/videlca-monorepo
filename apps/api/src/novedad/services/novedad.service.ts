@@ -60,6 +60,37 @@ export class NovedadService {
 
     }
 
+    // FECHA INICIO NOVEDAD
+                
+    const fechaInicioSplit = createNovedadDto.fechaInicio.toISOString().split('T')[0];
+
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
+    
+    const fechaInicioNovedad = new Date(añoInicio, mesInicio - 1, diaInicio);
+
+    // FECHA FIN NOVEDAD
+
+    let fechaFinNovedad = createNovedadDto.fechaFin != null ? new Date(createNovedadDto.fechaFin) : null;
+
+    // Validar que las fechas sean lógicamente correcto
+    if (createNovedadDto.fechaFin != null) {
+        
+        // FECHA FIN NOVEDAD
+
+        const fechaFinSplit = createNovedadDto.fechaFin.toISOString().split('T')[0];
+    
+        const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+                
+        fechaFinNovedad = new Date(añoFin, mesFin - 1, diaFin);
+
+        if (fechaInicioNovedad >= fechaFinNovedad) {
+
+            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        
+        }
+
+    }
+
     const queryRunner = this.dataSource.createQueryRunner();
 
     await queryRunner.connect();
@@ -71,6 +102,8 @@ export class NovedadService {
         
       const novedad = this.novedadRepository.create({
         ...createNovedadDto,
+        fechaInicio: fechaInicioNovedad,
+        fechaFin: fechaFinNovedad,
         idTipoNovedad: tipoNovedad,
         idPersonal: personal
       });

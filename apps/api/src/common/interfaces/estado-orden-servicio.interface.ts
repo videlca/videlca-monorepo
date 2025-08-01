@@ -1,4 +1,7 @@
-export enum EstadoOrdenServicio {    
+export enum EstadoOrdenServicio { 
+    
+    // CANCELADA
+    CANCELADA = "cancelada",
 
     // PROGRAMADO
     PROGRAMADO = "programado",

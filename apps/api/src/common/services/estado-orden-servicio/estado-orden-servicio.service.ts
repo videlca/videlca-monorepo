@@ -57,7 +57,7 @@ export class EstadoOrdenServicioService {
   // OBTENER UN ESTADO ORDEN DE SERVICIO POR NOMBRE
   async findOneByName(name: string){
   
-    const estadoOrden = await this.estadoOrdenRepository.findOneBy({descripcion: name});
+    const estadoOrden = await this.estadoOrdenRepository.findOneBy({nombre: name});
 
     if(!estadoOrden) throw new NotFoundException(`Estado Orden de Servicio con nombre "${name}" no se ha encontrado`);
 
