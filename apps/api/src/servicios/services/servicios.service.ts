@@ -179,7 +179,7 @@ export class ServiciosService {
 
   async findAllByPeriodo(idPeriodo: number, paginationDto: PaginationDto, pagination: boolean = true){
 
-    const queryBuilder = this.servicioRepository .createQueryBuilder('servicio') 
+    const queryBuilder = this.servicioRepository.createQueryBuilder('servicio') 
       .leftJoin('servicio.tarifas', 'tarifa', 'tarifa.idPeriodo = :idPeriodo', { idPeriodo }) 
       // .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio') 
       // .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion') 
