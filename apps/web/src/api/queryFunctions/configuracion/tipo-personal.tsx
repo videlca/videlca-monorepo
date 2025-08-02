@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import {
   createTipoPersonal,
+  deleteTipoPersonal,
   getTipoPersonal,
   getTipoPersonalActivo,
   updateTipoPersonal,
@@ -19,7 +20,7 @@ export const useTipoPersonal = (): UseQueryResult<
 > => {
   return useQuery({
     queryKey: ["tipo-personal"],
-    queryFn: () => getTipoPersonal(),
+    queryFn: () => getTipoPersonal({ pagination: false }),
   });
 };
 
@@ -29,7 +30,7 @@ export const useTipoPersonalActivo = (): UseQueryResult<
 > => {
   return useQuery({
     queryKey: ["tipo-personal-activo"],
-    queryFn: () => getTipoPersonalActivo(),
+    queryFn: () => getTipoPersonalActivo({ pagination: false }),
   });
 };
 
@@ -76,6 +77,29 @@ export const useActualizarTipoPersonal = (): UseMutationResult<
     },
     onError: (error) => {
       toast.error(error.message || "Error al actualizar tipo de personal");
+    },
+  });
+};
+
+export const useEliminarTipoPersonal = (): UseMutationResult<
+  ApiResponse,
+  Error,
+  { id: number }
+> => {
+  return useMutation({
+    mutationFn: ({ id }: { id: number }) => deleteTipoPersonal(id),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-personal"] });
+        toast.success("Tipo de personal eliminado exitosamente", {
+          description: "El tipo de personal ha sido eliminado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al eliminar tipo de personal");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al eliminar tipo de personal");
     },
   });
 };

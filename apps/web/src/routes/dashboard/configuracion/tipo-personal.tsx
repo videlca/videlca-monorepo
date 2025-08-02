@@ -3,12 +3,13 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { StateLabel } from "../../../components/common/StateLabel";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import type { TipoPersonal } from "../../../types";
 import {
   useActualizarTipoPersonal,
   useCrearTipoPersonal,
+  useEliminarTipoPersonal,
   useTipoPersonal,
 } from "../../../api/queryFunctions/configuracion";
 import type {
@@ -19,14 +20,24 @@ import { useForm } from "../../../hooks/useForm";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
 import { InputForm } from "../../../components/common/InputForm";
-import Button from "../../../components/common/Button";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
+import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
+import type { UpdateTipoPersonalDto } from "../../../api/dtos";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipo-personal")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  // Estados
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isModalOpenEditar, setIsModalOpenEditar] = useState<boolean>(false);
+  const [isModalOpenEliminar, setIsModalOpenEliminar] =
+    useState<boolean>(false);
+  const [selectedRow, setSelectedRow] = useState<number | null>(null);
+
+  // Queries y mutations
   const { data: tipoPersonal, isLoading } = useTipoPersonal();
   const { mutate: crearTipoPersonal, isPending: isCreatingTipoPersonal } =
     useCrearTipoPersonal();
@@ -34,6 +45,9 @@ function RouteComponent() {
     mutate: actualizarTipoPersonal,
     isPending: isActualizandoTipoPersonal,
   } = useActualizarTipoPersonal();
+  const { mutate: eliminarTipoPersonal } = useEliminarTipoPersonal();
+
+  // Formularios
   const { form, handleChange, resetForm } = useForm<CreateTipoPersonal>({
     descripcion: "",
   });
@@ -42,38 +56,48 @@ function RouteComponent() {
     handleChange: handleChangeEditar,
     resetForm: resetFormEditar,
     setForm: setFormEditar,
-  } = useForm<ActualizarTipoPersonal>({
+  } = useForm<UpdateTipoPersonalDto>({
+    descripcion: "",
     estado: false,
   });
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isModalOpenEditar, setIsModalOpenEditar] = useState<boolean>(false);
-  const [editingRow, setEditingRow] = useState<TipoPersonal | null>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    crearTipoPersonal(form);
-    setIsModalOpen(false);
-    resetForm();
+    crearTipoPersonal(form, {
+      onSettled: () => {
+        setIsModalOpen(false);
+        resetForm();
+      },
+    });
   };
 
   const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    actualizarTipoPersonal({
-      id: editingRow?.idTipoPersonal as number,
-      data: {
-        estado: String(formEditar.estado) === "true",
+    actualizarTipoPersonal(
+      {
+        id: selectedRow as number,
+        data: {
+          descripcion: formEditar.descripcion,
+          estado: String(formEditar.estado) === "true",
+        },
       },
-    });
-    setIsModalOpenEditar(false);
-    resetFormEditar();
+      {
+        onSettled: () => {
+          setIsModalOpenEditar(false);
+          resetFormEditar();
+          setSelectedRow(null);
+        },
+      },
+    );
   };
 
   const handleShowModalEditar = (row: TipoPersonal) => {
     setIsModalOpenEditar(true);
     setFormEditar({
       estado: row.estado,
+      descripcion: row.descripcion,
     });
-    setEditingRow(row);
+    setSelectedRow(row.idTipoPersonal);
   };
 
   const columns: ColumnDef<TipoPersonal>[] = [
@@ -97,13 +121,24 @@ function RouteComponent() {
       accessorKey: "acciones",
       cell: ({ row }) => {
         return (
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              handleShowModalEditar(row.original);
-            }}
-          />
+          <div className="flex justify-center gap-2">
+            <ButtonAction
+              Icon={PencilIcon}
+              label="Editar"
+              onClick={() => {
+                handleShowModalEditar(row.original);
+              }}
+            />
+            <ButtonAction
+              Icon={TrashIcon}
+              label="Eliminar"
+              onClick={() => {
+                setIsModalOpenEliminar(true);
+                setSelectedRow(row.original.idTipoPersonal);
+              }}
+              color="red"
+            />
+          </div>
         );
       },
     },
@@ -138,8 +173,17 @@ function RouteComponent() {
           setIsModalOpen(false);
           resetForm();
         }}
-        children={
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      >
+        <FormsModal
+          onSubmit={handleSubmit}
+          isLoading={isCreatingTipoPersonal}
+          onCancel={() => {
+            setIsModalOpen(false);
+            resetForm();
+          }}
+          updating={false}
+        >
+          <div className="flex flex-col gap-2">
             <InputForm
               label="Descripción"
               placeholder="Descripción"
@@ -149,27 +193,10 @@ function RouteComponent() {
               onChange={handleChange}
               type="text"
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  resetForm();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isCreatingTipoPersonal}
-                className="w-auto"
-              >
-                {isCreatingTipoPersonal ? "Creando..." : "Agregar"}
-              </Button>
-            </div>
-          </form>
-        }
-      />
+          </div>
+        </FormsModal>
+      </SimpleModal>
+
       <SimpleModal
         isOpen={isModalOpenEditar}
         title="Editar tipo de personal"
@@ -178,35 +205,54 @@ function RouteComponent() {
           setIsModalOpenEditar(false);
           resetForm();
         }}
-        children={
-          <form onSubmit={handleSubmitEditar} className="flex flex-col gap-4">
+      >
+        <FormsModal
+          onSubmit={handleSubmitEditar}
+          isLoading={isActualizandoTipoPersonal}
+          onCancel={() => {
+            setIsModalOpenEditar(false);
+            resetFormEditar();
+          }}
+          updating={true}
+        >
+          <div className="flex flex-col gap-2">
+            <InputForm
+              label="Descripción"
+              placeholder="Descripción"
+              id="descripcion"
+              required
+              value={formEditar.descripcion || ""}
+              onChange={handleChangeEditar}
+              type="text"
+            />
             <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
               id="estado"
-              value={formEditar.estado.toString()}
+              value={formEditar.estado?.toString() || "false"}
               onChange={handleChangeEditar}
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpenEditar(false);
-                  resetFormEditar();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={isActualizandoTipoPersonal}
-                className="w-auto"
-              >
-                {isActualizandoTipoPersonal ? "Actualizando..." : "Guardar"}
-              </Button>
-            </div>
-          </form>
-        }
+          </div>
+        </FormsModal>
+      </SimpleModal>
+
+      <ConfirmarDelete
+        isOpenDelete={isModalOpenEliminar}
+        text="¿Estás seguro de querer eliminar este tipo de personal?"
+        onClose={() => {
+          setIsModalOpenEliminar(false);
+        }}
+        onDelete={() => {
+          eliminarTipoPersonal(
+            { id: selectedRow as number },
+            {
+              onSettled: () => {
+                setIsModalOpenEliminar(false);
+                setSelectedRow(null);
+              },
+            },
+          );
+        }}
       />
     </Section>
   );

@@ -18,7 +18,7 @@ const Button: React.FC<ButtonProps> = ({
   className = "",
 }) => {
   const baseClasses =
-    "h-12 w-full cursor-pointer rounded-lg bg-blue-600 font-medium text-white hover:bg-blue-700 transition-colors px-6 py-3 text-base";
+    "h-12 cursor-pointer rounded-lg bg-blue-600 font-medium text-white hover:bg-blue-700 transition-colors px-6 py-3 text-base";
 
   const disabledClass =
     disabled || loading ? "opacity-50 cursor-not-allowed" : "";

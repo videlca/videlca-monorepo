@@ -9,7 +9,8 @@ export interface UpdateEstadoOrdenDto {
 }
 
 export interface UpdateTipoPersonalDto {
-  estado: boolean
+  descripcion?: string
+  estado?: boolean
 }
 
 // Ubicaciones

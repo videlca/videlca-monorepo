@@ -12,7 +12,7 @@ export interface CreateTipoPersonal {
   descripcion: string
 }
 
-export interface ActualizarTipoPersonal {
+export interface ActualizarTipoPersonal extends Partial<CreateTipoPersonal> {
   estado: boolean
 }
 
@@ -21,7 +21,7 @@ export interface CreateTipoCliente {
   descripcion: string
 }
 
-export interface ActualizarTipoCliente {
+export interface ActualizarTipoCliente extends Partial<CreateTipoCliente> {
   estado: boolean
 }
 
@@ -30,7 +30,7 @@ export interface CreateTipoIdentificacion {
   descripcion: string
 }
 
-export interface ActualizarTipoIdentificacion {
+export interface ActualizarTipoIdentificacion extends Partial<CreateTipoIdentificacion> {
   estado: boolean
 }
 
@@ -39,7 +39,7 @@ export interface CreateTipoGenero {
   descripcion: string
 }
 
-export interface ActualizarTipoGenero {
+export interface ActualizarTipoGenero extends Partial<CreateTipoGenero> {
   estado: boolean
 }
 
@@ -47,6 +47,6 @@ export interface CreateTipoNovedad {
   descripcion: string
 }
 
-export interface ActualizarTipoNovedad {
+export interface ActualizarTipoNovedad extends Partial<CreateTipoNovedad> {
   estado: boolean
 }
