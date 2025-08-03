@@ -250,7 +250,7 @@ function RouteComponent() {
             label="Estado"
             id="estado"
             placeholder="Estado"
-            value={formEditTipoServicio.estado?.toString() || "true"}
+            value={formEditTipoServicio.estado?.toString() || ""}
             onChange={handleBooleanChangeEditTipoServicio}
           />
           <CheckboxForm

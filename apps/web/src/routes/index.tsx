@@ -67,7 +67,7 @@ function Index() {
           </Link>
         </div>
 
-        <Button type="submit" disabled={mutation.isPending}>
+        <Button type="submit" disabled={mutation.isPending} className="w-full">
           {mutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
         </Button>
       </form>

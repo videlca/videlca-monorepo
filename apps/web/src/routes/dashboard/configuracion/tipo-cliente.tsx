@@ -3,12 +3,13 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { StateLabel } from "../../../components/common/StateLabel";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import type { TipoCliente } from "../../../types";
 import {
   useActualizarTipoCliente,
   useCrearTipoCliente,
+  useEliminarTipoCliente,
   useTipoCliente,
 } from "../../../api/queryFunctions/configuracion/tipo-cliente";
 import { useState } from "react";
@@ -21,6 +22,8 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { InputForm } from "../../../components/common/InputForm";
 import Button from "../../../components/common/Button";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipo-cliente")({
   component: RouteComponent,
@@ -28,13 +31,28 @@ export const Route = createFileRoute("/dashboard/configuracion/tipo-cliente")({
 });
 
 function RouteComponent() {
-  const { data: tipoCliente, isLoading } = useTipoCliente();
-  const { mutate: crearTipoCliente } = useCrearTipoCliente();
-  const { mutate: actualizarTipoCliente } = useActualizarTipoCliente();
+  // Estados
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenEditar, setIsModalOpenEditar] = useState(false);
-  const [editingRow, setEditingRow] = useState<TipoCliente | null>(null);
-  const { form, setForm, resetForm } = useForm<CreateTipoCliente>({
+  const [isModalOpenEliminar, setIsModalOpenEliminar] = useState(false);
+  const [selectIdRow, setSelectIdRow] = useState<number | null>(null);
+
+  // Queries y mutaciones
+  const { data: tipoCliente, isLoading } = useTipoCliente();
+  const { mutate: crearTipoCliente, isPending: isCreatingTipoCliente } =
+    useCrearTipoCliente();
+  const {
+    mutate: actualizarTipoCliente,
+    isPending: isActualizandoTipoCliente,
+  } = useActualizarTipoCliente();
+  const { mutate: eliminarTipoCliente } = useEliminarTipoCliente();
+
+  // Formularios
+  const {
+    form: formCrear,
+    resetForm: resetFormCrear,
+    handleChange: handleChangeCrear,
+  } = useForm<CreateTipoCliente>({
     descripcion: "",
   });
   const {
@@ -43,30 +61,33 @@ function RouteComponent() {
     setForm: setFormEditar,
     resetForm: resetFormEditar,
   } = useForm<ActualizarTipoCliente>({
+    descripcion: "",
     estado: false,
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    crearTipoCliente(form);
+    crearTipoCliente(formCrear);
     setIsModalOpen(false);
-    resetForm();
+    resetFormCrear();
   };
 
   const handleShowModalEditar = (row: TipoCliente) => {
     setIsModalOpenEditar(true);
     setFormEditar({
       estado: row.estado,
+      descripcion: row.descripcion,
     });
-    setEditingRow(row);
+    setSelectIdRow(row.idTipoCliente);
   };
 
   const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     actualizarTipoCliente({
-      id: editingRow?.idTipoCliente as number,
+      id: selectIdRow as number,
       data: {
         estado: String(formEditar.estado) === "true",
+        descripcion: formEditar.descripcion,
       },
     });
     setIsModalOpenEditar(false);
@@ -94,13 +115,24 @@ function RouteComponent() {
       accessorKey: "acciones",
       cell: ({ row }) => {
         return (
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              handleShowModalEditar(row.original);
-            }}
-          />
+          <div className="flex justify-center gap-2">
+            <ButtonAction
+              Icon={PencilIcon}
+              label="Editar"
+              onClick={() => {
+                handleShowModalEditar(row.original);
+              }}
+            />
+            <ButtonAction
+              Icon={TrashIcon}
+              label="Eliminar"
+              onClick={() => {
+                setIsModalOpenEliminar(true);
+                setSelectIdRow(row.original.idTipoCliente);
+              }}
+              color="red"
+            />
+          </div>
         );
       },
     },
@@ -131,36 +163,31 @@ function RouteComponent() {
         size="md"
         onClose={() => {
           setIsModalOpen(false);
-          resetForm();
+          resetFormCrear();
         }}
-        children={
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      >
+        <FormsModal
+          onSubmit={handleSubmit}
+          isLoading={isCreatingTipoCliente}
+          onCancel={() => {
+            setIsModalOpen(false);
+            resetFormCrear();
+          }}
+          updating={false}
+        >
+          <div className="flex flex-col gap-2">
             <InputForm
               label="Descripción"
               placeholder="Descripción"
               id="descripcion"
               required
-              value={form.descripcion}
-              onChange={(e) => setForm({ descripcion: e.target.value })}
+              value={formCrear.descripcion || ""}
+              onChange={handleChangeCrear}
               type="text"
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  resetForm();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Creando..." : "Agregar"}
-              </Button>
-            </div>
-          </form>
-        }
-      />
+          </div>
+        </FormsModal>
+      </SimpleModal>
       <SimpleModal
         isOpen={isModalOpenEditar}
         title="Editar tipo de cliente"
@@ -169,31 +196,54 @@ function RouteComponent() {
           setIsModalOpenEditar(false);
           resetFormEditar();
         }}
-        children={
-          <form onSubmit={handleSubmitEditar} className="flex flex-col gap-4">
+      >
+        <FormsModal
+          onSubmit={handleSubmitEditar}
+          isLoading={isActualizandoTipoCliente}
+          onCancel={() => {
+            setIsModalOpenEditar(false);
+            resetFormEditar();
+          }}
+          updating={true}
+        >
+          <div className="flex flex-col gap-2">
+            <InputForm
+              label="Descripción"
+              placeholder="Descripción"
+              id="descripcion"
+              required
+              value={formEditar.descripcion || ""}
+              onChange={handleChangeEditar}
+              type="text"
+            />
             <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
               id="estado"
-              value={formEditar.estado.toString()}
+              value={formEditar.estado?.toString() || ""}
               onChange={handleChangeEditar}
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpenEditar(false);
-                  resetFormEditar();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Actualizando..." : "Actualizar"}
-              </Button>
-            </div>
-          </form>
-        }
+          </div>
+        </FormsModal>
+      </SimpleModal>
+
+      <ConfirmarDelete
+        isOpenDelete={isModalOpenEliminar}
+        text="¿Estás seguro de querer eliminar este tipo de cliente?"
+        onClose={() => {
+          setIsModalOpenEliminar(false);
+        }}
+        onDelete={() => {
+          eliminarTipoCliente(
+            { id: selectIdRow as number },
+            {
+              onSettled: () => {
+                setIsModalOpenEliminar(false);
+                setSelectIdRow(null);
+              },
+            },
+          );
+        }}
       />
     </Section>
   );

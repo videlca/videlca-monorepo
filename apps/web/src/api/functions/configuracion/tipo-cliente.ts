@@ -1,5 +1,5 @@
 import type { TipoCliente } from "../../../types";
-import { axiosClient } from "../../config";
+import { apiDelete, axiosClient } from "../../config";
 import type { ActualizarTipoCliente, CreateTipoCliente } from "../../types";
 import type { ApiResponse } from "../../types/common";
 import type { PaginationDto } from "../../dtos/common";
@@ -49,3 +49,6 @@ export const updateTipoCliente = async (id: number, data: ActualizarTipoCliente)
   return response;
 };
 
+export const deleteTipoCliente = async (id: number): Promise<ApiResponse> => {
+  return await apiDelete<TipoCliente>(`/tipo-cliente/${id}`)
+}

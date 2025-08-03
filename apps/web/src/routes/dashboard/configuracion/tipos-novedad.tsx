@@ -182,7 +182,7 @@ function RouteComponent() {
               label="Estado"
               placeholder="Estado"
               id="estado"
-              value={formEditar.estado.toString()}
+              value={formEditar.estado?.toString() || ""}
               onChange={handleChangeEditar}
             />
             <div className="flex justify-end space-x-2">

@@ -1,4 +1,4 @@
-import { axiosClient } from "../../config";
+import { apiDelete, axiosClient } from "../../config";
 import type { ApiResponse } from "../../types/common";
 import type { Ciudad, Departamento, Pais } from "../../../types";
 import type { CreateCiudadDto, CreateDepartamentoDto, CreatePaisDto, UpdateCiudadDto, UpdateDepartamentoDto, UpdatePaisDto } from "../../dtos/configuracion";
@@ -97,6 +97,10 @@ export const updateDepartamento = async (id: number, data: UpdateDepartamentoDto
   return response;
 };
 
+export const deleteDepartamento = async (id: number): Promise<ApiResponse> => {
+  return await apiDelete<Departamento>(`/ubicacion/departamento/${id}`);
+};
+
 // Ciudades
 export const getCiudad = async (pagination: PaginationDto): Promise<ApiResponse<Ciudad[]>> => {
   const response = await axiosClient.get("/ubicacion/ciudad", { params: pagination }).then((res) => {
@@ -156,4 +160,8 @@ export const updateCiudad = async (id: number, data: UpdateCiudadDto): Promise<A
     };
   });
   return response;
+};
+
+export const deleteCiudad = async (id: number): Promise<ApiResponse> => {
+  return await apiDelete<Ciudad>(`/ubicacion/ciudad/${id}`);
 };

@@ -8,6 +8,8 @@ import {
   createCiudad,
   createDepartamento,
   createPais,
+  deleteCiudad,
+  deleteDepartamento,
   getCiudad,
   getCiudadActiva,
   getDepartamento,
@@ -143,6 +145,28 @@ export const useActualizarDepartamento = (): UseMutationResult<
   });
 };
 
+export const useEliminarDepartamento = (): UseMutationResult<
+  ApiResponse,
+  Error,
+  { id: number }
+> => {
+  return useMutation({
+    mutationFn: ({ id }: { id: number }) => deleteDepartamento(id),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["departamento"] });
+        toast.success("Departamento eliminado exitosamente", {
+          description: "El departamento ha sido eliminado correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al eliminar departamento");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al eliminar departamento");
+    },
+  });
+};
 // Ciudades
 export const useCiudad = (): UseQueryResult<ApiResponse<Ciudad[]>, Error> => {
   return useQuery({
@@ -204,6 +228,29 @@ export const useActualizarCiudad = (): UseMutationResult<
     },
     onError: (error) => {
       toast.error(error.message || "Error al actualizar ciudad");
+    },
+  });
+};
+
+export const useEliminarCiudad = (): UseMutationResult<
+  ApiResponse,
+  Error,
+  { id: number }
+> => {
+  return useMutation({
+    mutationFn: ({ id }: { id: number }) => deleteCiudad(id),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["ciudad"] });
+        toast.success("Ciudad eliminada exitosamente", {
+          description: "La ciudad ha sido eliminada correctamente",
+        });
+      } else {
+        throw new Error(data.message || "Error al eliminar ciudad");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al eliminar ciudad");
     },
   });
 };

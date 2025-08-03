@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import {
   createTipoIdentificacion,
+  deleteTipoIdentificacion,
   getTipoIdentificacion,
   getTipoIdentificacionActivo,
   updateTipoIdentificacion,
@@ -95,6 +96,32 @@ export const useActualizarTipoIdentificacion = (): UseMutationResult<
       toast.error(
         error.message || "Error al actualizar tipo de identificación",
       );
+    },
+  });
+};
+
+export const useEliminarTipoIdentificacion = (): UseMutationResult<
+  ApiResponse,
+  Error,
+  { id: number }
+> => {
+  return useMutation({
+    mutationFn: ({ id }: { id: number }) => deleteTipoIdentificacion(id),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        queryClient.invalidateQueries({ queryKey: ["tipo-identificacion"] });
+        toast.success("Tipo de identificación eliminado exitosamente", {
+          description:
+            "El tipo de identificación ha sido eliminado correctamente",
+        });
+      } else {
+        throw new Error(
+          data.message || "Error al eliminar tipo de identificación",
+        );
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al eliminar tipo de identificación");
     },
   });
 };

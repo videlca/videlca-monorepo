@@ -3,12 +3,13 @@ import type { Departamento } from "../../../../types";
 import type { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { ButtonAction } from "../../../common/ButtonAction";
-import { EditIcon, PlusIcon } from "lucide-react";
+import { EditIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { SimpleModal } from "../../../common/SimpleModal";
 import {
   useActualizarDepartamento,
   useCrearDepartamento,
   useDepartamento,
+  useEliminarDepartamento,
   usePais,
 } from "../../../../api/queryFunctions/configuracion/ubicaciones";
 import { useForm } from "../../../../hooks/useForm";
@@ -18,16 +19,28 @@ import type {
 } from "../../../../api/dtos/configuracion";
 import { InputForm } from "../../../common/InputForm";
 import { InputSelect } from "../../../common/InputSelect";
-import Button from "../../../common/Button";
+import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
+import { FormsModal } from "../../modals/FormsModal";
 
 export const DepartamentoTab = () => {
-  const { data: departamentos, isLoading } = useDepartamento();
-  const { data: paises } = usePais();
-  const { mutate: crearDepartamento } = useCrearDepartamento();
-  const { mutate: actualizarDepartamento } = useActualizarDepartamento();
+  // Estados
+  const [isModalOpenEliminar, setIsModalOpenEliminar] = useState(false);
+  const [selectIdRow, setSelectIdRow] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenEditar, setIsModalOpenEditar] = useState(false);
-  const [editingRow, setEditingRow] = useState<Departamento | null>(null);
+
+  // Queries y mutaciones
+
+  const { data: departamentos } = useDepartamento();
+  const { data: paises } = usePais();
+  const { mutate: crearDepartamento, isPending: isLoadingCrearDepartamento } =
+    useCrearDepartamento();
+  const {
+    mutate: actualizarDepartamento,
+    isPending: isLoadingActualizarDepartamento,
+  } = useActualizarDepartamento();
+  const { mutate: eliminarDepartamento } = useEliminarDepartamento();
+  // Formularios
   const { form, resetForm, handleChange } = useForm<CreateDepartamentoDto>({
     descripcion: "",
     pais: 0,
@@ -61,13 +74,13 @@ export const DepartamentoTab = () => {
       pais: row.pais.idPais,
       codigoDepartamento: row.codigoDepartamento,
     });
-    setEditingRow(row);
+    setSelectIdRow(row.idDepartamento);
   };
 
   const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     actualizarDepartamento({
-      id: editingRow?.idDepartamento as number,
+      id: selectIdRow as number,
       data: {
         descripcion: formEditar.descripcion || "",
         pais: formEditar.pais || 0,
@@ -99,11 +112,22 @@ export const DepartamentoTab = () => {
       header: "Acciones",
       cell: ({ row }) => {
         return (
-          <ButtonAction
-            Icon={EditIcon}
-            label="Editar"
-            onClick={() => handleShowModalEditar(row.original)}
-          />
+          <div className="flex justify-center gap-2">
+            <ButtonAction
+              Icon={EditIcon}
+              label="Editar"
+              onClick={() => handleShowModalEditar(row.original)}
+            />
+            <ButtonAction
+              Icon={TrashIcon}
+              label="Eliminar"
+              onClick={() => {
+                setIsModalOpenEliminar(true);
+                setSelectIdRow(row.original.idDepartamento);
+              }}
+              color="red"
+            />
+          </div>
         );
       },
     },
@@ -146,49 +170,45 @@ export const DepartamentoTab = () => {
           resetForm();
         }}
         children={
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <InputForm
-              label="Descripción"
-              placeholder="Descripción"
-              id="descripcion"
-              required
-              value={form.descripcion || ""}
-              onChange={handleChange}
-              type="text"
-            />
-            <InputSelect
-              label="Pais"
-              placeholder="Pais"
-              id="pais"
-              value={form.pais || ""}
-              onChange={handleChange}
-              options={paisOptions}
-              required
-            />
-            <InputForm
-              label="Código de departamento"
-              placeholder="Código de departamento"
-              id="codigoDepartamento"
-              required
-              value={form.codigoDepartamento || ""}
-              onChange={handleChange}
-              type="text"
-            />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  resetForm();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Creando..." : "Agregar"}
-              </Button>
+          <FormsModal
+            onSubmit={handleSubmit}
+            isLoading={isLoadingCrearDepartamento}
+            onCancel={() => {
+              setIsModalOpen(false);
+              resetForm();
+            }}
+            updating={false}
+          >
+            <div className="flex flex-col gap-2">
+              <InputForm
+                label="Descripción"
+                placeholder="Descripción"
+                id="descripcion"
+                required
+                value={form.descripcion || ""}
+                onChange={handleChange}
+                type="text"
+              />
+              <InputSelect
+                label="Pais"
+                placeholder="Pais"
+                id="pais"
+                value={form.pais || ""}
+                onChange={handleChange}
+                options={paisOptions}
+                required
+              />
+              <InputForm
+                label="Código de departamento"
+                placeholder="Código de departamento"
+                id="codigoDepartamento"
+                required
+                value={form.codigoDepartamento || ""}
+                onChange={handleChange}
+                type="text"
+              />
             </div>
-          </form>
+          </FormsModal>
         }
       />
       <SimpleModal
@@ -200,49 +220,61 @@ export const DepartamentoTab = () => {
           resetFormEditar();
         }}
         children={
-          <form onSubmit={handleSubmitEditar} className="flex flex-col gap-4">
-            <InputForm
-              label="Descripción"
-              placeholder="Descripción"
-              id="descripcion"
-              required
-              value={formEditar.descripcion || ""}
-              onChange={handleChangeEditar}
-              type="text"
-            />
-            <InputSelect
-              label="Pais"
-              placeholder="Pais"
-              id="pais"
-              value={formEditar.pais || ""}
-              onChange={handleChangeEditar}
-              options={paisOptions}
-            />
-            <InputForm
-              label="Código de departamento"
-              placeholder="Código de departamento"
-              id="codigoDepartamento"
-              required
-              value={formEditar.codigoDepartamento || ""}
-              onChange={handleChangeEditar}
-              type="text"
-            />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpenEditar(false);
-                  resetFormEditar();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Actualizando..." : "Actualizar"}
-              </Button>
+          <FormsModal
+            onSubmit={handleSubmitEditar}
+            isLoading={isLoadingActualizarDepartamento}
+            onCancel={() => {
+              setIsModalOpenEditar(false);
+              resetFormEditar();
+            }}
+            updating={true}
+          >
+            <div className="flex flex-col gap-2">
+              <InputForm
+                label="Descripción"
+                placeholder="Descripción"
+                id="descripcion"
+                required
+                value={formEditar.descripcion || ""}
+                onChange={handleChangeEditar}
+                type="text"
+              />
+              <InputSelect
+                label="Pais"
+                placeholder="Pais"
+                id="pais"
+                value={formEditar.pais || ""}
+                onChange={handleChangeEditar}
+                options={paisOptions}
+              />
+              <InputForm
+                label="Código de departamento"
+                placeholder="Código de departamento"
+                id="codigoDepartamento"
+                required
+                value={formEditar.codigoDepartamento || ""}
+                onChange={handleChangeEditar}
+                type="text"
+              />
             </div>
-          </form>
+          </FormsModal>
         }
+      />
+      <ConfirmarDelete
+        isOpenDelete={isModalOpenEliminar}
+        text="¿Estás seguro de querer eliminar este departamento?"
+        onDelete={() => {
+          eliminarDepartamento(
+            { id: selectIdRow as number },
+            {
+              onSettled: () => {
+                setIsModalOpenEliminar(false);
+                setSelectIdRow(null);
+              },
+            },
+          );
+        }}
+        onClose={() => setIsModalOpenEliminar(false)}
       />
     </>
   );

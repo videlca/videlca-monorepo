@@ -1,4 +1,4 @@
-import { EditIcon, PlusIcon } from "lucide-react";
+import { EditIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { ButtonAction } from "../../../common/ButtonAction";
 import Table from "../../../common/Table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -10,6 +10,7 @@ import {
   useCiudad,
   useCrearCiudad,
   useDepartamento,
+  useEliminarCiudad,
 } from "../../../../api/queryFunctions/configuracion";
 import type {
   CreateCiudadDto,
@@ -17,18 +18,29 @@ import type {
 } from "../../../../api/dtos/configuracion";
 import { useForm } from "../../../../hooks/useForm";
 import { InputForm } from "../../../common/InputForm";
-import Button from "../../../common/Button";
 import { InputSelect } from "../../../common/InputSelect";
 import { InputSelectStateBoolean } from "../../../common/InputSelectState";
+import { StateLabel } from "../../../common/StateLabel";
+import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
+import { FormsModal } from "../../modals/FormsModal";
 
 export const CiudadTab = () => {
-  const { data: ciudades, isLoading } = useCiudad();
-  const { data: departamentos } = useDepartamento();
-  const { mutate: crearCiudad } = useCrearCiudad();
-  const { mutate: actualizarCiudad } = useActualizarCiudad();
+  // Estados
+  const [isModalOpenEliminar, setIsModalOpenEliminar] = useState(false);
+  const [selectIdRow, setSelectIdRow] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenEditar, setIsModalOpenEditar] = useState(false);
-  const [editingRow, setEditingRow] = useState<Ciudad | null>(null);
+
+  // Queries y mutaciones
+  const { data: ciudades } = useCiudad();
+  const { data: departamentos } = useDepartamento();
+  const { mutate: crearCiudad, isPending: isLoadingCrearCiudad } =
+    useCrearCiudad();
+  const { mutate: actualizarCiudad, isPending: isLoadingActualizarCiudad } =
+    useActualizarCiudad();
+  const { mutate: eliminarCiudad } = useEliminarCiudad();
+
+  // Formularios
   const { form, resetForm, handleChange } = useForm<CreateCiudadDto>({
     descripcion: "",
     departamento: 0,
@@ -64,13 +76,13 @@ export const CiudadTab = () => {
       departamento: row.departamento.idDepartamento,
       codigoCiudad: row.codigoCiudad,
     });
-    setEditingRow(row);
+    setSelectIdRow(row.idCiudad);
   };
 
   const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     actualizarCiudad({
-      id: editingRow?.idCiudad as number,
+      id: selectIdRow as number,
       data: {
         estado: String(formEditar.estado) === "true",
         descripcion: formEditar.descripcion || "",
@@ -102,28 +114,29 @@ export const CiudadTab = () => {
       header: "Estado",
       accessorKey: "estado",
       cell: ({ row }) => {
-        return (
-          <span
-            className={`rounded-full px-2 py-1 text-xs ${
-              row.original.estado
-                ? "bg-green-500 text-white"
-                : "bg-red-500 text-white"
-            }`}
-          >
-            {row.original.estado ? "Activo" : "Inactivo"}
-          </span>
-        );
+        return <StateLabel state={row.original.estado} />;
       },
     },
     {
       header: "Acciones",
       cell: ({ row }) => {
         return (
-          <ButtonAction
-            Icon={EditIcon}
-            label="Editar"
-            onClick={() => handleShowModalEditar(row.original)}
-          />
+          <div className="flex justify-center gap-2">
+            <ButtonAction
+              Icon={EditIcon}
+              label="Editar"
+              onClick={() => handleShowModalEditar(row.original)}
+            />
+            <ButtonAction
+              Icon={TrashIcon}
+              label="Eliminar"
+              onClick={() => {
+                setIsModalOpenEliminar(true);
+                setSelectIdRow(row.original.idCiudad);
+              }}
+              color="red"
+            />
+          </div>
         );
       },
     },
@@ -166,49 +179,45 @@ export const CiudadTab = () => {
           resetForm();
         }}
         children={
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <InputForm
-              label="Descripción"
-              placeholder="Descripción"
-              id="descripcion"
-              required
-              value={form.descripcion || ""}
-              onChange={handleChange}
-              type="text"
-            />
-            <InputSelect
-              label="Departamento"
-              placeholder="Departamento"
-              id="departamento"
-              value={form.departamento || ""}
-              onChange={handleChange}
-              options={departamentosOptions || []}
-              required
-            />
-            <InputForm
-              label="Código de ciudad"
-              placeholder="Código de ciudad"
-              id="codigoCiudad"
-              required
-              value={form.codigoCiudad || ""}
-              onChange={handleChange}
-              type="text"
-            />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  resetForm();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Creando..." : "Agregar"}
-              </Button>
+          <FormsModal
+            onSubmit={handleSubmit}
+            isLoading={isLoadingCrearCiudad}
+            onCancel={() => {
+              setIsModalOpen(false);
+              resetForm();
+            }}
+            updating={false}
+          >
+            <div className="flex flex-col gap-2">
+              <InputForm
+                label="Descripción"
+                placeholder="Descripción"
+                id="descripcion"
+                required
+                value={form.descripcion || ""}
+                onChange={handleChange}
+                type="text"
+              />
+              <InputSelect
+                label="Departamento"
+                placeholder="Departamento"
+                id="departamento"
+                value={form.departamento || ""}
+                onChange={handleChange}
+                options={departamentosOptions || []}
+                required
+              />
+              <InputForm
+                label="Código de ciudad"
+                placeholder="Código de ciudad"
+                id="codigoCiudad"
+                required
+                value={form.codigoCiudad || ""}
+                onChange={handleChange}
+                type="text"
+              />
             </div>
-          </form>
+          </FormsModal>
         }
       />
       <SimpleModal
@@ -220,56 +229,68 @@ export const CiudadTab = () => {
           resetFormEditar();
         }}
         children={
-          <form onSubmit={handleSubmitEditar} className="flex flex-col gap-4">
-            <InputForm
-              label="Descripción"
-              placeholder="Descripción"
-              id="descripcion"
-              required
-              value={formEditar.descripcion || ""}
-              onChange={handleChangeEditar}
-              type="text"
-            />
-            <InputSelect
-              label="Departamento"
-              placeholder="Departamento"
-              id="departamento"
-              value={formEditar.departamento || ""}
-              onChange={handleChangeEditar}
-              options={departamentosOptions || []}
-            />
-            <InputForm
-              label="Código de ciudad"
-              placeholder="Código de ciudad"
-              id="codigoCiudad"
-              required
-              value={formEditar.codigoCiudad || ""}
-              onChange={handleChangeEditar}
-              type="text"
-            />
-            <InputSelectStateBoolean
-              label="Estado"
-              placeholder="Estado"
-              id="estado"
-              value={formEditar.estado?.toString() || ""}
-              onChange={handleChangeEditar}
-            />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpenEditar(false);
-                  resetFormEditar();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Actualizando..." : "Actualizar"}
-              </Button>
+          <FormsModal
+            onSubmit={handleSubmitEditar}
+            isLoading={isLoadingActualizarCiudad}
+            onCancel={() => {
+              setIsModalOpenEditar(false);
+              resetFormEditar();
+            }}
+            updating={true}
+          >
+            <div className="flex flex-col gap-2">
+              <InputForm
+                label="Descripción"
+                placeholder="Descripción"
+                id="descripcion"
+                required
+                value={formEditar.descripcion || ""}
+                onChange={handleChangeEditar}
+                type="text"
+              />
+              <InputSelect
+                label="Departamento"
+                placeholder="Departamento"
+                id="departamento"
+                value={formEditar.departamento || ""}
+                onChange={handleChangeEditar}
+                options={departamentosOptions || []}
+              />
+              <InputForm
+                label="Código de ciudad"
+                placeholder="Código de ciudad"
+                id="codigoCiudad"
+                required
+                value={formEditar.codigoCiudad || ""}
+                onChange={handleChangeEditar}
+                type="text"
+              />
+              <InputSelectStateBoolean
+                label="Estado"
+                placeholder="Estado"
+                id="estado"
+                value={formEditar.estado?.toString() || ""}
+                onChange={handleChangeEditar}
+              />
             </div>
-          </form>
+          </FormsModal>
         }
+      />
+      <ConfirmarDelete
+        isOpenDelete={isModalOpenEliminar}
+        text="¿Estás seguro de querer eliminar esta ciudad?"
+        onClose={() => setIsModalOpenEliminar(false)}
+        onDelete={() => {
+          eliminarCiudad(
+            { id: selectIdRow as number },
+            {
+              onSettled: () => {
+                setIsModalOpenEliminar(false);
+                setSelectIdRow(null);
+              },
+            },
+          );
+        }}
       />
     </>
   );

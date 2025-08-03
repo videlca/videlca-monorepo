@@ -3,7 +3,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import type { TipoIdentificacion } from "../../../types";
 import type {
@@ -14,6 +14,7 @@ import { useState } from "react";
 import {
   useActualizarTipoIdentificacion,
   useCrearTipoIdentificacion,
+  useEliminarTipoIdentificacion,
   useTipoIdentificacion,
 } from "../../../api/queryFunctions/configuracion/tipo-identificacion";
 import { useForm } from "../../../hooks/useForm";
@@ -21,6 +22,8 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { InputForm } from "../../../components/common/InputForm";
 import Button from "../../../components/common/Button";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipo-id")({
   component: RouteComponent,
@@ -28,14 +31,32 @@ export const Route = createFileRoute("/dashboard/configuracion/tipo-id")({
 });
 
 function RouteComponent() {
-  const { data: tipoIdentificacion, isLoading } = useTipoIdentificacion();
-  const { mutate: crearTipoIdentificacion } = useCrearTipoIdentificacion();
-  const { mutate: actualizarTipoIdentificacion } =
-    useActualizarTipoIdentificacion();
+  // Estados
+  const [isModalOpenEliminar, setIsModalOpenEliminar] = useState(false);
+  const [selectIdRow, setSelectIdRow] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalOpenEditar, setIsModalOpenEditar] = useState(false);
-  const [editingRow, setEditingRow] = useState<TipoIdentificacion | null>(null);
-  const { form, setForm, resetForm } = useForm<CreateTipoIdentificacion>({
+
+  // Queries y mutaciones
+  const { data: tipoIdentificacion, isLoading } = useTipoIdentificacion();
+  const {
+    mutate: crearTipoIdentificacion,
+    isPending: isCreatingTipoIdentificacion,
+  } = useCrearTipoIdentificacion();
+  const {
+    mutate: actualizarTipoIdentificacion,
+    isPending: isActualizandoTipoIdentificacion,
+  } = useActualizarTipoIdentificacion();
+  const { mutate: eliminarTipoIdentificacion } =
+    useEliminarTipoIdentificacion();
+
+  // Formularios
+  const {
+    form: formCrear,
+    setForm: setFormCrear,
+    resetForm: resetFormCrear,
+    handleChange: handleChangeCrear,
+  } = useForm<CreateTipoIdentificacion>({
     descripcion: "",
   });
   const {
@@ -44,29 +65,32 @@ function RouteComponent() {
     setForm: setFormEditar,
     resetForm: resetFormEditar,
   } = useForm<ActualizarTipoIdentificacion>({
+    descripcion: "",
     estado: false,
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    crearTipoIdentificacion(form);
+    crearTipoIdentificacion(formCrear);
     setIsModalOpen(false);
-    resetForm();
+    resetFormCrear();
   };
 
   const handleShowModalEditar = (row: TipoIdentificacion) => {
     setIsModalOpenEditar(true);
     setFormEditar({
       estado: row.estado,
+      descripcion: row.descripcion,
     });
-    setEditingRow(row);
+    setSelectIdRow(row.idTipoIdentificacion);
   };
 
   const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     actualizarTipoIdentificacion({
-      id: editingRow?.idTipoIdentificacion as number,
+      id: selectIdRow as number,
       data: {
+        descripcion: formEditar.descripcion,
         estado: String(formEditar.estado) === "true",
       },
     });
@@ -95,13 +119,24 @@ function RouteComponent() {
       accessorKey: "acciones",
       cell: ({ row }) => {
         return (
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              handleShowModalEditar(row.original);
-            }}
-          />
+          <div className="flex justify-center gap-2">
+            <ButtonAction
+              Icon={PencilIcon}
+              label="Editar"
+              onClick={() => {
+                handleShowModalEditar(row.original);
+              }}
+            />
+            <ButtonAction
+              Icon={TrashIcon}
+              label="Eliminar"
+              onClick={() => {
+                setIsModalOpenEliminar(true);
+                setSelectIdRow(row.original.idTipoIdentificacion);
+              }}
+              color="red"
+            />
+          </div>
         );
       },
     },
@@ -133,34 +168,30 @@ function RouteComponent() {
         size="md"
         onClose={() => {
           setIsModalOpen(false);
-          resetForm();
+          resetFormCrear();
         }}
         children={
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <InputForm
-              label="Descripción"
-              placeholder="Descripción"
-              id="descripcion"
-              required
-              value={form.descripcion}
-              onChange={(e) => setForm({ descripcion: e.target.value })}
-              type="text"
-            />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  resetForm();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Creando..." : "Agregar"}
-              </Button>
+          <FormsModal
+            onSubmit={handleSubmit}
+            isLoading={isCreatingTipoIdentificacion}
+            onCancel={() => {
+              setIsModalOpen(false);
+              resetFormCrear();
+            }}
+            updating={false}
+          >
+            <div className="flex flex-col gap-2">
+              <InputForm
+                label="Descripción"
+                placeholder="Descripción"
+                id="descripcion"
+                required
+                value={formCrear.descripcion || ""}
+                onChange={handleChangeCrear}
+                type="text"
+              />
             </div>
-          </form>
+          </FormsModal>
         }
       />
       <SimpleModal
@@ -171,31 +202,54 @@ function RouteComponent() {
           setIsModalOpenEditar(false);
           resetFormEditar();
         }}
-        children={
-          <form onSubmit={handleSubmitEditar} className="flex flex-col gap-4">
+      >
+        <FormsModal
+          onSubmit={handleSubmitEditar}
+          isLoading={isActualizandoTipoIdentificacion}
+          onCancel={() => {
+            setIsModalOpenEditar(false);
+            resetFormEditar();
+          }}
+          updating={true}
+        >
+          <div className="flex flex-col gap-2">
+            <InputForm
+              label="Descripción"
+              placeholder="Descripción"
+              id="descripcion"
+              required
+              value={formEditar.descripcion || ""}
+              onChange={handleChangeEditar}
+              type="text"
+            />
             <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
               id="estado"
-              value={formEditar.estado.toString()}
+              value={formEditar.estado?.toString() || ""}
               onChange={handleChangeEditar}
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpenEditar(false);
-                  resetFormEditar();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Actualizando..." : "Actualizar"}
-              </Button>
-            </div>
-          </form>
-        }
+          </div>
+        </FormsModal>
+      </SimpleModal>
+
+      <ConfirmarDelete
+        isOpenDelete={isModalOpenEliminar}
+        text="¿Estás seguro de querer eliminar este tipo de identificación?"
+        onClose={() => {
+          setIsModalOpenEliminar(false);
+        }}
+        onDelete={() => {
+          eliminarTipoIdentificacion(
+            { id: selectIdRow as number },
+            {
+              onSettled: () => {
+                setIsModalOpenEliminar(false);
+                setSelectIdRow(null);
+              },
+            },
+          );
+        }}
       />
     </Section>
   );
