@@ -20,7 +20,6 @@ import type {
 import { useForm } from "../../../hooks/useForm";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { InputForm } from "../../../components/common/InputForm";
-import Button from "../../../components/common/Button";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
@@ -38,7 +37,7 @@ function RouteComponent() {
   const [selectIdRow, setSelectIdRow] = useState<number | null>(null);
 
   // Queries y mutaciones
-  const { data: tipoCliente, isLoading } = useTipoCliente();
+  const { data: tipoCliente } = useTipoCliente();
   const { mutate: crearTipoCliente, isPending: isCreatingTipoCliente } =
     useCrearTipoCliente();
   const {

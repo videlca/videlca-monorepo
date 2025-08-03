@@ -51,9 +51,9 @@ export const useUpdateUsuario = (): UseMutationResult<ApiResponse, Error, { id: 
   })
 }
 
-export const useDeleteUsuario = (): UseMutationResult<ApiResponse, Error, number> => {
+export const useDeleteUsuario = (): UseMutationResult<ApiResponse, Error, { id: number }> => {
   return useMutation({
-    mutationFn: (id: number) => deleteUsuario(id),
+    mutationFn: ({ id }: { id: number }) => deleteUsuario(id),
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         queryClient.invalidateQueries({ queryKey: ['usuarios'] })

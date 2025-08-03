@@ -5,7 +5,6 @@ import type { TableType } from "../../../types";
 import {
   CiudadTab,
   DepartamentoTab,
-  PaisTab,
 } from "../../../components/ui/dashboard/ubicaciones";
 import { NavTabs } from "../../../components/ui/common/NavTabs";
 
@@ -19,7 +18,6 @@ function RouteComponent() {
   const tabs = [
     { id: "ciudades" as TableType, label: "Ciudades" },
     { id: "departamentos" as TableType, label: "Departamentos" },
-    // { id: "paises" as TableType, label: "Paises" },
   ];
 
   return (
@@ -32,7 +30,6 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         {activeTab === "ciudades" && <CiudadTab />}
         {activeTab === "departamentos" && <DepartamentoTab />}
-        {/* {activeTab === "paises" && <PaisTab />} */}
       </div>
     </Section>
   );

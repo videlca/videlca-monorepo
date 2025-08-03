@@ -8,6 +8,7 @@ import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import {
   useCreateUsuario,
+  useDeleteUsuario,
   useGetUsuarios,
   useUpdateUsuario,
 } from "../../../api/queryFunctions/usuarios";
@@ -21,6 +22,8 @@ import { useTipoIdentificacionActivo } from "../../../api/queryFunctions/configu
 import { useActiveRoles } from "../../../api/queryFunctions/permisos";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
 
 export const Route = createFileRoute("/dashboard/usuarios/")({
   component: RouteComponent,
@@ -30,6 +33,7 @@ function RouteComponent() {
   // Modales
   const [isModalOpenUsuario, setIsModalOpenUsuario] = useState(false);
   const [isModalEditUsuario, setIsModalEditUsuario] = useState(false);
+  const [isModalOpenEliminar, setIsModalOpenEliminar] = useState(false);
   const [idSelectedUsuario, setIdSelectedUsuario] = useState(0);
   // Queries y Mutations
   const { data: usuarios } = useGetUsuarios();
@@ -37,6 +41,8 @@ function RouteComponent() {
     useCreateUsuario();
   const { mutate: editarUsuario, isPending: isEditingUsuario } =
     useUpdateUsuario();
+  const { mutate: eliminarUsuario, isPending: isDeletingUsuario } =
+    useDeleteUsuario();
 
   const { data: roles } = useActiveRoles();
   const { data: tiposIdentificacion } = useTipoIdentificacionActivo();
@@ -46,7 +52,7 @@ function RouteComponent() {
     form: formUsuario,
     handleChange: handleChangeUsuario,
     handleNumericChange: handleNumericChangeUsuario,
-    setForm: setFormUsuario,
+
     resetForm: resetFormUsuario,
   } = useForm<CreateUserDto>({
     primerNombre: "",
@@ -54,8 +60,7 @@ function RouteComponent() {
     primerApellido: "",
     segundoApellido: "",
     email: "",
-    // TODO: Cambiar por un campo de contraseña o contrasena autogenerada
-    clave: "123Abc!",
+    clave: "",
     numeroIdentificacion: "",
     idTipoIdentificacion: 0,
     idRol: 0,
@@ -63,7 +68,6 @@ function RouteComponent() {
 
   const {
     form: formUsuarioEdit,
-
     handleNumericChange: handleNumericChangeUsuarioEdit,
     handleBooleanChange: handleBooleanChangeUsuarioEdit,
     setForm: setFormUsuarioEdit,
@@ -90,7 +94,7 @@ function RouteComponent() {
       {
         id: idSelectedUsuario,
         data: {
-          estado: Boolean(formUsuarioEdit.estado),
+          estado: String(formUsuarioEdit.estado) === "true",
           idRol: formUsuarioEdit.idRol,
         },
       },
@@ -160,12 +164,16 @@ function RouteComponent() {
               });
             }}
           />
-          <ButtonAction
+          {/* TODO: REvisar eliminar usuario */}
+          {/* <ButtonAction
             Icon={TrashIcon}
             label="Eliminar"
-            onClick={() => console.log(row.original)}
+            onClick={() => {
+              setIsModalOpenEliminar(true);
+              setIdSelectedUsuario(row.original.idUser);
+            }}
             color="red"
-          />
+          /> */}
         </div>
       ),
     },
@@ -202,11 +210,16 @@ function RouteComponent() {
         title="Agregar usuario"
         size="xl"
       >
-        <div className="space-y-4">
-          <form
-            onSubmit={handleSubmitCreateUsuario}
-            className="flex flex-col gap-4"
-          >
+        <FormsModal
+          onSubmit={handleSubmitCreateUsuario}
+          isLoading={isCreatingUsuario}
+          onCancel={() => {
+            setIsModalOpenUsuario(false);
+            resetFormUsuario();
+          }}
+          updating={false}
+        >
+          <div className="flex flex-col gap-2">
             <InputForm
               label="Nombre"
               placeholder="Nombre"
@@ -252,6 +265,15 @@ function RouteComponent() {
               onChange={handleChangeUsuario}
               required
             />
+            <InputForm
+              label="Contraseña"
+              placeholder="Contraseña"
+              type="password"
+              id="clave"
+              value={formUsuario.clave || ""}
+              onChange={handleChangeUsuario}
+              required
+            />
             <InputSelect
               label="Tipo de identificación"
               placeholder="Tipo de identificación"
@@ -293,26 +315,8 @@ function RouteComponent() {
               onChange={handleNumericChangeUsuario}
               required
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpenUsuario(false);
-                  resetFormUsuario();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="w-auto"
-                disabled={isCreatingUsuario}
-              >
-                {isCreatingUsuario ? "Creando..." : "Crear"}
-              </Button>
-            </div>
-          </form>
-        </div>
+          </div>
+        </FormsModal>
       </SimpleModal>
 
       <SimpleModal
@@ -340,11 +344,7 @@ function RouteComponent() {
               label="Rol"
               placeholder="Rol"
               id="idRol"
-              value={
-                formUsuarioEdit.idRol === undefined
-                  ? ""
-                  : formUsuarioEdit.idRol.toString()
-              }
+              value={formUsuarioEdit.idRol?.toString() || ""}
               options={
                 roles?.data?.map((role) => ({
                   id: role.id,
@@ -376,6 +376,23 @@ function RouteComponent() {
           </form>
         </div>
       </SimpleModal>
+
+      <ConfirmarDelete
+        isOpenDelete={isModalOpenEliminar}
+        text="¿Estás seguro de querer eliminar este usuario? Se eliminarán todos los datos asociados a este usuario."
+        onDelete={() => {
+          eliminarUsuario(
+            { id: idSelectedUsuario },
+            {
+              onSettled: () => {
+                setIsModalOpenEliminar(false);
+                setIdSelectedUsuario(0);
+              },
+            },
+          );
+        }}
+        onClose={() => setIsModalOpenEliminar(false)}
+      />
     </Section>
   );
 }
