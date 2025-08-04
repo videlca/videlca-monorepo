@@ -10,6 +10,7 @@ import {
   getLocacionById,
   getLocaciones,
   getLocacionesActivo,
+  getLocacionesByCliente,
   updateLocacion,
 } from "../../functions/clientes/locaciones";
 import type { ApiResponse } from "../../types";
@@ -28,6 +29,14 @@ export const useLocaciones = (): UseQueryResult<
   });
 };
 
+export const useLocacionesByCliente = (
+  idCliente: number,
+): UseQueryResult<ApiResponse<Locacion[]>, Error> => {
+  return useQuery({
+    queryKey: ["locaciones-by-cliente", idCliente],
+    queryFn: () => getLocacionesByCliente(idCliente, { pagination: false }),
+  });
+};
 export const useLocacionById = (): UseMutationResult<
   ApiResponse<Locacion | null>,
   Error,

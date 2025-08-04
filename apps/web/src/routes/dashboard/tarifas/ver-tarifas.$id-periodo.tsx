@@ -8,8 +8,12 @@ import { ButtonAction } from "../../../components/common/ButtonAction";
 import Table from "../../../components/common/Table";
 import {
   ArrowLeftIcon,
+  Calculator,
+  Calendar,
+  DollarSign,
   EyeIcon,
   PencilIcon,
+  Settings,
   SettingsIcon,
   TrashIcon,
 } from "lucide-react";
@@ -30,9 +34,8 @@ import { useForm } from "../../../hooks/useForm";
 import type { UpdateTarifaDto } from "../../../api/dtos";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputPrice } from "../../../components/common/InputPrice";
-import Button from "../../../components/common/Button";
-import { InputForm } from "../../../components/common/InputForm";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
 
 export const Route = createFileRoute(
   "/dashboard/tarifas/ver-tarifas/$id-periodo",
@@ -91,6 +94,22 @@ function RouteComponent() {
       },
     );
   };
+  const calcularPrecios = (precioBase: number) => {
+    const iva = precioBase * 0.019; // IVA del 19%
+    const precioTotal = precioBase + iva;
+    return { iva, precioTotal };
+  };
+
+  const handleChangeUpdateTarifaPrecio = (value: number) => {
+    const { iva, precioTotal } = calcularPrecios(Number(value));
+
+    setUpdateTarifaForm({
+      ...updateTarifaForm,
+      precioSinIva: value,
+      iva: iva,
+      precioTotal: precioTotal,
+    });
+  };
 
   const columns: ColumnDef<Tarifa>[] = [
     {
@@ -127,8 +146,12 @@ function RouteComponent() {
       accessorKey: "precioSinIva",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-semibold">
-            ${row.original.precioSinIva.toLocaleString("es-ES")}
+          <span className="text-center text-base font-medium text-green-700">
+            $
+            {row.original.precioSinIva?.toLocaleString("es-CO", {
+              style: "currency",
+              currency: "COP",
+            })}
           </span>
         );
       },
@@ -138,8 +161,12 @@ function RouteComponent() {
       accessorKey: "iva",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-semibold">
-            ${row.original.iva.toLocaleString("es-ES")}
+          <span className="text-center text-base font-medium text-green-700">
+            $
+            {row.original.iva?.toLocaleString("es-CO", {
+              style: "currency",
+              currency: "COP",
+            })}
           </span>
         );
       },
@@ -149,8 +176,12 @@ function RouteComponent() {
       accessorKey: "precioTotal",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-semibold">
-            ${row.original.precioTotal.toLocaleString("es-ES")}
+          <span className="text-center text-base font-medium text-green-700">
+            $
+            {row.original.precioTotal?.toLocaleString("es-CO", {
+              style: "currency",
+              currency: "COP",
+            })}
           </span>
         );
       },
@@ -183,6 +214,8 @@ function RouteComponent() {
               label="Ver"
               onClick={() => {
                 setIsOpenSeeTarifa(true);
+                setTarifaSelected(row.original);
+                console.log(row.original);
               }}
             />
             <ButtonAction
@@ -276,20 +309,209 @@ function RouteComponent() {
       <SimpleModal
         isOpen={isOpenSeeTarifa}
         onClose={() => setIsOpenSeeTarifa(false)}
-        title="Ver Tarifa"
-        size="xl"
+        title="Ver detalles de la tarifa"
+        size="2xl"
       >
-        <div className="flex flex-col gap-4"></div>
+        <div className="flex-1 space-y-6 overflow-y-auto p-6">
+          {/* Información General */}
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <Calculator className="h-5 w-5 text-blue-600" />
+              Información General
+            </h3>
+            <div className="grid grid-cols-1 gap-4 text-sm text-gray-700 md:grid-cols-2">
+              <div>
+                <p>
+                  <span className="font-medium">ID Tarifa:</span>{" "}
+                  {tarifaSelected?.idTarifa}
+                </p>
+                <p>
+                  <span className="font-medium">Tipo de Tarifa:</span>{" "}
+                  {tarifaSelected?.idTipoTarifa.nombre}
+                </p>
+                <p>
+                  <span className="font-medium">Estado:</span>{" "}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      tarifaSelected?.estado
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {tarifaSelected?.estado ? "Activa" : "Inactiva"}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p>
+                  <span className="font-medium">Fecha Creación:</span>{" "}
+                  {new Date(tarifaSelected?.fechaCreacion || "").toLocaleString(
+                    "es-ES",
+                  )}
+                </p>
+                <p>
+                  <span className="font-medium">Última Actualización:</span>{" "}
+                  {new Date(
+                    tarifaSelected?.fechaActualizacion || "",
+                  ).toLocaleString("es-ES")}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Información del Periodo */}
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <Calendar className="h-5 w-5 text-blue-600" />
+              Periodo
+            </h3>
+            <div className="grid grid-cols-1 gap-4 text-sm text-gray-700 md:grid-cols-2">
+              <div>
+                <p>
+                  <span className="font-medium">Nombre:</span>{" "}
+                  {tarifaSelected?.idPeriodo.nombre}
+                </p>
+                <p>
+                  <span className="font-medium">Fecha Inicio:</span>{" "}
+                  {new Date(
+                    tarifaSelected?.idPeriodo.fechaInicio || "",
+                  ).toLocaleDateString("es-ES")}
+                </p>
+                <p>
+                  <span className="font-medium">Fecha Fin:</span>{" "}
+                  {new Date(
+                    tarifaSelected?.idPeriodo.fechaFin || "",
+                  ).toLocaleDateString("es-ES")}
+                </p>
+              </div>
+              <div>
+                <p>
+                  <span className="font-medium">Mes Inicio:</span>{" "}
+                  {tarifaSelected?.idPeriodo.mesInicio}/
+                  {tarifaSelected?.idPeriodo.anioInicio}
+                </p>
+                <p>
+                  <span className="font-medium">Mes Fin:</span>{" "}
+                  {tarifaSelected?.idPeriodo.mesFin}/
+                  {tarifaSelected?.idPeriodo.anioFin}
+                </p>
+                <p>
+                  <span className="font-medium">Activo para Facturación:</span>{" "}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      tarifaSelected?.idPeriodo.periodoActivoFacturacion
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {tarifaSelected?.idPeriodo.periodoActivoFacturacion
+                      ? "Sí"
+                      : "No"}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Información del Servicio */}
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <Settings className="h-5 w-5 text-blue-600" />
+              Servicio
+            </h3>
+            <div className="grid grid-cols-1 gap-4 text-sm text-gray-700 md:grid-cols-2">
+              <div>
+                <p>
+                  <span className="font-medium">Código:</span>{" "}
+                  {tarifaSelected?.idServicio.codigo}
+                </p>
+                <p>
+                  <span className="font-medium">Descripción:</span>{" "}
+                  {tarifaSelected?.idServicio.descripcion}
+                </p>
+                <p>
+                  <span className="font-medium">Tipo de Servicio:</span>{" "}
+                  {tarifaSelected?.idServicio.idTipoServicio?.descripcion}
+                </p>
+                <p>
+                  <span className="font-medium">Tipo de Duración:</span>{" "}
+                  {tarifaSelected?.idServicio.idTipoDuracion?.descripcion}
+                </p>
+              </div>
+              <div>
+                <p>
+                  <span className="font-medium">Tipo de Horario:</span>{" "}
+                  {
+                    tarifaSelected?.idServicio.idTipoHorarioDescripcion
+                      ?.descripcion
+                  }
+                </p>
+                <p>
+                  <span className="font-medium">Estado del Servicio:</span>{" "}
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      tarifaSelected?.idServicio.estado
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {tarifaSelected?.idServicio.estado ? "Activo" : "Inactivo"}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Información de Precios */}
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <DollarSign className="h-5 w-5 text-blue-600" />
+              Precios
+            </h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <p className="text-sm font-medium text-blue-900">
+                  Precio Sin IVA
+                </p>
+                <p className="text-2xl font-bold whitespace-nowrap text-blue-600">
+                  $ {tarifaSelected?.precioSinIva?.toLocaleString("es-ES")}
+                </p>
+              </div>
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <p className="text-sm font-medium text-blue-900">IVA (19%)</p>
+                <p className="text-2xl font-bold whitespace-nowrap text-blue-600">
+                  $ {tarifaSelected?.iva?.toLocaleString("es-ES")}
+                </p>
+              </div>
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                <p className="text-sm font-medium text-green-900">
+                  Precio Total
+                </p>
+                <p className="text-2xl font-bold whitespace-nowrap text-green-600">
+                  $ {tarifaSelected?.precioTotal?.toLocaleString("es-ES")}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </SimpleModal>
 
       <SimpleModal
         isOpen={isOpenEditTarifa}
-        onClose={() => setIsOpenEditTarifa(false)}
+        onClose={() => {
+          setIsOpenEditTarifa(false);
+          setTarifaSelected(null);
+        }}
         title="Editar Tarifa"
         size="xl"
       >
-        <form
-          className="flex flex-col gap-4"
+        <FormsModal
+          updating={true}
+          onCancel={() => {
+            setIsOpenEditTarifa(false);
+            setTarifaSelected(null);
+          }}
+          isLoading={isLoadingActualizarTarifa}
           onSubmit={handleSubmitUpdateTarifa}
         >
           <div className="flex-1 overflow-y-auto">
@@ -319,19 +541,6 @@ function RouteComponent() {
                   onChange={handleChangeUpdateTarifa}
                   placeholder="Seleccione un estado"
                 />
-
-                {/* <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="estado"
-                        checked={estado}
-                        onChange={(e) => setEstado(e.target.checked)}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <label htmlFor="estado" className="text-sm text-gray-700">
-                        Tarifa Activa
-                    </label>
-                  </div> */}
               </div>
 
               {/* Información de Precios */}
@@ -339,50 +548,30 @@ function RouteComponent() {
                 <h3 className="border-b pb-2 text-lg font-medium text-gray-900">
                   Información de Precios
                 </h3>
-                <InputForm
-                  label="Precio sin IVA"
-                  id="precioSinIva"
+                <InputPrice
+                  size="full"
+                  label="Precio Base:"
                   value={updateTarifaForm.precioSinIva?.toString() || ""}
-                  onChange={handleChangeUpdateTarifa}
-                  type="number"
-                  placeholder="0.00"
-                  required={false}
+                  onChange={(e) => handleChangeUpdateTarifaPrecio(e)}
                 />
-                <InputForm
-                  label="IVA"
-                  id="iva"
+                <InputPrice
+                  size="full"
+                  label="Precio con IVA:"
                   value={updateTarifaForm.iva?.toString() || ""}
-                  onChange={handleChangeUpdateTarifa}
-                  type="number"
-                  placeholder="0.00"
-                  required={false}
+                  disabled
+                  readOnly
                 />
-                <InputForm
-                  label="Precio total"
-                  id="precioTotal"
+                <InputPrice
+                  size="full"
+                  label="Precio Total:"
                   value={updateTarifaForm.precioTotal?.toString() || ""}
-                  onChange={handleChangeUpdateTarifa}
-                  type="number"
-                  placeholder="0.00"
-                  required={false}
+                  disabled
+                  readOnly
                 />
               </div>
             </div>
           </div>
-          <div className="flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenEditTarifa(false);
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoadingActualizarTarifa ? "Actualizando..." : "Actualizar"}
-            </Button>
-          </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
 
       <ConfirmarDelete

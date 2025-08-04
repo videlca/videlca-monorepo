@@ -24,6 +24,8 @@ import { InputSelect } from "../../../components/common/InputSelect";
 import { InputForm } from "../../../components/common/InputForm";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { CheckboxForm } from "../../../components/common/CheckboxForm";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
+import { toast } from "sonner";
 
 export const Route = createFileRoute(
   "/dashboard/servicios/configurar-horarios",
@@ -151,7 +153,10 @@ function RouteComponent() {
           <ButtonAction
             Icon={PlusIcon}
             label="Agregar Horario"
-            onClick={() => setIsOpenAddTipoHorario(true)}
+            onClick={() => {
+              setIsOpenAddTipoHorario(true);
+              setIsIndefinido(false);
+            }}
           />
         </div>
         <Table
@@ -170,10 +175,19 @@ function RouteComponent() {
         }}
         title="Agregar Horario"
       >
-        <form
-          className="flex flex-col gap-4"
+        <FormsModal
           onSubmit={(e) => {
             e.preventDefault();
+            if (formAddTipoHorario.fechaVigenciaFin === "") {
+              toast.error("La fecha de vigencia de fin es requerida");
+              return;
+            }
+
+            if (formAddTipoHorario.fechaVigenciaInicio === "") {
+              toast.error("La fecha de vigencia de inicio es requerida");
+              return;
+            }
+
             const formattedData = {
               ...formAddTipoHorario,
               horaInicio:
@@ -203,91 +217,85 @@ function RouteComponent() {
               },
             });
           }}
+          isLoading={isLoadingCrearTipoHorario}
+          onCancel={() => {
+            setIsOpenAddTipoHorario(false);
+            resetFormAddTipoHorario();
+          }}
+          updating={false}
         >
-          <InputSelect
-            label="Tipo de horario"
-            placeholder="Selecciona un tipo de horario"
-            id="idTipoHorarioDescripcion"
-            options={
-              tipoHorarioDescripcionDiurnoNocturno?.data?.map((tipo) => ({
-                id: tipo.idTipoHorarioDescripcion,
-                descripcion: tipo.nombre,
-              })) || []
-            }
-            value={formAddTipoHorario.idTipoHorarioDescripcion}
-            onChange={handleChangeAddTipoHorario}
-            required={true}
-          />
-          <InputForm
-            label="Hora de inicio"
-            placeholder="Selecciona una hora de inicio"
-            id="horaInicio"
-            value={formAddTipoHorario.horaInicio}
-            onChange={(e) => {
-              handleChangeAddTipoHorario(e);
-              console.log(e.target.value);
-            }}
-            required={true}
-            type="time"
-          />
-          <InputForm
-            label="Hora de fin"
-            placeholder="Selecciona una hora de fin"
-            id="horaFin"
-            value={formAddTipoHorario.horaFin}
-            onChange={(e) => {
-              handleChangeAddTipoHorario(e);
-              console.log(e.target.value);
-            }}
-            required={true}
-            type="time"
-          />
-          <InputForm
-            label="Fecha de vigencia de inicio"
-            placeholder="Selecciona una fecha de vigencia de inicio"
-            id="fechaVigenciaInicio"
-            value={formAddTipoHorario.fechaVigenciaInicio}
-            onChange={handleChangeAddTipoHorario}
-            required={true}
-            type="date"
-          />
-          <InputForm
-            label="Fecha de vigencia de fin"
-            placeholder="Selecciona una fecha de vigencia de fin"
-            id="fechaVigenciaFin"
-            value={formAddTipoHorario.fechaVigenciaFin || ""}
-            onChange={handleChangeAddTipoHorario}
-            required={false}
-            disabled={isIndefinido}
-            type="date"
-          />
-          <CheckboxForm
-            label="Indefinido (sin fecha de vigencia de fin)"
-            id="indefinido"
-            checked={isIndefinido}
-            onChange={(e) => {
-              setIsIndefinido(e.target.checked);
-              if (e.target.checked) {
-                setIsIndefinido(true);
-                formAddTipoHorario.fechaVigenciaFin = null;
+          <div className="flex flex-col gap-4">
+            <InputSelect
+              label="Tipo de horario"
+              placeholder="Selecciona un tipo de horario"
+              id="idTipoHorarioDescripcion"
+              options={
+                tipoHorarioDescripcionDiurnoNocturno?.data?.map((tipo) => ({
+                  id: tipo.idTipoHorarioDescripcion,
+                  descripcion: tipo.nombre,
+                })) || []
               }
-            }}
-          />
-          <div className="flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenAddTipoHorario(false);
-                resetFormAddTipoHorario();
+              value={formAddTipoHorario.idTipoHorarioDescripcion}
+              onChange={handleChangeAddTipoHorario}
+              required={true}
+            />
+            <InputForm
+              label="Hora de inicio"
+              placeholder="Selecciona una hora de inicio"
+              id="horaInicio"
+              value={formAddTipoHorario.horaInicio}
+              onChange={(e) => {
+                handleChangeAddTipoHorario(e);
+                console.log(e.target.value);
               }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoadingCrearTipoHorario ? "Creando..." : "Crear"}
-            </Button>
+              required={true}
+              type="time"
+            />
+            <InputForm
+              label="Hora de fin"
+              placeholder="Selecciona una hora de fin"
+              id="horaFin"
+              value={formAddTipoHorario.horaFin}
+              onChange={(e) => {
+                handleChangeAddTipoHorario(e);
+                console.log(e.target.value);
+              }}
+              required={true}
+              type="time"
+            />
+            <InputForm
+              label="Fecha de vigencia de inicio"
+              placeholder="Selecciona una fecha de vigencia de inicio"
+              id="fechaVigenciaInicio"
+              value={formAddTipoHorario.fechaVigenciaInicio}
+              onChange={handleChangeAddTipoHorario}
+              required={true}
+              type="date"
+            />
+            <InputForm
+              label="Fecha de vigencia de fin"
+              placeholder="Selecciona una fecha de vigencia de fin"
+              id="fechaVigenciaFin"
+              value={formAddTipoHorario.fechaVigenciaFin || ""}
+              onChange={handleChangeAddTipoHorario}
+              required={false}
+              disabled={isIndefinido}
+              type="date"
+            />
+            <CheckboxForm
+              label="Indefinido (sin fecha de vigencia de fin)"
+              id="indefinido"
+              checked={isIndefinido}
+              onChange={(e) => {
+                setIsIndefinido(e.target.checked);
+                if (e.target.checked) {
+                  setIsIndefinido(true);
+                  formAddTipoHorario.fechaVigenciaFin = null;
+                }
+              }}
+            />
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
 
       <SimpleModal
@@ -298,11 +306,21 @@ function RouteComponent() {
         }}
         title="Editar Horario"
       >
-        <form
-          className="flex flex-col gap-4"
+        <FormsModal
           onSubmit={(e) => {
             e.preventDefault();
+            if (
+              formEditTipoHorario.fechaVigenciaFin === null &&
+              !isIndefinido
+            ) {
+              toast.error("La fecha de vigencia de fin es requerida");
+              return;
+            }
 
+            if (formEditTipoHorario.fechaVigenciaInicio === "") {
+              toast.error("La fecha de vigencia de inicio es requerida");
+              return;
+            }
             const formattedData = {
               ...formEditTipoHorario,
               horaInicio:
@@ -340,85 +358,79 @@ function RouteComponent() {
               },
             );
           }}
+          isLoading={isLoadingEditarTipoHorario}
+          onCancel={() => {
+            setIsOpenEditTipoHorario(false);
+            resetFormEditTipoHorario();
+          }}
+          updating={true}
         >
-          <InputSelect
-            label="Tipo de horario"
-            placeholder="Selecciona un tipo de horario"
-            id="idTipoHorarioDescripcion"
-            options={
-              tipoHorarioDescripcionDiurnoNocturno?.data?.map((tipo) => ({
-                id: tipo.idTipoHorarioDescripcion,
-                descripcion: tipo.nombre,
-              })) || []
-            }
-            value={formEditTipoHorario.idTipoHorarioDescripcion || 0}
-            onChange={handleChangeEditTipoHorario}
-            required={true}
-          />
-          <InputForm
-            label="Hora de inicio"
-            placeholder="Selecciona una hora de inicio"
-            id="horaInicio"
-            value={formEditTipoHorario.horaInicio || ""}
-            onChange={handleChangeEditTipoHorario}
-            required={true}
-            type="time"
-          />
-          <InputForm
-            label="Hora de fin"
-            placeholder="Selecciona una hora de fin"
-            id="horaFin"
-            value={formEditTipoHorario.horaFin || ""}
-            onChange={handleChangeEditTipoHorario}
-            required={true}
-            type="time"
-          />
-          <InputForm
-            label="Fecha de vigencia de inicio"
-            placeholder="Selecciona una fecha de vigencia de inicio"
-            id="fechaVigenciaInicio"
-            value={formEditTipoHorario.fechaVigenciaInicio || ""}
-            onChange={handleChangeEditTipoHorario}
-            required={true}
-            type="date"
-          />
-          <InputForm
-            label="Fecha de vigencia de fin"
-            placeholder="Selecciona una fecha de vigencia de fin"
-            id="fechaVigenciaFin"
-            value={formEditTipoHorario.fechaVigenciaFin || ""}
-            onChange={handleChangeEditTipoHorario}
-            required={false}
-            disabled={isIndefinido}
-            type="date"
-          />
-          <CheckboxForm
-            label="Indefinido (sin fecha de vigencia de fin)"
-            id="indefinido"
-            checked={isIndefinido}
-            onChange={(e) => {
-              setIsIndefinido(e.target.checked);
-              if (e.target.checked) {
-                setIsIndefinido(true);
-                formEditTipoHorario.fechaVigenciaFin = null;
+          <div className="flex flex-col gap-4">
+            <InputSelect
+              label="Tipo de horario"
+              placeholder="Selecciona un tipo de horario"
+              id="idTipoHorarioDescripcion"
+              options={
+                tipoHorarioDescripcionDiurnoNocturno?.data?.map((tipo) => ({
+                  id: tipo.idTipoHorarioDescripcion,
+                  descripcion: tipo.nombre,
+                })) || []
               }
-            }}
-          />
-          <div className="flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenEditTipoHorario(false);
-                resetFormEditTipoHorario();
+              value={formEditTipoHorario.idTipoHorarioDescripcion || 0}
+              onChange={handleChangeEditTipoHorario}
+              required={true}
+            />
+            <InputForm
+              label="Hora de inicio"
+              placeholder="Selecciona una hora de inicio"
+              id="horaInicio"
+              value={formEditTipoHorario.horaInicio || ""}
+              onChange={handleChangeEditTipoHorario}
+              required={true}
+              type="time"
+            />
+            <InputForm
+              label="Hora de fin"
+              placeholder="Selecciona una hora de fin"
+              id="horaFin"
+              value={formEditTipoHorario.horaFin || ""}
+              onChange={handleChangeEditTipoHorario}
+              required={true}
+              type="time"
+            />
+            <InputForm
+              label="Fecha de vigencia de inicio"
+              placeholder="Selecciona una fecha de vigencia de inicio"
+              id="fechaVigenciaInicio"
+              value={formEditTipoHorario.fechaVigenciaInicio || ""}
+              onChange={handleChangeEditTipoHorario}
+              required={true}
+              type="date"
+            />
+            <InputForm
+              label="Fecha de vigencia de fin"
+              placeholder="Selecciona una fecha de vigencia de fin"
+              id="fechaVigenciaFin"
+              value={formEditTipoHorario.fechaVigenciaFin || ""}
+              onChange={handleChangeEditTipoHorario}
+              required={false}
+              disabled={isIndefinido}
+              type="date"
+            />
+            <CheckboxForm
+              label="Indefinido (sin fecha de vigencia de fin)"
+              id="indefinido"
+              checked={isIndefinido}
+              onChange={(e) => {
+                setIsIndefinido(e.target.checked);
+                if (e.target.checked) {
+                  setIsIndefinido(true);
+                  formEditTipoHorario.fechaVigenciaFin = null;
+                }
               }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoadingEditarTipoHorario ? "Editando..." : "Editar"}
-            </Button>
+            />
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
 
       <ConfirmarDelete

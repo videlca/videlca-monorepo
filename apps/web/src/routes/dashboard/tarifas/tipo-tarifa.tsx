@@ -13,8 +13,8 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useForm } from "../../../hooks/useForm";
 import type { UpdateTipoTarifaDto } from "../../../api/dtos";
 import { InputForm } from "../../../components/common/InputForm";
-import Button from "../../../components/common/Button";
 import { Section } from "../../../components/ui/dashboard/Section";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
 
 export const Route = createFileRoute("/dashboard/tarifas/tipo-tarifa")({
   component: RouteComponent,
@@ -101,7 +101,7 @@ function RouteComponent() {
         onClose={() => setIsOpenEditModal(false)}
         title="Editar tipo de tarifa"
       >
-        <form
+        <FormsModal
           onSubmit={(e) => {
             e.preventDefault();
             actualizarTipoTarifa(
@@ -118,32 +118,26 @@ function RouteComponent() {
               },
             );
           }}
-          className="flex flex-col gap-4"
+          isLoading={isLoading}
+          onCancel={() => {
+            setIsOpenEditModal(false);
+            resetFormTarifaEditar();
+            setEditingRow(null);
+          }}
+          updating={true}
         >
-          <InputForm
-            label="Cantidad de tiempo"
-            id="cantidadTiempo"
-            type="number"
-            value={formTarifaEditar.cantidadTiempo.toString()}
-            onChange={handleChangeTarifaEditar}
-            placeholder="Cantidad de tiempo"
-            required={true}
-          />
-          <div className="flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenEditModal(false);
-                resetFormTarifaEditar();
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoading ? "Actualizando..." : "Actualizar"}
-            </Button>
+          <div className="flex flex-col gap-4">
+            <InputForm
+              label="Cantidad de tiempo"
+              id="cantidadTiempo"
+              type="number"
+              value={formTarifaEditar.cantidadTiempo.toString()}
+              onChange={handleChangeTarifaEditar}
+              placeholder="Cantidad de tiempo"
+              required={true}
+            />
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
     </Section>
   );

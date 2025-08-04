@@ -37,10 +37,7 @@ export const useClienteById = (): UseMutationResult<
     mutationFn: (id: number) => getClienteById(id),
     onSuccess: (data, id) => {
       if (data.status === 200 || data.status === 201) {
-        queryClient.setQueryData(["cliente", id], data);
-        toast.success("Cliente obtenido exitosamente", {
-          description: "El cliente ha sido obtenido correctamente",
-        });
+        queryClient.setQueryData(["cliente", id], data.data);
       } else {
         throw new Error(data.message || "Error al obtener cliente");
       }

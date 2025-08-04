@@ -22,8 +22,8 @@ import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { InputForm } from "../../../components/common/InputForm";
 import { CheckboxForm } from "../../../components/common/CheckboxForm";
-import Button from "../../../components/common/Button";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
 
 export const Route = createFileRoute("/dashboard/servicios/tipo-servicio")({
   component: RouteComponent,
@@ -109,6 +109,7 @@ function RouteComponent() {
                 formEditTipoServicio.descripcion = row.original.descripcion;
                 formEditTipoServicio.requierePersonal =
                   row.original.requierePersonal;
+                formEditTipoServicio.estado = row.original.estado;
               }}
             />
             <ButtonAction
@@ -151,7 +152,7 @@ function RouteComponent() {
         }}
         title="Agregar Tipo de Servicio"
       >
-        <form
+        <FormsModal
           onSubmit={(e) => {
             e.preventDefault();
             crearTipoServicio(formAddTipoServicio, {
@@ -161,48 +162,41 @@ function RouteComponent() {
               },
             });
           }}
-          className="flex flex-col gap-4"
+          isLoading={isLoadingCrearTipoServicio}
+          onCancel={() => {
+            setIsOpenAddTipoServicio(false);
+            resetFormAddTipoServicio();
+          }}
+          updating={false}
         >
-          <InputForm
-            label="Nombre"
-            id="nombre"
-            type="text"
-            required
-            placeholder="Nombre"
-            value={formAddTipoServicio.nombre}
-            onChange={handleChangeAddTipoServicio}
-          />
-          <InputForm
-            label="Descripción"
-            id="descripcion"
-            type="text"
-            required
-            placeholder="Descripción"
-            value={formAddTipoServicio.descripcion}
-            onChange={handleChangeAddTipoServicio}
-          />
-          <CheckboxForm
-            label="Requiere personal"
-            id="requierePersonal"
-            required={false}
-            checked={formAddTipoServicio.requierePersonal}
-            onChange={handleChangeAddTipoServicio}
-          />
-          <div className="flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenAddTipoServicio(false);
-                resetFormAddTipoServicio();
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoadingCrearTipoServicio ? "Creando..." : "Crear"}
-            </Button>
+          <div className="flex flex-col gap-2">
+            <InputForm
+              label="Nombre"
+              id="nombre"
+              type="text"
+              required
+              placeholder="Nombre"
+              value={formAddTipoServicio.nombre}
+              onChange={handleChangeAddTipoServicio}
+            />
+            <InputForm
+              label="Descripción"
+              id="descripcion"
+              type="text"
+              required
+              placeholder="Descripción"
+              value={formAddTipoServicio.descripcion}
+              onChange={handleChangeAddTipoServicio}
+            />
+            <CheckboxForm
+              label="Requiere personal"
+              id="requierePersonal"
+              required={false}
+              checked={formAddTipoServicio.requierePersonal}
+              onChange={handleChangeAddTipoServicio}
+            />
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
 
       <SimpleModal
@@ -210,7 +204,7 @@ function RouteComponent() {
         onClose={() => setIsOpenEditTipoServicio(false)}
         title="Editar Tipo de Servicio"
       >
-        <form
+        <FormsModal
           onSubmit={(e) => {
             e.preventDefault();
             editarTipoServicio(
@@ -226,55 +220,48 @@ function RouteComponent() {
               },
             );
           }}
-          className="flex flex-col gap-4"
+          isLoading={isLoadingEditarTipoServicio}
+          onCancel={() => {
+            setIsOpenEditTipoServicio(false);
+            resetFormEditTipoServicio();
+          }}
+          updating={true}
         >
-          <InputForm
-            label="Nombre"
-            id="nombre"
-            type="text"
-            required={false}
-            placeholder="Nombre"
-            value={formEditTipoServicio.nombre || ""}
-            onChange={handleChangeEditTipoServicio}
-          />
-          <InputForm
-            label="Descripción"
-            id="descripcion"
-            type="text"
-            required={false}
-            placeholder="Descripción"
-            value={formEditTipoServicio.descripcion || ""}
-            onChange={handleChangeEditTipoServicio}
-          />
-          <InputSelectStateBoolean
-            label="Estado"
-            id="estado"
-            placeholder="Estado"
-            value={formEditTipoServicio.estado?.toString() || ""}
-            onChange={handleBooleanChangeEditTipoServicio}
-          />
-          <CheckboxForm
-            label="Requiere personal"
-            id="requierePersonal"
-            required={false}
-            checked={formEditTipoServicio.requierePersonal ?? false}
-            onChange={handleChangeEditTipoServicio}
-          />
-          <div className="flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenEditTipoServicio(false);
-                resetFormEditTipoServicio();
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoadingEditarTipoServicio ? "Editando..." : "Editar"}
-            </Button>
+          <div className="flex flex-col gap-2">
+            <InputForm
+              label="Nombre"
+              id="nombre"
+              type="text"
+              required={false}
+              placeholder="Nombre"
+              value={formEditTipoServicio.nombre || ""}
+              onChange={handleChangeEditTipoServicio}
+            />
+            <InputForm
+              label="Descripción"
+              id="descripcion"
+              type="text"
+              required={false}
+              placeholder="Descripción"
+              value={formEditTipoServicio.descripcion || ""}
+              onChange={handleChangeEditTipoServicio}
+            />
+            <InputSelectStateBoolean
+              label="Estado"
+              id="estado"
+              placeholder="Estado"
+              value={formEditTipoServicio.estado?.toString() || ""}
+              onChange={handleBooleanChangeEditTipoServicio}
+            />
+            <CheckboxForm
+              label="Requiere personal"
+              id="requierePersonal"
+              required={false}
+              checked={formEditTipoServicio.requierePersonal ?? false}
+              onChange={handleChangeEditTipoServicio}
+            />
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
       <ConfirmarDelete
         isOpenDelete={isOpenDeleteTipoServicio}
@@ -287,7 +274,10 @@ function RouteComponent() {
             },
           });
         }}
-        onClose={() => setIsOpenDeleteTipoServicio(false)}
+        onClose={() => {
+          setIsOpenDeleteTipoServicio(false);
+          setIdTipoServicio(0);
+        }}
       />
     </Section>
   );

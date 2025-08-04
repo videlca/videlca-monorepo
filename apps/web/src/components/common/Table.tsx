@@ -187,7 +187,7 @@ const Table = <TData, TValues>({
       )}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="w-full">
+        <table className="mr-10">
           {showHeader && (
             <thead className="bg-gray-50">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -233,7 +233,9 @@ const Table = <TData, TValues>({
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="max-w-xs px-6 py-4 text-center text-sm break-words"
+                      className={`px-6 py-4 text-center text-sm break-words ${
+                        !cell.column.getIsLastColumn() ? "w-md" : "w-fit"
+                      }`}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

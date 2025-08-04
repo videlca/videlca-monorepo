@@ -4,7 +4,7 @@ import type { Usuario } from "../../../types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PencilIcon, PlusIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import {
   useCreateUsuario,
@@ -17,7 +17,6 @@ import { useForm } from "../../../hooks/useForm";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
 import { InputForm } from "../../../components/common/InputForm";
-import Button from "../../../components/common/Button";
 import { useTipoIdentificacionActivo } from "../../../api/queryFunctions/configuracion/tipo-identificacion";
 import { useActiveRoles } from "../../../api/queryFunctions/permisos";
 import { InputSelect } from "../../../components/common/InputSelect";
@@ -41,8 +40,7 @@ function RouteComponent() {
     useCreateUsuario();
   const { mutate: editarUsuario, isPending: isEditingUsuario } =
     useUpdateUsuario();
-  const { mutate: eliminarUsuario, isPending: isDeletingUsuario } =
-    useDeleteUsuario();
+  const { mutate: eliminarUsuario } = useDeleteUsuario();
 
   const { data: roles } = useActiveRoles();
   const { data: tiposIdentificacion } = useTipoIdentificacionActivo();
@@ -328,53 +326,37 @@ function RouteComponent() {
         title="Editar usuario"
         size="xl"
       >
-        <div className="space-y-4">
-          <form
-            onSubmit={handleSubmitEditUsuario}
-            className="flex flex-col gap-4"
-          >
-            <InputSelectStateBoolean
-              label="Estado"
-              placeholder="Estado"
-              id="estado"
-              value={formUsuarioEdit.estado?.toString() || ""}
-              onChange={handleBooleanChangeUsuarioEdit}
-            />
-            <InputSelect
-              label="Rol"
-              placeholder="Rol"
-              id="idRol"
-              value={formUsuarioEdit.idRol?.toString() || ""}
-              options={
-                roles?.data?.map((role) => ({
-                  id: role.id,
-                  descripcion: role.nombreRol,
-                })) || []
-              }
-              onChange={handleNumericChangeUsuarioEdit}
-              required
-            />
-
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalEditUsuario(false);
-                  resetFormUsuarioEdit();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="w-auto"
-                disabled={isEditingUsuario}
-              >
-                {isEditingUsuario ? "Editando..." : "Editar"}
-              </Button>
-            </div>
-          </form>
-        </div>
+        <FormsModal
+          onSubmit={handleSubmitEditUsuario}
+          isLoading={isEditingUsuario}
+          onCancel={() => {
+            setIsModalEditUsuario(false);
+            resetFormUsuarioEdit();
+          }}
+          updating={true}
+        >
+          <InputSelectStateBoolean
+            label="Estado"
+            placeholder="Estado"
+            id="estado"
+            value={formUsuarioEdit.estado?.toString() || ""}
+            onChange={handleBooleanChangeUsuarioEdit}
+          />
+          <InputSelect
+            label="Rol"
+            placeholder="Rol"
+            id="idRol"
+            value={formUsuarioEdit.idRol?.toString() || ""}
+            options={
+              roles?.data?.map((role) => ({
+                id: role.id,
+                descripcion: role.nombreRol,
+              })) || []
+            }
+            onChange={handleNumericChangeUsuarioEdit}
+            required
+          />
+        </FormsModal>
       </SimpleModal>
 
       <ConfirmarDelete

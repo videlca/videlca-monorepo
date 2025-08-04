@@ -7,9 +7,7 @@ import { ButtonAction } from "../../../components/common/ButtonAction";
 import { Section } from "../../../components/ui/dashboard/Section";
 import {
   ArrowLeftIcon,
-  Calculator,
   ChevronDown,
-  Clock,
   PlusIcon,
   Search,
   UserCheck,
@@ -17,7 +15,6 @@ import {
 } from "lucide-react";
 import { usePeriodoById } from "../../../api/queryFunctions/tarifas/periodo";
 import {
-  useServicios,
   useServiciosByPeriodo,
   useTipoServicios,
 } from "../../../api/queryFunctions/servicios";
@@ -477,7 +474,7 @@ function RouteComponent() {
                           />
                           <InputPrice
                             label="Precio Base:"
-                            value={servicioConfig?.precioBase || 0}
+                            value={servicioConfig?.precioBase || ""}
                             onChange={(value) => {
                               actualizarServicioConfigurado(
                                 item,
@@ -488,13 +485,13 @@ function RouteComponent() {
                           />
                           <InputPrice
                             label="Precio con IVA:"
-                            value={servicioConfig?.iva || 0}
+                            value={servicioConfig?.iva || ""}
                             disabled
                             readOnly
                           />
                           <InputPrice
                             label="Precio Total:"
-                            value={servicioConfig?.precioTotal || 0}
+                            value={servicioConfig?.precioTotal || ""}
                             disabled
                             readOnly
                           />

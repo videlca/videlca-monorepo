@@ -17,6 +17,7 @@ import type {
 } from "../../../../api/dtos/configuracion";
 import { InputForm } from "../../../common/InputForm";
 import Button from "../../../common/Button";
+import { FormsModal } from "../../modals/FormsModal";
 
 export const PaisTab = () => {
   const { data: paises, isLoading } = usePais();
@@ -104,7 +105,15 @@ export const PaisTab = () => {
           resetForm();
         }}
         children={
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormsModal
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+            onCancel={() => {
+              setIsModalOpen(false);
+              resetForm();
+            }}
+            updating={false}
+          >
             <InputForm
               label="Descripción"
               placeholder="Descripción"
@@ -114,21 +123,7 @@ export const PaisTab = () => {
               onChange={handleChange}
               type="text"
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  resetForm();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Creando..." : "Agregar"}
-              </Button>
-            </div>
-          </form>
+          </FormsModal>
         }
       />
       {/* <SimpleModal

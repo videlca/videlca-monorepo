@@ -24,8 +24,8 @@ import { InputForm } from "../../../components/common/InputForm";
 import { CheckboxForm } from "../../../components/common/CheckboxForm";
 import { useForm } from "../../../hooks/useForm";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../../api/dtos";
-import Button from "../../../components/common/Button";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
 
 export const Route = createFileRoute("/dashboard/tarifas/periodo")({
   component: RouteComponent,
@@ -182,11 +182,19 @@ function RouteComponent() {
       </div>
       <SimpleModal
         isOpen={isOpenAddTarifa}
-        onClose={() => setIsOpenAddTarifa(false)}
+        onClose={() => {
+          setIsOpenAddTarifa(false);
+          resetFormAddPeriodo();
+        }}
         title="Agregar Periodo"
       >
-        <form
-          className="flex flex-col gap-4"
+        <FormsModal
+          isLoading={isLoadingCrearPeriodo}
+          onCancel={() => {
+            setIsOpenAddTarifa(false);
+            resetFormAddPeriodo();
+          }}
+          updating={false}
           onSubmit={(e) => {
             e.preventDefault();
             crearPeriodo(
@@ -210,54 +218,53 @@ function RouteComponent() {
             );
           }}
         >
-          <InputForm
-            label="Fecha de inicio"
-            id="fechaInicio"
-            type="date"
-            placeholder="Fecha de inicio"
-            value={formAddPeriodo.fechaInicio}
-            onChange={handleChangeAddPeriodo}
-            required={true}
-          />
-          <InputForm
-            label="Fecha de fin"
-            id="fechaFin"
-            type="date"
-            placeholder="Fecha de fin"
-            value={formAddPeriodo.fechaFin}
-            onChange={handleChangeAddPeriodo}
-            required={true}
-          />
-          <CheckboxForm
-            label="Activo para facturación"
-            id="periodoActivoFacturacion"
-            checked={formAddPeriodo.periodoActivoFacturacion}
-            onChange={handleChangeAddPeriodo}
-            required={false}
-          />
-          <div className="flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenAddTarifa(false);
-                resetFormAddPeriodo();
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoadingCrearPeriodo ? "Creando..." : "Crear"}
-            </Button>
+          <div className="flex flex-col gap-4">
+            <InputForm
+              label="Fecha de inicio"
+              id="fechaInicio"
+              type="date"
+              placeholder="Fecha de inicio"
+              value={formAddPeriodo.fechaInicio}
+              onChange={handleChangeAddPeriodo}
+              required={true}
+            />
+            <InputForm
+              label="Fecha de fin"
+              id="fechaFin"
+              type="date"
+              placeholder="Fecha de fin"
+              value={formAddPeriodo.fechaFin}
+              onChange={handleChangeAddPeriodo}
+              required={true}
+            />
+            <CheckboxForm
+              label="Activo para facturación"
+              id="periodoActivoFacturacion"
+              checked={formAddPeriodo.periodoActivoFacturacion}
+              onChange={handleChangeAddPeriodo}
+              required={false}
+            />
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
+
       <SimpleModal
         isOpen={isOpenEditTarifa}
-        onClose={() => setIsOpenEditTarifa(false)}
+        onClose={() => {
+          setIsOpenEditTarifa(false);
+          resetFormEditPeriodo();
+          setSelectedPeriodo(null);
+        }}
         title="Editar Periodo"
       >
-        <form
-          className="flex flex-col gap-4"
+        <FormsModal
+          isLoading={isLoadingActualizarPeriodo}
+          onCancel={() => {
+            setIsOpenEditTarifa(false);
+            resetFormEditPeriodo();
+            setSelectedPeriodo(null);
+          }}
+          updating={true}
           onSubmit={(e) => {
             e.preventDefault();
             actualizarPeriodo(
@@ -284,46 +291,34 @@ function RouteComponent() {
             );
           }}
         >
-          <InputForm
-            label="Fecha de inicio"
-            id="fechaInicio"
-            type="date"
-            placeholder="Fecha de inicio"
-            value={formEditPeriodo.fechaInicio}
-            onChange={handleChangeEditPeriodo}
-            required={true}
-          />
-          <InputForm
-            label="Fecha de fin"
-            id="fechaFin"
-            type="date"
-            placeholder="Fecha de fin"
-            value={formEditPeriodo.fechaFin}
-            onChange={handleChangeEditPeriodo}
-            required={true}
-          />
-          <CheckboxForm
-            label="Activo para facturación"
-            id="periodoActivoFacturacion"
-            checked={formEditPeriodo.periodoActivoFacturacion}
-            onChange={handleChangeEditPeriodo}
-            required={false}
-          />
-          <div className="flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenEditTarifa(false);
-                resetFormEditPeriodo();
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoadingActualizarPeriodo ? "Actualizando..." : "Actualizar"}
-            </Button>
+          <div className="flex flex-col gap-4">
+            <InputForm
+              label="Fecha de inicio"
+              id="fechaInicio"
+              type="date"
+              placeholder="Fecha de inicio"
+              value={formEditPeriodo.fechaInicio}
+              onChange={handleChangeEditPeriodo}
+              required={true}
+            />
+            <InputForm
+              label="Fecha de fin"
+              id="fechaFin"
+              type="date"
+              placeholder="Fecha de fin"
+              value={formEditPeriodo.fechaFin}
+              onChange={handleChangeEditPeriodo}
+              required={true}
+            />
+            <CheckboxForm
+              label="Activo para facturación"
+              id="periodoActivoFacturacion"
+              checked={formEditPeriodo.periodoActivoFacturacion}
+              onChange={handleChangeEditPeriodo}
+              required={false}
+            />
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
       <ConfirmarDelete
         isOpenDelete={isOpenDeleteTarifa}

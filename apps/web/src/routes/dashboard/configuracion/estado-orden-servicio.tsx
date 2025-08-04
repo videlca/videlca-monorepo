@@ -15,20 +15,20 @@ function RouteComponent() {
   const { data: estadosOrden } = useEstadoOrden();
 
   const columns: ColumnDef<EstadoOrden>[] = [
-    {
-      accessorKey: "idEstadoOrdenServicio",
-      header: "ID",
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {row.getValue("idEstadoOrdenServicio")}
-        </span>
-      ),
-    },
+    // {
+    //   accessorKey: "idEstadoOrdenServicio",
+    //   header: "ID",
+    //   cell: ({ row }) => (
+    //     <span className="font-medium">
+    //       {row.getValue("idEstadoOrdenServicio")}
+    //     </span>
+    //   ),
+    // },
     {
       accessorKey: "nombre",
       header: "Nombre",
       cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("nombre")}</span>
+        <span className="font-medium capitalize">{row.getValue("nombre")}</span>
       ),
     },
     {

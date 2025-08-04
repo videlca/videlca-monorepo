@@ -32,6 +32,7 @@ import {
 } from "../../../../api/queryFunctions/clientes";
 import { InputSelectStateBoolean } from "../../../common/InputSelectState";
 import { toast } from "sonner";
+import { FormsModal } from "../../modals/FormsModal";
 
 export function SegmentacionTab() {
   // Estados
@@ -44,8 +45,10 @@ export function SegmentacionTab() {
 
   // Segmentaciones
   const { data: segmentaciones } = useSegmentaciones();
-  const { mutate: crearSegmentacion } = useCrearSegmentacion();
-  const { mutate: actualizarSegmentacion } = useActualizarSegmentacion();
+  const { mutate: crearSegmentacion, isPending: isCreatingSegmentacion } =
+    useCrearSegmentacion();
+  const { mutate: actualizarSegmentacion, isPending: isUpdatingSegmentacion } =
+    useActualizarSegmentacion();
   const { mutate: eliminarSegmentacion } = useEliminarSegmentacion();
   const {
     mutate: obtenerSegmentacionById,
@@ -54,8 +57,12 @@ export function SegmentacionTab() {
   } = useSegmentacionById();
   // Subsegmentaciones
   const { mutate: eliminarSubSegmentacion } = useEliminarSubSegmentacion();
-  const { mutate: actualizarSubSegmentacion } = useActualizarSubSegmentacion();
-  const { mutate: crearSubSegmentacion } = useCrearSubSegmentacion();
+  const {
+    mutate: actualizarSubSegmentacion,
+    isPending: isUpdatingSubSegmentacion,
+  } = useActualizarSubSegmentacion();
+  const { mutate: crearSubSegmentacion, isPending: isCreatingSubSegmentacion } =
+    useCrearSubSegmentacion();
 
   // Formularios
   const {
@@ -332,7 +339,15 @@ export function SegmentacionTab() {
         title="Crear Nueva Segmentación"
         size="xl"
       >
-        <form onSubmit={handleCreateSegmentacion} className="space-y-4">
+        <FormsModal
+          isLoading={isCreatingSegmentacion}
+          onCancel={() => {
+            setIsAddModalOpen(false);
+            resetFormCreate();
+          }}
+          updating={false}
+          onSubmit={handleCreateSegmentacion}
+        >
           <div className="space-y-6">
             <InputForm
               label="Descripción *"
@@ -466,23 +481,7 @@ export function SegmentacionTab() {
               )}
             </div>
           </div>
-
-          {/* Modal Actions */}
-          <div className="mt-6 flex justify-end space-x-3 border-t border-gray-200 pt-6">
-            <Button
-              onClick={() => {
-                setIsAddModalOpen(false);
-                resetFormCreate();
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={false}>
-              Crear Segmentación
-            </Button>
-          </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
 
       {/* Modal para editar segmentación */}
@@ -492,7 +491,15 @@ export function SegmentacionTab() {
         title="Editar Segmentación"
         size="xl"
       >
-        <form onSubmit={handleUpdateSegmentacion} className="space-y-4">
+        <FormsModal
+          isLoading={isUpdatingSegmentacion || isUpdatingSubSegmentacion}
+          onCancel={() => {
+            setIsEditModalOpen(false);
+            resetFormEdit();
+          }}
+          updating={true}
+          onSubmit={handleUpdateSegmentacion}
+        >
           <div className="space-y-6">
             <InputForm
               label="Descripción *"
@@ -663,23 +670,7 @@ export function SegmentacionTab() {
               )}
             </div>
           </div>
-
-          {/* Modal Actions */}
-          <div className="mt-6 flex justify-end space-x-3 border-t border-gray-200 pt-6">
-            <Button
-              onClick={() => {
-                setIsEditModalOpen(false);
-                resetFormEdit();
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={false}>
-              Actualizar Segmentación
-            </Button>
-          </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
 
       {/* Modal para agregar sub-segmentación */}
@@ -689,9 +680,18 @@ export function SegmentacionTab() {
         title="Agregar Sub-segmentación"
         size="xl"
       >
-        <form
+        <FormsModal
+          isLoading={isCreatingSubSegmentacion}
+          onCancel={() => {
+            setShowAddSubSegmentationModal(false);
+            setSubSegmentaciones({
+              idSubSegmentacion: 0,
+              descripcion: "",
+              estado: undefined,
+            });
+          }}
+          updating={false}
           onSubmit={handleAddSubSegmentacionToSegmentacion}
-          className="space-y-4"
         >
           <div className="space-y-6">
             <InputForm
@@ -722,7 +722,7 @@ export function SegmentacionTab() {
               </Button>
             </div>
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
     </div>
   );

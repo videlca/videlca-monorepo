@@ -9,7 +9,6 @@ import type { TipoNovedad } from "../../../types";
 import { useForm } from "../../../hooks/useForm";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { InputForm } from "../../../components/common/InputForm";
-import Button from "../../../components/common/Button";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import {
   useActualizarTipoNovedad,
@@ -21,6 +20,7 @@ import type {
   CreateTipoNovedad,
 } from "../../../api/types";
 import { useState } from "react";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipos-novedad")({
   component: RouteComponent,
@@ -141,7 +141,15 @@ function RouteComponent() {
           resetForm();
         }}
         children={
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <FormsModal
+            onSubmit={handleSubmit}
+            isLoading={isLoading}
+            onCancel={() => {
+              setIsModalOpen(false);
+              resetForm();
+            }}
+            updating={false}
+          >
             <InputForm
               label="Descripción"
               placeholder="Descripción"
@@ -151,21 +159,7 @@ function RouteComponent() {
               onChange={(e) => setForm({ descripcion: e.target.value })}
               type="text"
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpen(false);
-                  resetForm();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Creando..." : "Agregar"}
-              </Button>
-            </div>
-          </form>
+          </FormsModal>
         }
       />
       <SimpleModal
@@ -177,7 +171,15 @@ function RouteComponent() {
           resetFormEditar();
         }}
         children={
-          <form onSubmit={handleSubmitEditar} className="flex flex-col gap-4">
+          <FormsModal
+            onSubmit={handleSubmitEditar}
+            isLoading={isLoading}
+            onCancel={() => {
+              setIsModalOpenEditar(false);
+              resetFormEditar();
+            }}
+            updating={true}
+          >
             <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
@@ -185,21 +187,7 @@ function RouteComponent() {
               value={formEditar.estado?.toString() || ""}
               onChange={handleChangeEditar}
             />
-            <div className="flex justify-end space-x-2">
-              <Button
-                onClick={() => {
-                  setIsModalOpenEditar(false);
-                  resetFormEditar();
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
-                {isLoading ? "Actualizando..." : "Actualizar"}
-              </Button>
-            </div>
-          </form>
+          </FormsModal>
         }
       />
     </Section>

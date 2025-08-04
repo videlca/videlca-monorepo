@@ -19,6 +19,22 @@ export const getLocaciones = async (pagination: PaginationDto): Promise<ApiRespo
   return response;
 };
 
+export const getLocacionesByCliente = async (idCliente: number, pagination: PaginationDto): Promise<ApiResponse<Locacion[]>> => {
+  const response = await axiosClient.get(`/locaciones`, { params: pagination }).then((res) => {
+    const clientesFiltrados = res.data.filter((cliente: Locacion) => cliente.idCliente.idCliente === idCliente);
+    return {
+      status: res.status,
+      data: clientesFiltrados,
+    };
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || "Error de conexión",
+    };
+  });
+  return response;
+};
+
 export const getLocacionById = async (id: number): Promise<ApiResponse<Locacion | null>> => {
   const response = await axiosClient.get(`/locaciones/${id}`).then((res) => {
     return {
