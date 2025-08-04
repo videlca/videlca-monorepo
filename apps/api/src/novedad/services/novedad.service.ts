@@ -140,9 +140,7 @@ export class NovedadService {
 
     return await this.novedadRepository.find({
       where: { 
-        idPersonal: { 
-          idPersonal: personalId
-        } 
+        idPersonal: personalId as any
       },
       order: { 
         fechaInicio: 'DESC', 
