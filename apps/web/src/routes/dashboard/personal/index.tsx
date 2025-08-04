@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 import type { Personal } from "../../../api/types/personal";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import {
   BriefcaseIcon,
+  EyeIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
@@ -14,6 +15,7 @@ import { ButtonAction } from "../../../components/common/ButtonAction";
 import Table from "../../../components/common/Table";
 import {
   useCreatePersonal,
+  useCreatePersonalNovedad,
   useDeletePersonal,
   usePersonal,
   usePersonalById,
@@ -25,10 +27,12 @@ import {
   useCiudadActiva,
   useTipoGenero,
   useTipoIdentificacion,
+  useTipoNovedad,
   useTipoPersonalActivo,
 } from "../../../api/queryFunctions/configuracion";
 import { useForm } from "../../../hooks/useForm";
 import type {
+  CreateNovedadDto,
   CreatePersonalDto,
   UpdatePersonalDto,
 } from "../../../api/dtos/personal";
@@ -38,24 +42,30 @@ import { CheckboxForm } from "../../../components/common/CheckboxForm";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
+import { timeFormat } from "../../../utils/TimeFormat";
 
 export const Route = createFileRoute("/dashboard/personal/")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const navigate = useNavigate({ from: "/dashboard/personal" });
   // Estados
   const [isOpenAddModal, setIsOpenAddModal] = useState(false);
   const [isOpenEditModal, setIsOpenEditModal] = useState(false);
   const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
-  const [selectedIdPersonal, setSelectedIdPersonal] = useState<number>(0);
+  const [selectedPersonal, setSelectedPersonal] = useState<Personal | null>(
+    null,
+  );
 
+  const [isOpenAddNovedadModal, setIsOpenAddNovedadModal] = useState(false);
   // Queries y mutaciones
   const { data: personal } = usePersonal();
   const { data: tiposIdentificacion } = useTipoIdentificacion();
   const { data: ciudades } = useCiudadActiva();
   const { data: tiposGenero } = useTipoGenero();
   const { data: tiposPersonal } = useTipoPersonalActivo();
+  const { data: tiposNovedades } = useTipoNovedad();
 
   const { mutate: createPersonal, isPending: isCreatingPersonal } =
     useCreatePersonal();
@@ -63,6 +73,9 @@ function RouteComponent() {
   const { mutate: updatePersonal, isPending: isUpdatingPersonal } =
     useUpdatePersonal();
   const { mutate: deletePersonal } = useDeletePersonal();
+
+  const { mutate: createNovedad, isPending: isLoadingCreateNovedad } =
+    useCreatePersonalNovedad();
 
   // Formularios
   const {
@@ -111,6 +124,19 @@ function RouteComponent() {
     laborando: false,
   });
 
+  const {
+    form: formAddNovedad,
+    handleChange: handleChangeAddNovedad,
+    resetForm: resetFormAddNovedad,
+  } = useForm<CreateNovedadDto>({
+    descripcion: "",
+    fechaInicio: "",
+    horaInicio: "",
+    fechaFin: "",
+    horaFin: "",
+    idTipoNovedad: 0,
+  });
+
   const handleSubmitAddPersonal = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     createPersonal(formAddPersonal, {
@@ -125,7 +151,7 @@ function RouteComponent() {
     e.preventDefault();
     updatePersonal(
       {
-        id: selectedIdPersonal!,
+        id: selectedPersonal?.idPersonal || 0,
         data: formEditPersonal,
       },
       {
@@ -198,10 +224,28 @@ function RouteComponent() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <ButtonAction
+            Icon={PlusIcon}
+            label="Agregar novedad"
+            onClick={() => {
+              setSelectedPersonal(row.original);
+              setIsOpenAddNovedadModal(true);
+            }}
+          />
+          <ButtonAction
+            Icon={EyeIcon}
+            label="Ver novedades"
+            onClick={() => {
+              navigate({
+                to: "/dashboard/personal/novedades-personal/$id",
+                params: { id: row.original.idPersonal.toString() },
+              });
+            }}
+          />
+          <ButtonAction
             Icon={PencilIcon}
             label="Editar"
             onClick={() => {
-              setSelectedIdPersonal(row.original.idPersonal);
+              setSelectedPersonal(row.original);
               setIsOpenEditModal(true);
               getPersonalById(row.original.idPersonal, {
                 onSuccess: (data) => {
@@ -234,7 +278,7 @@ function RouteComponent() {
             Icon={TrashIcon}
             label="Eliminar"
             onClick={() => {
-              setSelectedIdPersonal(row.original.idPersonal);
+              setSelectedPersonal(row.original);
               setIsOpenDeleteModal(true);
             }}
             color="red"
@@ -455,7 +499,7 @@ function RouteComponent() {
         isOpen={isOpenEditModal}
         onClose={() => {
           setIsOpenEditModal(false);
-          setSelectedIdPersonal(0);
+          setSelectedPersonal(null);
           resetFormEditPersonal();
         }}
         title="Editar personal"
@@ -466,7 +510,7 @@ function RouteComponent() {
           isLoading={isUpdatingPersonal}
           onCancel={() => {
             setIsOpenEditModal(false);
-            setSelectedIdPersonal(0);
+            setSelectedPersonal(null);
             resetFormEditPersonal();
           }}
           updating={true}
@@ -647,14 +691,108 @@ function RouteComponent() {
         </FormsModal>
       </SimpleModal>
 
+      <SimpleModal
+        isOpen={isOpenAddNovedadModal}
+        onClose={() => {
+          setIsOpenAddNovedadModal(false);
+          resetFormAddNovedad();
+        }}
+        title={"Agregar novedad"}
+        size="lg"
+      >
+        <FormsModal
+          onSubmit={(e) => {
+            e.preventDefault();
+            createNovedad(
+              {
+                idPersonal: selectedPersonal?.idPersonal || 0,
+                data: {
+                  ...formAddNovedad,
+                  horaFin: timeFormat(formAddNovedad.horaFin || ""),
+                  horaInicio: timeFormat(formAddNovedad.horaInicio || ""),
+                },
+              },
+              {
+                onSuccess: () => {
+                  setIsOpenAddNovedadModal(false);
+                  resetFormAddNovedad();
+                },
+              },
+            );
+          }}
+          onCancel={() => {
+            setIsOpenAddNovedadModal(false);
+            resetFormAddNovedad();
+          }}
+          updating={false}
+          isLoading={isLoadingCreateNovedad}
+        >
+          <div className="flex flex-col gap-4">
+            <InputSelect
+              label="Tipo de novedad"
+              placeholder="Tipo de novedad"
+              id="idTipoNovedad"
+              value={formAddNovedad.idTipoNovedad}
+              onChange={handleChangeAddNovedad}
+              options={
+                tiposNovedades?.data?.map((tipo) => ({
+                  id: tipo.idTipoNovedad,
+                  descripcion: tipo.descripcion,
+                })) || []
+              }
+            />
+            <InputForm
+              label="Descripción"
+              placeholder="Descripción"
+              id="descripcion"
+              value={formAddNovedad.descripcion || ""}
+              onChange={handleChangeAddNovedad}
+              type="text"
+            />
+            <InputForm
+              label="Fecha de inicio"
+              placeholder="Fecha de inicio"
+              id="fechaInicio"
+              value={formAddNovedad.fechaInicio || ""}
+              onChange={handleChangeAddNovedad}
+              type="date"
+            />
+            <InputForm
+              label="Hora de inicio"
+              placeholder="Hora de inicio"
+              id="horaInicio"
+              value={formAddNovedad.horaInicio || ""}
+              onChange={handleChangeAddNovedad}
+              type="time"
+            />
+            <InputForm
+              label="Fecha de fin"
+              placeholder="Fecha de fin"
+              id="fechaFin"
+              value={formAddNovedad.fechaFin || ""}
+              onChange={handleChangeAddNovedad}
+              type="date"
+            />
+            <InputForm
+              label="Hora de fin"
+              placeholder="Hora de fin"
+              id="horaFin"
+              value={formAddNovedad.horaFin || ""}
+              onChange={handleChangeAddNovedad}
+              type="time"
+            />
+          </div>
+        </FormsModal>
+      </SimpleModal>
+
       <ConfirmarDelete
         isOpenDelete={isOpenDeleteModal}
         text="¿Estás seguro de querer eliminar este personal?"
         onDelete={() => {
-          deletePersonal(selectedIdPersonal, {
+          deletePersonal(selectedPersonal?.idPersonal || 0, {
             onSuccess: () => {
               setIsOpenDeleteModal(false);
-              setSelectedIdPersonal(0);
+              setSelectedPersonal(null);
             },
           });
         }}

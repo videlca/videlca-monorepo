@@ -115,12 +115,12 @@ export const linksSideBar: LinksSideBar = {
       description: "personal",
       icon: <UserPenIcon className="h-6 w-6" />,
     },
-    {
-      to: "/dashboard/personal/novedades",
-      label: "Novedades",
-      description: "novedades",
-      icon: <FileTextIcon className="h-6 w-6" />,
-    },
+    // {
+    //   to: "/dashboard/personal/novedades",
+    //   label: "Novedades",
+    //   description: "novedades",
+    //   icon: <FileTextIcon className="h-6 w-6" />,
+    // },
   ],
   usuarios: [
     {

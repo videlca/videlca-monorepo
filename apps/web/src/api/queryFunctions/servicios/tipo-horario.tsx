@@ -57,7 +57,7 @@ export const useCreateTipoHorario = (): UseMutationResult<
     mutationKey: ["create-tipo-horario"],
     mutationFn: (data: CreateTipoHorarioDto) => createTipoHorario(data),
     onSuccess: (data) => {
-      if (data.status === 200 || data.status === 201) {
+      if (data.status === 200 || data.status === 201 || data.status === 204) {
         toast.success("Tipo horario creado correctamente");
         queryClient.invalidateQueries({ queryKey: ["tipo-horarios"] });
       } else {

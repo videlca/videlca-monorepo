@@ -14,7 +14,6 @@ import {
   useUpdateTipoHorario,
 } from "../../../api/queryFunctions/servicios";
 import { SimpleModal } from "../../../components/common/SimpleModal";
-import Button from "../../../components/common/Button";
 import { useForm } from "../../../hooks/useForm";
 import type {
   CreateTipoHorarioDto,
@@ -26,6 +25,7 @@ import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { CheckboxForm } from "../../../components/common/CheckboxForm";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { toast } from "sonner";
+import { timeFormat } from "../../../utils/TimeFormat";
 
 export const Route = createFileRoute(
   "/dashboard/servicios/configurar-horarios",
@@ -323,18 +323,8 @@ function RouteComponent() {
             }
             const formattedData = {
               ...formEditTipoHorario,
-              horaInicio:
-                formEditTipoHorario.horaInicio &&
-                formEditTipoHorario.horaInicio.includes(":") &&
-                formEditTipoHorario.horaInicio.split(":").length === 2
-                  ? `${formEditTipoHorario.horaInicio}:00`
-                  : formEditTipoHorario.horaInicio,
-              horaFin:
-                formEditTipoHorario.horaFin &&
-                formEditTipoHorario.horaFin.includes(":") &&
-                formEditTipoHorario.horaFin.split(":").length === 2
-                  ? `${formEditTipoHorario.horaFin}:00`
-                  : formEditTipoHorario.horaFin,
+              horaInicio: timeFormat(formEditTipoHorario.horaInicio || ""),
+              horaFin: timeFormat(formEditTipoHorario.horaFin || ""),
               fechaVigenciaInicio: new Date(
                 formEditTipoHorario.fechaVigenciaInicio || "",
               ).toISOString(),

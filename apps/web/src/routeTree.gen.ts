@@ -30,7 +30,6 @@ import { Route as DashboardTarifasPeriodoRouteImport } from './routes/dashboard/
 import { Route as DashboardServiciosTipoServicioRouteImport } from './routes/dashboard/servicios/tipo-servicio'
 import { Route as DashboardServiciosTipoHorarioRouteImport } from './routes/dashboard/servicios/tipo-horario'
 import { Route as DashboardServiciosConfigurarHorariosRouteImport } from './routes/dashboard/servicios/configurar-horarios'
-import { Route as DashboardPersonalNovedadesRouteImport } from './routes/dashboard/personal/novedades'
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
 import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
 import { Route as DashboardConfiguracionTipoPersonalRouteImport } from './routes/dashboard/configuracion/tipo-personal'
@@ -40,6 +39,7 @@ import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/
 import { Route as DashboardConfiguracionEstadoOrdenServicioRouteImport } from './routes/dashboard/configuracion/estado-orden-servicio'
 import { Route as DashboardTarifasVerTarifasIdPeriodoRouteImport } from './routes/dashboard/tarifas/ver-tarifas.$id-periodo'
 import { Route as DashboardTarifasConfigurarServiciosIdPeriodoRouteImport } from './routes/dashboard/tarifas/configurar-servicios.$id-periodo'
+import { Route as DashboardPersonalNovedadesPersonalIdRouteImport } from './routes/dashboard/personal/novedades-personal.$id'
 import { Route as DashboardClientesIdClienteLocacionesRouteImport } from './routes/dashboard/clientes/$idCliente.locaciones'
 
 const RecuperarRoute = RecuperarRouteImport.update({
@@ -153,12 +153,6 @@ const DashboardServiciosConfigurarHorariosRoute =
     path: '/servicios/configurar-horarios',
     getParentRoute: () => DashboardRoute,
   } as any)
-const DashboardPersonalNovedadesRoute =
-  DashboardPersonalNovedadesRouteImport.update({
-    id: '/personal/novedades',
-    path: '/personal/novedades',
-    getParentRoute: () => DashboardRoute,
-  } as any)
 const DashboardConfiguracionUbicacionRoute =
   DashboardConfiguracionUbicacionRouteImport.update({
     id: '/configuracion/ubicacion',
@@ -213,6 +207,12 @@ const DashboardTarifasConfigurarServiciosIdPeriodoRoute =
     path: '/tarifas/configurar-servicios/$id-periodo',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardPersonalNovedadesPersonalIdRoute =
+  DashboardPersonalNovedadesPersonalIdRouteImport.update({
+    id: '/personal/novedades-personal/$id',
+    path: '/personal/novedades-personal/$id',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 const DashboardClientesIdClienteLocacionesRoute =
   DashboardClientesIdClienteLocacionesRouteImport.update({
     id: '/clientes/$idCliente/locaciones',
@@ -235,7 +235,6 @@ export interface FileRoutesByFullPath {
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
-  '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
   '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
   '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
@@ -251,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
   '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
+  '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
   '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
@@ -268,7 +268,6 @@ export interface FileRoutesByTo {
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
-  '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
   '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
   '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
@@ -284,6 +283,7 @@ export interface FileRoutesByTo {
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
   '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
+  '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
   '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
@@ -303,7 +303,6 @@ export interface FileRoutesById {
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
-  '/dashboard/personal/novedades': typeof DashboardPersonalNovedadesRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
   '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
   '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
@@ -319,6 +318,7 @@ export interface FileRoutesById {
   '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
   '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
+  '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
   '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
@@ -339,7 +339,6 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
-    | '/dashboard/personal/novedades'
     | '/dashboard/servicios/configurar-horarios'
     | '/dashboard/servicios/tipo-horario'
     | '/dashboard/servicios/tipo-servicio'
@@ -355,6 +354,7 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
     | '/dashboard/clientes/$idCliente/locaciones'
+    | '/dashboard/personal/novedades-personal/$id'
     | '/dashboard/tarifas/configurar-servicios/$id-periodo'
     | '/dashboard/tarifas/ver-tarifas/$id-periodo'
   fileRoutesByTo: FileRoutesByTo
@@ -372,7 +372,6 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
-    | '/dashboard/personal/novedades'
     | '/dashboard/servicios/configurar-horarios'
     | '/dashboard/servicios/tipo-horario'
     | '/dashboard/servicios/tipo-servicio'
@@ -388,6 +387,7 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
     | '/dashboard/clientes/$idCliente/locaciones'
+    | '/dashboard/personal/novedades-personal/$id'
     | '/dashboard/tarifas/configurar-servicios/$id-periodo'
     | '/dashboard/tarifas/ver-tarifas/$id-periodo'
   id:
@@ -406,7 +406,6 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
-    | '/dashboard/personal/novedades'
     | '/dashboard/servicios/configurar-horarios'
     | '/dashboard/servicios/tipo-horario'
     | '/dashboard/servicios/tipo-servicio'
@@ -422,6 +421,7 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas/'
     | '/dashboard/usuarios/'
     | '/dashboard/clientes/$idCliente/locaciones'
+    | '/dashboard/personal/novedades-personal/$id'
     | '/dashboard/tarifas/configurar-servicios/$id-periodo'
     | '/dashboard/tarifas/ver-tarifas/$id-periodo'
   fileRoutesById: FileRoutesById
@@ -583,13 +583,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardServiciosConfigurarHorariosRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/personal/novedades': {
-      id: '/dashboard/personal/novedades'
-      path: '/personal/novedades'
-      fullPath: '/dashboard/personal/novedades'
-      preLoaderRoute: typeof DashboardPersonalNovedadesRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/dashboard/configuracion/ubicacion': {
       id: '/dashboard/configuracion/ubicacion'
       path: '/configuracion/ubicacion'
@@ -653,6 +646,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardTarifasConfigurarServiciosIdPeriodoRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/personal/novedades-personal/$id': {
+      id: '/dashboard/personal/novedades-personal/$id'
+      path: '/personal/novedades-personal/$id'
+      fullPath: '/dashboard/personal/novedades-personal/$id'
+      preLoaderRoute: typeof DashboardPersonalNovedadesPersonalIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/clientes/$idCliente/locaciones': {
       id: '/dashboard/clientes/$idCliente/locaciones'
       path: '/clientes/$idCliente/locaciones'
@@ -673,7 +673,6 @@ interface DashboardRouteChildren {
   DashboardConfiguracionTipoPersonalRoute: typeof DashboardConfiguracionTipoPersonalRoute
   DashboardConfiguracionTiposNovedadRoute: typeof DashboardConfiguracionTiposNovedadRoute
   DashboardConfiguracionUbicacionRoute: typeof DashboardConfiguracionUbicacionRoute
-  DashboardPersonalNovedadesRoute: typeof DashboardPersonalNovedadesRoute
   DashboardServiciosConfigurarHorariosRoute: typeof DashboardServiciosConfigurarHorariosRoute
   DashboardServiciosTipoHorarioRoute: typeof DashboardServiciosTipoHorarioRoute
   DashboardServiciosTipoServicioRoute: typeof DashboardServiciosTipoServicioRoute
@@ -689,6 +688,7 @@ interface DashboardRouteChildren {
   DashboardTarifasIndexRoute: typeof DashboardTarifasIndexRoute
   DashboardUsuariosIndexRoute: typeof DashboardUsuariosIndexRoute
   DashboardClientesIdClienteLocacionesRoute: typeof DashboardClientesIdClienteLocacionesRoute
+  DashboardPersonalNovedadesPersonalIdRoute: typeof DashboardPersonalNovedadesPersonalIdRoute
   DashboardTarifasConfigurarServiciosIdPeriodoRoute: typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   DashboardTarifasVerTarifasIdPeriodoRoute: typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
@@ -707,7 +707,6 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardConfiguracionTiposNovedadRoute:
     DashboardConfiguracionTiposNovedadRoute,
   DashboardConfiguracionUbicacionRoute: DashboardConfiguracionUbicacionRoute,
-  DashboardPersonalNovedadesRoute: DashboardPersonalNovedadesRoute,
   DashboardServiciosConfigurarHorariosRoute:
     DashboardServiciosConfigurarHorariosRoute,
   DashboardServiciosTipoHorarioRoute: DashboardServiciosTipoHorarioRoute,
@@ -725,6 +724,8 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardUsuariosIndexRoute: DashboardUsuariosIndexRoute,
   DashboardClientesIdClienteLocacionesRoute:
     DashboardClientesIdClienteLocacionesRoute,
+  DashboardPersonalNovedadesPersonalIdRoute:
+    DashboardPersonalNovedadesPersonalIdRoute,
   DashboardTarifasConfigurarServiciosIdPeriodoRoute:
     DashboardTarifasConfigurarServiciosIdPeriodoRoute,
   DashboardTarifasVerTarifasIdPeriodoRoute:
