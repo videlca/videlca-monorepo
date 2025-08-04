@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
-import type { Novedad } from "../../../types";
+
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { PencilIcon, PlusIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
+import type { Novedad } from "../../../api/types";
 
 export const Route = createFileRoute("/dashboard/personal/novedades")({
   component: RouteComponent,
@@ -68,6 +69,7 @@ const novedades: Novedad[] = [
       descripcion: "Novedad 1",
       estado: true,
       retirado: false,
+      novedades: [],
     },
   },
   {
@@ -127,6 +129,7 @@ const novedades: Novedad[] = [
       descripcion: "Novedad 2",
       estado: true,
       retirado: false,
+      novedades: [],
     },
   },
 ];
@@ -143,6 +146,11 @@ const columns: ColumnDef<Novedad>[] = [
   {
     accessorKey: "fechaInicio",
     header: "Fecha de inicio",
+    cell: ({ row }) => {
+      return (
+        <span className="whitespace-nowrap">{row.original.fechaInicio}</span>
+      );
+    },
   },
   {
     accessorKey: "horaInicio",
@@ -151,6 +159,9 @@ const columns: ColumnDef<Novedad>[] = [
   {
     accessorKey: "fechaFin",
     header: "Fecha de fin",
+    cell: ({ row }) => {
+      return <span className="whitespace-nowrap">{row.original.fechaFin}</span>;
+    },
   },
   {
     accessorKey: "horaFin",

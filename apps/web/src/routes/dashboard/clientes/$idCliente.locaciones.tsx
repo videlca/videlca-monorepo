@@ -110,6 +110,14 @@ export function RouteComponent() {
     getLocacionById(row.original.idLocacion, {
       onSuccess: (data) => {
         if (data.data) {
+          const correosFormatted = data.data.correos.map((correo) => ({
+            nombre: correo.nombre,
+            apellido: correo.apellido,
+            email: correo.email,
+            estados: correo.estados.map(
+              (estado) => estado.idEstadoOrdenServicio,
+            ),
+          }));
           setFormEditLocacion({
             idCliente: data.data.idCliente.idCliente,
             nombre: data.data.nombre,
@@ -123,9 +131,9 @@ export function RouteComponent() {
             diasAnticipaticionNotificacion:
               data.data.diasAnticipaticionNotificacion,
             estado: data.data.estado,
-            correos: [...data.data.correos] as unknown as CreateCorreoDto[],
+            correos: [...correosFormatted],
           });
-          setCorreos(data.data.correos as unknown as CreateCorreoDto[]);
+          setCorreos(correosFormatted);
         }
       },
     });
@@ -138,8 +146,16 @@ export function RouteComponent() {
       header: "ID",
     },
     {
+      accessorKey: "idCliente.nombre",
+      header: "Cliente",
+    },
+    {
       accessorKey: "nombre",
-      header: "Nombre",
+      header: "Nombre de la locación",
+    },
+    {
+      accessorKey: "idCiudad.descripcion",
+      header: "Ciudad",
     },
     {
       accessorKey: "direccion",
@@ -180,12 +196,17 @@ export function RouteComponent() {
       ),
     },
     {
-      accessorKey: "idCliente.nombre",
-      header: "Cliente",
+      accessorKey: "diasAnticipaticionNotificacion",
+      header: "Días de anticipación de notificación",
     },
     {
-      accessorKey: "idCiudad.descripcion",
-      header: "Ciudad",
+      accessorKey: "correos",
+      header: "Correos",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-gray-900">
+          {row.original.correos.map((correo) => correo.email).join(", ")}
+        </span>
+      ),
     },
     {
       accessorKey: "estado",
@@ -229,8 +250,6 @@ export function RouteComponent() {
       correo: "",
     });
   };
-
-  console.log(locaciones?.data);
 
   return (
     <div className="space-y-4">
@@ -547,7 +566,6 @@ export function RouteComponent() {
                                 )}
                                 // Manejo de estados asignados al correo
                                 onChange={(e) => {
-                                  console.log(e.target.checked);
                                   setCorreos(
                                     correos.map((c) =>
                                       c.email === correo.email

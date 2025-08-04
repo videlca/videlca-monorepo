@@ -33,7 +33,7 @@ export const useLocacionesByCliente = (
   idCliente: number,
 ): UseQueryResult<ApiResponse<Locacion[]>, Error> => {
   return useQuery({
-    queryKey: ["locaciones-by-cliente", idCliente],
+    queryKey: ["locaciones-by-cliente"],
     queryFn: () => getLocacionesByCliente(idCliente, { pagination: false }),
   });
 };
@@ -102,8 +102,11 @@ export const useUpdateLocacion = (): UseMutationResult<
     mutationFn: (data: { id: number; data: UpdateLocacionDto }) =>
       updateLocacion(data.id, data.data),
     onSuccess: (data) => {
-      if (data.status === 200 || data.status === 201) {
+      if (data.status === 200 || data.status === 201 || data.status === 204) {
         queryClient.invalidateQueries({ queryKey: ["locaciones"] });
+        queryClient.invalidateQueries({
+          queryKey: ["locaciones-by-cliente"],
+        });
         toast.success("Locación actualizada exitosamente", {
           description: "La locación ha sido actualizada correctamente",
         });
