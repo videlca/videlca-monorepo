@@ -1,9 +1,17 @@
 import { ButtonAction } from "../../../common/ButtonAction";
-import { PencilIcon, PlusIcon, TrashIcon, XIcon } from "lucide-react";
+import {
+  Building2,
+  Mail,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  User,
+  XIcon,
+} from "lucide-react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
-import type { Correo, EstadoOrden, Locacion } from "../../../../types";
+import type { Locacion } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { useState } from "react";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
@@ -27,12 +35,13 @@ import {
 } from "../../../../api/queryFunctions/configuracion";
 import { InputForm } from "../../../common/InputForm";
 import { InputSelect } from "../../../common/InputSelect";
-import Button from "../../../common/Button";
 import { toast } from "sonner";
+import { FormsModal } from "../../modals/FormsModal";
+import { FormSection } from "../../../common/FormSection";
 
 export function LocacionesTab() {
   // Estados
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [correoInput, setCorreoInput] = useState<{
@@ -55,37 +64,12 @@ export function LocacionesTab() {
   const { data: clientes } = useClientesActivo();
   const { data: estadosOrdenServicio } = useEstadoOrden();
 
-  const { mutate: createLocacion, isPending: isCreatingLocacion } =
-    useCreateLocacion();
   const { mutate: updateLocacion, isPending: isUpdatingLocacion } =
     useUpdateLocacion();
-  const { mutate: getLocacionById, isPending: isGettingLocacionById } =
-    useLocacionById();
-  const { mutate: deleteLocacion, isPending: isDeletingLocacion } =
-    useDeleteLocacion();
+  const { mutate: getLocacionById } = useLocacionById();
+  const { mutate: deleteLocacion } = useDeleteLocacion();
 
   // Formularios
-
-  // TODO: Revisar formulario
-  const {
-    form: formAddLocacion,
-    handleChange: handleChangeAddLocacion,
-    handleNumericChange: handleNumericChangeAddLocacion,
-    setForm: setFormAddLocacion,
-    resetForm: resetFormAddLocacion,
-  } = useForm<CreateLocacionDto>({
-    idCliente: 0,
-    nombre: "",
-    idCiudad: 0,
-    direccion: "",
-    latitud: 0,
-    longitud: 0,
-    primerNombreResponsable: "",
-    primerApellidoResponsable: "",
-    telefono: "",
-    diasAnticipaticionNotificacion: 0,
-    correos: [],
-  });
 
   // TODO: Agregar correos
 
@@ -116,7 +100,6 @@ export function LocacionesTab() {
     getLocacionById(row.original.idLocacion, {
       onSuccess: (data) => {
         if (data.data) {
-          console.log(data.data);
           setFormEditLocacion({
             idCliente: data.data.idCliente.idCliente,
             nombre: data.data.nombre,
@@ -216,17 +199,6 @@ export function LocacionesTab() {
     },
   ];
 
-  const handleCloseAddLocacion = () => {
-    setIsAddModalOpen(false);
-    resetFormAddLocacion();
-    setCorreos([]);
-    setCorreoInput({
-      nombre: "",
-      apellido: "",
-      correo: "",
-    });
-  };
-
   const handleCloseEditLocacion = () => {
     setIsEditModalOpen(false);
     resetFormEditLocacion();
@@ -240,13 +212,13 @@ export function LocacionesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      {/* <div className="flex justify-end">
         <ButtonAction
           Icon={PlusIcon}
           label="Agregar locación"
           onClick={() => setIsAddModalOpen(true)}
         />
-      </div>
+      </div> */}
       <Table
         data={locaciones?.data || []}
         columns={columnsLocaciones}
@@ -256,354 +228,6 @@ export function LocacionesTab() {
         enableFiltering={true}
       />
 
-      {/* Modal para agregar locación */}
-      <SimpleModal
-        isOpen={isAddModalOpen}
-        onClose={() => {
-          handleCloseAddLocacion();
-        }}
-        title="Agregar locación"
-        size="4xl"
-      >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            createLocacion(
-              {
-                ...formAddLocacion,
-                correos: correos,
-              },
-              {
-                onSuccess: () => {
-                  handleCloseAddLocacion();
-                },
-              },
-            );
-          }}
-          className="grid grid-cols-1 gap-4 md:grid-cols-2"
-        >
-          <div className="col-span-1">
-            <h5 className="mb-3 text-sm font-medium text-gray-900 md:text-base">
-              Información Básica
-            </h5>
-            <InputForm
-              label="Nombre*"
-              placeholder="Nombre"
-              type="text"
-              id="nombre"
-              value={formAddLocacion.nombre}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-            <InputSelect
-              label="Cliente*"
-              placeholder="Cliente"
-              id="idCliente"
-              value={formAddLocacion.idCliente}
-              onChange={handleNumericChangeAddLocacion}
-              options={
-                clientes?.data?.map((cliente) => ({
-                  id: cliente.idCliente,
-                  descripcion: cliente.nombre,
-                })) || []
-              }
-              required
-            />
-            <InputSelect
-              label="Ciudad*"
-              placeholder="Ciudad"
-              id="idCiudad"
-              value={formAddLocacion.idCiudad}
-              onChange={handleNumericChangeAddLocacion}
-              options={
-                ciudades?.data?.map((ciudad) => ({
-                  id: ciudad.idCiudad,
-                  descripcion: ciudad.descripcion,
-                })) || []
-              }
-              required
-            />
-            <InputForm
-              label="Dirección*"
-              placeholder="Dirección"
-              type="text"
-              id="direccion"
-              value={formAddLocacion.direccion}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-            <InputForm
-              label="Días de anticipación de notificación*"
-              placeholder="Días de anticipación de notificación"
-              type="number"
-              id="diasAnticipaticionNotificacion"
-              value={formAddLocacion.diasAnticipaticionNotificacion.toString()}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <InputForm
-                label="Latitud*"
-                placeholder="Latitud"
-                type="number"
-                id="latitud"
-                value={formAddLocacion.latitud.toString()}
-                onChange={handleChangeAddLocacion}
-                required
-              />
-              <InputForm
-                label="Longitud*"
-                placeholder="Longitud"
-                type="number"
-                id="longitud"
-                value={formAddLocacion.longitud.toString()}
-                onChange={handleChangeAddLocacion}
-                required
-              />
-            </div>
-          </div>
-          <div className="col-span-1">
-            <h5 className="mb-3 text-sm font-medium text-gray-900 md:text-base">
-              Información de contacto
-            </h5>
-            <InputForm
-              label="Primer nombre responsable*"
-              placeholder="Primer nombre responsable"
-              type="text"
-              id="primerNombreResponsable"
-              value={formAddLocacion.primerNombreResponsable}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-            <InputForm
-              label="Primer apellido responsable*"
-              placeholder="Primer apellido responsable"
-              type="text"
-              id="primerApellidoResponsable"
-              value={formAddLocacion.primerApellidoResponsable}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-            <InputForm
-              label="Teléfono*"
-              placeholder="Teléfono"
-              type="number"
-              id="telefono"
-              value={formAddLocacion.telefono}
-              onChange={handleChangeAddLocacion}
-              required
-            />
-            <InputForm
-              label="Teléfono 2"
-              placeholder="Teléfono 2"
-              type="number"
-              id="segundoTelefono"
-              value={formAddLocacion.segundoTelefono || ""}
-              onChange={handleChangeAddLocacion}
-              required={false}
-            />
-            <div className="mt-4 mb-4 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-900">
-                  Correos electrónicos *
-                </p>
-              </div>
-              <div className="col-span-2 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <div className="">
-                  <label
-                    htmlFor="correo"
-                    className="space-y-2 text-base font-medium text-gray-700"
-                  >
-                    Nuevo correo electrónico
-                    <div className="flex flex-col items-center gap-2">
-                      <input
-                        type="text"
-                        id="nombre"
-                        placeholder="Nombre"
-                        className="w-full rounded-md border border-gray-300 p-2"
-                        value={correoInput.nombre}
-                        onChange={(e) =>
-                          setCorreoInput({
-                            ...correoInput,
-                            nombre: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="email"
-                        id="apellido"
-                        placeholder="Apellido"
-                        className="w-full rounded-md border border-gray-300 p-2"
-                        value={correoInput.apellido}
-                        onChange={(e) =>
-                          setCorreoInput({
-                            ...correoInput,
-                            apellido: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="email"
-                        id="correo"
-                        placeholder="Correo"
-                        className="w-full rounded-md border border-gray-300 p-2"
-                        value={correoInput.correo}
-                        onChange={(e) =>
-                          setCorreoInput({
-                            ...correoInput,
-                            correo: e.target.value,
-                          })
-                        }
-                      />
-                      <ButtonAction
-                        Icon={PlusIcon}
-                        label="Añadir"
-                        type="button"
-                        onClick={() => {
-                          if (correoInput.correo.trim() === "") {
-                            toast.error(
-                              "El correo electrónico no puede estar vacío",
-                            );
-                            return;
-                          }
-                          setCorreos([
-                            ...correos,
-                            {
-                              email: correoInput.correo,
-                              nombre: correoInput.nombre,
-                              apellido: correoInput.apellido,
-                              estados: [],
-                            },
-                          ]);
-                          setCorreoInput({
-                            nombre: "",
-                            apellido: "",
-                            correo: "",
-                          });
-                        }}
-                      />
-                    </div>
-                  </label>
-                </div>
-                <span className="text-sm text-gray-500">
-                  Presione el botón de "Añadir" para agregar un nuevo correo a
-                  la lista
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-gray-900">
-                  Correos configurados ({correos.length})
-                </p>
-
-                {correos.length > 0 &&
-                  correos.map((correo) => (
-                    <div
-                      key={correo.email}
-                      className="flex flex-col gap-2 rounded-md border border-gray-200 bg-gray-50 px-4 py-4"
-                    >
-                      <div className="flex flex-row items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-gray-900">
-                          {correo.email}
-                        </p>
-                        <button
-                          className="cursor-pointer rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-200 hover:text-red-500"
-                          onClick={() => {
-                            setCorreos(
-                              correos.filter((c) => c.email !== correo.email),
-                            );
-                          }}
-                        >
-                          <XIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Estados de Notificación
-                        <span className="ml-1 text-xs text-gray-500">
-                          ({correo.estados.length || 0} seleccionados)
-                        </span>
-                      </label>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        {estadosOrdenServicio?.data
-                          ?.filter((estado) => estado.estado) // Solo estados activos
-                          .map((estado, index) => (
-                            <div
-                              key={estado.idEstadoOrdenServicio}
-                              className="flex items-start space-x-2 rounded-md p-2 hover:bg-gray-50"
-                            >
-                              <input
-                                type="checkbox"
-                                id={`estado-${index}-${estado.idEstadoOrdenServicio}`}
-                                checked={correo.estados?.includes(
-                                  estado.idEstadoOrdenServicio,
-                                )}
-                                // Manejo de estados asignados al correo
-                                onChange={(e) => {
-                                  console.log(e.target.checked);
-                                  setCorreos(
-                                    correos.map((c) =>
-                                      c.email === correo.email
-                                        ? {
-                                            ...c,
-                                            estados: e.target.checked
-                                              ? [
-                                                  ...c.estados,
-                                                  estado.idEstadoOrdenServicio,
-                                                ]
-                                              : c.estados.filter(
-                                                  (id) =>
-                                                    id !==
-                                                    estado.idEstadoOrdenServicio,
-                                                ),
-                                          }
-                                        : c,
-                                    ),
-                                  );
-                                }}
-                                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <div className="flex-1">
-                                <label
-                                  htmlFor={`estado-${index}-${estado.idEstadoOrdenServicio}`}
-                                  className="cursor-pointer text-sm font-medium text-gray-700 capitalize"
-                                >
-                                  {estado.nombre}
-                                </label>
-                                <p className="mt-0.5 text-xs text-gray-500">
-                                  {estado.descripcion}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
-                {correos.length === 0 && (
-                  <div className="rounded-md border border-gray-200 bg-gray-50 p-2 text-sm text-gray-500">
-                    No hay correos configurados
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="col-span-2 flex justify-end space-x-2">
-            <Button
-              onClick={() => handleCloseAddLocacion()}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isCreatingLocacion}
-              className="w-auto"
-            >
-              {isCreatingLocacion ? "Creando..." : "Agregar"}
-            </Button>
-          </div>
-        </form>
-      </SimpleModal>
-
       {/* Modal para editar locación */}
       <SimpleModal
         isOpen={isEditModalOpen}
@@ -611,7 +235,12 @@ export function LocacionesTab() {
         title="Editar locación"
         size="4xl"
       >
-        <form
+        <FormsModal
+          isLoading={isUpdatingLocacion}
+          onCancel={() => {
+            handleCloseEditLocacion();
+          }}
+          updating={true}
           onSubmit={(e) => {
             e.preventDefault();
             updateLocacion(
@@ -629,224 +258,223 @@ export function LocacionesTab() {
               },
             );
           }}
-          className="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
-          <div className="col-span-1">
-            <h5 className="mb-3 text-sm font-medium text-gray-900 md:text-base">
-              Información Básica
-            </h5>
-            <InputForm
-              label="Nombre*"
-              placeholder="Nombre"
-              type="text"
-              id="nombre"
-              value={formEditLocacion.nombre || ""}
-              onChange={handleChangeEditLocacion}
-              required
-            />
-            <InputSelect
-              label="Cliente*"
-              placeholder="Cliente"
-              id="idCliente"
-              value={formEditLocacion.idCliente || 0}
-              onChange={handleNumericChangeEditLocacion}
-              options={
-                clientes?.data?.map((cliente) => ({
-                  id: cliente.idCliente,
-                  descripcion: cliente.nombre,
-                })) || []
-              }
-              required
-            />
-            <InputSelect
-              label="Ciudad*"
-              placeholder="Ciudad"
-              id="idCiudad"
-              value={formEditLocacion.idCiudad || 0}
-              onChange={handleNumericChangeEditLocacion}
-              options={
-                ciudades?.data?.map((ciudad) => ({
-                  id: ciudad.idCiudad,
-                  descripcion: ciudad.descripcion,
-                })) || []
-              }
-              required
-            />
-            <InputForm
-              label="Dirección*"
-              placeholder="Dirección"
-              type="text"
-              id="direccion"
-              value={formEditLocacion.direccion || ""}
-              onChange={handleChangeEditLocacion}
-              required
-            />
-            <InputForm
-              label="Días de anticipación de notificación*"
-              placeholder="Días de anticipación de notificación"
-              type="number"
-              id="diasAnticipaticionNotificacion"
-              value={
-                formEditLocacion.diasAnticipaticionNotificacion?.toString() ||
-                "0"
-              }
-              onChange={handleChangeEditLocacion}
-              required
-            />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-4">
+            <FormSection
+              title="Información de la locación"
+              description="Información de la locación"
+              Icon={Building2}
+            >
               <InputForm
-                label="Latitud*"
-                placeholder="Latitud"
-                type="number"
-                id="latitud"
-                value={formEditLocacion.latitud?.toString() || ""}
+                label="Nombre*"
+                placeholder="Nombre"
+                type="text"
+                id="nombre"
+                value={formEditLocacion.nombre || ""}
+                onChange={handleChangeEditLocacion}
+                required
+              />
+              <InputSelect
+                label="Cliente*"
+                placeholder="Cliente"
+                id="idCliente"
+                value={formEditLocacion.idCliente || 0}
+                onChange={handleNumericChangeEditLocacion}
+                options={
+                  clientes?.data?.map((cliente) => ({
+                    id: cliente.idCliente,
+                    descripcion: cliente.nombre,
+                  })) || []
+                }
+                required
+              />
+              <InputSelect
+                label="Ciudad*"
+                placeholder="Ciudad"
+                id="idCiudad"
+                value={formEditLocacion.idCiudad || 0}
+                onChange={handleNumericChangeEditLocacion}
+                options={
+                  ciudades?.data?.map((ciudad) => ({
+                    id: ciudad.idCiudad,
+                    descripcion: ciudad.descripcion,
+                  })) || []
+                }
+                required
+              />
+              <InputForm
+                label="Dirección*"
+                placeholder="Dirección"
+                type="text"
+                id="direccion"
+                value={formEditLocacion.direccion || ""}
                 onChange={handleChangeEditLocacion}
                 required
               />
               <InputForm
-                label="Longitud*"
-                placeholder="Longitud"
+                label="Días de anticipación de notificación*"
+                placeholder="Días de anticipación de notificación"
                 type="number"
-                id="longitud"
-                value={formEditLocacion.longitud?.toString() || ""}
+                id="diasAnticipaticionNotificacion"
+                value={
+                  formEditLocacion.diasAnticipaticionNotificacion?.toString() ||
+                  "0"
+                }
                 onChange={handleChangeEditLocacion}
                 required
               />
-            </div>
-          </div>
-          <div className="col-span-1">
-            <h5 className="mb-3 text-sm font-medium text-gray-900 md:text-base">
-              Información de contacto
-            </h5>
-            <InputForm
-              label="Primer nombre responsable*"
-              placeholder="Primer nombre responsable"
-              type="text"
-              id="primerNombreResponsable"
-              value={formEditLocacion.primerNombreResponsable || ""}
-              onChange={handleChangeEditLocacion}
-              required
-            />
-            <InputForm
-              label="Primer apellido responsable*"
-              placeholder="Primer apellido responsable"
-              type="text"
-              id="primerApellidoResponsable"
-              value={formEditLocacion.primerApellidoResponsable || ""}
-              onChange={handleChangeEditLocacion}
-              required
-            />
-            <InputForm
-              label="Teléfono*"
-              placeholder="Teléfono"
-              type="number"
-              id="telefono"
-              value={formEditLocacion.telefono || ""}
-              onChange={handleChangeEditLocacion}
-              required
-            />
-            <InputForm
-              label="Teléfono 2"
-              placeholder="Teléfono 2"
-              type="number"
-              id="segundoTelefono"
-              value={formEditLocacion.segundoTelefono || ""}
-              onChange={handleChangeEditLocacion}
-              required={false}
-            />
-            <div className="mt-4 mb-4 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-900">
-                  Correos electrónicos *
-                </p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <InputForm
+                  label="Latitud*"
+                  placeholder="Latitud"
+                  type="number"
+                  id="latitud"
+                  value={formEditLocacion.latitud?.toString() || ""}
+                  onChange={handleChangeEditLocacion}
+                  required
+                />
+                <InputForm
+                  label="Longitud*"
+                  placeholder="Longitud"
+                  type="number"
+                  id="longitud"
+                  value={formEditLocacion.longitud?.toString() || ""}
+                  onChange={handleChangeEditLocacion}
+                  required
+                />
               </div>
+            </FormSection>
+
+            <FormSection
+              title="Información de contacto"
+              description="Información de contacto"
+              Icon={User}
+            >
+              <InputForm
+                label="Primer nombre responsable*"
+                placeholder="Primer nombre responsable"
+                type="text"
+                id="primerNombreResponsable"
+                value={formEditLocacion.primerNombreResponsable || ""}
+                onChange={handleChangeEditLocacion}
+                required
+              />
+              <InputForm
+                label="Primer apellido responsable*"
+                placeholder="Primer apellido responsable"
+                type="text"
+                id="primerApellidoResponsable"
+                value={formEditLocacion.primerApellidoResponsable || ""}
+                onChange={handleChangeEditLocacion}
+                required
+              />
+              <InputForm
+                label="Teléfono*"
+                placeholder="Teléfono"
+                type="number"
+                id="telefono"
+                value={formEditLocacion.telefono || ""}
+                onChange={handleChangeEditLocacion}
+                required
+              />
+              <InputForm
+                label="Teléfono 2"
+                placeholder="Teléfono 2"
+                type="number"
+                id="segundoTelefono"
+                value={formEditLocacion.segundoTelefono || ""}
+                onChange={handleChangeEditLocacion}
+                required={false}
+              />
+            </FormSection>
+
+            <FormSection
+              title="Correos electrónicos"
+              description="Correos electrónicos"
+              Icon={Mail}
+              Details={
+                <p className="text-sm font-medium text-gray-900">
+                  Correos configurados ({correos.length || 0})
+                </p>
+              }
+            >
               <div className="col-span-2 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <div className="">
-                  <label
-                    htmlFor="correo"
-                    className="space-y-2 text-base font-medium text-gray-700"
-                  >
-                    Nuevo correo electrónico
-                    <div className="flex flex-col items-center gap-2">
-                      <input
-                        type="text"
-                        id="nombre"
-                        placeholder="Nombre"
-                        className="w-full rounded-md border border-gray-300 p-2"
-                        value={correoInput.nombre}
-                        onChange={(e) =>
-                          setCorreoInput({
-                            ...correoInput,
-                            nombre: e.target.value,
-                          })
+                  <div className="flex flex-col items-center gap-2">
+                    <input
+                      type="text"
+                      id="nombre"
+                      placeholder="Nombre"
+                      className="w-full rounded-md border border-gray-300 p-2"
+                      value={correoInput.nombre}
+                      onChange={(e) =>
+                        setCorreoInput({
+                          ...correoInput,
+                          nombre: e.target.value,
+                        })
+                      }
+                    />
+                    <input
+                      type="text"
+                      id="apellido"
+                      placeholder="Apellido"
+                      className="w-full rounded-md border border-gray-300 p-2"
+                      value={correoInput.apellido}
+                      onChange={(e) =>
+                        setCorreoInput({
+                          ...correoInput,
+                          apellido: e.target.value,
+                        })
+                      }
+                    />
+                    <input
+                      type="email"
+                      id="correo"
+                      placeholder="Correo"
+                      className="w-full rounded-md border border-gray-300 p-2"
+                      value={correoInput.correo}
+                      onChange={(e) =>
+                        setCorreoInput({
+                          ...correoInput,
+                          correo: e.target.value,
+                        })
+                      }
+                    />
+                    <ButtonAction
+                      Icon={PlusIcon}
+                      label="Añadir"
+                      type="button"
+                      onClick={() => {
+                        if (correoInput.correo.trim() === "") {
+                          toast.error(
+                            "El correo electrónico no puede estar vacío",
+                          );
+                          return;
                         }
-                      />
-                      <input
-                        type="text"
-                        id="apellido"
-                        placeholder="Apellido"
-                        className="w-full rounded-md border border-gray-300 p-2"
-                        value={correoInput.apellido}
-                        onChange={(e) =>
-                          setCorreoInput({
-                            ...correoInput,
-                            apellido: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="email"
-                        id="correo"
-                        placeholder="Correo"
-                        className="w-full rounded-md border border-gray-300 p-2"
-                        value={correoInput.correo}
-                        onChange={(e) =>
-                          setCorreoInput({
-                            ...correoInput,
-                            correo: e.target.value,
-                          })
-                        }
-                      />
-                      <ButtonAction
-                        Icon={PlusIcon}
-                        label="Añadir"
-                        type="button"
-                        onClick={() => {
-                          if (correoInput.correo.trim() === "") {
-                            toast.error(
-                              "El correo electrónico no puede estar vacío",
-                            );
-                            return;
-                          }
-                          setCorreos([
-                            ...correos,
-                            {
-                              email: correoInput.correo,
-                              nombre: correoInput.nombre,
-                              apellido: correoInput.apellido,
-                              estados: [],
-                            },
-                          ]);
-                          setCorreoInput({
-                            nombre: "",
-                            apellido: "",
-                            correo: "",
-                          });
-                        }}
-                      />
-                    </div>
-                  </label>
+                        setCorreos([
+                          ...correos,
+                          {
+                            email: correoInput.correo,
+                            nombre: correoInput.nombre,
+                            apellido: correoInput.apellido,
+                            estados: [],
+                          },
+                        ]);
+                        setCorreoInput({
+                          nombre: "",
+                          apellido: "",
+                          correo: "",
+                        });
+                      }}
+                    />
+                  </div>
                 </div>
                 <span className="text-sm text-gray-500">
                   Presione el botón de "Añadir" para agregar un nuevo correo a
                   la lista
                 </span>
               </div>
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-gray-900">
-                  Correos configurados ({correos.length || 0})
-                </p>
-
+              <div className="mt-4 flex h-full flex-col gap-2 overflow-y-auto">
                 {correos.length > 0 &&
                   correos.map((correo) => (
                     <div
@@ -932,29 +560,14 @@ export function LocacionesTab() {
                     </div>
                   ))}
                 {correos.length === 0 && (
-                  <div className="rounded-md border border-gray-200 bg-gray-50 p-2 text-sm text-gray-500">
+                  <div className="rounded-md border border-gray-200 bg-gray-50 p-2 py-10 text-center text-sm text-gray-500">
                     No hay correos configurados
                   </div>
                 )}
               </div>
-            </div>
+            </FormSection>
           </div>
-          <div className="col-span-2 flex justify-end space-x-2">
-            <Button
-              onClick={() => handleCloseEditLocacion()}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isUpdatingLocacion}
-              className="w-auto"
-            >
-              {isUpdatingLocacion ? "Actualizando..." : "Actualizar"}
-            </Button>
-          </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
 
       <ConfirmarDelete

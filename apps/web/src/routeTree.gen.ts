@@ -40,6 +40,7 @@ import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/
 import { Route as DashboardConfiguracionEstadoOrdenServicioRouteImport } from './routes/dashboard/configuracion/estado-orden-servicio'
 import { Route as DashboardTarifasVerTarifasIdPeriodoRouteImport } from './routes/dashboard/tarifas/ver-tarifas.$id-periodo'
 import { Route as DashboardTarifasConfigurarServiciosIdPeriodoRouteImport } from './routes/dashboard/tarifas/configurar-servicios.$id-periodo'
+import { Route as DashboardClientesIdClienteLocacionesRouteImport } from './routes/dashboard/clientes/$idCliente.locaciones'
 
 const RecuperarRoute = RecuperarRouteImport.update({
   id: '/recuperar',
@@ -212,6 +213,12 @@ const DashboardTarifasConfigurarServiciosIdPeriodoRoute =
     path: '/tarifas/configurar-servicios/$id-periodo',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardClientesIdClienteLocacionesRoute =
+  DashboardClientesIdClienteLocacionesRouteImport.update({
+    id: '/clientes/$idCliente/locaciones',
+    path: '/clientes/$idCliente/locaciones',
+    getParentRoute: () => DashboardRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -243,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/servicios': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
+  '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
   '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
@@ -275,6 +283,7 @@ export interface FileRoutesByTo {
   '/dashboard/servicios': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
+  '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
   '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
@@ -309,6 +318,7 @@ export interface FileRoutesById {
   '/dashboard/servicios/': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
+  '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
   '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
@@ -344,6 +354,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
+    | '/dashboard/clientes/$idCliente/locaciones'
     | '/dashboard/tarifas/configurar-servicios/$id-periodo'
     | '/dashboard/tarifas/ver-tarifas/$id-periodo'
   fileRoutesByTo: FileRoutesByTo
@@ -376,6 +387,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
+    | '/dashboard/clientes/$idCliente/locaciones'
     | '/dashboard/tarifas/configurar-servicios/$id-periodo'
     | '/dashboard/tarifas/ver-tarifas/$id-periodo'
   id:
@@ -409,6 +421,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios/'
     | '/dashboard/tarifas/'
     | '/dashboard/usuarios/'
+    | '/dashboard/clientes/$idCliente/locaciones'
     | '/dashboard/tarifas/configurar-servicios/$id-periodo'
     | '/dashboard/tarifas/ver-tarifas/$id-periodo'
   fileRoutesById: FileRoutesById
@@ -640,6 +653,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardTarifasConfigurarServiciosIdPeriodoRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/clientes/$idCliente/locaciones': {
+      id: '/dashboard/clientes/$idCliente/locaciones'
+      path: '/clientes/$idCliente/locaciones'
+      fullPath: '/dashboard/clientes/$idCliente/locaciones'
+      preLoaderRoute: typeof DashboardClientesIdClienteLocacionesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
@@ -668,6 +688,7 @@ interface DashboardRouteChildren {
   DashboardServiciosIndexRoute: typeof DashboardServiciosIndexRoute
   DashboardTarifasIndexRoute: typeof DashboardTarifasIndexRoute
   DashboardUsuariosIndexRoute: typeof DashboardUsuariosIndexRoute
+  DashboardClientesIdClienteLocacionesRoute: typeof DashboardClientesIdClienteLocacionesRoute
   DashboardTarifasConfigurarServiciosIdPeriodoRoute: typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   DashboardTarifasVerTarifasIdPeriodoRoute: typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
@@ -702,6 +723,8 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardServiciosIndexRoute: DashboardServiciosIndexRoute,
   DashboardTarifasIndexRoute: DashboardTarifasIndexRoute,
   DashboardUsuariosIndexRoute: DashboardUsuariosIndexRoute,
+  DashboardClientesIdClienteLocacionesRoute:
+    DashboardClientesIdClienteLocacionesRoute,
   DashboardTarifasConfigurarServiciosIdPeriodoRoute:
     DashboardTarifasConfigurarServiciosIdPeriodoRoute,
   DashboardTarifasVerTarifasIdPeriodoRoute:

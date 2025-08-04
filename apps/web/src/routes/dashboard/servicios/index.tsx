@@ -37,6 +37,8 @@ import type { CreateServicioDto, UpdateServicioDto } from "../../../api/dtos";
 import { InputForm } from "../../../components/common/InputForm";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { FormsModal } from "../../../components/ui/modals/FormsModal";
+import { FormSection } from "../../../components/common/FormSection";
 
 export const Route = createFileRoute("/dashboard/servicios/")({
   component: RouteComponent,
@@ -71,7 +73,6 @@ function RouteComponent() {
   const {
     form: formAgregarServicio,
     handleChange: handleChangeAgregarServicio,
-    setForm: setFormAgregarServicio,
     resetForm: resetFormAgregarServicio,
   } = useForm<CreateServicioDto>({
     codigo: "",
@@ -229,7 +230,7 @@ function RouteComponent() {
         title="Agregar Servicio"
         size="xl"
       >
-        <form
+        <FormsModal
           onSubmit={(e) => {
             e.preventDefault();
             agregarServicio(
@@ -261,144 +262,152 @@ function RouteComponent() {
               },
             );
           }}
-          className="grid grid-cols-2 gap-4"
+          isLoading={isLoadingAgregarServicio}
+          onCancel={() => {
+            setIsOpenAddModal(false);
+            resetFormAgregarServicio();
+            setTipoDuracion(null);
+            setTipoHorarioDescripcion(null);
+          }}
+          updating={false}
         >
-          <div className="col-span-1 space-y-2">
-            <h3 className="text-lg font-semibold">Datos del servicio</h3>
-            <InputForm
-              label="Código"
-              placeholder="Código"
-              type="text"
-              id="codigo"
-              value={formAgregarServicio.codigo}
-              onChange={handleChangeAgregarServicio}
-              required={true}
-            />
-            <InputForm
-              label="Descripción"
-              placeholder="Descripción"
-              type="text"
-              id="descripcion"
-              value={formAgregarServicio.descripcion}
-              onChange={handleChangeAgregarServicio}
-              required={true}
-            />
-            <InputSelect
-              label="Tipo de servicio"
-              placeholder="Tipo de servicio"
-              options={
-                tiposServicios?.data?.map((tipo) => ({
-                  id: tipo.idTipoServicio,
-                  descripcion: tipo.descripcion,
-                })) || []
-              }
-              id="idTipoServicio"
-              value={formAgregarServicio.idTipoServicio}
-              onChange={handleChangeAgregarServicio}
-              required={true}
-            />
-            <InputSelect
-              label="Tipo de horario"
-              placeholder="Tipo de horario"
-              options={
-                tiposHorarios?.data?.map((tipo) => ({
-                  id: tipo.idTipoHorarioDescripcion,
-                  descripcion: tipo.nombre,
-                })) || []
-              }
-              id="idTipoHorarioDescripcion"
-              value={formAgregarServicio.idTipoHorarioDescripcion}
-              onChange={(e) => {
-                handleChangeAgregarServicio(e);
-                if (e.target.selectedOptions[0].text.includes("dia completo")) {
-                  setTipoHorarioDescripcion(true);
-                } else {
-                  setTipoHorarioDescripcion(false);
-                }
-              }}
-              required={true}
-            />
-            {!tipoHorarioDescripcion && (
+          <div className="flex flex-col gap-4">
+            <FormSection
+              title="Datos del servicio"
+              description="Datos del servicio"
+              Icon={FileText}
+            >
+              <InputForm
+                label="Código"
+                placeholder="Código"
+                type="text"
+                id="codigo"
+                value={formAgregarServicio.codigo}
+                onChange={handleChangeAgregarServicio}
+                required={true}
+              />
+              <InputForm
+                label="Descripción"
+                placeholder="Descripción"
+                type="text"
+                id="descripcion"
+                value={formAgregarServicio.descripcion}
+                onChange={handleChangeAgregarServicio}
+                required={true}
+              />
               <InputSelect
-                label="Tipo de duración"
-                placeholder="Tipo de duración"
+                label="Tipo de servicio"
+                placeholder="Tipo de servicio"
                 options={
-                  tiposDuraciones?.data?.map((tipo) => ({
-                    id: tipo.idTipoDuracion,
+                  tiposServicios?.data?.map((tipo) => ({
+                    id: tipo.idTipoServicio,
                     descripcion: tipo.descripcion,
                   })) || []
                 }
-                id="idTipoDuracion"
-                value={formAgregarServicio.idTipoDuracion}
+                id="idTipoServicio"
+                value={formAgregarServicio.idTipoServicio}
+                onChange={handleChangeAgregarServicio}
+                required={true}
+              />
+              <InputSelect
+                label="Tipo de horario"
+                placeholder="Tipo de horario"
+                options={
+                  tiposHorarios?.data?.map((tipo) => ({
+                    id: tipo.idTipoHorarioDescripcion,
+                    descripcion: tipo.nombre,
+                  })) || []
+                }
+                id="idTipoHorarioDescripcion"
+                value={formAgregarServicio.idTipoHorarioDescripcion}
                 onChange={(e) => {
                   handleChangeAgregarServicio(e);
                   if (
-                    tiposDuraciones?.data?.find(
-                      (tipo) => tipo.idTipoDuracion === Number(e.target.value),
-                    )?.descripcion === "flexible"
+                    e.target.selectedOptions[0].text.includes("dia completo")
                   ) {
-                    setTipoDuracion("flexible");
+                    setTipoHorarioDescripcion(true);
                   } else {
-                    setTipoDuracion("fija");
+                    setTipoHorarioDescripcion(false);
                   }
                 }}
                 required={true}
               />
-            )}
-          </div>
-          <div className="col-span-1 space-y-2">
-            <h3 className="text-lg font-semibold">Configuración de horas</h3>
-            {!tipoHorarioDescripcion && tipoDuracion === "fija" && (
-              <InputForm
-                label="Horas fijas"
-                placeholder="Horas fijas"
-                type="number"
-                id="horasFijas"
-                value={formAgregarServicio.horasFijas?.toString() || ""}
-                onChange={handleChangeAgregarServicio}
-                required={true}
-              />
-            )}
-            {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
-              <>
-                <InputForm
-                  label="Horas mínimas"
-                  placeholder="Horas mínimas"
-                  type="number"
-                  id="horasMinimas"
-                  value={formAgregarServicio.horasMinimas?.toString() || ""}
-                  onChange={handleChangeAgregarServicio}
+              {!tipoHorarioDescripcion && (
+                <InputSelect
+                  label="Tipo de duración"
+                  placeholder="Tipo de duración"
+                  options={
+                    tiposDuraciones?.data?.map((tipo) => ({
+                      id: tipo.idTipoDuracion,
+                      descripcion: tipo.descripcion,
+                    })) || []
+                  }
+                  id="idTipoDuracion"
+                  value={formAgregarServicio.idTipoDuracion}
+                  onChange={(e) => {
+                    handleChangeAgregarServicio(e);
+                    if (
+                      tiposDuraciones?.data?.find(
+                        (tipo) =>
+                          tipo.idTipoDuracion === Number(e.target.value),
+                      )?.descripcion === "flexible"
+                    ) {
+                      setTipoDuracion("flexible");
+                    } else {
+                      setTipoDuracion("fija");
+                    }
+                  }}
                   required={true}
                 />
-                <InputForm
-                  label="Horas máximas"
-                  placeholder="Horas máximas"
-                  type="number"
-                  id="horasMaximas"
-                  value={formAgregarServicio.horasMaximas?.toString() || ""}
-                  onChange={handleChangeAgregarServicio}
-                  required={true}
-                />
-              </>
-            )}
-          </div>
-          <div className="col-span-2 flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenAddModal(false);
-                resetFormAgregarServicio();
-                setTipoDuracion(null);
-                setTipoHorarioDescripcion(null);
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
+              )}
+            </FormSection>
+            <FormSection
+              title="Configuración de horas"
+              description="Configuración de horas"
+              Icon={Clock}
             >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoadingAgregarServicio ? "Creando..." : "Crear"}
-            </Button>
+              {tipoHorarioDescripcion && (
+                <span className="text-sm text-gray-500">
+                  El servicio cubre todo el día. No es necesario configurar
+                  horas.
+                </span>
+              )}
+              {!tipoHorarioDescripcion && tipoDuracion === "fija" && (
+                <InputForm
+                  label="Horas fijas"
+                  placeholder="Horas fijas"
+                  type="number"
+                  id="horasFijas"
+                  value={formAgregarServicio.horasFijas?.toString() || ""}
+                  onChange={handleChangeAgregarServicio}
+                  required={true}
+                />
+              )}
+              {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
+                <>
+                  <InputForm
+                    label="Horas mínimas"
+                    placeholder="Horas mínimas"
+                    type="number"
+                    id="horasMinimas"
+                    value={formAgregarServicio.horasMinimas?.toString() || ""}
+                    onChange={handleChangeAgregarServicio}
+                    required={true}
+                  />
+                  <InputForm
+                    label="Horas máximas"
+                    placeholder="Horas máximas"
+                    type="number"
+                    id="horasMaximas"
+                    value={formAgregarServicio.horasMaximas?.toString() || ""}
+                    onChange={handleChangeAgregarServicio}
+                    required={true}
+                  />
+                </>
+              )}
+            </FormSection>
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
 
       <SimpleModal
@@ -412,7 +421,7 @@ function RouteComponent() {
         title="Editar Servicio"
         size="xl"
       >
-        <form
+        <FormsModal
           onSubmit={(e) => {
             e.preventDefault();
             if (tipoDuracion === "fija") {
@@ -450,161 +459,168 @@ function RouteComponent() {
               },
             );
           }}
-          className="grid grid-cols-2 gap-4"
+          isLoading={isLoadingActualizarServicio}
+          onCancel={() => {
+            setIsOpenEditModal(false);
+            resetFormEditarServicio();
+            setTipoDuracion(null);
+            setTipoHorarioDescripcion(null);
+          }}
+          updating={true}
         >
-          <div className="col-span-1 space-y-2">
-            <h3 className="text-lg font-semibold">Datos del servicio</h3>
-            <InputForm
-              label="Código"
-              placeholder="Código"
-              type="text"
-              id="codigo"
-              value={formEditarServicio.codigo || ""}
-              onChange={handleChangeEditarServicio}
-              required={true}
-            />
-            <InputForm
-              label="Descripción"
-              placeholder="Descripción"
-              type="text"
-              id="descripcion"
-              value={formEditarServicio.descripcion || ""}
-              onChange={handleChangeEditarServicio}
-              required={true}
-            />
-            <InputSelect
-              label="Tipo de servicio"
-              placeholder="Tipo de servicio"
-              options={
-                tiposServicios?.data?.map((tipo) => ({
-                  id: tipo.idTipoServicio,
-                  descripcion: tipo.descripcion,
-                })) || []
-              }
-              id="idTipoServicio"
-              value={formEditarServicio.idTipoServicio?.toString() || ""}
-              onChange={handleChangeEditarServicio}
-              required={true}
-            />
-            <InputSelect
-              label="Tipo de horario"
-              placeholder="Tipo de horario"
-              options={
-                tiposHorarios?.data?.map((tipo) => ({
-                  id: tipo.idTipoHorarioDescripcion,
-                  descripcion: tipo.nombre,
-                })) || []
-              }
-              id="idTipoHorarioDescripcion"
-              value={
-                formEditarServicio.idTipoHorarioDescripcion?.toString() || ""
-              }
-              onChange={(e) => {
-                handleChangeEditarServicio(e);
-                if (e.target.selectedOptions[0].text.includes("dia completo")) {
-                  setTipoHorarioDescripcion(true);
-                } else {
-                  setTipoHorarioDescripcion(false);
-                }
-              }}
-              required={true}
-            />
-            {!tipoHorarioDescripcion && (
+          <div className="flex flex-col gap-4">
+            <FormSection
+              title="Datos del servicio"
+              description="Datos del servicio"
+              Icon={FileText}
+            >
+              <InputForm
+                label="Código"
+                placeholder="Código"
+                type="text"
+                id="codigo"
+                value={formEditarServicio.codigo || ""}
+                onChange={handleChangeEditarServicio}
+                required={true}
+              />
+              <InputForm
+                label="Descripción"
+                placeholder="Descripción"
+                type="text"
+                id="descripcion"
+                value={formEditarServicio.descripcion || ""}
+                onChange={handleChangeEditarServicio}
+                required={true}
+              />
               <InputSelect
-                label="Tipo de duración"
-                placeholder="Tipo de duración"
+                label="Tipo de servicio"
+                placeholder="Tipo de servicio"
                 options={
-                  tiposDuraciones?.data?.map((tipo) => ({
-                    id: tipo.idTipoDuracion,
+                  tiposServicios?.data?.map((tipo) => ({
+                    id: tipo.idTipoServicio,
                     descripcion: tipo.descripcion,
                   })) || []
                 }
-                id="idTipoDuracion"
-                value={formEditarServicio.idTipoDuracion?.toString() || ""}
+                id="idTipoServicio"
+                value={formEditarServicio.idTipoServicio?.toString() || ""}
+                onChange={handleChangeEditarServicio}
+                required={true}
+              />
+              <InputSelect
+                label="Tipo de horario"
+                placeholder="Tipo de horario"
+                options={
+                  tiposHorarios?.data?.map((tipo) => ({
+                    id: tipo.idTipoHorarioDescripcion,
+                    descripcion: tipo.nombre,
+                  })) || []
+                }
+                id="idTipoHorarioDescripcion"
+                value={
+                  formEditarServicio.idTipoHorarioDescripcion?.toString() || ""
+                }
                 onChange={(e) => {
                   handleChangeEditarServicio(e);
                   if (
-                    tiposDuraciones?.data?.find(
-                      (tipo) => tipo.idTipoDuracion === Number(e.target.value),
-                    )?.descripcion === "flexible"
+                    e.target.selectedOptions[0].text.includes("dia completo")
                   ) {
-                    setTipoDuracion("flexible");
+                    setTipoHorarioDescripcion(true);
                   } else {
-                    setTipoDuracion("fija");
+                    setTipoHorarioDescripcion(false);
                   }
                 }}
                 required={true}
               />
-            )}
-            <InputSelectStateBoolean
-              label="Estado"
-              placeholder="Estado"
-              id="estado"
-              value={formEditarServicio.estado?.toString() || ""}
-              onChange={handleChangeEditarServicio}
-            />
-          </div>
-          <div className="col-span-1 space-y-2">
-            <h3 className="text-lg font-semibold">Configuración de horas</h3>
-            {!tipoHorarioDescripcion && tipoDuracion === "fija" && (
-              <InputForm
-                label="Horas fijas"
-                placeholder="Horas fijas"
-                type="number"
-                id="horasFijas"
-                value={formEditarServicio.horasFijas?.toString() || ""}
+              {!tipoHorarioDescripcion && (
+                <InputSelect
+                  label="Tipo de duración"
+                  placeholder="Tipo de duración"
+                  options={
+                    tiposDuraciones?.data?.map((tipo) => ({
+                      id: tipo.idTipoDuracion,
+                      descripcion: tipo.descripcion,
+                    })) || []
+                  }
+                  id="idTipoDuracion"
+                  value={formEditarServicio.idTipoDuracion?.toString() || ""}
+                  onChange={(e) => {
+                    handleChangeEditarServicio(e);
+                    if (
+                      tiposDuraciones?.data?.find(
+                        (tipo) =>
+                          tipo.idTipoDuracion === Number(e.target.value),
+                      )?.descripcion === "flexible"
+                    ) {
+                      setTipoDuracion("flexible");
+                    } else {
+                      setTipoDuracion("fija");
+                    }
+                  }}
+                  required={true}
+                />
+              )}
+              <InputSelectStateBoolean
+                label="Estado"
+                placeholder="Estado"
+                id="estado"
+                value={formEditarServicio.estado?.toString() || ""}
                 onChange={handleChangeEditarServicio}
-                required={true}
               />
-            )}
-            {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
-              <>
-                <InputForm
-                  label="Horas mínimas"
-                  placeholder="Horas mínimas"
-                  type="number"
-                  id="horasMinimas"
-                  value={formEditarServicio.horasMinimas?.toString() || ""}
-                  onChange={handleChangeEditarServicio}
-                  required={true}
-                />
-                <InputForm
-                  label="Horas máximas"
-                  placeholder="Horas máximas"
-                  type="number"
-                  id="horasMaximas"
-                  value={formEditarServicio.horasMaximas?.toString() || ""}
-                  onChange={handleChangeEditarServicio}
-                  required={true}
-                />
-              </>
-            )}
-          </div>
-
-          <div className="col-span-2 flex justify-end space-x-2">
-            <Button
-              onClick={() => {
-                setIsOpenEditModal(false);
-                resetFormEditarServicio();
-                setTipoDuracion(null);
-                setTipoHorarioDescripcion(null);
-              }}
-              className="w-auto bg-gray-500 hover:bg-gray-600"
+            </FormSection>
+            <FormSection
+              title="Configuración de horas"
+              description="Configuración de horas"
+              Icon={Clock}
             >
-              Cancelar
-            </Button>
-            <Button type="submit" className="w-auto">
-              {isLoadingActualizarServicio ? "Actualizando..." : "Actualizar"}
-            </Button>
+              {tipoHorarioDescripcion && (
+                <span className="text-sm text-gray-500">
+                  El servicio cubre todo el día. No es necesario configurar
+                  horas.
+                </span>
+              )}
+              {!tipoHorarioDescripcion && tipoDuracion === "fija" && (
+                <InputForm
+                  label="Horas fijas"
+                  placeholder="Horas fijas"
+                  type="number"
+                  id="horasFijas"
+                  value={formEditarServicio.horasFijas?.toString() || ""}
+                  onChange={handleChangeEditarServicio}
+                  required={true}
+                />
+              )}
+              {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
+                <>
+                  <InputForm
+                    label="Horas mínimas"
+                    placeholder="Horas mínimas"
+                    type="number"
+                    id="horasMinimas"
+                    value={formEditarServicio.horasMinimas?.toString() || ""}
+                    onChange={handleChangeEditarServicio}
+                    required={true}
+                  />
+                  <InputForm
+                    label="Horas máximas"
+                    placeholder="Horas máximas"
+                    type="number"
+                    id="horasMaximas"
+                    value={formEditarServicio.horasMaximas?.toString() || ""}
+                    onChange={handleChangeEditarServicio}
+                    required={true}
+                  />
+                </>
+              )}
+            </FormSection>
           </div>
-        </form>
+        </FormsModal>
       </SimpleModal>
 
       <SimpleModal
         isOpen={isOpenViewModal}
         onClose={() => setIsOpenViewModal(false)}
         title="Ver Servicio"
-        size="lg"
+        size="xl"
       >
         <div className="space-y-4">
           <div className="relative flex items-start gap-3 rounded-lg bg-gray-50 p-3">
