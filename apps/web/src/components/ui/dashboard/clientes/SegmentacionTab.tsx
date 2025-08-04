@@ -19,7 +19,6 @@ import type {
   UpdateSegmentacionDto,
   UpdateSubSegmentacionDto,
 } from "../../../../api/dtos";
-import Button from "../../../common/Button";
 import {
   useActualizarSegmentacion,
   useActualizarSubSegmentacion,
@@ -33,15 +32,20 @@ import {
 import { InputSelectStateBoolean } from "../../../common/InputSelectState";
 import { toast } from "sonner";
 import { FormsModal } from "../../modals/FormsModal";
+import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 
 export function SegmentacionTab() {
   // Estados
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isOpenDelete, setIsOpenDelete] = useState(false);
+  const [isOpenDeleteSubSegmentacion, setIsOpenDeleteSubSegmentacion] =
+    useState(false);
   const [showSubSegmentations, setShowSubSegmentations] = useState(false);
   const [showAddSubSegmentationModal, setShowAddSubSegmentationModal] =
     useState(false);
   const [idSegmentacion, setIdSegmentacion] = useState(0);
+  const [idSubSegmentacion, setIdSubSegmentacion] = useState(0);
 
   // Segmentaciones
   const { data: segmentaciones } = useSegmentaciones();
@@ -120,8 +124,6 @@ export function SegmentacionTab() {
     e: React.FormEvent<HTMLFormElement>,
   ) => {
     e.preventDefault();
-    console.log(idSegmentacion);
-    console.log(subSegmentaciones);
     crearSubSegmentacion(
       { id: idSegmentacion, data: subSegmentaciones },
       {
@@ -173,24 +175,16 @@ export function SegmentacionTab() {
   };
 
   const handleDeleteSegmentacion = (id: number) => {
-    eliminarSegmentacion(id, {
-      onSuccess: () => {
-        setIsEditModalOpen(false);
-        resetFormEdit();
-      },
-    });
+    setIsOpenDelete(true);
+    setIdSegmentacion(id);
   };
 
   const handleDeleteSubSegmentacion = (id: number) => {
-    eliminarSubSegmentacion(id, {
-      onSuccess: () => {
-        resetFormEdit();
-      },
-    });
+    setIsOpenDeleteSubSegmentacion(true);
+    setIdSubSegmentacion(id);
   };
 
   const handleShowEditSubSegmentacion = (subSegmentacion: SubSegmentacion) => {
-    console.log(subSegmentacion);
     setSubSegmentaciones({
       idSubSegmentacion: subSegmentacion.idSubSegmentacion,
       descripcion: subSegmentacion.descripcion,
@@ -254,22 +248,22 @@ export function SegmentacionTab() {
       accessorKey: "subSegmentaciones",
       header: "Sub-Segmentaciones",
       cell: ({ row }) => (
-        <>
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium text-gray-500">
-              {row.original.subSegmentaciones?.length} Sub Segmentaciones
-            </p>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium whitespace-nowrap text-gray-500">
+            {row.original.subSegmentaciones?.length} Sub Segmentaciones
+          </p>
 
+          <div className="flex flex-wrap gap-2">
             {row.original.subSegmentaciones?.map((subSegmentacion) => (
               <span
-                className="w-fit rounded-md bg-blue-100 px-2 py-1 text-center text-sm font-medium text-blue-600 hover:bg-blue-200"
+                className="w-fit rounded-md bg-blue-100 px-2 py-1 text-center text-sm font-medium whitespace-nowrap text-blue-600 hover:bg-blue-200"
                 key={subSegmentacion.idSubSegmentacion}
               >
                 {subSegmentacion.descripcion}
               </span>
             ))}
           </div>
-        </>
+        </div>
       ),
     },
     {
@@ -590,7 +584,6 @@ export function SegmentacionTab() {
                           type="button"
                           className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700 disabled:bg-blue-300"
                           onClick={() => {
-                            console.log(subSegmentaciones);
                             handleUpdateSubSegmentacion(
                               subSegmentaciones?.idSubSegmentacion || 0,
                               {
@@ -693,37 +686,46 @@ export function SegmentacionTab() {
           updating={false}
           onSubmit={handleAddSubSegmentacionToSegmentacion}
         >
-          <div className="space-y-6">
-            <InputForm
-              label="Descripción *"
-              placeholder="Ej: Sub-segmentación por Industria"
-              type="text"
-              id="descripcion"
-              required={false}
-              value={subSegmentaciones?.descripcion}
-              onChange={handleChangeSubSegmentacion}
-            />
-            <div className="mt-6 flex justify-end space-x-3 pt-6">
-              <Button
-                onClick={() => {
-                  setShowAddSubSegmentationModal(false);
-                  setSubSegmentaciones({
-                    idSubSegmentacion: 0,
-                    descripcion: "",
-                    estado: undefined,
-                  });
-                }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={false}>
-                Agregar Sub-segmentación
-              </Button>
-            </div>
-          </div>
+          <InputForm
+            label="Descripción *"
+            placeholder="Ej: Sub-segmentación por Industria"
+            type="text"
+            id="descripcion"
+            required={false}
+            value={subSegmentaciones?.descripcion}
+            onChange={handleChangeSubSegmentacion}
+          />
         </FormsModal>
       </SimpleModal>
+
+      <ConfirmarDelete
+        isOpenDelete={isOpenDelete}
+        text="¿Estás seguro de querer eliminar esta segmentación?"
+        onDelete={() => {
+          eliminarSegmentacion(idSegmentacion, {
+            onSuccess: () => {
+              setIsOpenDelete(false);
+              setIdSegmentacion(0);
+            },
+          });
+        }}
+        onClose={() => setIsOpenDelete(false)}
+      />
+      <ConfirmarDelete
+        isOpenDelete={isOpenDeleteSubSegmentacion}
+        text="¿Estás seguro de querer eliminar esta sub-segmentación?"
+        onDelete={() => {
+          eliminarSubSegmentacion(idSubSegmentacion, {
+            onSuccess: () => {
+              setIsOpenDeleteSubSegmentacion(false);
+              setIsEditModalOpen(false);
+              setIdSubSegmentacion(0);
+              resetFormEdit();
+            },
+          });
+        }}
+        onClose={() => setIsOpenDeleteSubSegmentacion(false)}
+      />
     </div>
   );
 }
