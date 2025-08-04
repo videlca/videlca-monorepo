@@ -36,6 +36,7 @@ import { InputSelect } from "../../../components/common/InputSelect";
 import { InputPrice } from "../../../components/common/InputPrice";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
+import { priceFormat } from "../../../utils/PriceFormat";
 
 export const Route = createFileRoute(
   "/dashboard/tarifas/ver-tarifas/$id-periodo",
@@ -146,12 +147,8 @@ function RouteComponent() {
       accessorKey: "precioSinIva",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium text-green-700">
-            $
-            {row.original.precioSinIva?.toLocaleString("es-CO", {
-              style: "currency",
-              currency: "COP",
-            })}
+          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+            {priceFormat(row.original.precioSinIva || 0)}
           </span>
         );
       },
@@ -161,12 +158,8 @@ function RouteComponent() {
       accessorKey: "iva",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium text-green-700">
-            $
-            {row.original.iva?.toLocaleString("es-CO", {
-              style: "currency",
-              currency: "COP",
-            })}
+          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+            {priceFormat(row.original.iva || 0)}
           </span>
         );
       },
@@ -176,12 +169,8 @@ function RouteComponent() {
       accessorKey: "precioTotal",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium text-green-700">
-            $
-            {row.original.precioTotal?.toLocaleString("es-CO", {
-              style: "currency",
-              currency: "COP",
-            })}
+          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+            {priceFormat(row.original.precioTotal || 0)}
           </span>
         );
       },
@@ -215,7 +204,6 @@ function RouteComponent() {
               onClick={() => {
                 setIsOpenSeeTarifa(true);
                 setTarifaSelected(row.original);
-                console.log(row.original);
               }}
             />
             <ButtonAction
@@ -474,13 +462,13 @@ function RouteComponent() {
                   Precio Sin IVA
                 </p>
                 <p className="text-2xl font-bold whitespace-nowrap text-blue-600">
-                  $ {tarifaSelected?.precioSinIva?.toLocaleString("es-ES")}
+                  {priceFormat(tarifaSelected?.precioSinIva || 0)}
                 </p>
               </div>
               <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                 <p className="text-sm font-medium text-blue-900">IVA (19%)</p>
                 <p className="text-2xl font-bold whitespace-nowrap text-blue-600">
-                  $ {tarifaSelected?.iva?.toLocaleString("es-ES")}
+                  {priceFormat(tarifaSelected?.iva || 0)}
                 </p>
               </div>
               <div className="rounded-lg border border-green-200 bg-green-50 p-4">
@@ -488,7 +476,7 @@ function RouteComponent() {
                   Precio Total
                 </p>
                 <p className="text-2xl font-bold whitespace-nowrap text-green-600">
-                  $ {tarifaSelected?.precioTotal?.toLocaleString("es-ES")}
+                  {priceFormat(tarifaSelected?.precioTotal || 0)}
                 </p>
               </div>
             </div>

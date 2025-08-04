@@ -26,6 +26,7 @@ import { useGuardarTarifas } from "../../../api/queryFunctions/tarifas/tarifa";
 import { useTipoTarifa } from "../../../api/queryFunctions/tarifas";
 import type { CreateTarifaDto } from "../../../api/dtos/tarifas";
 import { toast } from "sonner";
+import { priceFormat } from "../../../utils/PriceFormat";
 
 // Interfaz para manejar servicios configurados localmente
 interface ServicioConfigurado {
@@ -70,6 +71,7 @@ function RouteComponent() {
   const { mutate: guardarTarifas, isPending: isLoadingGuardarTarifas } =
     useGuardarTarifas();
 
+  console.log(servicios?.data);
   // Función para calcular IVA y precio total automáticamente
   const calcularPrecios = (precioBase: number) => {
     const iva = precioBase * 0.019; // IVA del 19%
@@ -365,12 +367,10 @@ function RouteComponent() {
                             )?.nombre
                           }
                         </span>
-                        <span>
-                          Precio Base: ${sc.precioBase.toLocaleString("es-ES")}
-                        </span>
-                        <span>IVA: ${sc.iva.toLocaleString("es-ES")}</span>
+                        <span>Precio Base: {priceFormat(sc.precioBase)}</span>
+                        <span>IVA: {priceFormat(sc.iva)}</span>
                         <span className="font-semibold">
-                          Total: ${sc.precioTotal.toLocaleString("es-ES")}
+                          Total: {priceFormat(sc.precioTotal)}
                         </span>
                       </div>
                     </div>

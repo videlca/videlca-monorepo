@@ -24,9 +24,9 @@ export interface CreateTarifaDto {
   idPeriodo: number;
   idServicio: number;
   idTipoTarifa: number;
-  precioSinIva: number;
-  iva: number;
-  precioTotal: number;
+  precioSinIva: number | string;
+  iva: number | string;
+  precioTotal: number | string;
 }
 
 export interface UpdateTarifaDto extends Partial<CreateTarifaDto> {
