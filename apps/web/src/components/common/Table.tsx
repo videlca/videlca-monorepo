@@ -32,6 +32,7 @@ interface TableProps<TData, TValues> {
   showHeader?: boolean;
   loading?: boolean;
   emptyMessage?: string;
+  hasActions?: boolean;
 }
 
 const Table = <TData, TValues>({
@@ -45,6 +46,7 @@ const Table = <TData, TValues>({
   showHeader = true,
   loading = false,
   emptyMessage = "No data available",
+  hasActions = false,
 }: TableProps<TData, TValues>) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
@@ -187,7 +189,7 @@ const Table = <TData, TValues>({
       )}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="mr-10">
+        <table className="mr-10 w-full">
           {showHeader && (
             <thead className="bg-gray-50">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -233,9 +235,7 @@ const Table = <TData, TValues>({
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className={`px-6 py-4 text-center text-sm break-words ${
-                        !cell.column.getIsLastColumn() ? "w-md" : "w-fit"
-                      }`}
+                      className={`w-md px-6 py-4 text-center text-sm break-words`}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

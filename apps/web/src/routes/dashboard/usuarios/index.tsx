@@ -335,27 +335,29 @@ function RouteComponent() {
           }}
           updating={true}
         >
-          <InputSelectStateBoolean
-            label="Estado"
-            placeholder="Estado"
-            id="estado"
-            value={formUsuarioEdit.estado?.toString() || ""}
-            onChange={handleBooleanChangeUsuarioEdit}
-          />
-          <InputSelect
-            label="Rol"
-            placeholder="Rol"
-            id="idRol"
-            value={formUsuarioEdit.idRol?.toString() || ""}
-            options={
-              roles?.data?.map((role) => ({
-                id: role.id,
-                descripcion: role.nombreRol,
-              })) || []
-            }
-            onChange={handleNumericChangeUsuarioEdit}
-            required
-          />
+          <div className="flex flex-col gap-2">
+            <InputSelectStateBoolean
+              label="Estado"
+              placeholder="Estado"
+              id="estado"
+              value={formUsuarioEdit.estado?.toString() || ""}
+              onChange={handleBooleanChangeUsuarioEdit}
+            />
+            <InputSelect
+              label="Rol"
+              placeholder="Rol"
+              id="idRol"
+              value={formUsuarioEdit.idRol?.toString() || ""}
+              options={
+                roles?.data?.map((role) => ({
+                  id: role.id,
+                  descripcion: role.nombreRol,
+                })) || []
+              }
+              onChange={handleNumericChangeUsuarioEdit}
+              required
+            />
+          </div>
         </FormsModal>
       </SimpleModal>
 
