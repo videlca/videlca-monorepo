@@ -421,11 +421,23 @@ export class TipoHorarioService {
     
         if (registrosEnConflicto.length > 0) {
             const conflicto = registrosEnConflicto[0];
+            
+            // Ensure dates are properly converted to Date objects
+            const fechaInicio = conflicto.fechaVigenciaInicio instanceof Date 
+                ? conflicto.fechaVigenciaInicio 
+                : new Date(conflicto.fechaVigenciaInicio);
+            
+            const fechaFin = conflicto.fechaVigenciaFin 
+                ? (conflicto.fechaVigenciaFin instanceof Date 
+                    ? conflicto.fechaVigenciaFin 
+                    : new Date(conflicto.fechaVigenciaFin))
+                : null;
+            
             const descripcionConflicto = 
             `Registro ID ${conflicto.idTipoHorario} (${conflicto.idTipoHorarioDescripcion.nombre}) ` +
-            `con vigencia desde ${conflicto.fechaVigenciaInicio.toISOString().split('T')[0]} ` +
-            `hasta ${conflicto.fechaVigenciaFin ? conflicto.fechaVigenciaFin.toISOString().split('T')[0] : 'indefinido'}`;
-    
+            `con vigencia desde ${fechaInicio.toISOString().split('T')[0]} ` +
+            `hasta ${fechaFin ? fechaFin.toISOString().split('T')[0] : 'indefinido'}`;
+
             return {
                 haySolapamiento: true,
                 descripcionConflicto
