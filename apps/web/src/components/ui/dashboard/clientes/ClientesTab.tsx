@@ -119,6 +119,7 @@ export function ClientesTab() {
     form: formAddLocacion,
     handleChange: handleChangeAddLocacion,
     handleNumericChange: handleNumericChangeAddLocacion,
+    setForm: setFormAddLocacion,
     resetForm: resetFormAddLocacion,
   } = useForm<CreateLocacionDto>({
     idCliente: 0,
@@ -216,7 +217,13 @@ export function ClientesTab() {
           <ButtonAction
             Icon={PlusIcon}
             label="Agregar locacion"
-            onClick={() => setIsAddLocacionModalOpen(true)}
+            onClick={() => {
+              setIsAddLocacionModalOpen(true);
+              setFormAddLocacion({
+                ...formAddLocacion,
+                idCliente: row.original.idCliente || 0,
+              });
+            }}
           />
           <ButtonAction
             Icon={EyeIcon}
@@ -506,7 +513,7 @@ export function ClientesTab() {
                 onChange={handleChangeAddLocacion}
                 required
               />
-              <InputSelect
+              {/* <InputSelect
                 label="Cliente*"
                 placeholder="Cliente"
                 id="idCliente"
@@ -519,7 +526,7 @@ export function ClientesTab() {
                   })) || []
                 }
                 required
-              />
+              /> */}
               <InputSelect
                 label="Ciudad*"
                 placeholder="Ciudad"

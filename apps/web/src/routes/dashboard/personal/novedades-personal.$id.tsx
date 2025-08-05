@@ -24,6 +24,7 @@ import { useTipoNovedad } from "../../../api/queryFunctions/configuracion";
 import { useGetPersonalNovedad } from "../../../api/queryFunctions/personal";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputForm } from "../../../components/common/InputForm";
+import { timeFormat } from "../../../utils/TimeFormat";
 
 export const Route = createFileRoute(
   "/dashboard/personal/novedades-personal/$id",
@@ -181,7 +182,11 @@ function RouteComponent() {
             updateNovedad(
               {
                 id: novedad?.idNovedad || 0,
-                data: formEditNovedad,
+                data: {
+                  ...formEditNovedad,
+                  horaFin: timeFormat(formEditNovedad.horaFin || ""),
+                  horaInicio: timeFormat(formEditNovedad.horaInicio || ""),
+                },
               },
               {
                 onSuccess: () => {
@@ -200,59 +205,61 @@ function RouteComponent() {
           updating={true}
           isLoading={isLoadingUpdateNovedad}
         >
-          <InputSelect
-            label="Tipo de novedad"
-            placeholder="Tipo de novedad"
-            id="idTipoNovedad"
-            value={formEditNovedad.idTipoNovedad?.toString() || ""}
-            onChange={handleChangeEditNovedad}
-            options={
-              tiposNovedades?.data?.map((tipo) => ({
-                id: tipo.idTipoNovedad,
-                descripcion: tipo.descripcion,
-              })) || []
-            }
-          />
-          <InputForm
-            label="Descripción"
-            placeholder="Descripción"
-            id="descripcion"
-            value={formEditNovedad.descripcion || ""}
-            onChange={handleChangeEditNovedad}
-            type="text"
-          />
-          <InputForm
-            label="Fecha de inicio"
-            placeholder="Fecha de inicio"
-            id="fechaInicio"
-            value={formEditNovedad.fechaInicio || ""}
-            onChange={handleChangeEditNovedad}
-            type="date"
-          />
-          <InputForm
-            label="Hora de inicio"
-            placeholder="Hora de inicio"
-            id="horaInicio"
-            value={formEditNovedad.horaInicio || ""}
-            onChange={handleChangeEditNovedad}
-            type="time"
-          />
-          <InputForm
-            label="Fecha de fin"
-            placeholder="Fecha de fin"
-            id="fechaFin"
-            value={formEditNovedad.fechaFin || ""}
-            onChange={handleChangeEditNovedad}
-            type="date"
-          />
-          <InputForm
-            label="Hora de fin"
-            placeholder="Hora de fin"
-            id="horaFin"
-            value={formEditNovedad.horaFin || ""}
-            onChange={handleChangeEditNovedad}
-            type="time"
-          />
+          <div className="flex flex-col gap-4">
+            <InputSelect
+              label="Tipo de novedad"
+              placeholder="Tipo de novedad"
+              id="idTipoNovedad"
+              value={formEditNovedad.idTipoNovedad?.toString() || ""}
+              onChange={handleChangeEditNovedad}
+              options={
+                tiposNovedades?.data?.map((tipo) => ({
+                  id: tipo.idTipoNovedad,
+                  descripcion: tipo.descripcion,
+                })) || []
+              }
+            />
+            <InputForm
+              label="Descripción"
+              placeholder="Descripción"
+              id="descripcion"
+              value={formEditNovedad.descripcion || ""}
+              onChange={handleChangeEditNovedad}
+              type="text"
+            />
+            <InputForm
+              label="Fecha de inicio"
+              placeholder="Fecha de inicio"
+              id="fechaInicio"
+              value={formEditNovedad.fechaInicio || ""}
+              onChange={handleChangeEditNovedad}
+              type="date"
+            />
+            <InputForm
+              label="Hora de inicio"
+              placeholder="Hora de inicio"
+              id="horaInicio"
+              value={formEditNovedad.horaInicio || ""}
+              onChange={handleChangeEditNovedad}
+              type="time"
+            />
+            <InputForm
+              label="Fecha de fin"
+              placeholder="Fecha de fin"
+              id="fechaFin"
+              value={formEditNovedad.fechaFin || ""}
+              onChange={handleChangeEditNovedad}
+              type="date"
+            />
+            <InputForm
+              label="Hora de fin"
+              placeholder="Hora de fin"
+              id="horaFin"
+              value={formEditNovedad.horaFin || ""}
+              onChange={handleChangeEditNovedad}
+              type="time"
+            />
+          </div>
         </FormsModal>
       </SimpleModal>
 

@@ -45,7 +45,7 @@ export const useGetPersonalNovedad = (
   idPersonal: number,
 ): UseQueryResult<ApiResponse<Novedad[]>, Error> => {
   return useQuery({
-    queryKey: ["personal-novedad", idPersonal],
+    queryKey: ["personal-novedad"],
     queryFn: () => getPersonalNovedad(idPersonal, { pagination: false }),
   });
 };

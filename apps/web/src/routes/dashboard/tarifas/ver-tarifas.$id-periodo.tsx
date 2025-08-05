@@ -429,10 +429,7 @@ function RouteComponent() {
               <div>
                 <p>
                   <span className="font-medium">Tipo de Horario:</span>{" "}
-                  {
-                    tarifaSelected?.idServicio.idTipoHorarioDescripcion
-                      ?.descripcion
-                  }
+                  {tarifaSelected?.idServicio.idTipoHorarioDescripcion?.nombre}
                 </p>
                 <p>
                   <span className="font-medium">Estado del Servicio:</span>{" "}

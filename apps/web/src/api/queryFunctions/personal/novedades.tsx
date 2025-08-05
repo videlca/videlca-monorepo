@@ -33,6 +33,7 @@ export const useUpdateNovedad = (): UseMutationResult<
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201 || data.status === 204) {
         queryClient.invalidateQueries({ queryKey: ["novedades"] });
+        queryClient.invalidateQueries({ queryKey: ["personal-novedad"] });
         toast.success("Novedad actualizada correctamente");
       } else {
         throw new Error(data.message || "Error al actualizar la novedad");
@@ -55,6 +56,7 @@ export const useDeleteNovedad = (): UseMutationResult<
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201 || data.status === 204) {
         queryClient.invalidateQueries({ queryKey: ["novedades"] });
+        queryClient.invalidateQueries({ queryKey: ["personal-novedad"] });
         toast.success("Novedad eliminada correctamente");
       } else {
         throw new Error(data.message || "Error al eliminar la novedad");

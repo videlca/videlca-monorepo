@@ -74,8 +74,7 @@ export const useGetUsuarioByCookie = (): UseQueryResult<ApiResponse<Usuario>, Er
   return useQuery({
     queryKey: ['usuario'],
     queryFn: () => getUsuarioByCookie(),
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 60000,
   })
 }
 

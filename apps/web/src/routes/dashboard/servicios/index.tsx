@@ -173,6 +173,12 @@ function RouteComponent() {
                   estado: row.original.estado,
                 });
                 setIsOpenEditModal(true);
+                setTipoDuracion(row.original.idTipoDuracion.descripcion);
+                setTipoHorarioDescripcion(
+                  row.original.idTipoHorarioDescripcion.nombre.includes(
+                    "dia completo",
+                  ),
+                );
               }}
             />
             <ButtonAction

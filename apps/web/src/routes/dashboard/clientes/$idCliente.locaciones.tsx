@@ -71,7 +71,7 @@ export function RouteComponent() {
   // Mutaciones y Queries
   const { data: locaciones } = useLocacionesByCliente(Number(idCliente));
   const { data: ciudades } = useCiudad();
-  const { data: clientes } = useClientesActivo();
+  // const { data: clientes } = useClientesActivo();
   const { data: estadosOrdenServicio } = useEstadoOrden();
 
   const { mutate: updateLocacion, isPending: isUpdatingLocacion } =
@@ -320,7 +320,7 @@ export function RouteComponent() {
                 onChange={handleChangeEditLocacion}
                 required
               />
-              <InputSelect
+              {/* <InputSelect
                 label="Cliente*"
                 placeholder="Cliente"
                 id="idCliente"
@@ -333,7 +333,7 @@ export function RouteComponent() {
                   })) || []
                 }
                 required
-              />
+              /> */}
               <InputSelect
                 label="Ciudad*"
                 placeholder="Ciudad"
