@@ -31,6 +31,8 @@ import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import {
   useCreateOrdenServicio,
   useGetOrdenesServicio,
+  useGetPrecioOrdenServicio,
+  useValidateHorariosOrdenServicio,
 } from "../../../api/queryFunctions/orden-servicio";
 import type { CreateOrdenServicioDto } from "../../../api/dtos";
 import type { OrdenServicio } from "../../../api/types/orden-servicio";
@@ -44,68 +46,70 @@ import {
   useTarifasActivo,
   useTarifasPeriodoActivo,
 } from "../../../api/queryFunctions/tarifas";
+import { priceFormat } from "../../../utils/PriceFormat";
+import { timeFormat } from "../../../utils/TimeFormat";
+import { dateFormat } from "../../../utils/DateFormat";
+import type { Tarifa } from "../../../api/types/periodo";
+import { useForm } from "../../../hooks/useForm";
+import { usePersonalActivo } from "../../../api/queryFunctions/personal";
 
 export const Route = createFileRoute("/dashboard/ordenes-de-servicio/")({
   component: RouteComponent,
 });
 
-const employees = [
-  {
-    id: 1,
-    name: "Juan Carlos Pérez López",
-    position: "Supervisor de Seguridad",
-    email: "juan.perez@gevid.com",
-    phone: "+57 310 123 4567",
-    skills: ["Control de Acceso", "Videovigilancia", "Supervisión"],
-  },
-  {
-    id: 2,
-    name: "María Elena Rodríguez",
-    position: "Agente de Seguridad",
-    email: "maria.rodriguez@gevid.com",
-    phone: "+57 311 234 5678",
-    skills: ["Patrullaje", "Control de Acceso"],
-  },
-  {
-    id: 3,
-    name: "Carlos Alberto Gómez",
-    position: "Técnico en Videovigilancia",
-    email: "carlos.gomez@gevid.com",
-    phone: "+57 312 345 6789",
-    skills: ["Videovigilancia", "Eventos"],
-  },
-];
-
 function RouteComponent() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isOpenAdd, setIsOpenAdd] = useState(false);
   const [isOpenDetails, setIsOpenDetails] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
-  const [isLoading, setIsLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteOrderId, setDeleteOrderId] = useState<number | null>(null);
 
-  // Form states
   const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
   const [selectedTipoServicio, setSelectedTipoServicio] = useState<
     number | null
   >(null);
   const [selectedService, setSelectedService] = useState<number | null>(null);
-  const [selectedTarifa, setSelectedTarifa] = useState<number | null>(null);
+  const [selectedTarifa, setSelectedTarifa] = useState<Tarifa | null>(null);
+
   const [staffQuantity, setStaffQuantity] = useState(1);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [isIndefinite, setIsIndefinite] = useState(false);
-  const [isServicio24Horas, setIsServicio24Horas] = useState(false);
-  const [timeRanges, setTimeRanges] = useState([
-    { id: 1, startTime: "08:00", endTime: "12:00" },
-    { id: 2, startTime: "13:00", endTime: "17:00" },
-  ]);
   const [assignedEmployees, setAssignedEmployees] = useState<any[]>([]);
 
+  // Queries y mutaciones
+  const { data: ordenesDeServicioQuery } = useGetOrdenesServicio();
+  const { data: locacionesQuery } = useLocacionesActivo();
+  const { data: tarifasQueryPeriodoActivo } = useTarifasPeriodoActivo();
+  const { data: tipoServiciosQuery } = useTipoServiciosActivo();
+  const { data: personalQuery } = usePersonalActivo();
+
+  const {
+    mutate: validateHorariosOrdenServicio,
+    data: validateHorariosOrdenServicioData,
+    isPending: isValidateHorariosPending,
+  } = useValidateHorariosOrdenServicio();
+  const { mutate: getPrecioOrdenServicio, isPending: isGetPrecioOrdenPending } =
+    useGetPrecioOrdenServicio();
+  const { mutate: crearOrdenServicio, isPending: isCrearOrdenServicioPending } =
+    useCreateOrdenServicio();
+
   // Formulario crear orden de servicio
+  const {
+    form: formOrdenServicio,
+    handleChange: handleChangeOrdenServicio,
+    resetForm: resetFormOrdenServicio,
+    setForm: setFormOrdenServicio,
+  } = useForm<CreateOrdenServicioDto>({
+    cantidadPersonal: 0,
+    fechaInicio: "",
+    fechaFin: "",
+    horaInicio: "",
+    horaFin: "",
+    fechaCreacion: "",
+    idLocacion: 0,
+    idTarifa: 0,
+  });
 
   const [selectedEmployeeForSlot, setSelectedEmployeeForSlot] = useState<{
     [key: number]: number;
@@ -115,33 +119,56 @@ function RouteComponent() {
   const [selectedOrderDetail, setSelectedOrderDetail] =
     useState<OrdenServicio | null>(null);
 
-  const resetForm = () => {
-    setSelectedLocation(null);
+  const handleCloseModal = () => {
+    setIsOpenAdd(false);
+    setCurrentStep(1);
     setSelectedTipoServicio(null);
+    setSelectedLocation(null);
     setSelectedService(null);
-    setStaffQuantity(1);
-    setStartDate("");
-    setEndDate("");
+    setSelectedTarifa(null);
     setIsIndefinite(false);
-    setTimeRanges([
-      { id: 1, startTime: "08:00", endTime: "12:00" },
-      { id: 2, startTime: "13:00", endTime: "17:00" },
-    ]);
+    resetFormOrdenServicio();
     setAssignedEmployees([]);
     setSelectedEmployeeForSlot({});
   };
 
-  const handleCloseModal = () => {
-    setIsOpen(false);
-    setIsModalOpen(false);
-    setCurrentStep(1);
-    setSelectedLocation(null);
-    setSelectedService(null);
-    resetForm();
-  };
-
   const handleNext = () => {
-    if (currentStep < 4) {
+    const requierePersonal =
+      selectedTarifa?.idServicio.idTipoServicio.requierePersonal;
+    const requiereHorario = selectedTarifa?.idServicio.horasFijas === 24;
+    if (currentStep === 3) {
+      validateHorariosOrdenServicio(
+        {
+          idTarifa: selectedTarifa?.idTarifa || 0,
+          fechaInicio: dateFormat(new Date(formOrdenServicio.fechaInicio)),
+          fechaFin: isIndefinite
+            ? null
+            : dateFormat(new Date(formOrdenServicio.fechaFin || "")),
+          horaInicio: !requiereHorario
+            ? timeFormat(formOrdenServicio.horaInicio)
+            : "00:00:00",
+          horaFin: !requiereHorario
+            ? timeFormat(formOrdenServicio.horaFin)
+            : "00:00:00",
+          // TODO: Revisar horas descanso
+          horasDescanso: 2,
+        },
+        {
+          onSuccess: () => {
+            setCurrentStep(4);
+          },
+        },
+      );
+      return;
+    }
+
+    // if (currentStep === 4) {
+    //   getPrecioOrdenServicio({
+    //     idTarifa: selectedTarifa?.idTarifa || 0,
+    //   });
+    // }
+
+    if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -153,39 +180,28 @@ function RouteComponent() {
   };
 
   const handleSaveOrder = async () => {
+    const requiereHorario = selectedTarifa?.idServicio.horasFijas === 24;
+    console.log(requiereHorario);
+    const ordenesDeServicioMutation: CreateOrdenServicioDto = {
+      idTarifa: selectedTarifa?.idTarifa || 0,
+      idLocacion: formOrdenServicio.idLocacion || 0,
+      cantidadPersonal: formOrdenServicio.cantidadPersonal,
+      fechaInicio: formOrdenServicio.fechaInicio,
+      fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
+      horaInicio: !requiereHorario
+        ? timeFormat(formOrdenServicio.horaInicio)
+        : "00:00:00",
+      horaFin: !requiereHorario
+        ? timeFormat(formOrdenServicio.horaFin)
+        : "00:00:00",
+      fechaCreacion: new Date().toISOString(),
+    };
     console.log(ordenesDeServicioMutation);
     crearOrdenServicio(ordenesDeServicioMutation, {
       onSuccess: () => {
         handleCloseModal();
       },
     });
-  };
-
-  const addTimeRange = () => {
-    const newId =
-      timeRanges.length > 0 ? Math.max(...timeRanges.map((r) => r.id)) + 1 : 1;
-    setTimeRanges([
-      ...timeRanges,
-      { id: newId, startTime: "09:00", endTime: "18:00" },
-    ]);
-  };
-
-  const removeTimeRange = (id: number) => {
-    if (timeRanges.length > 1) {
-      setTimeRanges(timeRanges.filter((range) => range.id !== id));
-    }
-  };
-
-  const updateTimeRange = (
-    id: number,
-    field: "startTime" | "endTime",
-    value: string,
-  ) => {
-    setTimeRanges(
-      timeRanges.map((range) =>
-        range.id === id ? { ...range, [field]: value } : range,
-      ),
-    );
   };
 
   const handleEmployeeSelection = (slotIndex: number, employeeId: number) => {
@@ -197,30 +213,12 @@ function RouteComponent() {
 
   const getSelectedEmployeeInfo = (slotIndex: number) => {
     const employeeId = selectedEmployeeForSlot[slotIndex];
-    return employees.find((emp) => emp.id === employeeId);
+    return personalQuery?.data?.find((emp) => emp.idPersonal === employeeId);
   };
 
   useEffect(() => {
     setSelectedService(null);
   }, [selectedTipoServicio]);
-
-  const { data: ordenesDeServicioQuery } = useGetOrdenesServicio();
-  const { data: locacionesQuery } = useLocacionesActivo();
-  const { data: tarifasQueryPeriodoActivo } = useTarifasPeriodoActivo();
-  const { data: tipoServiciosQuery } = useTipoServiciosActivo();
-  // const { data: serviciosQuery } = useServiciosActivo();
-  const { mutate: crearOrdenServicio } = useCreateOrdenServicio();
-
-  const ordenesDeServicioMutation: CreateOrdenServicioDto = {
-    idTarifa: selectedTarifa || 0,
-    idLocacion: selectedLocation || 0,
-    cantidadPersonal: staffQuantity,
-    fechaInicio: startDate,
-    fechaFin: isIndefinite ? null : endDate,
-    horaInicio: "08:00:00",
-    horaFin: "12:00:00",
-    fechaCreacion: new Date().toISOString(),
-  };
 
   // Filtrar los servicios por el tipo de servicio seleccionado
   const filteredServices = selectedTipoServicio
@@ -230,6 +228,17 @@ function RouteComponent() {
           selectedTipoServicio,
       )
     : [];
+
+  const tipoServiciosOptions =
+    tarifasQueryPeriodoActivo?.data
+      ?.map((tarifa) => ({
+        id: tarifa.idServicio.idTipoServicio.idTipoServicio,
+        descripcion: tarifa.idServicio.idTipoServicio.descripcion,
+      }))
+      .filter(
+        (option, index, array) =>
+          array.findIndex((item) => item.id === option.id) === index,
+      ) || [];
 
   const columns: ColumnDef<OrdenServicio>[] = [
     {
@@ -335,25 +344,30 @@ function RouteComponent() {
               </p>
             </div>
 
-            {/* <div className="relative">
+            <div className="relative">
               <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Buscar por nombre del cliente, localización o dirección..."
                 className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
-            </div> */}
+            </div>
 
             <div className="max-h-80 space-y-3 overflow-y-auto">
               {locacionesQuery?.data?.map((location) => (
                 <div
                   key={location.idLocacion}
                   className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-                    selectedLocation === location.idLocacion
+                    formOrdenServicio.idLocacion === location.idLocacion
                       ? "border-blue-500 bg-blue-50 shadow-sm"
                       : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                   }`}
-                  onClick={() => setSelectedLocation(location.idLocacion)}
+                  onClick={() =>
+                    setFormOrdenServicio({
+                      ...formOrdenServicio,
+                      idLocacion: location.idLocacion,
+                    })
+                  }
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -362,7 +376,8 @@ function RouteComponent() {
                         <h4 className="font-medium text-gray-900">
                           {location.nombre}
                         </h4>
-                        {selectedLocation === location.idLocacion && (
+                        {formOrdenServicio.idLocacion ===
+                          location.idLocacion && (
                           <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-blue-600">
                             <Check className="h-4 w-4 text-white" />
                           </div>
@@ -416,12 +431,7 @@ function RouteComponent() {
                 label="Tipo de Servicio"
                 placeholder="Seleccione el tipo de servicio"
                 id="tipoServicio"
-                options={
-                  tarifasQueryPeriodoActivo?.data?.map((tarifa) => ({
-                    id: tarifa.idServicio.idTipoServicio.idTipoServicio,
-                    descripcion: tarifa.idServicio.idTipoServicio.descripcion,
-                  })) || []
-                }
+                options={tipoServiciosOptions}
                 onChange={(e) =>
                   setSelectedTipoServicio(Number(e.target.value))
                 }
@@ -444,7 +454,8 @@ function RouteComponent() {
                         }`}
                         onClick={() => {
                           setSelectedService(tarifa.idServicio.idServicio);
-                          setSelectedTarifa(tarifa.idTarifa);
+                          setSelectedTarifa(tarifa);
+                          console.log(tarifa);
                         }}
                       >
                         <div className="mb-2 flex items-start justify-between">
@@ -471,7 +482,9 @@ function RouteComponent() {
                               )?.descripcion
                             }
                           </span>
-                          <span className="font-semibold text-blue-600">$</span>
+                          <span className="font-semibold text-blue-600">
+                            {priceFormat(tarifa.precioTotal)}
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -505,33 +518,46 @@ function RouteComponent() {
               <h4 className="font-medium text-gray-900">Período de Servicio</h4>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="">
                   <label className="text-sm font-medium text-gray-700">
                     Fecha de Inicio *
                   </label>
                   <input
                     type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    value={formOrdenServicio.fechaInicio || ""}
+                    onChange={(e) =>
+                      setFormOrdenServicio({
+                        ...formOrdenServicio,
+                        fechaInicio: e.target.value,
+                      })
+                    }
                     className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
-                <div>
+                <div className="">
                   <label className="text-sm font-medium text-gray-700">
                     Fecha de Fin
                   </label>
                   <input
                     type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    value={formOrdenServicio.fechaFin || ""}
+                    onChange={(e) =>
+                      setFormOrdenServicio({
+                        ...formOrdenServicio,
+                        fechaFin: e.target.value,
+                      })
+                    }
                     className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100"
                     disabled={isIndefinite}
                   />
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <label htmlFor="indefinite" className="text-sm text-gray-700">
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="indefinite"
+                  className="flex items-center gap-2 text-sm text-gray-700"
+                >
                   <input
                     type="checkbox"
                     id="indefinite"
@@ -539,16 +565,19 @@ function RouteComponent() {
                     onChange={(e) => {
                       setIsIndefinite(e.target.checked);
                       if (e.target.checked) {
-                        setEndDate("");
+                        setFormOrdenServicio({
+                          ...formOrdenServicio,
+                          fechaFin: null,
+                        });
                       }
                     }}
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   Orden de servicio indefinida (sin fecha de finalización)
                 </label>
-                <label
+                {/* <label
                   htmlFor="servicio24horas"
-                  className="text-sm text-gray-700"
+                  className="flex items-center gap-2 text-sm text-gray-700"
                 >
                   <input
                     type="checkbox"
@@ -556,23 +585,22 @@ function RouteComponent() {
                     checked={isServicio24Horas}
                     onChange={(e) => {
                       setIsServicio24Horas(e.target.checked);
-                      // if (e.target.checked) {
-                      //   setEndDate("");
-                      // }
                     }}
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   Horario fijo (Servicio de 24 horas)
-                </label>
+                </label> */}
               </div>
             </div>
-            {isServicio24Horas ? (
+            {selectedTarifa?.idServicio.horasFijas === 24 ? (
               <p className="text-sm font-medium text-gray-700">
-                Horario Fijo (Servicio de 24 horas)
+                Horario Fijo (Servicio de 24 horas) no es necesario configurar
+                horarios, se prestará el servicio en el horario fijo de 24 horas
+                de lunes a domingo.
               </p>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                {/* <div className="flex items-center justify-between">
                   <h4 className="font-medium text-gray-900">
                     Horarios Durante el Día
                   </h4>
@@ -583,19 +611,19 @@ function RouteComponent() {
                   >
                     + Agregar Rango de Horario
                   </button>
-                </div>
+                </div> */}
 
                 <div className="space-y-4">
-                  {timeRanges.map((range, index) => (
-                    <div
-                      key={range.id}
-                      className="rounded-lg border border-gray-200 p-4 shadow-sm"
-                    >
-                      <div className="mb-3 flex items-center justify-between">
-                        <label className="text-sm font-medium text-gray-700">
-                          Rango de Horario #{index + 1}
-                        </label>
-                        {timeRanges.length > 1 && (
+                  {/* {timeRanges.map((range, index) => ( */}
+                  <div
+                    // key={range.id}
+                    className="rounded-lg border border-gray-200 p-4 shadow-sm"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <label className="text-sm font-medium text-gray-700">
+                        Rango de Horario
+                      </label>
+                      {/* {timeRanges.length > 1 && (
                           <button
                             type="button"
                             className="rounded-md p-1 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
@@ -603,216 +631,268 @@ function RouteComponent() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm text-gray-700">
-                            Hora de Inicio
-                          </label>
-                          <input
-                            type="time"
-                            value={range.startTime}
-                            step={60}
-                            min="00:00"
-                            max="24:00"
-                            onChange={(e) =>
-                              updateTimeRange(
-                                range.id,
-                                "startTime",
-                                e.target.value,
-                              )
-                            }
-                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm text-gray-700">
-                            Hora de Fin
-                          </label>
-                          <input
-                            type="time"
-                            value={range.endTime}
-                            onChange={(e) =>
-                              updateTimeRange(
-                                range.id,
-                                "endTime",
-                                e.target.value,
-                              )
-                            }
-                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                          />
-                        </div>
-                      </div>
+                        )} */}
                     </div>
-                  ))}
+                    <div className="grid grid-cols-2 gap-4">
+                      <label
+                        className="text-sm text-gray-700"
+                        htmlFor="horaInicio"
+                      >
+                        Hora de Inicio
+                        <input
+                          type="time"
+                          name="horaInicio"
+                          value={formOrdenServicio.horaInicio}
+                          step={60}
+                          min="00:00"
+                          max="24:00"
+                          onChange={(e) => handleChangeOrdenServicio(e)}
+                          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </label>
+                      <label
+                        className="text-sm text-gray-700"
+                        htmlFor="horaFin"
+                      >
+                        Hora de Fin
+                        <input
+                          type="time"
+                          name="horaFin"
+                          value={formOrdenServicio.horaFin}
+                          step={60}
+                          min="00:00"
+                          max="24:00"
+                          onChange={(e) => handleChangeOrdenServicio(e)}
+                          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  {/* ))} */}
                 </div>
               </div>
             )}
           </div>
         );
 
-      // case 4:
-      //   return (
-      //     <div className="space-y-6">
-      //       <div className="text-center">
-      //         <h3 className="mb-2 text-lg font-semibold text-gray-900">
-      //           Personal y Asignación
-      //         </h3>
-      //         <p className="text-sm text-gray-600">
-      //           Define cuánto personal necesita y asígnelo inmediatamente
-      //         </p>
-      //       </div>
+      case 4:
+        return (
+          <>
+            {!selectedTarifa?.idServicio.idTipoServicio.requierePersonal ? (
+              <div className="space-y-6">
+                <h3 className="text-center text-lg font-semibold text-gray-900">
+                  Asignación de Personal
+                </h3>
+                <p className="text-sm text-gray-600">
+                  No es necesario asignar personal para este servicio, se
+                  prestará el servicio en el horario fijo de 24 horas de lunes a
+                  domingo.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="mb-2 text-lg font-semibold text-gray-900">
+                    Personal y Asignación
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Define cuánto personal necesita y asígnelo inmediatamente
+                  </p>
+                </div>
 
-      //       <div className="space-y-6">
-      //         <div>
-      //           <label
-      //             htmlFor="quantity"
-      //             className="text-sm font-medium text-gray-700"
-      //           >
-      //             Cantidad de Personal Requerido *
-      //           </label>
-      //           <input
-      //             id="quantity"
-      //             type="number"
-      //             min="1"
-      //             max="10"
-      //             value={staffQuantity}
-      //             onChange={(e) =>
-      //               setStaffQuantity(Number.parseInt(e.target.value) || 1)
-      //             }
-      //             className="mt-1 w-32 rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-      //           />
-      //         </div>
+                <div className="space-y-6">
+                  <label
+                    htmlFor="cantidadPersonal"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Cantidad de Personal Requerido *
+                    <input
+                      id="cantidadPersonal"
+                      name="cantidadPersonal"
+                      type="number"
+                      min="1"
+                      max="2"
+                      value={formOrdenServicio.cantidadPersonal}
+                      onChange={(e) => handleChangeOrdenServicio(e)}
+                      className="mt-1 w-32 rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </label>
 
-      //         <div>
-      //           <label className="mb-3 block text-sm font-medium text-gray-700">
-      //             Buscar Empleados Disponibles
-      //           </label>
-      //           <div className="relative mb-4">
-      //             <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
-      //             <input
-      //               type="text"
-      //               placeholder="Buscar por nombre, apellido o cargo..."
-      //               className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-      //             />
-      //           </div>
-      //         </div>
+                  {/* <div>
+                    <label className="mb-3 block text-sm font-medium text-gray-700">
+                      Buscar Empleados Disponibles
+                    </label>
+                    <div className="relative mb-4">
+                      <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Buscar por nombre, apellido o cargo..."
+                        className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div> */}
 
-      //         <div>
-      //           <label className="mb-3 block text-sm font-medium text-gray-700">
-      //             Asignación de Personal ({staffQuantity} requeridos)
-      //           </label>
+                  <div>
+                    {/* TODO: Revisar asignación de personal */}
+                    <label className="mb-3 block text-sm font-medium text-gray-700">
+                      Asignación de Personal (
+                      {formOrdenServicio.cantidadPersonal} requeridos)
+                    </label>
 
-      //           <div className="space-y-4">
-      //             {Array.from({ length: staffQuantity }, (_, index) => {
-      //               const selectedEmployee = getSelectedEmployeeInfo(index);
+                    <div className="space-y-4">
+                      {Array.from(
+                        { length: formOrdenServicio.cantidadPersonal },
+                        (_, index) => {
+                          const selectedEmployee =
+                            getSelectedEmployeeInfo(index);
 
-      //               return (
-      //                 <div
-      //                   key={index}
-      //                   className="rounded-lg border border-gray-200 p-4 shadow-sm"
-      //                 >
-      //                   <div className="mb-4 border-b border-gray-200 pb-3">
-      //                     <h3 className="text-base font-semibold text-gray-900">
-      //                       Empleado #{index + 1}
-      //                     </h3>
-      //                   </div>
-      //                   <div className="space-y-4">
-      //                     <div className="grid grid-cols-2 gap-4">
-      //                       <div>
-      //                         <label className="text-sm text-gray-700">
-      //                           Seleccionar Empleado *
-      //                         </label>
-      //                         <div className="relative mt-1">
-      //                           <select
-      //                             value={
-      //                               selectedEmployeeForSlot[
-      //                                 index
-      //                               ]?.toString() || ""
-      //                             }
-      //                             onChange={(e) =>
-      //                               handleEmployeeSelection(
-      //                                 index,
-      //                                 Number.parseInt(e.target.value),
-      //                               )
-      //                             }
-      //                             className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-      //                           >
-      //                             <option value="">
-      //                               Seleccionar empleado...
-      //                             </option>
-      //                             {employees.map((employee) => (
-      //                               <option
-      //                                 key={employee.id}
-      //                                 value={employee.id.toString()}
-      //                               >
-      //                                 {employee.name} - {employee.position}
-      //                               </option>
-      //                             ))}
-      //                           </select>
-      //                           <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-      //                         </div>
-      //                       </div>
-      //                       <div>
-      //                         <label className="text-sm text-gray-700">
-      //                           Rol en esta Orden *
-      //                         </label>
-      //                         <input
-      //                           type="text"
-      //                           placeholder="Ej: Supervisor, Guardia, etc."
-      //                           className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-      //                         />
-      //                       </div>
-      //                     </div>
+                          return (
+                            <div
+                              key={index}
+                              className="rounded-lg border border-gray-200 p-4 shadow-sm"
+                            >
+                              <div className="mb-4 border-b border-gray-200 pb-3">
+                                <h3 className="text-base font-semibold text-gray-900">
+                                  Empleado #{index + 1}
+                                </h3>
+                              </div>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="text-sm text-gray-700">
+                                      Seleccionar Empleado *
+                                    </label>
+                                    <div className="relative mt-1">
+                                      <select
+                                        value={
+                                          selectedEmployeeForSlot[
+                                            index
+                                          ]?.toString() || ""
+                                        }
+                                        onChange={(e) =>
+                                          handleEmployeeSelection(
+                                            index,
+                                            Number.parseInt(e.target.value),
+                                          )
+                                        }
+                                        className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                      >
+                                        <option value="">
+                                          Seleccionar empleado...
+                                        </option>
+                                        {personalQuery?.data?.map(
+                                          (employee) => (
+                                            <option
+                                              key={employee.idPersonal}
+                                              value={employee.idPersonal.toString()}
+                                            >
+                                              {employee.primerNombre}{" "}
+                                              {employee.primerApellido}
+                                            </option>
+                                          ),
+                                        )}
+                                      </select>
+                                      <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                                    </div>
+                                  </div>
+                                  {/* <div>
+                                    <label className="text-sm text-gray-700">
+                                      Rol en esta Orden *
+                                    </label>
+                                    <input
+                                      type="text"
+                                      placeholder="Ej: Supervisor, Guardia, etc."
+                                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    />
+                                  </div> */}
+                                </div>
 
-      //                     <div>
-      //                       <label className="text-sm text-gray-700">
-      //                         Notas Adicionales
-      //                       </label>
-      //                       <textarea
-      //                         placeholder="Instrucciones específicas para este empleado..."
-      //                         className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-      //                         rows={3}
-      //                       />
-      //                     </div>
+                                {/* <div>
+                                  <label className="text-sm text-gray-700">
+                                    Notas Adicionales
+                                  </label>
+                                  <textarea
+                                    placeholder="Instrucciones específicas para este empleado..."
+                                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    rows={3}
+                                  />
+                                </div> */}
 
-      //                     {selectedEmployee && (
-      //                       <div className="rounded-lg bg-gray-50 p-3">
-      //                         <div className="mb-2 flex items-center gap-4 text-sm text-gray-600">
-      //                           <div className="flex items-center gap-1">
-      //                             <Mail className="h-3 w-3" />
-      //                             <span>{selectedEmployee.email}</span>
-      //                           </div>
-      //                           <div className="flex items-center gap-1">
-      //                             <Phone className="h-3 w-3" />
-      //                             <span>{selectedEmployee.phone}</span>
-      //                           </div>
-      //                         </div>
-      //                         <div className="flex gap-2">
-      //                           {selectedEmployee.skills.map(
-      //                             (skill, skillIndex) => (
-      //                               <span
-      //                                 key={skillIndex}
-      //                                 className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700"
-      //                               >
-      //                                 {skill}
-      //                               </span>
-      //                             ),
-      //                           )}
-      //                         </div>
-      //                       </div>
-      //                     )}
-      //                   </div>
-      //                 </div>
-      //               );
-      //             })}
-      //           </div>
-      //         </div>
-      //       </div>
-      //     </div>
-      //   );
+                                {selectedEmployee && (
+                                  <div className="rounded-lg bg-gray-50 p-3">
+                                    <div className="mb-2 flex items-center gap-4 text-sm text-gray-600">
+                                      <div className="flex items-center gap-1">
+                                        <Mail className="h-3 w-3" />
+                                        <span>
+                                          {
+                                            selectedEmployee.idTipoPersonal
+                                              .descripcion
+                                          }
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Phone className="h-3 w-3" />
+                                        <span>{selectedEmployee.telefono}</span>
+                                      </div>
+                                    </div>
+                                    {/* <div className="flex gap-2">
+                                    {selectedEmployee.idTipoPersonal.habilidades.map(
+                                      (skill, skillIndex) => (
+                                        <span
+                                          key={skillIndex}
+                                          className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700"
+                                        >
+                                          {skill.descripcion}
+                                        </span>
+                                      ),
+                                    )}
+                                  </div> */}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        },
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        );
 
+      case 5:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="mb-2 text-lg font-semibold text-gray-900">
+                Detalles de la orden de servicio
+              </h3>
+              <p className="text-sm text-gray-600">
+                Revisa los detalles de la orden de servicio y confirma la
+                creación
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-gray-900">Servicio</h4>
+                  <p className="text-sm text-gray-600">
+                    {selectedTarifa?.idServicio.codigo}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium text-gray-900">Servicio</h4>
+                  <p className="text-sm text-gray-600"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -826,7 +906,7 @@ function RouteComponent() {
             Icon={PlusIcon}
             label="Agregar orden de servicio"
             onClick={() => {
-              setIsOpen(true);
+              setIsOpenAdd(true);
             }}
           />
         </div>
@@ -838,7 +918,7 @@ function RouteComponent() {
       </div>
 
       <SimpleModal
-        isOpen={isOpen}
+        isOpen={isOpenAdd}
         onClose={() => {
           handleCloseModal();
         }}
@@ -848,7 +928,7 @@ function RouteComponent() {
         <>
           {/* Step Indicator */}
           <div className="flex items-center justify-center px-6 py-6">
-            {[1, 2, 3, 4].map((step) => (
+            {[1, 2, 3, 4, 5].map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
@@ -861,7 +941,7 @@ function RouteComponent() {
                 >
                   {step < currentStep ? <Check className="h-4 w-4" /> : step}
                 </div>
-                {step < 4 && (
+                {step < 5 && (
                   <div
                     className={`mx-2 h-0.5 w-16 ${step < currentStep ? "bg-green-500" : "bg-gray-200"}`}
                   />
@@ -877,7 +957,7 @@ function RouteComponent() {
 
           {/* Footer */}
           <div className="flex items-center justify-between border-t border-gray-200 px-6 pt-6 pb-4">
-            <div className="text-sm text-gray-500">Paso {currentStep} de 4</div>
+            <div className="text-sm text-gray-500">Paso {currentStep} de 5</div>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -899,26 +979,32 @@ function RouteComponent() {
               )}
               <button
                 type="button"
-                onClick={currentStep < 3 ? handleNext : handleSaveOrder}
+                onClick={currentStep < 5 ? handleNext : handleSaveOrder}
                 disabled={
-                  isLoading ||
-                  (currentStep === 1 && !selectedLocation) ||
+                  isValidateHorariosPending ||
+                  isGetPrecioOrdenPending ||
+                  isCrearOrdenServicioPending ||
+                  (currentStep === 1 && !formOrdenServicio.idLocacion) ||
                   (currentStep === 2 && !selectedService) ||
-                  (currentStep === 3 && !startDate)
-                  // ||(currentStep === 4 && staffQuantity < 1)
+                  (currentStep === 3 && !formOrdenServicio.fechaInicio) ||
+                  (currentStep === 4 &&
+                    selectedTarifa?.idServicio.idTipoServicio
+                      .requierePersonal &&
+                    Object.values(selectedEmployeeForSlot).length <
+                      formOrdenServicio.cantidadPersonal)
                 }
-                className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none ${
-                  currentStep < 3
+                className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+                  currentStep < 5
                     ? "bg-blue-600 hover:bg-blue-700"
                     : "bg-green-600 hover:bg-green-700"
-                } ${isLoading ? "cursor-not-allowed opacity-50" : ""}`}
+                } ${isCrearOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
               >
-                {isLoading ? (
+                {isCrearOrdenServicioPending ? (
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                     Creando...
                   </div>
-                ) : currentStep < 3 ? (
+                ) : currentStep < 5 ? (
                   "Siguiente"
                 ) : (
                   "Crear Orden"

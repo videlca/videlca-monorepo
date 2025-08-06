@@ -1,6 +1,6 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { createOrdenServicio, getOrdenesServicio, getOrdenServicioById, validateHorariosOrdenServicio } from "../../functions/orden-servicio";
-import type { CreateOrdenServicioDto, PaginationDto, TercerPasoDto } from "../../dtos";
+import { createOrdenServicio, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, validateHorariosOrdenServicio } from "../../functions/orden-servicio";
+import type { CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, TercerPasoDto } from "../../dtos";
 import type { OrdenServicio } from "../../types/orden-servicio";
 import type { ApiResponse } from "../../types";
 import { toast } from "sonner";
@@ -66,6 +66,25 @@ export const useValidateHorariosOrdenServicio = (): UseMutationResult<ApiRespons
     },
     onError: (error) => {
       toast.error(error.message || "Error al validar los horarios");
+    },
+  });
+}
+
+export const useGetPrecioOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, PrecioOrdenDto> => {
+  return useMutation({
+    mutationFn: getPrecioOrdenServicio,
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Precio de orden de servicio obtenido correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["orden-servicio"],
+        });
+      } else {
+        throw new Error(data.message || "Error al obtener el precio de la orden de servicio");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al obtener el precio de la orden de servicio");
     },
   });
 }

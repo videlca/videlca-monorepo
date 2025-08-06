@@ -11,6 +11,28 @@ export interface CreateOrdenServicioDto {
 
 export interface TercerPasoDto {
   idTarifa: number;
-  horaInicio: string;
-  horaFin: string;
+  fechaInicio: string;
+  fechaFin: string | null;
+  horaInicio: string | null;
+  horaFin: string | null;
+  horasDescanso: number;
+}
+
+export interface PrecioOrdenDto {
+  idTarifa: number;
+  horaInicio: string | null;
+  horaFin: string | null;
+  horasDescanso: number;
+  cantidadPersonal: number;
+  fechaInicio: string;
+  fechaFin: string | null;
+}
+
+export interface CreateObservacionOrdenServicioDto {
+  descripcion: string;
+  idOrdenServicio: number;
+}
+
+export interface UpdateObservacionOrdenServicioDto {
+  descripcion: string;
 }
