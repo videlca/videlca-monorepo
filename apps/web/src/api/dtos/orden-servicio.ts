@@ -23,7 +23,7 @@ export interface PrecioOrdenDto {
   horaInicio: string | null;
   horaFin: string | null;
   horasDescanso: number;
-  cantidadPersonal: number;
+  cantidadPersonal: number | null;
   fechaInicio: string;
   fechaFin: string | null;
 }

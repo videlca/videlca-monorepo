@@ -4,13 +4,18 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import {
   Building2,
+  Calculator,
   Calendar,
   Check,
   ChevronDown,
+  DollarSign,
   EyeIcon,
+  FilePenIcon,
   FileText,
+  IdCard,
   Mail,
   MapPin,
+  Pencil,
   PencilIcon,
   Phone,
   PlusIcon,
@@ -20,6 +25,7 @@ import {
   User,
   Users,
   Users2,
+  UserSquare2Icon,
   XIcon,
 } from "lucide-react";
 import Table from "../../../components/common/Table";
@@ -52,10 +58,19 @@ import { dateFormat } from "../../../utils/DateFormat";
 import type { Tarifa } from "../../../api/types/periodo";
 import { useForm } from "../../../hooks/useForm";
 import { usePersonalActivo } from "../../../api/queryFunctions/personal";
+import { OrderStateLabel } from "../../../components/common/OrderStateLabel";
+import type { Locacion } from "../../../types";
 
 export const Route = createFileRoute("/dashboard/ordenes-de-servicio/")({
   component: RouteComponent,
 });
+
+interface AssignedEmployee {
+  nombreCompleto: string;
+  numeroIdentificacion: string;
+  telefono: string;
+  tipoPersonal: string;
+}
 
 function RouteComponent() {
   const [isOpenAdd, setIsOpenAdd] = useState(false);
@@ -66,7 +81,9 @@ function RouteComponent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteOrderId, setDeleteOrderId] = useState<number | null>(null);
 
-  const [selectedLocation, setSelectedLocation] = useState<number | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<Locacion | null>(
+    null,
+  );
   const [selectedTipoServicio, setSelectedTipoServicio] = useState<
     number | null
   >(null);
@@ -75,7 +92,9 @@ function RouteComponent() {
 
   const [staffQuantity, setStaffQuantity] = useState(1);
   const [isIndefinite, setIsIndefinite] = useState(false);
-  const [assignedEmployees, setAssignedEmployees] = useState<any[]>([]);
+  const [assignedEmployees, setAssignedEmployees] = useState<
+    AssignedEmployee[]
+  >([]);
 
   // Queries y mutaciones
   const { data: ordenesDeServicioQuery } = useGetOrdenesServicio();
@@ -89,8 +108,11 @@ function RouteComponent() {
     data: validateHorariosOrdenServicioData,
     isPending: isValidateHorariosPending,
   } = useValidateHorariosOrdenServicio();
-  const { mutate: getPrecioOrdenServicio, isPending: isGetPrecioOrdenPending } =
-    useGetPrecioOrdenServicio();
+  const {
+    mutate: getPrecioOrdenServicio,
+    isPending: isGetPrecioOrdenPending,
+    data: getPrecioOrdenServicioData,
+  } = useGetPrecioOrdenServicio();
   const { mutate: crearOrdenServicio, isPending: isCrearOrdenServicioPending } =
     useCreateOrdenServicio();
 
@@ -162,11 +184,33 @@ function RouteComponent() {
       return;
     }
 
-    // if (currentStep === 4) {
-    //   getPrecioOrdenServicio({
-    //     idTarifa: selectedTarifa?.idTarifa || 0,
-    //   });
-    // }
+    if (currentStep === 4) {
+      getPrecioOrdenServicio(
+        {
+          idTarifa: selectedTarifa?.idTarifa || 0,
+          cantidadPersonal: requierePersonal
+            ? formOrdenServicio.cantidadPersonal
+            : null,
+          fechaInicio: formOrdenServicio.fechaInicio,
+          fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
+          horaInicio: !requiereHorario
+            ? timeFormat(formOrdenServicio.horaInicio)
+            : "00:00:00",
+          horaFin: !requiereHorario
+            ? timeFormat(formOrdenServicio.horaFin)
+            : "00:00:00",
+          horasDescanso: 2,
+        },
+        {
+          onSuccess: (data) => {
+            if (data.status === 201) {
+              setCurrentStep(5);
+            }
+          },
+        },
+      );
+      return;
+    }
 
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
@@ -181,7 +225,6 @@ function RouteComponent() {
 
   const handleSaveOrder = async () => {
     const requiereHorario = selectedTarifa?.idServicio.horasFijas === 24;
-    console.log(requiereHorario);
     const ordenesDeServicioMutation: CreateOrdenServicioDto = {
       idTarifa: selectedTarifa?.idTarifa || 0,
       idLocacion: formOrdenServicio.idLocacion || 0,
@@ -196,15 +239,28 @@ function RouteComponent() {
         : "00:00:00",
       fechaCreacion: new Date().toISOString(),
     };
-    console.log(ordenesDeServicioMutation);
+
     crearOrdenServicio(ordenesDeServicioMutation, {
       onSuccess: () => {
         handleCloseModal();
       },
     });
   };
-
+  console.log(assignedEmployees);
   const handleEmployeeSelection = (slotIndex: number, employeeId: number) => {
+    const employee = personalQuery?.data?.find(
+      (emp) => emp.idPersonal === employeeId,
+    );
+    const selectedEmployee = {
+      nombreCompleto: `${employee?.primerNombre} ${employee?.primerApellido}`,
+      numeroIdentificacion: employee?.numeroIdentificacion,
+      telefono: employee?.telefono,
+      tipoPersonal: employee?.idTipoPersonal.descripcion,
+    };
+    setAssignedEmployees((prev) => [
+      ...prev,
+      selectedEmployee as AssignedEmployee,
+    ]);
     setSelectedEmployeeForSlot((prev) => ({
       ...prev,
       [slotIndex]: employeeId,
@@ -245,7 +301,7 @@ function RouteComponent() {
       accessorKey: "idLocacion",
       header: "Localización",
       cell: ({ row }) => (
-        <span className="flex flex-col gap-1 font-medium text-black">
+        <span className="flex flex-col gap-1 font-medium whitespace-nowrap text-black capitalize">
           {row.original.idLocacion.nombre}
           <span className="text-sm text-gray-500">
             {row.original.idLocacion.direccion}
@@ -257,7 +313,7 @@ function RouteComponent() {
       accessorKey: "servicio",
       header: "Servicio",
       cell: ({ row }) => (
-        <span className="font-medium text-gray-500">
+        <span className="font-medium text-black">
           {row.original.idTarifa.idServicio.codigo}
         </span>
       ),
@@ -265,19 +321,24 @@ function RouteComponent() {
     {
       accessorKey: "personal",
       header: "Personal",
-      cell: ({ row }) => (
-        <span className="flex items-center gap-2 font-medium text-gray-500">
-          {" "}
-          <Users2 className="h-4 w-4" /> {row.original.cantidadPersonal}{" "}
-          empleados
-        </span>
-      ),
+      cell: ({ row }) =>
+        row.original.cantidadPersonal > 0 ? (
+          <span className="flex items-center gap-2 font-medium whitespace-nowrap text-gray-500">
+            {" "}
+            <Users2 className="h-4 w-4" /> {row.original.cantidadPersonal}{" "}
+            {row.original.cantidadPersonal > 1 ? "empleados" : "empleado"}
+          </span>
+        ) : (
+          <span className="text-xs text-gray-500">
+            (Esta orden no requiere personal)
+          </span>
+        ),
     },
     {
       accessorKey: "fechas",
       header: "Fechas",
       cell: ({ row }) => (
-        <span className="font-medium text-gray-500">
+        <span className="font-medium whitespace-nowrap text-gray-500">
           {row.original.fechaInicio} - {row.original.fechaFin || "Indefinida"}
         </span>
       ),
@@ -287,9 +348,9 @@ function RouteComponent() {
       header: "Estado",
       cell: ({ row }) => {
         return (
-          <span className="font-medium text-gray-500">
-            {row.original.idEstadoOrdenServicio?.nombre || ""}
-          </span>
+          <OrderStateLabel
+            state={row.original.idEstadoOrdenServicio?.nombre || ""}
+          />
         );
       },
     },
@@ -362,12 +423,13 @@ function RouteComponent() {
                       ? "border-blue-500 bg-blue-50 shadow-sm"
                       : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                   }`}
-                  onClick={() =>
+                  onClick={() => {
                     setFormOrdenServicio({
                       ...formOrdenServicio,
                       idLocacion: location.idLocacion,
-                    })
-                  }
+                    });
+                    setSelectedLocation(location);
+                  }}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -455,7 +517,6 @@ function RouteComponent() {
                         onClick={() => {
                           setSelectedService(tarifa.idServicio.idServicio);
                           setSelectedTarifa(tarifa);
-                          console.log(tarifa);
                         }}
                       >
                         <div className="mb-2 flex items-start justify-between">
@@ -642,11 +703,11 @@ function RouteComponent() {
                         <input
                           type="time"
                           name="horaInicio"
+                          id="horaInicio"
                           value={formOrdenServicio.horaInicio}
-                          step={60}
                           min="00:00"
                           max="24:00"
-                          onChange={(e) => handleChangeOrdenServicio(e)}
+                          onChange={handleChangeOrdenServicio}
                           className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                       </label>
@@ -658,11 +719,11 @@ function RouteComponent() {
                         <input
                           type="time"
                           name="horaFin"
+                          id="horaFin"
                           value={formOrdenServicio.horaFin}
-                          step={60}
                           min="00:00"
                           max="24:00"
-                          onChange={(e) => handleChangeOrdenServicio(e)}
+                          onChange={handleChangeOrdenServicio}
                           className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                       </label>
@@ -757,11 +818,13 @@ function RouteComponent() {
                                 </h3>
                               </div>
                               <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm text-gray-700">
-                                      Seleccionar Empleado *
-                                    </label>
+                                {/* <div className="grid grid-cols-2 gap-4"> */}
+                                <div>
+                                  <label
+                                    htmlFor={`empleado-${index}`}
+                                    className="text-sm text-gray-700"
+                                  >
+                                    Seleccionar Empleado *
                                     <div className="relative mt-1">
                                       <select
                                         value={
@@ -769,12 +832,12 @@ function RouteComponent() {
                                             index
                                           ]?.toString() || ""
                                         }
-                                        onChange={(e) =>
+                                        onChange={(e) => {
                                           handleEmployeeSelection(
                                             index,
                                             Number.parseInt(e.target.value),
-                                          )
-                                        }
+                                          );
+                                        }}
                                         className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                       >
                                         <option value="">
@@ -794,8 +857,9 @@ function RouteComponent() {
                                       </select>
                                       <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                     </div>
-                                  </div>
-                                  {/* <div>
+                                  </label>
+                                </div>
+                                {/* <div>
                                     <label className="text-sm text-gray-700">
                                       Rol en esta Orden *
                                     </label>
@@ -805,7 +869,7 @@ function RouteComponent() {
                                       className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                     />
                                   </div> */}
-                                </div>
+                                {/* </div> */}
 
                                 {/* <div>
                                   <label className="text-sm text-gray-700">
@@ -822,17 +886,25 @@ function RouteComponent() {
                                   <div className="rounded-lg bg-gray-50 p-3">
                                     <div className="mb-2 flex items-center gap-4 text-sm text-gray-600">
                                       <div className="flex items-center gap-1">
-                                        <Mail className="h-3 w-3" />
+                                        <IdCard className="h-4 w-4" />
+                                        <span>
+                                          {
+                                            selectedEmployee.numeroIdentificacion
+                                          }
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Phone className="h-4 w-4" />
+                                        <span>{selectedEmployee.telefono}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <UserSquare2Icon className="h-4 w-4" />
                                         <span>
                                           {
                                             selectedEmployee.idTipoPersonal
                                               .descripcion
                                           }
                                         </span>
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        <Phone className="h-3 w-3" />
-                                        <span>{selectedEmployee.telefono}</span>
                                       </div>
                                     </div>
                                     {/* <div className="flex gap-2">
@@ -863,6 +935,7 @@ function RouteComponent() {
         );
 
       case 5:
+        console.log(selectedTarifa);
         return (
           <div className="space-y-6">
             <div className="text-center">
@@ -876,18 +949,354 @@ function RouteComponent() {
             </div>
 
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900">Servicio</h4>
-                  <p className="text-sm text-gray-600">
-                    {selectedTarifa?.idServicio.codigo}
+              {/* Información del Cliente y Ubicación */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <Building2 className="h-6 w-6 text-blue-600" />
+                  Cliente y Ubicación
+                </h4>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Cliente:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedLocation?.idCliente.nombre}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Ubicación:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedLocation?.nombre}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Dirección:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedLocation?.direccion}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">Ciudad:</span>{" "}
+                      <span className="text-gray-600">
+                        {selectedLocation?.idCiudad.descripcion}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Responsable:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedLocation?.primerNombreResponsable}{" "}
+                        {selectedLocation?.primerApellidoResponsable}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Teléfono:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedLocation?.telefono}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información del Servicio */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <FileText className="h-6 w-6 text-green-600" />
+                  Servicio
+                </h4>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">Código:</span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio.codigo}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Descripción:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio.descripcion}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Tipo de Servicio:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio.idTipoServicio.descripcion}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Duración:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio?.idTipoDuracion
+                          ?.descripcion || "No especificada"}{" "}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Horas Fijas:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio.horasFijas} horas
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Requiere Personal:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio.idTipoServicio
+                          .requierePersonal
+                          ? "Sí"
+                          : "No"}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información de Fechas y Horarios */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <Calendar className="h-6 w-6 text-purple-600" />
+                  Fechas y Horarios
+                </h4>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Fecha de Inicio:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {new Date(
+                          formOrdenServicio.fechaInicio,
+                        ).toLocaleDateString()}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Fecha de Fin:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {isIndefinite
+                          ? "Indefinida"
+                          : formOrdenServicio.fechaFin
+                            ? new Date(
+                                formOrdenServicio.fechaFin,
+                              ).toLocaleDateString()
+                            : "No especificada"}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Hora de Inicio:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio.horasFijas === 24
+                          ? "00:00:00 (24 horas)"
+                          : formOrdenServicio.horaInicio}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Hora de Fin:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio.horasFijas === 24
+                          ? "00:00:00 (24 horas)"
+                          : formOrdenServicio.horaFin}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <p className="text-sm">
+                    <span className="font-medium text-gray-700">
+                      Horas de Descanso:
+                    </span>{" "}
+                    <span className="text-gray-600">2 horas</span>
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900">Servicio</h4>
-                  <p className="text-sm text-gray-600"></p>
+
+              {/* Información del Personal */}
+              {selectedTarifa?.idServicio.idTipoServicio.requierePersonal && (
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <Users className="h-6 w-6 text-orange-600" />
+                    Personal
+                  </h4>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="text-sm">
+                        <span className="font-medium text-gray-700">
+                          Cantidad de Personal:
+                        </span>{" "}
+                        <span className="text-gray-600">
+                          {formOrdenServicio.cantidadPersonal}{" "}
+                          {formOrdenServicio.cantidadPersonal === 1
+                            ? "persona"
+                            : "personas"}
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm">
+                        <span className="font-medium text-gray-700">
+                          Personal Asignado:
+                        </span>{" "}
+                        <span className="text-gray-600">
+                          {assignedEmployees.length > 0
+                            ? `${assignedEmployees.length} asignado(s)`
+                            : "Pendiente de asignación"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Información de Tarifa y Precios */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <DollarSign className="h-6 w-6 text-green-600" />
+                  Tarifa y Precios
+                </h4>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Período:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idPeriodo.nombre}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Tipo de Tarifa:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idTipoTarifa.nombre}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Unidad de Tiempo:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idTipoTarifa?.idTipoUnidadTiempo
+                          ?.descripcion || "No especificada"}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Precio sin IVA:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {priceFormat(selectedTarifa?.precioSinIva || 0)}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">IVA:</span>{" "}
+                      <span className="text-gray-600">
+                        {priceFormat(selectedTarifa?.iva || 0)}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Precio Total Base:
+                      </span>{" "}
+                      <span className="font-semibold text-green-600">
+                        {priceFormat(selectedTarifa?.precioTotal || 0)}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información de Precio Calculado */}
+              {getPrecioOrdenServicioData?.data && (
+                <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                  <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-green-900">
+                    <Calculator className="h-6 w-6 text-green-600" />
+                    Precio Calculado
+                  </h4>
+                  <div className="space-y-2">
+                    {Object.entries(getPrecioOrdenServicioData.data).map(
+                      ([key, value]) => {
+                        return (
+                          <p key={key} className="text-sm">
+                            <span className="font-medium text-green-800 capitalize">
+                              {key}:
+                            </span>{" "}
+                            <span className="text-green-700">
+                              {key === "precio"
+                                ? priceFormat(Number(value))
+                                : String(value)}
+                            </span>
+                          </p>
+                        );
+                      },
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Información de Creación */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <FilePenIcon className="h-6 w-6 text-green-600" />
+                  Información de Creación
+                </h4>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Fecha de Creación:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {formOrdenServicio.fechaCreacion
+                          ? new Date(
+                              formOrdenServicio.fechaCreacion,
+                            ).toLocaleString()
+                          : new Date().toLocaleString()}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Estado Inicial:
+                      </span>{" "}
+                      <span className="font-medium text-blue-600">
+                        Programada
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1231,7 +1640,7 @@ function RouteComponent() {
 
       <ConfirmarDelete
         isOpenDelete={isOpenDelete}
-        text="¿Estás seguro de querer eliminar esta orden de servicio?"
+        text="¿Estás seguro de querer eliminar esta orden de servicio? Esta acción no se puede deshacer."
         onDelete={() => {}}
         onClose={() => setIsOpenDelete(false)}
       />

@@ -12,29 +12,32 @@ export const useForm = <T,>(initialState: T) => {
     >,
   ) => {
     const { id, value } = e.target;
+    const fieldName = id; // Use name if available, otherwise use id
     const inputValue =
       e.target instanceof HTMLInputElement && e.target.type === "checkbox"
         ? e.target.checked
         : value;
     setForm((prev) => ({
       ...prev,
-      [id]: inputValue,
+      [fieldName]: inputValue,
     }));
   };
 
   const handleNumericChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { id, value } = e.target;
+    const { id, name, value } = e.target;
+    const fieldName = name || id; // Use name if available, otherwise use id
     setForm((prev) => ({
       ...prev,
-      [id]: Number(value) || 0,
+      [fieldName]: Number(value) || 0,
     }));
   };
 
   const handleBooleanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const { id, value } = e.target;
+    const { id, name, value } = e.target;
+    const fieldName = name || id; // Use name if available, otherwise use id
     setForm((prev) => ({
       ...prev,
-      [id]: value === "true",
+      [fieldName]: value === "true",
     }));
   };
 
