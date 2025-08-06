@@ -154,6 +154,10 @@ export class TarifasService {
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
       .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
       .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
+      .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion')
+      .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
+      // .leftJoinAndSelect('tipoHorarioDescripcion.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
+      // .leftJoinAndSelect('tipoHorario.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
       .where('tarifa.idPeriodo = :id', { id })
 
     if (pagination) {

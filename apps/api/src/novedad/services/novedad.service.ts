@@ -138,22 +138,28 @@ export class NovedadService {
 
   async findAllByPersonal(personalId: number){
 
-    return await this.novedadRepository.find({
-      where: { 
-        idPersonal: personalId as any
-      },
-      order: { 
-        fechaInicio: 'DESC', 
-        horaInicio: 'DESC' 
-      } // Más reciente primero
-    });
-
+    return await this.novedadRepository
+      .createQueryBuilder('novedad')
+      .leftJoinAndSelect('novedad.idPersonal', 'personal')
+      .leftJoinAndSelect('novedad.idTipoNovedad', 'tipoNovedad')
+      .leftJoinAndSelect('personal.idTipoIdentificacion', 'tipoIdentificacion')
+      .leftJoinAndSelect('personal.idCiudad', 'ciudad')
+      .leftJoinAndSelect('ciudad.departamento', 'departamento')
+      .leftJoinAndSelect('departamento.pais', 'pais')
+      .leftJoinAndSelect('personal.idTipoGenero', 'tipoGenero')
+      .leftJoinAndSelect('personal.idTipoPersonal', 'tipoPersonal')
+      .where('personal.idPersonal = :personalId', { personalId })
+      .orderBy('novedad.fechaInicio', 'DESC')
+      .addOrderBy('novedad.horaInicio', 'DESC')
+      .getMany();
   }
   
   // OBTENER UNA NOVEDAD
   async findOne(id: number){
   
-    const novedad = await this.novedadRepository.findOneBy({idNovedad: id});
+    const novedad = await this.novedadRepository.findOne({
+      where: { idNovedad: id }
+    });
 
     if(!novedad) throw new NotFoundException(`Novedad con id "${id}" no se ha encontrado`);
 
@@ -215,9 +221,18 @@ export class NovedadService {
 
     const {idTipoNovedad, ...toUpdate} = updateNovedadDto;
     
-    const novedad = await this.novedadRepository.preload({idNovedad: id, ...toUpdate});
+    // First, get the existing novedad with relations loaded
+    const existingNovedad = await this.findOne(id);
+    
+    // Apply the updates to the existing entity, preserving the idPersonal relation
+    const novedad = await this.novedadRepository.preload({
+      idNovedad: id, 
+      ...toUpdate,
+      // Always preserve the idPersonal relation (shouldn't change in updates)
+      idPersonal: existingNovedad.idPersonal
+    });
 
-    if (!novedad) throw new NotFoundException(`Tipo Novedad con id "${id}" no se ha encontrado`);
+    if (!novedad) throw new NotFoundException(`Novedad con id "${id}" no se ha encontrado`);
 
     const novedadesPersonal = await this.findAllByPersonal(novedad.idPersonal.idPersonal);
 
@@ -254,9 +269,14 @@ export class NovedadService {
 
     try {
       
+      // Update the idTipoNovedad if provided
+      if(idTipoNovedad && tipoNovedad){
+        novedad.idTipoNovedad = tipoNovedad;
+      }
+      
       await queryRunner.manager.save(novedad);
 
-      if(tipoNovedad.retirado === true){
+      if(tipoNovedad && tipoNovedad.retirado === true){
 
         // cambiar estado personal
         await this.personalService.updateState(novedad.idPersonal.idPersonal, false, queryRunner)
@@ -270,6 +290,10 @@ export class NovedadService {
       return novedad;
 
     } catch (error) {
+      
+      await queryRunner.rollbackTransaction();
+       
+      await queryRunner.release();
       
       this.handleDbExceptions(error);
 
@@ -297,9 +321,17 @@ export class NovedadService {
         await this.personalService.updateState(novedad.idPersonal.idPersonal, true, queryRunner)
 
       }
+
+      await queryRunner.commitTransaction();
+
+      await queryRunner.release();
       
     } catch (error) {
       
+      await queryRunner.rollbackTransaction();
+       
+      await queryRunner.release();
+
       this.logger.error(error);
         
       throw new InternalServerErrorException(`Unexpected error, check server logs`);

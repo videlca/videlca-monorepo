@@ -181,9 +181,9 @@ export class ServiciosService {
 
     const queryBuilder = this.servicioRepository.createQueryBuilder('servicio') 
       .leftJoin('servicio.tarifas', 'tarifa', 'tarifa.idPeriodo = :idPeriodo', { idPeriodo }) 
-      // .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio') 
-      // .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion') 
-      // .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion') 
+      .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio') 
+      .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion') 
+      .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion') 
       .where('tarifa.idTarifa IS NULL') 
       .andWhere('servicio.estado = :estado', { estado: true }) 
       .orderBy('servicio.codigo', 'ASC') 

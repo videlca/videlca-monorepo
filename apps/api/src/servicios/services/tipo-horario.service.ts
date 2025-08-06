@@ -244,7 +244,7 @@ export class TipoHorarioService {
             .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
             .where('th.idTipoHorarioDescripcion = :idTipoHorarioDescripcion', { idTipoHorarioDescripcion: tipoHorarioDescripcion.idTipoHorarioDescripcion })
             .andWhere('th.estado = :estado', { estado: true })
-            .andWhere('(th.fechaVigenciaFin IS NULL')
+            .andWhere('(th.fechaVigenciaFin IS NULL)')
             .getOne();
             
         if(!tipoHorario) throw new NotFoundException(`Tipo Horario vigente "${tipoHorarioDescripcion.nombre}" no se ha encontrado`);
