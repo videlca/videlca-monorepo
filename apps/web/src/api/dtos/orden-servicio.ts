@@ -6,6 +6,7 @@ export interface CreateOrdenServicioDto {
   fechaFin: string | null;
   horaInicio: string;
   horaFin: string;
+  horasDescanso: number;
   fechaCreacion: string;
 }
 

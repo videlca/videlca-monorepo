@@ -131,6 +131,7 @@ function RouteComponent() {
     fechaCreacion: "",
     idLocacion: 0,
     idTarifa: 0,
+    horasDescanso: 0,
   });
 
   const [selectedEmployeeForSlot, setSelectedEmployeeForSlot] = useState<{
@@ -173,7 +174,7 @@ function RouteComponent() {
             ? timeFormat(formOrdenServicio.horaFin)
             : "00:00:00",
           // TODO: Revisar horas descanso
-          horasDescanso: 2,
+          horasDescanso: formOrdenServicio.horasDescanso,
         },
         {
           onSuccess: () => {
@@ -199,7 +200,7 @@ function RouteComponent() {
           horaFin: !requiereHorario
             ? timeFormat(formOrdenServicio.horaFin)
             : "00:00:00",
-          horasDescanso: 2,
+          horasDescanso: formOrdenServicio.horasDescanso,
         },
         {
           onSuccess: (data) => {
@@ -238,6 +239,7 @@ function RouteComponent() {
         ? timeFormat(formOrdenServicio.horaFin)
         : "00:00:00",
       fechaCreacion: new Date().toISOString(),
+      horasDescanso: formOrdenServicio.horasDescanso,
     };
 
     crearOrdenServicio(ordenesDeServicioMutation, {
@@ -246,7 +248,6 @@ function RouteComponent() {
       },
     });
   };
-  console.log(assignedEmployees);
   const handleEmployeeSelection = (slotIndex: number, employeeId: number) => {
     const employee = personalQuery?.data?.find(
       (emp) => emp.idPersonal === employeeId,
@@ -660,8 +661,25 @@ function RouteComponent() {
                 de lunes a domingo.
               </p>
             ) : (
-              <div className="space-y-4">
-                {/* <div className="flex items-center justify-between">
+              <>
+                <div className="mt-4 rounded-lg border border-yellow-500 bg-yellow-100 p-4 text-left">
+                  <h4 className="text-lg font-medium text-yellow-700">Nota:</h4>{" "}
+                  <p className="mt-2 text-sm text-yellow-700">
+                    Horas recomendadas:{" "}
+                    <span className="font-medium text-yellow-700">
+                      {selectedTarifa?.idServicio.horasMinimas} Horas mínimas -{" "}
+                      {selectedTarifa?.idServicio.horasMaximas} Horas máximas.
+                    </span>
+                  </p>
+                  <p className="mt-2 text-yellow-700">
+                    Segun el tipo de duracion del servicio{" "}
+                    <span className="font-medium text-yellow-700 capitalize">
+                      {selectedTarifa?.idServicio.idTipoDuracion.descripcion}
+                    </span>
+                  </p>
+                </div>
+                <div className="space-y-4">
+                  {/* <div className="flex items-center justify-between">
                   <h4 className="font-medium text-gray-900">
                     Horarios Durante el Día
                   </h4>
@@ -674,17 +692,17 @@ function RouteComponent() {
                   </button>
                 </div> */}
 
-                <div className="space-y-4">
-                  {/* {timeRanges.map((range, index) => ( */}
-                  <div
-                    // key={range.id}
-                    className="rounded-lg border border-gray-200 p-4 shadow-sm"
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-700">
-                        Rango de Horario
-                      </label>
-                      {/* {timeRanges.length > 1 && (
+                  <div className="space-y-4">
+                    {/* {timeRanges.map((range, index) => ( */}
+                    <div
+                      // key={range.id}
+                      className="rounded-lg border border-gray-200 p-4 shadow-sm"
+                    >
+                      <div className="mb-3 flex items-center justify-between">
+                        <label className="text-sm font-medium text-gray-700">
+                          Rango de Horario
+                        </label>
+                        {/* {timeRanges.length > 1 && (
                           <button
                             type="button"
                             className="rounded-md p-1 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
@@ -693,45 +711,62 @@ function RouteComponent() {
                             <Trash2 className="h-4 w-4" />
                           </button>
                         )} */}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <label
+                          className="text-sm text-gray-700"
+                          htmlFor="horaInicio"
+                        >
+                          Hora de Inicio
+                          <input
+                            type="time"
+                            name="horaInicio"
+                            id="horaInicio"
+                            value={formOrdenServicio.horaInicio}
+                            min="00:00"
+                            max="24:00"
+                            onChange={handleChangeOrdenServicio}
+                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          />
+                        </label>
+                        <label
+                          className="text-sm text-gray-700"
+                          htmlFor="horaFin"
+                        >
+                          Hora de Fin
+                          <input
+                            type="time"
+                            name="horaFin"
+                            id="horaFin"
+                            value={formOrdenServicio.horaFin}
+                            min="00:00"
+                            max="24:00"
+                            onChange={handleChangeOrdenServicio}
+                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          />
+                        </label>
+                        <label
+                          className="text-sm text-gray-700"
+                          htmlFor="horasDescanso"
+                        >
+                          Horas de Descanso
+                          <input
+                            type="number"
+                            name="horasDescanso"
+                            id="horasDescanso"
+                            value={formOrdenServicio.horasDescanso}
+                            min="0"
+                            max="24"
+                            onChange={handleChangeOrdenServicio}
+                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          />
+                        </label>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <label
-                        className="text-sm text-gray-700"
-                        htmlFor="horaInicio"
-                      >
-                        Hora de Inicio
-                        <input
-                          type="time"
-                          name="horaInicio"
-                          id="horaInicio"
-                          value={formOrdenServicio.horaInicio}
-                          min="00:00"
-                          max="24:00"
-                          onChange={handleChangeOrdenServicio}
-                          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
-                      </label>
-                      <label
-                        className="text-sm text-gray-700"
-                        htmlFor="horaFin"
-                      >
-                        Hora de Fin
-                        <input
-                          type="time"
-                          name="horaFin"
-                          id="horaFin"
-                          value={formOrdenServicio.horaFin}
-                          min="00:00"
-                          max="24:00"
-                          onChange={handleChangeOrdenServicio}
-                          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
-                      </label>
-                    </div>
+                    {/* ))} */}
                   </div>
-                  {/* ))} */}
                 </div>
-              </div>
+              </>
             )}
           </div>
         );
@@ -745,9 +780,8 @@ function RouteComponent() {
                   Asignación de Personal
                 </h3>
                 <p className="text-sm text-gray-600">
-                  No es necesario asignar personal para este servicio, se
-                  prestará el servicio en el horario fijo de 24 horas de lunes a
-                  domingo.
+                  No es necesario asignar personal para este servicio. Ya que el
+                  tipo de servicio no requiere personal.
                 </p>
               </div>
             ) : (
@@ -884,7 +918,7 @@ function RouteComponent() {
 
                                 {selectedEmployee && (
                                   <div className="rounded-lg bg-gray-50 p-3">
-                                    <div className="mb-2 flex items-center gap-4 text-sm text-gray-600">
+                                    <div className="mb-2 flex items-center justify-around gap-4 text-sm text-gray-600">
                                       <div className="flex items-center gap-1">
                                         <IdCard className="h-4 w-4" />
                                         <span>
@@ -935,7 +969,6 @@ function RouteComponent() {
         );
 
       case 5:
-        console.log(selectedTarifa);
         return (
           <div className="space-y-6">
             <div className="text-center">
@@ -1040,9 +1073,20 @@ function RouteComponent() {
                         {selectedTarifa?.idServicio.idTipoServicio.descripcion}
                       </span>
                     </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Requiere Personal:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio.idTipoServicio
+                          .requierePersonal
+                          ? "Sí"
+                          : "No"}
+                      </span>
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm">
+                    {/* <p className="text-sm">
                       <span className="font-medium text-gray-700">
                         Duración:
                       </span>{" "}
@@ -1050,7 +1094,7 @@ function RouteComponent() {
                         {selectedTarifa?.idServicio?.idTipoDuracion
                           ?.descripcion || "No especificada"}{" "}
                       </span>
-                    </p>
+                    </p> */}
                     <p className="text-sm">
                       <span className="font-medium text-gray-700">
                         Horas Fijas:
@@ -1061,13 +1105,18 @@ function RouteComponent() {
                     </p>
                     <p className="text-sm">
                       <span className="font-medium text-gray-700">
-                        Requiere Personal:
+                        Horas Máximas:
                       </span>{" "}
                       <span className="text-gray-600">
-                        {selectedTarifa?.idServicio.idTipoServicio
-                          .requierePersonal
-                          ? "Sí"
-                          : "No"}
+                        {selectedTarifa?.idServicio.horasMaximas} horas
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Horas Mínimas:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {selectedTarifa?.idServicio.horasMinimas} horas
                       </span>
                     </p>
                   </div>
