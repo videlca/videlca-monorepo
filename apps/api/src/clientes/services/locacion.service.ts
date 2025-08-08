@@ -105,7 +105,7 @@ export class LocacionService {
                 const savedCorreo = await queryRunner.manager.save(Correo, correo);
 
                 // ENVIAR EMAIL PARA SABER SI CORREO FUNCIONA
-                // await this.notificationEmail(correoDto);
+                await this.notificationEmail(correoDto);
             
                 correosCreados.push(savedCorreo);
 
@@ -463,10 +463,10 @@ export class LocacionService {
                         emailEnvio.email === correo.email
                     );
                     
-                    // if (debeEnviarCorreo) {
-                    //     // ENVIAR EMAIL PARA SABER SI CORREO FUNCIONA
-                    //     // await this.notificationEmail(correoDto);
-                    // }
+                    if (debeEnviarCorreo) {
+                        // ENVIAR EMAIL PARA SABER SI CORREO FUNCIONA
+                        await this.notificationEmail(correoDto);
+                    }
 
                     correosCreados.push(savedCorreo);
 

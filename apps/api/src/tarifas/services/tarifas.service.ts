@@ -197,6 +197,7 @@ export class TarifasService {
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
       .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
       .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
+      .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion')
       .where('tarifa.idPeriodo = :id', { id: periodoActivoFacturacion.idPeriodo })
 
     if (pagination) {
