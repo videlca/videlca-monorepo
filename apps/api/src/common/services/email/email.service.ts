@@ -24,9 +24,11 @@ export class EmailService {
       const mailerService = this.configService.get<string>('mailerService');
       const mailerEmail = this.configService.get<string>('mailerEmail');
       const senderEmailKey = this.configService.get<string>('mailerSecretKey');
+      const emailHostService = this.configService.get<string>('emailHostService');
       
       this.transporter = nodemailer.createTransport({
           service: mailerService,
+          host: emailHostService,
           auth: {
             user: mailerEmail,
             pass: senderEmailKey,
