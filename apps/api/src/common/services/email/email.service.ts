@@ -30,7 +30,9 @@ export class EmailService {
           auth: {
             user: mailerEmail,
             pass: senderEmailKey,
-          }
+          },
+          connectionTimeout: 10_000,
+          socketTimeout: 20_000,
       });
 
     }
