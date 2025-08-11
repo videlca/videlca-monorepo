@@ -22,7 +22,6 @@ import { Route as DashboardServiciosIndexRouteImport } from './routes/dashboard/
 import { Route as DashboardReportesIndexRouteImport } from './routes/dashboard/reportes/index'
 import { Route as DashboardProgramacionesIndexRouteImport } from './routes/dashboard/programaciones/index'
 import { Route as DashboardPersonalIndexRouteImport } from './routes/dashboard/personal/index'
-import { Route as DashboardPermisosIndexRouteImport } from './routes/dashboard/permisos/index'
 import { Route as DashboardOrdenesDeServicioIndexRouteImport } from './routes/dashboard/ordenes-de-servicio/index'
 import { Route as DashboardClientesIndexRouteImport } from './routes/dashboard/clientes/index'
 import { Route as DashboardTarifasTipoTarifaRouteImport } from './routes/dashboard/tarifas/tipo-tarifa'
@@ -30,6 +29,8 @@ import { Route as DashboardTarifasPeriodoRouteImport } from './routes/dashboard/
 import { Route as DashboardServiciosTipoServicioRouteImport } from './routes/dashboard/servicios/tipo-servicio'
 import { Route as DashboardServiciosTipoHorarioRouteImport } from './routes/dashboard/servicios/tipo-horario'
 import { Route as DashboardServiciosConfigurarHorariosRouteImport } from './routes/dashboard/servicios/configurar-horarios'
+import { Route as DashboardPermisosRolesPermisosRouteImport } from './routes/dashboard/permisos/roles-permisos'
+import { Route as DashboardPermisosRolesRouteImport } from './routes/dashboard/permisos/roles'
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
 import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
 import { Route as DashboardConfiguracionTipoPersonalRouteImport } from './routes/dashboard/configuracion/tipo-personal'
@@ -108,11 +109,6 @@ const DashboardPersonalIndexRoute = DashboardPersonalIndexRouteImport.update({
   path: '/personal/',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardPermisosIndexRoute = DashboardPermisosIndexRouteImport.update({
-  id: '/permisos/',
-  path: '/permisos/',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardOrdenesDeServicioIndexRoute =
   DashboardOrdenesDeServicioIndexRouteImport.update({
     id: '/ordenes-de-servicio/',
@@ -153,6 +149,17 @@ const DashboardServiciosConfigurarHorariosRoute =
     path: '/servicios/configurar-horarios',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardPermisosRolesPermisosRoute =
+  DashboardPermisosRolesPermisosRouteImport.update({
+    id: '/permisos/roles-permisos',
+    path: '/permisos/roles-permisos',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardPermisosRolesRoute = DashboardPermisosRolesRouteImport.update({
+  id: '/permisos/roles',
+  path: '/permisos/roles',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardConfiguracionUbicacionRoute =
   DashboardConfiguracionUbicacionRouteImport.update({
     id: '/configuracion/ubicacion',
@@ -235,6 +242,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
+  '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
   '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
   '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
@@ -242,7 +251,6 @@ export interface FileRoutesByFullPath {
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/clientes': typeof DashboardClientesIndexRoute
   '/dashboard/ordenes-de-servicio': typeof DashboardOrdenesDeServicioIndexRoute
-  '/dashboard/permisos': typeof DashboardPermisosIndexRoute
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
   '/dashboard/reportes': typeof DashboardReportesIndexRoute
@@ -268,6 +276,8 @@ export interface FileRoutesByTo {
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
+  '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
   '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
   '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
@@ -275,7 +285,6 @@ export interface FileRoutesByTo {
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/clientes': typeof DashboardClientesIndexRoute
   '/dashboard/ordenes-de-servicio': typeof DashboardOrdenesDeServicioIndexRoute
-  '/dashboard/permisos': typeof DashboardPermisosIndexRoute
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
   '/dashboard/reportes': typeof DashboardReportesIndexRoute
@@ -303,6 +312,8 @@ export interface FileRoutesById {
   '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
+  '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
   '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
   '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
@@ -310,7 +321,6 @@ export interface FileRoutesById {
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/clientes/': typeof DashboardClientesIndexRoute
   '/dashboard/ordenes-de-servicio/': typeof DashboardOrdenesDeServicioIndexRoute
-  '/dashboard/permisos/': typeof DashboardPermisosIndexRoute
   '/dashboard/personal/': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
   '/dashboard/reportes/': typeof DashboardReportesIndexRoute
@@ -339,6 +349,8 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/permisos/roles'
+    | '/dashboard/permisos/roles-permisos'
     | '/dashboard/servicios/configurar-horarios'
     | '/dashboard/servicios/tipo-horario'
     | '/dashboard/servicios/tipo-servicio'
@@ -346,7 +358,6 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/clientes'
     | '/dashboard/ordenes-de-servicio'
-    | '/dashboard/permisos'
     | '/dashboard/personal'
     | '/dashboard/programaciones'
     | '/dashboard/reportes'
@@ -372,6 +383,8 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/permisos/roles'
+    | '/dashboard/permisos/roles-permisos'
     | '/dashboard/servicios/configurar-horarios'
     | '/dashboard/servicios/tipo-horario'
     | '/dashboard/servicios/tipo-servicio'
@@ -379,7 +392,6 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/clientes'
     | '/dashboard/ordenes-de-servicio'
-    | '/dashboard/permisos'
     | '/dashboard/personal'
     | '/dashboard/programaciones'
     | '/dashboard/reportes'
@@ -406,6 +418,8 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-personal'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/permisos/roles'
+    | '/dashboard/permisos/roles-permisos'
     | '/dashboard/servicios/configurar-horarios'
     | '/dashboard/servicios/tipo-horario'
     | '/dashboard/servicios/tipo-servicio'
@@ -413,7 +427,6 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/clientes/'
     | '/dashboard/ordenes-de-servicio/'
-    | '/dashboard/permisos/'
     | '/dashboard/personal/'
     | '/dashboard/programaciones/'
     | '/dashboard/reportes/'
@@ -527,13 +540,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPersonalIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/permisos/': {
-      id: '/dashboard/permisos/'
-      path: '/permisos'
-      fullPath: '/dashboard/permisos'
-      preLoaderRoute: typeof DashboardPermisosIndexRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/dashboard/ordenes-de-servicio/': {
       id: '/dashboard/ordenes-de-servicio/'
       path: '/ordenes-de-servicio'
@@ -581,6 +587,20 @@ declare module '@tanstack/react-router' {
       path: '/servicios/configurar-horarios'
       fullPath: '/dashboard/servicios/configurar-horarios'
       preLoaderRoute: typeof DashboardServiciosConfigurarHorariosRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/permisos/roles-permisos': {
+      id: '/dashboard/permisos/roles-permisos'
+      path: '/permisos/roles-permisos'
+      fullPath: '/dashboard/permisos/roles-permisos'
+      preLoaderRoute: typeof DashboardPermisosRolesPermisosRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/permisos/roles': {
+      id: '/dashboard/permisos/roles'
+      path: '/permisos/roles'
+      fullPath: '/dashboard/permisos/roles'
+      preLoaderRoute: typeof DashboardPermisosRolesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/configuracion/ubicacion': {
@@ -673,6 +693,8 @@ interface DashboardRouteChildren {
   DashboardConfiguracionTipoPersonalRoute: typeof DashboardConfiguracionTipoPersonalRoute
   DashboardConfiguracionTiposNovedadRoute: typeof DashboardConfiguracionTiposNovedadRoute
   DashboardConfiguracionUbicacionRoute: typeof DashboardConfiguracionUbicacionRoute
+  DashboardPermisosRolesRoute: typeof DashboardPermisosRolesRoute
+  DashboardPermisosRolesPermisosRoute: typeof DashboardPermisosRolesPermisosRoute
   DashboardServiciosConfigurarHorariosRoute: typeof DashboardServiciosConfigurarHorariosRoute
   DashboardServiciosTipoHorarioRoute: typeof DashboardServiciosTipoHorarioRoute
   DashboardServiciosTipoServicioRoute: typeof DashboardServiciosTipoServicioRoute
@@ -680,7 +702,6 @@ interface DashboardRouteChildren {
   DashboardTarifasTipoTarifaRoute: typeof DashboardTarifasTipoTarifaRoute
   DashboardClientesIndexRoute: typeof DashboardClientesIndexRoute
   DashboardOrdenesDeServicioIndexRoute: typeof DashboardOrdenesDeServicioIndexRoute
-  DashboardPermisosIndexRoute: typeof DashboardPermisosIndexRoute
   DashboardPersonalIndexRoute: typeof DashboardPersonalIndexRoute
   DashboardProgramacionesIndexRoute: typeof DashboardProgramacionesIndexRoute
   DashboardReportesIndexRoute: typeof DashboardReportesIndexRoute
@@ -707,6 +728,8 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardConfiguracionTiposNovedadRoute:
     DashboardConfiguracionTiposNovedadRoute,
   DashboardConfiguracionUbicacionRoute: DashboardConfiguracionUbicacionRoute,
+  DashboardPermisosRolesRoute: DashboardPermisosRolesRoute,
+  DashboardPermisosRolesPermisosRoute: DashboardPermisosRolesPermisosRoute,
   DashboardServiciosConfigurarHorariosRoute:
     DashboardServiciosConfigurarHorariosRoute,
   DashboardServiciosTipoHorarioRoute: DashboardServiciosTipoHorarioRoute,
@@ -715,7 +738,6 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardTarifasTipoTarifaRoute: DashboardTarifasTipoTarifaRoute,
   DashboardClientesIndexRoute: DashboardClientesIndexRoute,
   DashboardOrdenesDeServicioIndexRoute: DashboardOrdenesDeServicioIndexRoute,
-  DashboardPermisosIndexRoute: DashboardPermisosIndexRoute,
   DashboardPersonalIndexRoute: DashboardPersonalIndexRoute,
   DashboardProgramacionesIndexRoute: DashboardProgramacionesIndexRoute,
   DashboardReportesIndexRoute: DashboardReportesIndexRoute,

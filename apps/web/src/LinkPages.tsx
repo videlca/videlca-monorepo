@@ -102,7 +102,13 @@ export const linksSideBar: LinksSideBar = {
   ],
   permisos: [
     {
-      to: "/dashboard/permisos",
+      to: "/dashboard/permisos/roles",
+      label: "Roles",
+      description: "roles",
+      icon: <FileTextIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/permisos/roles-permisos",
       label: "Roles y Permisos",
       description: "roles-permisos",
       icon: <ShieldCheckIcon className="h-6 w-6" />,

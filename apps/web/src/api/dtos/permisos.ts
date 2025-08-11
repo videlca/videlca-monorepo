@@ -1,10 +1,10 @@
 export interface CreateRoleDto {
-  permissionsIds: string[]
+  permissionsIds: number[]
   descripcion: string
 }
 
-export interface UpdateRoleDto {
-  estado: boolean
+export interface UpdateRoleDto extends Partial<CreateRoleDto> {
+  estado?: boolean
 }
 
 export interface UpdateUserStateRoleDto {

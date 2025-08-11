@@ -1,5 +1,5 @@
 export * from './configuracion'
 export * from './clientes'
 export * from './common'
-export * from './novedades'
 export * from './personal'
+export * from './permisos'
