@@ -51,7 +51,7 @@ export const useLogout = (): UseMutationResult<ApiResponse, Error, void> => {
 
   return useMutation({
     mutationFn: () => logout(),
-    onSuccess: (data) => {
+    onSuccess: () => {
       setIsAuthenticated(false);
       queryClient.invalidateQueries({ queryKey: ["login"] });
       toast.success("Cierre de sesión exitoso", {

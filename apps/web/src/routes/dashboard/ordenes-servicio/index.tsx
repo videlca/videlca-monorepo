@@ -61,7 +61,7 @@ import { usePersonalActivo } from "../../../api/queryFunctions/personal";
 import { OrderStateLabel } from "../../../components/common/OrderStateLabel";
 import type { Locacion } from "../../../types";
 
-export const Route = createFileRoute("/dashboard/ordenes-de-servicio/")({
+export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
 });
 
@@ -1401,7 +1401,7 @@ function RouteComponent() {
                 </div>
                 {step < 5 && (
                   <div
-                    className={`mx-2 h-0.5 w-16 ${step < currentStep ? "bg-green-500" : "bg-gray-200"}`}
+                    className={`mx-2 h-0.5 w-16 ${step < currentStep ? `bg-green-500` : `bg-gray-200`}`}
                   />
                 )}
               </div>

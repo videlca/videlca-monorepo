@@ -11,6 +11,7 @@ import {
   useAuth,
   type AuthContextType,
 } from "./context/AuthContext";
+import { PermissionsProvider } from "./context/PermissionsContext";
 import { Toaster } from "sonner";
 
 const browserHistory = createBrowserHistory();
@@ -58,7 +59,9 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClient}>
-        <RouterApp />
+        <PermissionsProvider>
+          <RouterApp />
+        </PermissionsProvider>
       </QueryClientProvider>
     </AuthProvider>
   );

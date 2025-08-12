@@ -14,7 +14,17 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as OlvidePasswordIdRouteImport } from './routes/olvide-password.$id'
+import { Route as DashboardUsuariosRouteImport } from './routes/dashboard/usuarios'
+import { Route as DashboardTarifasRouteImport } from './routes/dashboard/tarifas'
+import { Route as DashboardServiciosRouteImport } from './routes/dashboard/servicios'
+import { Route as DashboardReportesRouteImport } from './routes/dashboard/reportes'
+import { Route as DashboardProgramacionesRouteImport } from './routes/dashboard/programaciones'
+import { Route as DashboardPersonalRouteImport } from './routes/dashboard/personal'
+import { Route as DashboardPermisosRouteImport } from './routes/dashboard/permisos'
 import { Route as DashboardPerfilUsuarioRouteImport } from './routes/dashboard/perfil-usuario'
+import { Route as DashboardOrdenesServicioRouteImport } from './routes/dashboard/ordenes-servicio'
+import { Route as DashboardConfiguracionRouteImport } from './routes/dashboard/configuracion'
+import { Route as DashboardClientesRouteImport } from './routes/dashboard/clientes'
 import { Route as ActualizarIdRouteImport } from './routes/actualizar.$id'
 import { Route as DashboardUsuariosIndexRouteImport } from './routes/dashboard/usuarios/index'
 import { Route as DashboardTarifasIndexRouteImport } from './routes/dashboard/tarifas/index'
@@ -22,7 +32,7 @@ import { Route as DashboardServiciosIndexRouteImport } from './routes/dashboard/
 import { Route as DashboardReportesIndexRouteImport } from './routes/dashboard/reportes/index'
 import { Route as DashboardProgramacionesIndexRouteImport } from './routes/dashboard/programaciones/index'
 import { Route as DashboardPersonalIndexRouteImport } from './routes/dashboard/personal/index'
-import { Route as DashboardOrdenesDeServicioIndexRouteImport } from './routes/dashboard/ordenes-de-servicio/index'
+import { Route as DashboardOrdenesServicioIndexRouteImport } from './routes/dashboard/ordenes-servicio/index'
 import { Route as DashboardClientesIndexRouteImport } from './routes/dashboard/clientes/index'
 import { Route as DashboardTarifasTipoTarifaRouteImport } from './routes/dashboard/tarifas/tipo-tarifa'
 import { Route as DashboardTarifasPeriodoRouteImport } from './routes/dashboard/tarifas/periodo'
@@ -68,9 +78,60 @@ const OlvidePasswordIdRoute = OlvidePasswordIdRouteImport.update({
   path: '/olvide-password/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardUsuariosRoute = DashboardUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardTarifasRoute = DashboardTarifasRouteImport.update({
+  id: '/tarifas',
+  path: '/tarifas',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardServiciosRoute = DashboardServiciosRouteImport.update({
+  id: '/servicios',
+  path: '/servicios',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardReportesRoute = DashboardReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProgramacionesRoute = DashboardProgramacionesRouteImport.update({
+  id: '/programaciones',
+  path: '/programaciones',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPersonalRoute = DashboardPersonalRouteImport.update({
+  id: '/personal',
+  path: '/personal',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPermisosRoute = DashboardPermisosRouteImport.update({
+  id: '/permisos',
+  path: '/permisos',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardPerfilUsuarioRoute = DashboardPerfilUsuarioRouteImport.update({
   id: '/perfil-usuario',
   path: '/perfil-usuario',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOrdenesServicioRoute =
+  DashboardOrdenesServicioRouteImport.update({
+    id: '/ordenes-servicio',
+    path: '/ordenes-servicio',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardConfiguracionRoute = DashboardConfiguracionRouteImport.update({
+  id: '/configuracion',
+  path: '/configuracion',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardClientesRoute = DashboardClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
   getParentRoute: () => DashboardRoute,
 } as any)
 const ActualizarIdRoute = ActualizarIdRouteImport.update({
@@ -79,152 +140,152 @@ const ActualizarIdRoute = ActualizarIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardUsuariosIndexRoute = DashboardUsuariosIndexRouteImport.update({
-  id: '/usuarios/',
-  path: '/usuarios/',
-  getParentRoute: () => DashboardRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardUsuariosRoute,
 } as any)
 const DashboardTarifasIndexRoute = DashboardTarifasIndexRouteImport.update({
-  id: '/tarifas/',
-  path: '/tarifas/',
-  getParentRoute: () => DashboardRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardTarifasRoute,
 } as any)
 const DashboardServiciosIndexRoute = DashboardServiciosIndexRouteImport.update({
-  id: '/servicios/',
-  path: '/servicios/',
-  getParentRoute: () => DashboardRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardServiciosRoute,
 } as any)
 const DashboardReportesIndexRoute = DashboardReportesIndexRouteImport.update({
-  id: '/reportes/',
-  path: '/reportes/',
-  getParentRoute: () => DashboardRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardReportesRoute,
 } as any)
 const DashboardProgramacionesIndexRoute =
   DashboardProgramacionesIndexRouteImport.update({
-    id: '/programaciones/',
-    path: '/programaciones/',
-    getParentRoute: () => DashboardRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => DashboardProgramacionesRoute,
   } as any)
 const DashboardPersonalIndexRoute = DashboardPersonalIndexRouteImport.update({
-  id: '/personal/',
-  path: '/personal/',
-  getParentRoute: () => DashboardRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardPersonalRoute,
 } as any)
-const DashboardOrdenesDeServicioIndexRoute =
-  DashboardOrdenesDeServicioIndexRouteImport.update({
-    id: '/ordenes-de-servicio/',
-    path: '/ordenes-de-servicio/',
-    getParentRoute: () => DashboardRoute,
+const DashboardOrdenesServicioIndexRoute =
+  DashboardOrdenesServicioIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => DashboardOrdenesServicioRoute,
   } as any)
 const DashboardClientesIndexRoute = DashboardClientesIndexRouteImport.update({
-  id: '/clientes/',
-  path: '/clientes/',
-  getParentRoute: () => DashboardRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardClientesRoute,
 } as any)
 const DashboardTarifasTipoTarifaRoute =
   DashboardTarifasTipoTarifaRouteImport.update({
-    id: '/tarifas/tipo-tarifa',
-    path: '/tarifas/tipo-tarifa',
-    getParentRoute: () => DashboardRoute,
+    id: '/tipo-tarifa',
+    path: '/tipo-tarifa',
+    getParentRoute: () => DashboardTarifasRoute,
   } as any)
 const DashboardTarifasPeriodoRoute = DashboardTarifasPeriodoRouteImport.update({
-  id: '/tarifas/periodo',
-  path: '/tarifas/periodo',
-  getParentRoute: () => DashboardRoute,
+  id: '/periodo',
+  path: '/periodo',
+  getParentRoute: () => DashboardTarifasRoute,
 } as any)
 const DashboardServiciosTipoServicioRoute =
   DashboardServiciosTipoServicioRouteImport.update({
-    id: '/servicios/tipo-servicio',
-    path: '/servicios/tipo-servicio',
-    getParentRoute: () => DashboardRoute,
+    id: '/tipo-servicio',
+    path: '/tipo-servicio',
+    getParentRoute: () => DashboardServiciosRoute,
   } as any)
 const DashboardServiciosTipoHorarioRoute =
   DashboardServiciosTipoHorarioRouteImport.update({
-    id: '/servicios/tipo-horario',
-    path: '/servicios/tipo-horario',
-    getParentRoute: () => DashboardRoute,
+    id: '/tipo-horario',
+    path: '/tipo-horario',
+    getParentRoute: () => DashboardServiciosRoute,
   } as any)
 const DashboardServiciosConfigurarHorariosRoute =
   DashboardServiciosConfigurarHorariosRouteImport.update({
-    id: '/servicios/configurar-horarios',
-    path: '/servicios/configurar-horarios',
-    getParentRoute: () => DashboardRoute,
+    id: '/configurar-horarios',
+    path: '/configurar-horarios',
+    getParentRoute: () => DashboardServiciosRoute,
   } as any)
 const DashboardPermisosRolesPermisosRoute =
   DashboardPermisosRolesPermisosRouteImport.update({
-    id: '/permisos/roles-permisos',
-    path: '/permisos/roles-permisos',
-    getParentRoute: () => DashboardRoute,
+    id: '/roles-permisos',
+    path: '/roles-permisos',
+    getParentRoute: () => DashboardPermisosRoute,
   } as any)
 const DashboardPermisosRolesRoute = DashboardPermisosRolesRouteImport.update({
-  id: '/permisos/roles',
-  path: '/permisos/roles',
-  getParentRoute: () => DashboardRoute,
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => DashboardPermisosRoute,
 } as any)
 const DashboardConfiguracionUbicacionRoute =
   DashboardConfiguracionUbicacionRouteImport.update({
-    id: '/configuracion/ubicacion',
-    path: '/configuracion/ubicacion',
-    getParentRoute: () => DashboardRoute,
+    id: '/ubicacion',
+    path: '/ubicacion',
+    getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
 const DashboardConfiguracionTiposNovedadRoute =
   DashboardConfiguracionTiposNovedadRouteImport.update({
-    id: '/configuracion/tipos-novedad',
-    path: '/configuracion/tipos-novedad',
-    getParentRoute: () => DashboardRoute,
+    id: '/tipos-novedad',
+    path: '/tipos-novedad',
+    getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
 const DashboardConfiguracionTipoPersonalRoute =
   DashboardConfiguracionTipoPersonalRouteImport.update({
-    id: '/configuracion/tipo-personal',
-    path: '/configuracion/tipo-personal',
-    getParentRoute: () => DashboardRoute,
+    id: '/tipo-personal',
+    path: '/tipo-personal',
+    getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
 const DashboardConfiguracionTipoIdRoute =
   DashboardConfiguracionTipoIdRouteImport.update({
-    id: '/configuracion/tipo-id',
-    path: '/configuracion/tipo-id',
-    getParentRoute: () => DashboardRoute,
+    id: '/tipo-id',
+    path: '/tipo-id',
+    getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
 const DashboardConfiguracionTipoGeneroRoute =
   DashboardConfiguracionTipoGeneroRouteImport.update({
-    id: '/configuracion/tipo-genero',
-    path: '/configuracion/tipo-genero',
-    getParentRoute: () => DashboardRoute,
+    id: '/tipo-genero',
+    path: '/tipo-genero',
+    getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
 const DashboardConfiguracionTipoClienteRoute =
   DashboardConfiguracionTipoClienteRouteImport.update({
-    id: '/configuracion/tipo-cliente',
-    path: '/configuracion/tipo-cliente',
-    getParentRoute: () => DashboardRoute,
+    id: '/tipo-cliente',
+    path: '/tipo-cliente',
+    getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
 const DashboardConfiguracionEstadoOrdenServicioRoute =
   DashboardConfiguracionEstadoOrdenServicioRouteImport.update({
-    id: '/configuracion/estado-orden-servicio',
-    path: '/configuracion/estado-orden-servicio',
-    getParentRoute: () => DashboardRoute,
+    id: '/estado-orden-servicio',
+    path: '/estado-orden-servicio',
+    getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
 const DashboardTarifasVerTarifasIdPeriodoRoute =
   DashboardTarifasVerTarifasIdPeriodoRouteImport.update({
-    id: '/tarifas/ver-tarifas/$id-periodo',
-    path: '/tarifas/ver-tarifas/$id-periodo',
-    getParentRoute: () => DashboardRoute,
+    id: '/ver-tarifas/$id-periodo',
+    path: '/ver-tarifas/$id-periodo',
+    getParentRoute: () => DashboardTarifasRoute,
   } as any)
 const DashboardTarifasConfigurarServiciosIdPeriodoRoute =
   DashboardTarifasConfigurarServiciosIdPeriodoRouteImport.update({
-    id: '/tarifas/configurar-servicios/$id-periodo',
-    path: '/tarifas/configurar-servicios/$id-periodo',
-    getParentRoute: () => DashboardRoute,
+    id: '/configurar-servicios/$id-periodo',
+    path: '/configurar-servicios/$id-periodo',
+    getParentRoute: () => DashboardTarifasRoute,
   } as any)
 const DashboardPersonalNovedadesPersonalIdRoute =
   DashboardPersonalNovedadesPersonalIdRouteImport.update({
-    id: '/personal/novedades-personal/$id',
-    path: '/personal/novedades-personal/$id',
-    getParentRoute: () => DashboardRoute,
+    id: '/novedades-personal/$id',
+    path: '/novedades-personal/$id',
+    getParentRoute: () => DashboardPersonalRoute,
   } as any)
 const DashboardClientesIdClienteLocacionesRoute =
   DashboardClientesIdClienteLocacionesRouteImport.update({
-    id: '/clientes/$idCliente/locaciones',
-    path: '/clientes/$idCliente/locaciones',
-    getParentRoute: () => DashboardRoute,
+    id: '/$idCliente/locaciones',
+    path: '/$idCliente/locaciones',
+    getParentRoute: () => DashboardClientesRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -232,77 +293,17 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/recuperar': typeof RecuperarRoute
   '/actualizar/$id': typeof ActualizarIdRoute
+  '/dashboard/clientes': typeof DashboardClientesRouteWithChildren
+  '/dashboard/configuracion': typeof DashboardConfiguracionRouteWithChildren
+  '/dashboard/ordenes-servicio': typeof DashboardOrdenesServicioRouteWithChildren
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
-  '/olvide-password/$id': typeof OlvidePasswordIdRoute
-  '/dashboard/': typeof DashboardIndexRoute
-  '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
-  '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
-  '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
-  '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
-  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
-  '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
-  '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
-  '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
-  '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
-  '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
-  '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
-  '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
-  '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
-  '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
-  '/dashboard/clientes': typeof DashboardClientesIndexRoute
-  '/dashboard/ordenes-de-servicio': typeof DashboardOrdenesDeServicioIndexRoute
-  '/dashboard/personal': typeof DashboardPersonalIndexRoute
-  '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
-  '/dashboard/reportes': typeof DashboardReportesIndexRoute
-  '/dashboard/servicios': typeof DashboardServiciosIndexRoute
-  '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
-  '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
-  '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
-  '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
-  '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
-  '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
-}
-export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/recuperar': typeof RecuperarRoute
-  '/actualizar/$id': typeof ActualizarIdRoute
-  '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
-  '/olvide-password/$id': typeof OlvidePasswordIdRoute
-  '/dashboard': typeof DashboardIndexRoute
-  '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
-  '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
-  '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
-  '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
-  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
-  '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
-  '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
-  '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
-  '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
-  '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
-  '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
-  '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
-  '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
-  '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
-  '/dashboard/clientes': typeof DashboardClientesIndexRoute
-  '/dashboard/ordenes-de-servicio': typeof DashboardOrdenesDeServicioIndexRoute
-  '/dashboard/personal': typeof DashboardPersonalIndexRoute
-  '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
-  '/dashboard/reportes': typeof DashboardReportesIndexRoute
-  '/dashboard/servicios': typeof DashboardServiciosIndexRoute
-  '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
-  '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
-  '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
-  '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
-  '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
-  '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
-}
-export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRouteWithChildren
-  '/recuperar': typeof RecuperarRoute
-  '/actualizar/$id': typeof ActualizarIdRoute
-  '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
+  '/dashboard/permisos': typeof DashboardPermisosRouteWithChildren
+  '/dashboard/personal': typeof DashboardPersonalRouteWithChildren
+  '/dashboard/programaciones': typeof DashboardProgramacionesRouteWithChildren
+  '/dashboard/reportes': typeof DashboardReportesRouteWithChildren
+  '/dashboard/servicios': typeof DashboardServiciosRouteWithChildren
+  '/dashboard/tarifas': typeof DashboardTarifasRouteWithChildren
+  '/dashboard/usuarios': typeof DashboardUsuariosRouteWithChildren
   '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
@@ -320,7 +321,89 @@ export interface FileRoutesById {
   '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/clientes/': typeof DashboardClientesIndexRoute
-  '/dashboard/ordenes-de-servicio/': typeof DashboardOrdenesDeServicioIndexRoute
+  '/dashboard/ordenes-servicio/': typeof DashboardOrdenesServicioIndexRoute
+  '/dashboard/personal/': typeof DashboardPersonalIndexRoute
+  '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
+  '/dashboard/reportes/': typeof DashboardReportesIndexRoute
+  '/dashboard/servicios/': typeof DashboardServiciosIndexRoute
+  '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
+  '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
+  '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
+  '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
+  '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
+  '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/recuperar': typeof RecuperarRoute
+  '/actualizar/$id': typeof ActualizarIdRoute
+  '/dashboard/configuracion': typeof DashboardConfiguracionRouteWithChildren
+  '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
+  '/dashboard/permisos': typeof DashboardPermisosRouteWithChildren
+  '/olvide-password/$id': typeof OlvidePasswordIdRoute
+  '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
+  '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
+  '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
+  '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
+  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
+  '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
+  '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
+  '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
+  '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
+  '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
+  '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
+  '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
+  '/dashboard/clientes': typeof DashboardClientesIndexRoute
+  '/dashboard/ordenes-servicio': typeof DashboardOrdenesServicioIndexRoute
+  '/dashboard/personal': typeof DashboardPersonalIndexRoute
+  '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
+  '/dashboard/reportes': typeof DashboardReportesIndexRoute
+  '/dashboard/servicios': typeof DashboardServiciosIndexRoute
+  '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
+  '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
+  '/dashboard/clientes/$idCliente/locaciones': typeof DashboardClientesIdClienteLocacionesRoute
+  '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
+  '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
+  '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
+}
+export interface FileRoutesById {
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRouteWithChildren
+  '/recuperar': typeof RecuperarRoute
+  '/actualizar/$id': typeof ActualizarIdRoute
+  '/dashboard/clientes': typeof DashboardClientesRouteWithChildren
+  '/dashboard/configuracion': typeof DashboardConfiguracionRouteWithChildren
+  '/dashboard/ordenes-servicio': typeof DashboardOrdenesServicioRouteWithChildren
+  '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
+  '/dashboard/permisos': typeof DashboardPermisosRouteWithChildren
+  '/dashboard/personal': typeof DashboardPersonalRouteWithChildren
+  '/dashboard/programaciones': typeof DashboardProgramacionesRouteWithChildren
+  '/dashboard/reportes': typeof DashboardReportesRouteWithChildren
+  '/dashboard/servicios': typeof DashboardServiciosRouteWithChildren
+  '/dashboard/tarifas': typeof DashboardTarifasRouteWithChildren
+  '/dashboard/usuarios': typeof DashboardUsuariosRouteWithChildren
+  '/olvide-password/$id': typeof OlvidePasswordIdRoute
+  '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
+  '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
+  '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
+  '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
+  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
+  '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
+  '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
+  '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
+  '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
+  '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
+  '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
+  '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
+  '/dashboard/clientes/': typeof DashboardClientesIndexRoute
+  '/dashboard/ordenes-servicio/': typeof DashboardOrdenesServicioIndexRoute
   '/dashboard/personal/': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
   '/dashboard/reportes/': typeof DashboardReportesIndexRoute
@@ -339,76 +422,17 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/recuperar'
     | '/actualizar/$id'
-    | '/dashboard/perfil-usuario'
-    | '/olvide-password/$id'
-    | '/dashboard/'
-    | '/dashboard/configuracion/estado-orden-servicio'
-    | '/dashboard/configuracion/tipo-cliente'
-    | '/dashboard/configuracion/tipo-genero'
-    | '/dashboard/configuracion/tipo-id'
-    | '/dashboard/configuracion/tipo-personal'
-    | '/dashboard/configuracion/tipos-novedad'
-    | '/dashboard/configuracion/ubicacion'
-    | '/dashboard/permisos/roles'
-    | '/dashboard/permisos/roles-permisos'
-    | '/dashboard/servicios/configurar-horarios'
-    | '/dashboard/servicios/tipo-horario'
-    | '/dashboard/servicios/tipo-servicio'
-    | '/dashboard/tarifas/periodo'
-    | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/clientes'
-    | '/dashboard/ordenes-de-servicio'
+    | '/dashboard/configuracion'
+    | '/dashboard/ordenes-servicio'
+    | '/dashboard/perfil-usuario'
+    | '/dashboard/permisos'
     | '/dashboard/personal'
     | '/dashboard/programaciones'
     | '/dashboard/reportes'
     | '/dashboard/servicios'
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
-    | '/dashboard/clientes/$idCliente/locaciones'
-    | '/dashboard/personal/novedades-personal/$id'
-    | '/dashboard/tarifas/configurar-servicios/$id-periodo'
-    | '/dashboard/tarifas/ver-tarifas/$id-periodo'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/recuperar'
-    | '/actualizar/$id'
-    | '/dashboard/perfil-usuario'
-    | '/olvide-password/$id'
-    | '/dashboard'
-    | '/dashboard/configuracion/estado-orden-servicio'
-    | '/dashboard/configuracion/tipo-cliente'
-    | '/dashboard/configuracion/tipo-genero'
-    | '/dashboard/configuracion/tipo-id'
-    | '/dashboard/configuracion/tipo-personal'
-    | '/dashboard/configuracion/tipos-novedad'
-    | '/dashboard/configuracion/ubicacion'
-    | '/dashboard/permisos/roles'
-    | '/dashboard/permisos/roles-permisos'
-    | '/dashboard/servicios/configurar-horarios'
-    | '/dashboard/servicios/tipo-horario'
-    | '/dashboard/servicios/tipo-servicio'
-    | '/dashboard/tarifas/periodo'
-    | '/dashboard/tarifas/tipo-tarifa'
-    | '/dashboard/clientes'
-    | '/dashboard/ordenes-de-servicio'
-    | '/dashboard/personal'
-    | '/dashboard/programaciones'
-    | '/dashboard/reportes'
-    | '/dashboard/servicios'
-    | '/dashboard/tarifas'
-    | '/dashboard/usuarios'
-    | '/dashboard/clientes/$idCliente/locaciones'
-    | '/dashboard/personal/novedades-personal/$id'
-    | '/dashboard/tarifas/configurar-servicios/$id-periodo'
-    | '/dashboard/tarifas/ver-tarifas/$id-periodo'
-  id:
-    | '__root__'
-    | '/'
-    | '/dashboard'
-    | '/recuperar'
-    | '/actualizar/$id'
-    | '/dashboard/perfil-usuario'
     | '/olvide-password/$id'
     | '/dashboard/'
     | '/dashboard/configuracion/estado-orden-servicio'
@@ -426,7 +450,88 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas/periodo'
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/clientes/'
-    | '/dashboard/ordenes-de-servicio/'
+    | '/dashboard/ordenes-servicio/'
+    | '/dashboard/personal/'
+    | '/dashboard/programaciones/'
+    | '/dashboard/reportes/'
+    | '/dashboard/servicios/'
+    | '/dashboard/tarifas/'
+    | '/dashboard/usuarios/'
+    | '/dashboard/clientes/$idCliente/locaciones'
+    | '/dashboard/personal/novedades-personal/$id'
+    | '/dashboard/tarifas/configurar-servicios/$id-periodo'
+    | '/dashboard/tarifas/ver-tarifas/$id-periodo'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/recuperar'
+    | '/actualizar/$id'
+    | '/dashboard/configuracion'
+    | '/dashboard/perfil-usuario'
+    | '/dashboard/permisos'
+    | '/olvide-password/$id'
+    | '/dashboard'
+    | '/dashboard/configuracion/estado-orden-servicio'
+    | '/dashboard/configuracion/tipo-cliente'
+    | '/dashboard/configuracion/tipo-genero'
+    | '/dashboard/configuracion/tipo-id'
+    | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipos-novedad'
+    | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/permisos/roles'
+    | '/dashboard/permisos/roles-permisos'
+    | '/dashboard/servicios/configurar-horarios'
+    | '/dashboard/servicios/tipo-horario'
+    | '/dashboard/servicios/tipo-servicio'
+    | '/dashboard/tarifas/periodo'
+    | '/dashboard/tarifas/tipo-tarifa'
+    | '/dashboard/clientes'
+    | '/dashboard/ordenes-servicio'
+    | '/dashboard/personal'
+    | '/dashboard/programaciones'
+    | '/dashboard/reportes'
+    | '/dashboard/servicios'
+    | '/dashboard/tarifas'
+    | '/dashboard/usuarios'
+    | '/dashboard/clientes/$idCliente/locaciones'
+    | '/dashboard/personal/novedades-personal/$id'
+    | '/dashboard/tarifas/configurar-servicios/$id-periodo'
+    | '/dashboard/tarifas/ver-tarifas/$id-periodo'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/recuperar'
+    | '/actualizar/$id'
+    | '/dashboard/clientes'
+    | '/dashboard/configuracion'
+    | '/dashboard/ordenes-servicio'
+    | '/dashboard/perfil-usuario'
+    | '/dashboard/permisos'
+    | '/dashboard/personal'
+    | '/dashboard/programaciones'
+    | '/dashboard/reportes'
+    | '/dashboard/servicios'
+    | '/dashboard/tarifas'
+    | '/dashboard/usuarios'
+    | '/olvide-password/$id'
+    | '/dashboard/'
+    | '/dashboard/configuracion/estado-orden-servicio'
+    | '/dashboard/configuracion/tipo-cliente'
+    | '/dashboard/configuracion/tipo-genero'
+    | '/dashboard/configuracion/tipo-id'
+    | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipos-novedad'
+    | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/permisos/roles'
+    | '/dashboard/permisos/roles-permisos'
+    | '/dashboard/servicios/configurar-horarios'
+    | '/dashboard/servicios/tipo-horario'
+    | '/dashboard/servicios/tipo-servicio'
+    | '/dashboard/tarifas/periodo'
+    | '/dashboard/tarifas/tipo-tarifa'
+    | '/dashboard/clientes/'
+    | '/dashboard/ordenes-servicio/'
     | '/dashboard/personal/'
     | '/dashboard/programaciones/'
     | '/dashboard/reportes/'
@@ -484,11 +589,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OlvidePasswordIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/usuarios': {
+      id: '/dashboard/usuarios'
+      path: '/usuarios'
+      fullPath: '/dashboard/usuarios'
+      preLoaderRoute: typeof DashboardUsuariosRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/tarifas': {
+      id: '/dashboard/tarifas'
+      path: '/tarifas'
+      fullPath: '/dashboard/tarifas'
+      preLoaderRoute: typeof DashboardTarifasRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/servicios': {
+      id: '/dashboard/servicios'
+      path: '/servicios'
+      fullPath: '/dashboard/servicios'
+      preLoaderRoute: typeof DashboardServiciosRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/reportes': {
+      id: '/dashboard/reportes'
+      path: '/reportes'
+      fullPath: '/dashboard/reportes'
+      preLoaderRoute: typeof DashboardReportesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/programaciones': {
+      id: '/dashboard/programaciones'
+      path: '/programaciones'
+      fullPath: '/dashboard/programaciones'
+      preLoaderRoute: typeof DashboardProgramacionesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/personal': {
+      id: '/dashboard/personal'
+      path: '/personal'
+      fullPath: '/dashboard/personal'
+      preLoaderRoute: typeof DashboardPersonalRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/permisos': {
+      id: '/dashboard/permisos'
+      path: '/permisos'
+      fullPath: '/dashboard/permisos'
+      preLoaderRoute: typeof DashboardPermisosRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/perfil-usuario': {
       id: '/dashboard/perfil-usuario'
       path: '/perfil-usuario'
       fullPath: '/dashboard/perfil-usuario'
       preLoaderRoute: typeof DashboardPerfilUsuarioRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/ordenes-servicio': {
+      id: '/dashboard/ordenes-servicio'
+      path: '/ordenes-servicio'
+      fullPath: '/dashboard/ordenes-servicio'
+      preLoaderRoute: typeof DashboardOrdenesServicioRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/configuracion': {
+      id: '/dashboard/configuracion'
+      path: '/configuracion'
+      fullPath: '/dashboard/configuracion'
+      preLoaderRoute: typeof DashboardConfiguracionRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/clientes': {
+      id: '/dashboard/clientes'
+      path: '/clientes'
+      fullPath: '/dashboard/clientes'
+      preLoaderRoute: typeof DashboardClientesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/actualizar/$id': {
@@ -500,192 +675,204 @@ declare module '@tanstack/react-router' {
     }
     '/dashboard/usuarios/': {
       id: '/dashboard/usuarios/'
-      path: '/usuarios'
-      fullPath: '/dashboard/usuarios'
+      path: '/'
+      fullPath: '/dashboard/usuarios/'
       preLoaderRoute: typeof DashboardUsuariosIndexRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardUsuariosRoute
     }
     '/dashboard/tarifas/': {
       id: '/dashboard/tarifas/'
-      path: '/tarifas'
-      fullPath: '/dashboard/tarifas'
+      path: '/'
+      fullPath: '/dashboard/tarifas/'
       preLoaderRoute: typeof DashboardTarifasIndexRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardTarifasRoute
     }
     '/dashboard/servicios/': {
       id: '/dashboard/servicios/'
-      path: '/servicios'
-      fullPath: '/dashboard/servicios'
+      path: '/'
+      fullPath: '/dashboard/servicios/'
       preLoaderRoute: typeof DashboardServiciosIndexRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardServiciosRoute
     }
     '/dashboard/reportes/': {
       id: '/dashboard/reportes/'
-      path: '/reportes'
-      fullPath: '/dashboard/reportes'
+      path: '/'
+      fullPath: '/dashboard/reportes/'
       preLoaderRoute: typeof DashboardReportesIndexRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardReportesRoute
     }
     '/dashboard/programaciones/': {
       id: '/dashboard/programaciones/'
-      path: '/programaciones'
-      fullPath: '/dashboard/programaciones'
+      path: '/'
+      fullPath: '/dashboard/programaciones/'
       preLoaderRoute: typeof DashboardProgramacionesIndexRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardProgramacionesRoute
     }
     '/dashboard/personal/': {
       id: '/dashboard/personal/'
-      path: '/personal'
-      fullPath: '/dashboard/personal'
+      path: '/'
+      fullPath: '/dashboard/personal/'
       preLoaderRoute: typeof DashboardPersonalIndexRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardPersonalRoute
     }
-    '/dashboard/ordenes-de-servicio/': {
-      id: '/dashboard/ordenes-de-servicio/'
-      path: '/ordenes-de-servicio'
-      fullPath: '/dashboard/ordenes-de-servicio'
-      preLoaderRoute: typeof DashboardOrdenesDeServicioIndexRouteImport
-      parentRoute: typeof DashboardRoute
+    '/dashboard/ordenes-servicio/': {
+      id: '/dashboard/ordenes-servicio/'
+      path: '/'
+      fullPath: '/dashboard/ordenes-servicio/'
+      preLoaderRoute: typeof DashboardOrdenesServicioIndexRouteImport
+      parentRoute: typeof DashboardOrdenesServicioRoute
     }
     '/dashboard/clientes/': {
       id: '/dashboard/clientes/'
-      path: '/clientes'
-      fullPath: '/dashboard/clientes'
+      path: '/'
+      fullPath: '/dashboard/clientes/'
       preLoaderRoute: typeof DashboardClientesIndexRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardClientesRoute
     }
     '/dashboard/tarifas/tipo-tarifa': {
       id: '/dashboard/tarifas/tipo-tarifa'
-      path: '/tarifas/tipo-tarifa'
+      path: '/tipo-tarifa'
       fullPath: '/dashboard/tarifas/tipo-tarifa'
       preLoaderRoute: typeof DashboardTarifasTipoTarifaRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardTarifasRoute
     }
     '/dashboard/tarifas/periodo': {
       id: '/dashboard/tarifas/periodo'
-      path: '/tarifas/periodo'
+      path: '/periodo'
       fullPath: '/dashboard/tarifas/periodo'
       preLoaderRoute: typeof DashboardTarifasPeriodoRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardTarifasRoute
     }
     '/dashboard/servicios/tipo-servicio': {
       id: '/dashboard/servicios/tipo-servicio'
-      path: '/servicios/tipo-servicio'
+      path: '/tipo-servicio'
       fullPath: '/dashboard/servicios/tipo-servicio'
       preLoaderRoute: typeof DashboardServiciosTipoServicioRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardServiciosRoute
     }
     '/dashboard/servicios/tipo-horario': {
       id: '/dashboard/servicios/tipo-horario'
-      path: '/servicios/tipo-horario'
+      path: '/tipo-horario'
       fullPath: '/dashboard/servicios/tipo-horario'
       preLoaderRoute: typeof DashboardServiciosTipoHorarioRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardServiciosRoute
     }
     '/dashboard/servicios/configurar-horarios': {
       id: '/dashboard/servicios/configurar-horarios'
-      path: '/servicios/configurar-horarios'
+      path: '/configurar-horarios'
       fullPath: '/dashboard/servicios/configurar-horarios'
       preLoaderRoute: typeof DashboardServiciosConfigurarHorariosRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardServiciosRoute
     }
     '/dashboard/permisos/roles-permisos': {
       id: '/dashboard/permisos/roles-permisos'
-      path: '/permisos/roles-permisos'
+      path: '/roles-permisos'
       fullPath: '/dashboard/permisos/roles-permisos'
       preLoaderRoute: typeof DashboardPermisosRolesPermisosRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardPermisosRoute
     }
     '/dashboard/permisos/roles': {
       id: '/dashboard/permisos/roles'
-      path: '/permisos/roles'
+      path: '/roles'
       fullPath: '/dashboard/permisos/roles'
       preLoaderRoute: typeof DashboardPermisosRolesRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardPermisosRoute
     }
     '/dashboard/configuracion/ubicacion': {
       id: '/dashboard/configuracion/ubicacion'
-      path: '/configuracion/ubicacion'
+      path: '/ubicacion'
       fullPath: '/dashboard/configuracion/ubicacion'
       preLoaderRoute: typeof DashboardConfiguracionUbicacionRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardConfiguracionRoute
     }
     '/dashboard/configuracion/tipos-novedad': {
       id: '/dashboard/configuracion/tipos-novedad'
-      path: '/configuracion/tipos-novedad'
+      path: '/tipos-novedad'
       fullPath: '/dashboard/configuracion/tipos-novedad'
       preLoaderRoute: typeof DashboardConfiguracionTiposNovedadRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardConfiguracionRoute
     }
     '/dashboard/configuracion/tipo-personal': {
       id: '/dashboard/configuracion/tipo-personal'
-      path: '/configuracion/tipo-personal'
+      path: '/tipo-personal'
       fullPath: '/dashboard/configuracion/tipo-personal'
       preLoaderRoute: typeof DashboardConfiguracionTipoPersonalRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardConfiguracionRoute
     }
     '/dashboard/configuracion/tipo-id': {
       id: '/dashboard/configuracion/tipo-id'
-      path: '/configuracion/tipo-id'
+      path: '/tipo-id'
       fullPath: '/dashboard/configuracion/tipo-id'
       preLoaderRoute: typeof DashboardConfiguracionTipoIdRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardConfiguracionRoute
     }
     '/dashboard/configuracion/tipo-genero': {
       id: '/dashboard/configuracion/tipo-genero'
-      path: '/configuracion/tipo-genero'
+      path: '/tipo-genero'
       fullPath: '/dashboard/configuracion/tipo-genero'
       preLoaderRoute: typeof DashboardConfiguracionTipoGeneroRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardConfiguracionRoute
     }
     '/dashboard/configuracion/tipo-cliente': {
       id: '/dashboard/configuracion/tipo-cliente'
-      path: '/configuracion/tipo-cliente'
+      path: '/tipo-cliente'
       fullPath: '/dashboard/configuracion/tipo-cliente'
       preLoaderRoute: typeof DashboardConfiguracionTipoClienteRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardConfiguracionRoute
     }
     '/dashboard/configuracion/estado-orden-servicio': {
       id: '/dashboard/configuracion/estado-orden-servicio'
-      path: '/configuracion/estado-orden-servicio'
+      path: '/estado-orden-servicio'
       fullPath: '/dashboard/configuracion/estado-orden-servicio'
       preLoaderRoute: typeof DashboardConfiguracionEstadoOrdenServicioRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardConfiguracionRoute
     }
     '/dashboard/tarifas/ver-tarifas/$id-periodo': {
       id: '/dashboard/tarifas/ver-tarifas/$id-periodo'
-      path: '/tarifas/ver-tarifas/$id-periodo'
+      path: '/ver-tarifas/$id-periodo'
       fullPath: '/dashboard/tarifas/ver-tarifas/$id-periodo'
       preLoaderRoute: typeof DashboardTarifasVerTarifasIdPeriodoRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardTarifasRoute
     }
     '/dashboard/tarifas/configurar-servicios/$id-periodo': {
       id: '/dashboard/tarifas/configurar-servicios/$id-periodo'
-      path: '/tarifas/configurar-servicios/$id-periodo'
+      path: '/configurar-servicios/$id-periodo'
       fullPath: '/dashboard/tarifas/configurar-servicios/$id-periodo'
       preLoaderRoute: typeof DashboardTarifasConfigurarServiciosIdPeriodoRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardTarifasRoute
     }
     '/dashboard/personal/novedades-personal/$id': {
       id: '/dashboard/personal/novedades-personal/$id'
-      path: '/personal/novedades-personal/$id'
+      path: '/novedades-personal/$id'
       fullPath: '/dashboard/personal/novedades-personal/$id'
       preLoaderRoute: typeof DashboardPersonalNovedadesPersonalIdRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardPersonalRoute
     }
     '/dashboard/clientes/$idCliente/locaciones': {
       id: '/dashboard/clientes/$idCliente/locaciones'
-      path: '/clientes/$idCliente/locaciones'
+      path: '/$idCliente/locaciones'
       fullPath: '/dashboard/clientes/$idCliente/locaciones'
       preLoaderRoute: typeof DashboardClientesIdClienteLocacionesRouteImport
-      parentRoute: typeof DashboardRoute
+      parentRoute: typeof DashboardClientesRoute
     }
   }
 }
 
-interface DashboardRouteChildren {
-  DashboardPerfilUsuarioRoute: typeof DashboardPerfilUsuarioRoute
-  DashboardIndexRoute: typeof DashboardIndexRoute
+interface DashboardClientesRouteChildren {
+  DashboardClientesIndexRoute: typeof DashboardClientesIndexRoute
+  DashboardClientesIdClienteLocacionesRoute: typeof DashboardClientesIdClienteLocacionesRoute
+}
+
+const DashboardClientesRouteChildren: DashboardClientesRouteChildren = {
+  DashboardClientesIndexRoute: DashboardClientesIndexRoute,
+  DashboardClientesIdClienteLocacionesRoute:
+    DashboardClientesIdClienteLocacionesRoute,
+}
+
+const DashboardClientesRouteWithChildren =
+  DashboardClientesRoute._addFileChildren(DashboardClientesRouteChildren)
+
+interface DashboardConfiguracionRouteChildren {
   DashboardConfiguracionEstadoOrdenServicioRoute: typeof DashboardConfiguracionEstadoOrdenServicioRoute
   DashboardConfiguracionTipoClienteRoute: typeof DashboardConfiguracionTipoClienteRoute
   DashboardConfiguracionTipoGeneroRoute: typeof DashboardConfiguracionTipoGeneroRoute
@@ -693,65 +880,173 @@ interface DashboardRouteChildren {
   DashboardConfiguracionTipoPersonalRoute: typeof DashboardConfiguracionTipoPersonalRoute
   DashboardConfiguracionTiposNovedadRoute: typeof DashboardConfiguracionTiposNovedadRoute
   DashboardConfiguracionUbicacionRoute: typeof DashboardConfiguracionUbicacionRoute
+}
+
+const DashboardConfiguracionRouteChildren: DashboardConfiguracionRouteChildren =
+  {
+    DashboardConfiguracionEstadoOrdenServicioRoute:
+      DashboardConfiguracionEstadoOrdenServicioRoute,
+    DashboardConfiguracionTipoClienteRoute:
+      DashboardConfiguracionTipoClienteRoute,
+    DashboardConfiguracionTipoGeneroRoute:
+      DashboardConfiguracionTipoGeneroRoute,
+    DashboardConfiguracionTipoIdRoute: DashboardConfiguracionTipoIdRoute,
+    DashboardConfiguracionTipoPersonalRoute:
+      DashboardConfiguracionTipoPersonalRoute,
+    DashboardConfiguracionTiposNovedadRoute:
+      DashboardConfiguracionTiposNovedadRoute,
+    DashboardConfiguracionUbicacionRoute: DashboardConfiguracionUbicacionRoute,
+  }
+
+const DashboardConfiguracionRouteWithChildren =
+  DashboardConfiguracionRoute._addFileChildren(
+    DashboardConfiguracionRouteChildren,
+  )
+
+interface DashboardOrdenesServicioRouteChildren {
+  DashboardOrdenesServicioIndexRoute: typeof DashboardOrdenesServicioIndexRoute
+}
+
+const DashboardOrdenesServicioRouteChildren: DashboardOrdenesServicioRouteChildren =
+  {
+    DashboardOrdenesServicioIndexRoute: DashboardOrdenesServicioIndexRoute,
+  }
+
+const DashboardOrdenesServicioRouteWithChildren =
+  DashboardOrdenesServicioRoute._addFileChildren(
+    DashboardOrdenesServicioRouteChildren,
+  )
+
+interface DashboardPermisosRouteChildren {
   DashboardPermisosRolesRoute: typeof DashboardPermisosRolesRoute
   DashboardPermisosRolesPermisosRoute: typeof DashboardPermisosRolesPermisosRoute
+}
+
+const DashboardPermisosRouteChildren: DashboardPermisosRouteChildren = {
+  DashboardPermisosRolesRoute: DashboardPermisosRolesRoute,
+  DashboardPermisosRolesPermisosRoute: DashboardPermisosRolesPermisosRoute,
+}
+
+const DashboardPermisosRouteWithChildren =
+  DashboardPermisosRoute._addFileChildren(DashboardPermisosRouteChildren)
+
+interface DashboardPersonalRouteChildren {
+  DashboardPersonalIndexRoute: typeof DashboardPersonalIndexRoute
+  DashboardPersonalNovedadesPersonalIdRoute: typeof DashboardPersonalNovedadesPersonalIdRoute
+}
+
+const DashboardPersonalRouteChildren: DashboardPersonalRouteChildren = {
+  DashboardPersonalIndexRoute: DashboardPersonalIndexRoute,
+  DashboardPersonalNovedadesPersonalIdRoute:
+    DashboardPersonalNovedadesPersonalIdRoute,
+}
+
+const DashboardPersonalRouteWithChildren =
+  DashboardPersonalRoute._addFileChildren(DashboardPersonalRouteChildren)
+
+interface DashboardProgramacionesRouteChildren {
+  DashboardProgramacionesIndexRoute: typeof DashboardProgramacionesIndexRoute
+}
+
+const DashboardProgramacionesRouteChildren: DashboardProgramacionesRouteChildren =
+  {
+    DashboardProgramacionesIndexRoute: DashboardProgramacionesIndexRoute,
+  }
+
+const DashboardProgramacionesRouteWithChildren =
+  DashboardProgramacionesRoute._addFileChildren(
+    DashboardProgramacionesRouteChildren,
+  )
+
+interface DashboardReportesRouteChildren {
+  DashboardReportesIndexRoute: typeof DashboardReportesIndexRoute
+}
+
+const DashboardReportesRouteChildren: DashboardReportesRouteChildren = {
+  DashboardReportesIndexRoute: DashboardReportesIndexRoute,
+}
+
+const DashboardReportesRouteWithChildren =
+  DashboardReportesRoute._addFileChildren(DashboardReportesRouteChildren)
+
+interface DashboardServiciosRouteChildren {
   DashboardServiciosConfigurarHorariosRoute: typeof DashboardServiciosConfigurarHorariosRoute
   DashboardServiciosTipoHorarioRoute: typeof DashboardServiciosTipoHorarioRoute
   DashboardServiciosTipoServicioRoute: typeof DashboardServiciosTipoServicioRoute
-  DashboardTarifasPeriodoRoute: typeof DashboardTarifasPeriodoRoute
-  DashboardTarifasTipoTarifaRoute: typeof DashboardTarifasTipoTarifaRoute
-  DashboardClientesIndexRoute: typeof DashboardClientesIndexRoute
-  DashboardOrdenesDeServicioIndexRoute: typeof DashboardOrdenesDeServicioIndexRoute
-  DashboardPersonalIndexRoute: typeof DashboardPersonalIndexRoute
-  DashboardProgramacionesIndexRoute: typeof DashboardProgramacionesIndexRoute
-  DashboardReportesIndexRoute: typeof DashboardReportesIndexRoute
   DashboardServiciosIndexRoute: typeof DashboardServiciosIndexRoute
-  DashboardTarifasIndexRoute: typeof DashboardTarifasIndexRoute
-  DashboardUsuariosIndexRoute: typeof DashboardUsuariosIndexRoute
-  DashboardClientesIdClienteLocacionesRoute: typeof DashboardClientesIdClienteLocacionesRoute
-  DashboardPersonalNovedadesPersonalIdRoute: typeof DashboardPersonalNovedadesPersonalIdRoute
-  DashboardTarifasConfigurarServiciosIdPeriodoRoute: typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
-  DashboardTarifasVerTarifasIdPeriodoRoute: typeof DashboardTarifasVerTarifasIdPeriodoRoute
 }
 
-const DashboardRouteChildren: DashboardRouteChildren = {
-  DashboardPerfilUsuarioRoute: DashboardPerfilUsuarioRoute,
-  DashboardIndexRoute: DashboardIndexRoute,
-  DashboardConfiguracionEstadoOrdenServicioRoute:
-    DashboardConfiguracionEstadoOrdenServicioRoute,
-  DashboardConfiguracionTipoClienteRoute:
-    DashboardConfiguracionTipoClienteRoute,
-  DashboardConfiguracionTipoGeneroRoute: DashboardConfiguracionTipoGeneroRoute,
-  DashboardConfiguracionTipoIdRoute: DashboardConfiguracionTipoIdRoute,
-  DashboardConfiguracionTipoPersonalRoute:
-    DashboardConfiguracionTipoPersonalRoute,
-  DashboardConfiguracionTiposNovedadRoute:
-    DashboardConfiguracionTiposNovedadRoute,
-  DashboardConfiguracionUbicacionRoute: DashboardConfiguracionUbicacionRoute,
-  DashboardPermisosRolesRoute: DashboardPermisosRolesRoute,
-  DashboardPermisosRolesPermisosRoute: DashboardPermisosRolesPermisosRoute,
+const DashboardServiciosRouteChildren: DashboardServiciosRouteChildren = {
   DashboardServiciosConfigurarHorariosRoute:
     DashboardServiciosConfigurarHorariosRoute,
   DashboardServiciosTipoHorarioRoute: DashboardServiciosTipoHorarioRoute,
   DashboardServiciosTipoServicioRoute: DashboardServiciosTipoServicioRoute,
+  DashboardServiciosIndexRoute: DashboardServiciosIndexRoute,
+}
+
+const DashboardServiciosRouteWithChildren =
+  DashboardServiciosRoute._addFileChildren(DashboardServiciosRouteChildren)
+
+interface DashboardTarifasRouteChildren {
+  DashboardTarifasPeriodoRoute: typeof DashboardTarifasPeriodoRoute
+  DashboardTarifasTipoTarifaRoute: typeof DashboardTarifasTipoTarifaRoute
+  DashboardTarifasIndexRoute: typeof DashboardTarifasIndexRoute
+  DashboardTarifasConfigurarServiciosIdPeriodoRoute: typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
+  DashboardTarifasVerTarifasIdPeriodoRoute: typeof DashboardTarifasVerTarifasIdPeriodoRoute
+}
+
+const DashboardTarifasRouteChildren: DashboardTarifasRouteChildren = {
   DashboardTarifasPeriodoRoute: DashboardTarifasPeriodoRoute,
   DashboardTarifasTipoTarifaRoute: DashboardTarifasTipoTarifaRoute,
-  DashboardClientesIndexRoute: DashboardClientesIndexRoute,
-  DashboardOrdenesDeServicioIndexRoute: DashboardOrdenesDeServicioIndexRoute,
-  DashboardPersonalIndexRoute: DashboardPersonalIndexRoute,
-  DashboardProgramacionesIndexRoute: DashboardProgramacionesIndexRoute,
-  DashboardReportesIndexRoute: DashboardReportesIndexRoute,
-  DashboardServiciosIndexRoute: DashboardServiciosIndexRoute,
   DashboardTarifasIndexRoute: DashboardTarifasIndexRoute,
-  DashboardUsuariosIndexRoute: DashboardUsuariosIndexRoute,
-  DashboardClientesIdClienteLocacionesRoute:
-    DashboardClientesIdClienteLocacionesRoute,
-  DashboardPersonalNovedadesPersonalIdRoute:
-    DashboardPersonalNovedadesPersonalIdRoute,
   DashboardTarifasConfigurarServiciosIdPeriodoRoute:
     DashboardTarifasConfigurarServiciosIdPeriodoRoute,
   DashboardTarifasVerTarifasIdPeriodoRoute:
     DashboardTarifasVerTarifasIdPeriodoRoute,
+}
+
+const DashboardTarifasRouteWithChildren =
+  DashboardTarifasRoute._addFileChildren(DashboardTarifasRouteChildren)
+
+interface DashboardUsuariosRouteChildren {
+  DashboardUsuariosIndexRoute: typeof DashboardUsuariosIndexRoute
+}
+
+const DashboardUsuariosRouteChildren: DashboardUsuariosRouteChildren = {
+  DashboardUsuariosIndexRoute: DashboardUsuariosIndexRoute,
+}
+
+const DashboardUsuariosRouteWithChildren =
+  DashboardUsuariosRoute._addFileChildren(DashboardUsuariosRouteChildren)
+
+interface DashboardRouteChildren {
+  DashboardClientesRoute: typeof DashboardClientesRouteWithChildren
+  DashboardConfiguracionRoute: typeof DashboardConfiguracionRouteWithChildren
+  DashboardOrdenesServicioRoute: typeof DashboardOrdenesServicioRouteWithChildren
+  DashboardPerfilUsuarioRoute: typeof DashboardPerfilUsuarioRoute
+  DashboardPermisosRoute: typeof DashboardPermisosRouteWithChildren
+  DashboardPersonalRoute: typeof DashboardPersonalRouteWithChildren
+  DashboardProgramacionesRoute: typeof DashboardProgramacionesRouteWithChildren
+  DashboardReportesRoute: typeof DashboardReportesRouteWithChildren
+  DashboardServiciosRoute: typeof DashboardServiciosRouteWithChildren
+  DashboardTarifasRoute: typeof DashboardTarifasRouteWithChildren
+  DashboardUsuariosRoute: typeof DashboardUsuariosRouteWithChildren
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardClientesRoute: DashboardClientesRouteWithChildren,
+  DashboardConfiguracionRoute: DashboardConfiguracionRouteWithChildren,
+  DashboardOrdenesServicioRoute: DashboardOrdenesServicioRouteWithChildren,
+  DashboardPerfilUsuarioRoute: DashboardPerfilUsuarioRoute,
+  DashboardPermisosRoute: DashboardPermisosRouteWithChildren,
+  DashboardPersonalRoute: DashboardPersonalRouteWithChildren,
+  DashboardProgramacionesRoute: DashboardProgramacionesRouteWithChildren,
+  DashboardReportesRoute: DashboardReportesRouteWithChildren,
+  DashboardServiciosRoute: DashboardServiciosRouteWithChildren,
+  DashboardTarifasRoute: DashboardTarifasRouteWithChildren,
+  DashboardUsuariosRoute: DashboardUsuariosRouteWithChildren,
+  DashboardIndexRoute: DashboardIndexRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(

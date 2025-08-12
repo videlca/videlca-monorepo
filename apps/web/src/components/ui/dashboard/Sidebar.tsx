@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { linksSideBar } from "../../../LinkPages";
+import { usePermissions } from "../../../context/PermissionsContext";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -34,74 +35,92 @@ export function Sidebar({
 }: SidebarProps) {
   const navigate = useNavigate();
   const pathname = useLocation();
-  const navigationItems = [
+  const { hasPermission, isSuperAdmin } = usePermissions();
+
+  const allNavigationItems = [
     {
       id: "dashboard",
       label: "Dashboard",
       icon: HomeIcon,
       subItems: linksSideBar.dashboard,
+      requiredPermission: "dashboard",
     },
     {
       id: "usuarios",
       label: "Usuarios",
       icon: UserCog2,
       subItems: linksSideBar.usuarios,
+      requiredPermission: "usuarios",
     },
     {
       id: "permisos",
       label: "Permisos",
       icon: Shield,
       subItems: linksSideBar.permisos,
+      requiredPermission: "permisos",
     },
     {
       id: "configuracion",
       label: "Configuración",
       icon: Settings,
       subItems: linksSideBar.configuracion,
+      requiredPermission: "configuracion",
     },
     {
       id: "clientes",
       label: "Clientes",
       icon: Users,
       subItems: linksSideBar.clientes,
+      requiredPermission: "clientes",
     },
     {
       id: "personal",
       label: "Personal",
       icon: User2,
       subItems: linksSideBar.personal,
+      requiredPermission: "personal",
     },
     {
       id: "programaciones",
       label: "Programaciones",
       icon: Calendar,
       subItems: linksSideBar.programaciones,
+      requiredPermission: "programaciones",
     },
     {
       id: "servicios",
       label: "Servicios",
       icon: FileSpreadsheetIcon,
       subItems: linksSideBar.servicios,
+      requiredPermission: "servicios",
     },
     {
       id: "tarifas",
       label: "Tarifas",
       icon: DollarSign,
       subItems: linksSideBar.tarifas,
+      requiredPermission: "tarifas",
     },
     {
-      id: "ordenes-de-servicio",
+      id: "ordenes-servicio",
       label: "Ordenes de Servicio",
       icon: FileText,
-      subItems: linksSideBar["ordenes-de-servicio"],
+      subItems: linksSideBar["ordenes-servicio"],
+      requiredPermission: "ordenes-servicio",
     },
     {
       id: "reportes",
       label: "Reportes",
       icon: BarChart3,
       subItems: linksSideBar.reportes,
+      requiredPermission: "reportes",
     },
   ];
+
+  // Filtrar los elementos de navegación basados en los permisos
+  const navigationItems = allNavigationItems.filter(
+    (item) => isSuperAdmin || hasPermission(item.requiredPermission || ""),
+  );
 
   return (
     <aside

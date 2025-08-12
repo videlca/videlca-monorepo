@@ -36,7 +36,7 @@ interface LinksSideBar {
   programaciones: LinkSideBar[];
   tarifas: LinkSideBar[];
   reportes: LinkSideBar[];
-  "ordenes-de-servicio": LinkSideBar[];
+  "ordenes-servicio": LinkSideBar[];
   servicios: LinkSideBar[];
 }
 
@@ -172,9 +172,9 @@ export const linksSideBar: LinksSideBar = {
       icon: <ChartColumn className="h-6 w-6" />,
     },
   ],
-  "ordenes-de-servicio": [
+  "ordenes-servicio": [
     {
-      to: "/dashboard/ordenes-de-servicio",
+      to: "/dashboard/ordenes-servicio",
       label: "Ordenes de Servicio",
       description: "ordenes-de-servicio",
       icon: <FileArchive className="h-6 w-6" />,
