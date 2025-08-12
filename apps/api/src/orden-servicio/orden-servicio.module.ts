@@ -15,6 +15,7 @@ import { OrdenServicio, ObservacionOrdenServicio } from './entities';
 import { OrdenServicioService, ObservacionesOrdenServicioService } from './services';
 
 import { OrdenServicioController, ObservacionesOrdenServicioController } from './controllers';
+import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
 
 @Module({
   imports: [
@@ -30,7 +31,8 @@ import { OrdenServicioController, ObservacionesOrdenServicioController } from '.
     UsersModule,
     ClientesModule,
     TarifasModule,
-    ServiciosModule
+    ServiciosModule,
+    LiquidacionesModule,
 
   ],
   controllers: [

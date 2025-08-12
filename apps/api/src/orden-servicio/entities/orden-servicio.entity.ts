@@ -4,6 +4,7 @@ import { EstadoOrdenServicio } from "../../common/entities";
 import { Locacion } from "../../clientes/entities";
 import { Tarifa } from "../../tarifas/entities";
 import { ObservacionOrdenServicio } from "./observaciones-orden.entity";
+import { Liquidacione } from "src/liquidaciones/entities/liquidacione.entity";
 
 @Entity({name: "orden-servicio"})
 export class OrdenServicio {
@@ -126,5 +127,8 @@ export class OrdenServicio {
         {cascade: true}
     )
     observacionesOrdenServicio: ObservacionOrdenServicio[];
+
+    @OneToMany(() => Liquidacione, (liq) => liq.ordenServicio)
+    liquidaciones: Liquidacione[];
 
 }
