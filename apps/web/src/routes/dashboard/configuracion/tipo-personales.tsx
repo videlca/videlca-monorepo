@@ -25,7 +25,7 @@ import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import type { UpdateTipoPersonalDto } from "../../../api/dtos";
 
-export const Route = createFileRoute("/dashboard/configuracion/tipo-personal")({
+export const Route = createFileRoute("/dashboard/configuracion/tipo-personales")({
   component: RouteComponent,
 });
 

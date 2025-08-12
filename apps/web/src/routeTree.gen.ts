@@ -43,7 +43,7 @@ import { Route as DashboardPermisosRolesPermisosRouteImport } from './routes/das
 import { Route as DashboardPermisosRolesRouteImport } from './routes/dashboard/permisos/roles'
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
 import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
-import { Route as DashboardConfiguracionTipoPersonalRouteImport } from './routes/dashboard/configuracion/tipo-personal'
+import { Route as DashboardConfiguracionTipoPersonalesRouteImport } from './routes/dashboard/configuracion/tipo-personales'
 import { Route as DashboardConfiguracionTipoIdRouteImport } from './routes/dashboard/configuracion/tipo-id'
 import { Route as DashboardConfiguracionTipoGeneroRouteImport } from './routes/dashboard/configuracion/tipo-genero'
 import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/dashboard/configuracion/tipo-cliente'
@@ -233,10 +233,10 @@ const DashboardConfiguracionTiposNovedadRoute =
     path: '/tipos-novedad',
     getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
-const DashboardConfiguracionTipoPersonalRoute =
-  DashboardConfiguracionTipoPersonalRouteImport.update({
-    id: '/tipo-personal',
-    path: '/tipo-personal',
+const DashboardConfiguracionTipoPersonalesRoute =
+  DashboardConfiguracionTipoPersonalesRouteImport.update({
+    id: '/tipo-personales',
+    path: '/tipo-personales',
     getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
 const DashboardConfiguracionTipoIdRoute =
@@ -310,7 +310,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
-  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipo-personales': typeof DashboardConfiguracionTipoPersonalesRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
@@ -346,7 +346,7 @@ export interface FileRoutesByTo {
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
-  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipo-personales': typeof DashboardConfiguracionTipoPersonalesRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
@@ -392,7 +392,7 @@ export interface FileRoutesById {
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
-  '/dashboard/configuracion/tipo-personal': typeof DashboardConfiguracionTipoPersonalRoute
+  '/dashboard/configuracion/tipo-personales': typeof DashboardConfiguracionTipoPersonalesRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
@@ -439,7 +439,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
-    | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipo-personales'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/permisos/roles'
@@ -475,7 +475,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
-    | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipo-personales'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/permisos/roles'
@@ -520,7 +520,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
-    | '/dashboard/configuracion/tipo-personal'
+    | '/dashboard/configuracion/tipo-personales'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/permisos/roles'
@@ -792,11 +792,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardConfiguracionTiposNovedadRouteImport
       parentRoute: typeof DashboardConfiguracionRoute
     }
-    '/dashboard/configuracion/tipo-personal': {
-      id: '/dashboard/configuracion/tipo-personal'
-      path: '/tipo-personal'
-      fullPath: '/dashboard/configuracion/tipo-personal'
-      preLoaderRoute: typeof DashboardConfiguracionTipoPersonalRouteImport
+    '/dashboard/configuracion/tipo-personales': {
+      id: '/dashboard/configuracion/tipo-personales'
+      path: '/tipo-personales'
+      fullPath: '/dashboard/configuracion/tipo-personales'
+      preLoaderRoute: typeof DashboardConfiguracionTipoPersonalesRouteImport
       parentRoute: typeof DashboardConfiguracionRoute
     }
     '/dashboard/configuracion/tipo-id': {
@@ -877,7 +877,7 @@ interface DashboardConfiguracionRouteChildren {
   DashboardConfiguracionTipoClienteRoute: typeof DashboardConfiguracionTipoClienteRoute
   DashboardConfiguracionTipoGeneroRoute: typeof DashboardConfiguracionTipoGeneroRoute
   DashboardConfiguracionTipoIdRoute: typeof DashboardConfiguracionTipoIdRoute
-  DashboardConfiguracionTipoPersonalRoute: typeof DashboardConfiguracionTipoPersonalRoute
+  DashboardConfiguracionTipoPersonalesRoute: typeof DashboardConfiguracionTipoPersonalesRoute
   DashboardConfiguracionTiposNovedadRoute: typeof DashboardConfiguracionTiposNovedadRoute
   DashboardConfiguracionUbicacionRoute: typeof DashboardConfiguracionUbicacionRoute
 }
@@ -891,8 +891,8 @@ const DashboardConfiguracionRouteChildren: DashboardConfiguracionRouteChildren =
     DashboardConfiguracionTipoGeneroRoute:
       DashboardConfiguracionTipoGeneroRoute,
     DashboardConfiguracionTipoIdRoute: DashboardConfiguracionTipoIdRoute,
-    DashboardConfiguracionTipoPersonalRoute:
-      DashboardConfiguracionTipoPersonalRoute,
+    DashboardConfiguracionTipoPersonalesRoute:
+      DashboardConfiguracionTipoPersonalesRoute,
     DashboardConfiguracionTiposNovedadRoute:
       DashboardConfiguracionTiposNovedadRoute,
     DashboardConfiguracionUbicacionRoute: DashboardConfiguracionUbicacionRoute,

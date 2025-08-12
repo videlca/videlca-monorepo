@@ -57,7 +57,7 @@ export const linksSideBar: LinksSideBar = {
       icon: <FileCogIcon className="h-6 w-6" />,
     },
     {
-      to: "/dashboard/configuracion/tipo-personal",
+      to: "/dashboard/configuracion/tipo-personales",
       label: "Tipo de Personal",
       description: "tipo-personal",
       icon: <UserIcon className="h-6 w-6" />,

@@ -147,9 +147,9 @@ export function Sidebar({
             <li
               key={item.id}
               className={`${
-                pathname.pathname.includes(item.id) &&
-                item.subItems.length === 1 &&
-                item.id !== "dashboard"
+                // TODO: Verificar modulos de personal, hay un bug donde marca el "tipo-personales" y "personal"
+                // pathname.pathname.includes(item.id) &&
+                item.subItems.length < 1 && item.id !== "dashboard"
                   ? "bg-blue-500"
                   : ""
               }`}
