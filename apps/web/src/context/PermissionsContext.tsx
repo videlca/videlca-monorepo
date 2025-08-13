@@ -91,11 +91,12 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
       return true;
     }
 
-    // TODO: Verificar si esto es necesario
+    // TODO: Verificar modulos publicos y no necesitar permisos
     if (
       moduleName === "dashboard" ||
       moduleName === "reportes" ||
-      moduleName === "programaciones"
+      moduleName === "programaciones" ||
+      moduleName === "liquidaciones"
     ) {
       return true;
     }

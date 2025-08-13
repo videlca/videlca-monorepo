@@ -23,6 +23,7 @@ import { Route as DashboardPersonalRouteImport } from './routes/dashboard/person
 import { Route as DashboardPermisosRouteImport } from './routes/dashboard/permisos'
 import { Route as DashboardPerfilUsuarioRouteImport } from './routes/dashboard/perfil-usuario'
 import { Route as DashboardOrdenesServicioRouteImport } from './routes/dashboard/ordenes-servicio'
+import { Route as DashboardLiquidacionesRouteImport } from './routes/dashboard/liquidaciones'
 import { Route as DashboardConfiguracionRouteImport } from './routes/dashboard/configuracion'
 import { Route as DashboardClientesRouteImport } from './routes/dashboard/clientes'
 import { Route as ActualizarIdRouteImport } from './routes/actualizar.$id'
@@ -33,6 +34,7 @@ import { Route as DashboardReportesIndexRouteImport } from './routes/dashboard/r
 import { Route as DashboardProgramacionesIndexRouteImport } from './routes/dashboard/programaciones/index'
 import { Route as DashboardPersonalIndexRouteImport } from './routes/dashboard/personal/index'
 import { Route as DashboardOrdenesServicioIndexRouteImport } from './routes/dashboard/ordenes-servicio/index'
+import { Route as DashboardLiquidacionesIndexRouteImport } from './routes/dashboard/liquidaciones/index'
 import { Route as DashboardClientesIndexRouteImport } from './routes/dashboard/clientes/index'
 import { Route as DashboardTarifasTipoTarifaRouteImport } from './routes/dashboard/tarifas/tipo-tarifa'
 import { Route as DashboardTarifasPeriodoRouteImport } from './routes/dashboard/tarifas/periodo'
@@ -41,6 +43,7 @@ import { Route as DashboardServiciosTipoHorarioRouteImport } from './routes/dash
 import { Route as DashboardServiciosConfigurarHorariosRouteImport } from './routes/dashboard/servicios/configurar-horarios'
 import { Route as DashboardPermisosRolesPermisosRouteImport } from './routes/dashboard/permisos/roles-permisos'
 import { Route as DashboardPermisosRolesRouteImport } from './routes/dashboard/permisos/roles'
+import { Route as DashboardLiquidacionesHistorialRouteImport } from './routes/dashboard/liquidaciones/historial'
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
 import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
 import { Route as DashboardConfiguracionTipoPersonalesRouteImport } from './routes/dashboard/configuracion/tipo-personales'
@@ -124,6 +127,11 @@ const DashboardOrdenesServicioRoute =
     path: '/ordenes-servicio',
     getParentRoute: () => DashboardRoute,
   } as any)
+const DashboardLiquidacionesRoute = DashboardLiquidacionesRouteImport.update({
+  id: '/liquidaciones',
+  path: '/liquidaciones',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardConfiguracionRoute = DashboardConfiguracionRouteImport.update({
   id: '/configuracion',
   path: '/configuracion',
@@ -176,6 +184,12 @@ const DashboardOrdenesServicioIndexRoute =
     path: '/',
     getParentRoute: () => DashboardOrdenesServicioRoute,
   } as any)
+const DashboardLiquidacionesIndexRoute =
+  DashboardLiquidacionesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => DashboardLiquidacionesRoute,
+  } as any)
 const DashboardClientesIndexRoute = DashboardClientesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -221,6 +235,12 @@ const DashboardPermisosRolesRoute = DashboardPermisosRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => DashboardPermisosRoute,
 } as any)
+const DashboardLiquidacionesHistorialRoute =
+  DashboardLiquidacionesHistorialRouteImport.update({
+    id: '/historial',
+    path: '/historial',
+    getParentRoute: () => DashboardLiquidacionesRoute,
+  } as any)
 const DashboardConfiguracionUbicacionRoute =
   DashboardConfiguracionUbicacionRouteImport.update({
     id: '/ubicacion',
@@ -295,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/actualizar/$id': typeof ActualizarIdRoute
   '/dashboard/clientes': typeof DashboardClientesRouteWithChildren
   '/dashboard/configuracion': typeof DashboardConfiguracionRouteWithChildren
+  '/dashboard/liquidaciones': typeof DashboardLiquidacionesRouteWithChildren
   '/dashboard/ordenes-servicio': typeof DashboardOrdenesServicioRouteWithChildren
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/dashboard/permisos': typeof DashboardPermisosRouteWithChildren
@@ -313,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/configuracion/tipo-personales': typeof DashboardConfiguracionTipoPersonalesRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
   '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
@@ -321,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/clientes/': typeof DashboardClientesIndexRoute
+  '/dashboard/liquidaciones/': typeof DashboardLiquidacionesIndexRoute
   '/dashboard/ordenes-servicio/': typeof DashboardOrdenesServicioIndexRoute
   '/dashboard/personal/': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
@@ -349,6 +372,7 @@ export interface FileRoutesByTo {
   '/dashboard/configuracion/tipo-personales': typeof DashboardConfiguracionTipoPersonalesRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
   '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
@@ -357,6 +381,7 @@ export interface FileRoutesByTo {
   '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/clientes': typeof DashboardClientesIndexRoute
+  '/dashboard/liquidaciones': typeof DashboardLiquidacionesIndexRoute
   '/dashboard/ordenes-servicio': typeof DashboardOrdenesServicioIndexRoute
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
@@ -377,6 +402,7 @@ export interface FileRoutesById {
   '/actualizar/$id': typeof ActualizarIdRoute
   '/dashboard/clientes': typeof DashboardClientesRouteWithChildren
   '/dashboard/configuracion': typeof DashboardConfiguracionRouteWithChildren
+  '/dashboard/liquidaciones': typeof DashboardLiquidacionesRouteWithChildren
   '/dashboard/ordenes-servicio': typeof DashboardOrdenesServicioRouteWithChildren
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/dashboard/permisos': typeof DashboardPermisosRouteWithChildren
@@ -395,6 +421,7 @@ export interface FileRoutesById {
   '/dashboard/configuracion/tipo-personales': typeof DashboardConfiguracionTipoPersonalesRoute
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
+  '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
   '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
@@ -403,6 +430,7 @@ export interface FileRoutesById {
   '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/clientes/': typeof DashboardClientesIndexRoute
+  '/dashboard/liquidaciones/': typeof DashboardLiquidacionesIndexRoute
   '/dashboard/ordenes-servicio/': typeof DashboardOrdenesServicioIndexRoute
   '/dashboard/personal/': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
@@ -424,6 +452,7 @@ export interface FileRouteTypes {
     | '/actualizar/$id'
     | '/dashboard/clientes'
     | '/dashboard/configuracion'
+    | '/dashboard/liquidaciones'
     | '/dashboard/ordenes-servicio'
     | '/dashboard/perfil-usuario'
     | '/dashboard/permisos'
@@ -442,6 +471,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-personales'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/liquidaciones/historial'
     | '/dashboard/permisos/roles'
     | '/dashboard/permisos/roles-permisos'
     | '/dashboard/servicios/configurar-horarios'
@@ -450,6 +480,7 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas/periodo'
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/clientes/'
+    | '/dashboard/liquidaciones/'
     | '/dashboard/ordenes-servicio/'
     | '/dashboard/personal/'
     | '/dashboard/programaciones/'
@@ -478,6 +509,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-personales'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/liquidaciones/historial'
     | '/dashboard/permisos/roles'
     | '/dashboard/permisos/roles-permisos'
     | '/dashboard/servicios/configurar-horarios'
@@ -486,6 +518,7 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas/periodo'
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/clientes'
+    | '/dashboard/liquidaciones'
     | '/dashboard/ordenes-servicio'
     | '/dashboard/personal'
     | '/dashboard/programaciones'
@@ -505,6 +538,7 @@ export interface FileRouteTypes {
     | '/actualizar/$id'
     | '/dashboard/clientes'
     | '/dashboard/configuracion'
+    | '/dashboard/liquidaciones'
     | '/dashboard/ordenes-servicio'
     | '/dashboard/perfil-usuario'
     | '/dashboard/permisos'
@@ -523,6 +557,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipo-personales'
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
+    | '/dashboard/liquidaciones/historial'
     | '/dashboard/permisos/roles'
     | '/dashboard/permisos/roles-permisos'
     | '/dashboard/servicios/configurar-horarios'
@@ -531,6 +566,7 @@ export interface FileRouteTypes {
     | '/dashboard/tarifas/periodo'
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/clientes/'
+    | '/dashboard/liquidaciones/'
     | '/dashboard/ordenes-servicio/'
     | '/dashboard/personal/'
     | '/dashboard/programaciones/'
@@ -652,6 +688,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardOrdenesServicioRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/liquidaciones': {
+      id: '/dashboard/liquidaciones'
+      path: '/liquidaciones'
+      fullPath: '/dashboard/liquidaciones'
+      preLoaderRoute: typeof DashboardLiquidacionesRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/configuracion': {
       id: '/dashboard/configuracion'
       path: '/configuracion'
@@ -722,6 +765,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardOrdenesServicioIndexRouteImport
       parentRoute: typeof DashboardOrdenesServicioRoute
     }
+    '/dashboard/liquidaciones/': {
+      id: '/dashboard/liquidaciones/'
+      path: '/'
+      fullPath: '/dashboard/liquidaciones/'
+      preLoaderRoute: typeof DashboardLiquidacionesIndexRouteImport
+      parentRoute: typeof DashboardLiquidacionesRoute
+    }
     '/dashboard/clientes/': {
       id: '/dashboard/clientes/'
       path: '/'
@@ -777,6 +827,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/permisos/roles'
       preLoaderRoute: typeof DashboardPermisosRolesRouteImport
       parentRoute: typeof DashboardPermisosRoute
+    }
+    '/dashboard/liquidaciones/historial': {
+      id: '/dashboard/liquidaciones/historial'
+      path: '/historial'
+      fullPath: '/dashboard/liquidaciones/historial'
+      preLoaderRoute: typeof DashboardLiquidacionesHistorialRouteImport
+      parentRoute: typeof DashboardLiquidacionesRoute
     }
     '/dashboard/configuracion/ubicacion': {
       id: '/dashboard/configuracion/ubicacion'
@@ -903,6 +960,22 @@ const DashboardConfiguracionRouteWithChildren =
     DashboardConfiguracionRouteChildren,
   )
 
+interface DashboardLiquidacionesRouteChildren {
+  DashboardLiquidacionesHistorialRoute: typeof DashboardLiquidacionesHistorialRoute
+  DashboardLiquidacionesIndexRoute: typeof DashboardLiquidacionesIndexRoute
+}
+
+const DashboardLiquidacionesRouteChildren: DashboardLiquidacionesRouteChildren =
+  {
+    DashboardLiquidacionesHistorialRoute: DashboardLiquidacionesHistorialRoute,
+    DashboardLiquidacionesIndexRoute: DashboardLiquidacionesIndexRoute,
+  }
+
+const DashboardLiquidacionesRouteWithChildren =
+  DashboardLiquidacionesRoute._addFileChildren(
+    DashboardLiquidacionesRouteChildren,
+  )
+
 interface DashboardOrdenesServicioRouteChildren {
   DashboardOrdenesServicioIndexRoute: typeof DashboardOrdenesServicioIndexRoute
 }
@@ -1022,6 +1095,7 @@ const DashboardUsuariosRouteWithChildren =
 interface DashboardRouteChildren {
   DashboardClientesRoute: typeof DashboardClientesRouteWithChildren
   DashboardConfiguracionRoute: typeof DashboardConfiguracionRouteWithChildren
+  DashboardLiquidacionesRoute: typeof DashboardLiquidacionesRouteWithChildren
   DashboardOrdenesServicioRoute: typeof DashboardOrdenesServicioRouteWithChildren
   DashboardPerfilUsuarioRoute: typeof DashboardPerfilUsuarioRoute
   DashboardPermisosRoute: typeof DashboardPermisosRouteWithChildren
@@ -1037,6 +1111,7 @@ interface DashboardRouteChildren {
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardClientesRoute: DashboardClientesRouteWithChildren,
   DashboardConfiguracionRoute: DashboardConfiguracionRouteWithChildren,
+  DashboardLiquidacionesRoute: DashboardLiquidacionesRouteWithChildren,
   DashboardOrdenesServicioRoute: DashboardOrdenesServicioRouteWithChildren,
   DashboardPerfilUsuarioRoute: DashboardPerfilUsuarioRoute,
   DashboardPermisosRoute: DashboardPermisosRouteWithChildren,

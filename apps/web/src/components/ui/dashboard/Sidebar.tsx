@@ -115,6 +115,13 @@ export function Sidebar({
       subItems: linksSideBar.reportes,
       requiredPermission: "reportes",
     },
+    {
+      id: "liquidaciones",
+      label: "Liquidaciones",
+      icon: DollarSign,
+      subItems: linksSideBar.liquidaciones,
+      requiredPermission: "liquidaciones",
+    },
   ];
 
   // Filtrar los elementos de navegación basados en los permisos

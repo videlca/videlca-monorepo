@@ -38,6 +38,7 @@ interface LinksSideBar {
   reportes: LinkSideBar[];
   "ordenes-servicio": LinkSideBar[];
   servicios: LinkSideBar[];
+  liquidaciones: LinkSideBar[];
 }
 
 export const linksSideBar: LinksSideBar = {
@@ -204,6 +205,20 @@ export const linksSideBar: LinksSideBar = {
       label: "Tipo de Horario",
       description: "tipo-horario",
       icon: <ClockIcon className="h-6 w-6" />,
+    },
+  ],
+  liquidaciones: [
+    {
+      to: "/dashboard/liquidaciones",
+      label: "Liquidaciones",
+      description: "liquidaciones",
+      icon: <DollarSignIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/liquidaciones/historial",
+      label: "Historial",
+      description: "historial",
+      icon: <FileTextIcon className="h-6 w-6" />,
     },
   ],
 };
