@@ -60,6 +60,8 @@ import { useForm } from "../../../hooks/useForm";
 import { usePersonalActivo } from "../../../api/queryFunctions/personal";
 import { OrderStateLabel } from "../../../components/common/OrderStateLabel";
 import type { Locacion } from "../../../types";
+import { InputForm } from "../../../components/common/InputForm";
+import { InputTime } from "../../../components/common/InputTime";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
@@ -120,6 +122,7 @@ function RouteComponent() {
   const {
     form: formOrdenServicio,
     handleChange: handleChangeOrdenServicio,
+    handleChangeTime: handleChangeTimeOrdenServicio,
     resetForm: resetFormOrdenServicio,
     setForm: setFormOrdenServicio,
   } = useForm<CreateOrdenServicioDto>({
@@ -713,54 +716,30 @@ function RouteComponent() {
                         )} */}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        <label
-                          className="text-sm text-gray-700"
-                          htmlFor="horaInicio"
-                        >
-                          Hora de Inicio
-                          <input
-                            type="time"
-                            name="horaInicio"
-                            id="horaInicio"
-                            value={formOrdenServicio.horaInicio}
-                            min="00:00"
-                            max="24:00"
-                            onChange={handleChangeOrdenServicio}
-                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                          />
-                        </label>
-                        <label
-                          className="text-sm text-gray-700"
-                          htmlFor="horaFin"
-                        >
-                          Hora de Fin
-                          <input
-                            type="time"
-                            name="horaFin"
-                            id="horaFin"
-                            value={formOrdenServicio.horaFin}
-                            min="00:00"
-                            max="24:00"
-                            onChange={handleChangeOrdenServicio}
-                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                          />
-                        </label>
-                        <label
-                          className="text-sm text-gray-700"
-                          htmlFor="horasDescanso"
-                        >
-                          Horas de Descanso
-                          <input
-                            type="number"
-                            name="horasDescanso"
-                            id="horasDescanso"
-                            value={formOrdenServicio.horasDescanso}
-                            min="0"
-                            max="24"
-                            onChange={handleChangeOrdenServicio}
-                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                          />
-                        </label>
+                        <InputTime
+                          label="Hora de inicio"
+                          placeholder="Hora de inicio"
+                          id="horaInicio"
+                          value={formOrdenServicio.horaInicio || ""}
+                          onChange={handleChangeTimeOrdenServicio}
+                        />
+                        <InputTime
+                          label="Hora de fin"
+                          placeholder="Hora de fin"
+                          id="horaFin"
+                          value={formOrdenServicio.horaFin || ""}
+                          onChange={handleChangeTimeOrdenServicio}
+                        />
+                        <InputForm
+                          label="Horas de Descanso"
+                          placeholder="Horas de Descanso"
+                          id="horasDescanso"
+                          value={
+                            formOrdenServicio.horasDescanso.toString() || ""
+                          }
+                          onChange={handleChangeOrdenServicio}
+                          type="number"
+                        />
                       </div>
                     </div>
                     {/* ))} */}

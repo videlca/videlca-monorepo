@@ -43,6 +43,7 @@ import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
 import { timeFormat } from "../../../utils/TimeFormat";
+import { InputTime } from "../../../components/common/InputTime";
 
 export const Route = createFileRoute("/dashboard/personal/")({
   component: RouteComponent,
@@ -127,6 +128,7 @@ function RouteComponent() {
   const {
     form: formAddNovedad,
     handleChange: handleChangeAddNovedad,
+    handleChangeTime: handleChangeTimeAddNovedad,
     resetForm: resetFormAddNovedad,
   } = useForm<CreateNovedadDto>({
     descripcion: "",
@@ -757,13 +759,12 @@ function RouteComponent() {
               onChange={handleChangeAddNovedad}
               type="date"
             />
-            <InputForm
+            <InputTime
               label="Hora de inicio"
               placeholder="Hora de inicio"
               id="horaInicio"
               value={formAddNovedad.horaInicio || ""}
-              onChange={handleChangeAddNovedad}
-              type="time"
+              onChange={handleChangeTimeAddNovedad}
             />
             <InputForm
               label="Fecha de fin"
@@ -773,13 +774,12 @@ function RouteComponent() {
               onChange={handleChangeAddNovedad}
               type="date"
             />
-            <InputForm
+            <InputTime
               label="Hora de fin"
               placeholder="Hora de fin"
               id="horaFin"
               value={formAddNovedad.horaFin || ""}
-              onChange={handleChangeAddNovedad}
-              type="time"
+              onChange={handleChangeTimeAddNovedad}
             />
           </div>
         </FormsModal>

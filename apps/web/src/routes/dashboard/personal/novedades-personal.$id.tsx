@@ -25,6 +25,7 @@ import { useGetPersonalNovedad } from "../../../api/queryFunctions/personal";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputForm } from "../../../components/common/InputForm";
 import { timeFormat } from "../../../utils/TimeFormat";
+import { InputTime } from "../../../components/common/InputTime";
 
 export const Route = createFileRoute(
   "/dashboard/personal/novedades-personal/$id",
@@ -56,6 +57,7 @@ function RouteComponent() {
   const {
     form: formEditNovedad,
     handleChange: handleChangeEditNovedad,
+    handleChangeTime: handleChangeTimeEditNovedad,
     setForm: setFormEditNovedad,
     resetForm: resetFormEditNovedad,
   } = useForm<UpdateNovedadDto>({
@@ -235,13 +237,12 @@ function RouteComponent() {
               onChange={handleChangeEditNovedad}
               type="date"
             />
-            <InputForm
+            <InputTime
               label="Hora de inicio"
               placeholder="Hora de inicio"
               id="horaInicio"
               value={formEditNovedad.horaInicio || ""}
-              onChange={handleChangeEditNovedad}
-              type="time"
+              onChange={handleChangeTimeEditNovedad}
             />
             <InputForm
               label="Fecha de fin"
@@ -251,13 +252,12 @@ function RouteComponent() {
               onChange={handleChangeEditNovedad}
               type="date"
             />
-            <InputForm
+            <InputTime
               label="Hora de fin"
               placeholder="Hora de fin"
               id="horaFin"
               value={formEditNovedad.horaFin || ""}
-              onChange={handleChangeEditNovedad}
-              type="time"
+              onChange={handleChangeTimeEditNovedad}
             />
           </div>
         </FormsModal>

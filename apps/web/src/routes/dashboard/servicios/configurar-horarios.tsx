@@ -26,6 +26,7 @@ import { CheckboxForm } from "../../../components/common/CheckboxForm";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { toast } from "sonner";
 import { timeFormat } from "../../../utils/TimeFormat";
+import { InputTime } from "../../../components/common/InputTime";
 
 export const Route = createFileRoute(
   "/dashboard/servicios/configurar-horarios",
@@ -55,6 +56,7 @@ function RouteComponent() {
   const {
     form: formAddTipoHorario,
     handleChange: handleChangeAddTipoHorario,
+    handleChangeTime: handleChangeTimeAddTipoHorario,
     resetForm: resetFormAddTipoHorario,
   } = useForm<CreateTipoHorarioDto>({
     idTipoHorarioDescripcion: 0,
@@ -66,6 +68,7 @@ function RouteComponent() {
   const {
     form: formEditTipoHorario,
     handleChange: handleChangeEditTipoHorario,
+    handleChangeTime: handleChangeTimeEditTipoHorario,
     resetForm: resetFormEditTipoHorario,
   } = useForm<UpdateTipoHorarioDto>({
     idTipoHorarioDescripcion: 0,
@@ -239,29 +242,21 @@ function RouteComponent() {
               onChange={handleChangeAddTipoHorario}
               required={true}
             />
-            <InputForm
+            <InputTime
               label="Hora de inicio"
               placeholder="Selecciona una hora de inicio"
               id="horaInicio"
               value={formAddTipoHorario.horaInicio}
-              onChange={(e) => {
-                handleChangeAddTipoHorario(e);
-                console.log(e.target.value);
-              }}
+              onChange={handleChangeTimeAddTipoHorario}
               required={true}
-              type="time"
             />
-            <InputForm
+            <InputTime
               label="Hora de fin"
               placeholder="Selecciona una hora de fin"
               id="horaFin"
               value={formAddTipoHorario.horaFin}
-              onChange={(e) => {
-                handleChangeAddTipoHorario(e);
-                console.log(e.target.value);
-              }}
+              onChange={handleChangeTimeAddTipoHorario}
               required={true}
-              type="time"
             />
             <InputForm
               label="Fecha de vigencia de inicio"
@@ -370,23 +365,21 @@ function RouteComponent() {
               onChange={handleChangeEditTipoHorario}
               required={true}
             />
-            <InputForm
+            <InputTime
               label="Hora de inicio"
               placeholder="Selecciona una hora de inicio"
               id="horaInicio"
               value={formEditTipoHorario.horaInicio || ""}
-              onChange={handleChangeEditTipoHorario}
+              onChange={handleChangeTimeEditTipoHorario}
               required={true}
-              type="time"
             />
-            <InputForm
+            <InputTime
               label="Hora de fin"
               placeholder="Selecciona una hora de fin"
               id="horaFin"
               value={formEditTipoHorario.horaFin || ""}
-              onChange={handleChangeEditTipoHorario}
+              onChange={handleChangeTimeEditTipoHorario}
               required={true}
-              type="time"
             />
             <InputForm
               label="Fecha de vigencia de inicio"

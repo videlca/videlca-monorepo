@@ -14,9 +14,14 @@ export interface PermissionsContextType {
   refetchPermissions: () => void;
 }
 
-const PermissionsContext = createContext<PermissionsContextType>(
-  {} as PermissionsContextType,
-);
+const PermissionsContext = createContext<PermissionsContextType>({
+  userPermissions: [],
+  isPermissionsLoading: true,
+  hasPermission: () => false,
+  isSuperAdmin: false,
+  currentUser: null,
+  refetchPermissions: () => {},
+});
 
 interface PermissionsProviderProps {
   children: ReactNode;

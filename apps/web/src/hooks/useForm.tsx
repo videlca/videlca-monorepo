@@ -41,6 +41,16 @@ export const useForm = <T,>(initialState: T) => {
     }));
   };
 
+  const handleChangeTime = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    const fieldName = id;
+    const [hours] = value.split(":");
+    setForm((prev) => ({
+      ...prev,
+      [fieldName]: `${hours}:00`,
+    }));
+  };
+
   const resetForm = () => {
     setForm(initialState);
   };
@@ -50,6 +60,7 @@ export const useForm = <T,>(initialState: T) => {
     handleChange,
     handleNumericChange,
     handleBooleanChange,
+    handleChangeTime,
     setForm,
     resetForm,
   };
