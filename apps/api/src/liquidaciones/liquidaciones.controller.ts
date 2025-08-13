@@ -1,4 +1,3 @@
-// liquidaciones.controller.ts
 import {
   Controller,
   Get,
@@ -16,11 +15,12 @@ import { LiquidacionesService } from './liquidaciones.service';
 import { UpdateLiquidacioneDto } from './dto/update-liquidacione.dto';
 import { CreateLiquidacioneDto } from './dto/create-liquidacione.dto'
 import { ApiTags, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { OrdenBody } from './dto/orden-body.dto';
 
 @ApiTags('liquidaciones')
 @Controller('liquidaciones')
 export class LiquidacionesController {
-  constructor(private readonly service: LiquidacionesService) {}
+  constructor(private readonly service: LiquidacionesService) { }
 
   @Post()
   @ApiResponse({ status: 201, description: 'Liquidación creada' })
@@ -55,5 +55,13 @@ export class LiquidacionesController {
   @HttpCode(204)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.service.remove(id);
+  }
+
+  @Post(':ordenId/liquidaciones/mes')
+  createLiqMes(
+    @Param('ordenId', ParseIntPipe) ordenId: number,
+    @Body() body: OrdenBody,
+  ) {
+    return this.service.crearLiquidacionParaMes(ordenId, body.anio, body.mes);
   }
 }

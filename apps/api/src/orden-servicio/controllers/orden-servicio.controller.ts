@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query, DefaultValuePipe } from '@nestjs/common';
 
 import { AppAuth, GetUser, ValidateJwtAuth } from '../../auth/decorators';
 import { DescriptionRoutes } from '../../auth/interfaces';
@@ -10,11 +10,16 @@ import { User } from '../../users/entities/user.entity';
 import { OrdenServicioService } from '../services/orden-servicio.service';
 
 import { CreateOrdenServicioDto, TercerPasoDto, PrecioOrdenDto } from '../dto';
+import { ApiQuery } from '@nestjs/swagger';
+import { LiquidacionesService } from 'src/liquidaciones/liquidaciones.service';
 
 @Controller('orden-servicio')
 @AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class OrdenServicioController {
-  constructor(private readonly ordenServicioService: OrdenServicioService) {}
+  constructor(
+    private readonly ordenServicioService: OrdenServicioService,
+    private liquidacionesService: LiquidacionesService
+  ) {}
 
   @Post()
   create(
@@ -42,6 +47,17 @@ export class OrdenServicioController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordenServicioService.findOne(id);
+  }
+
+   @Get(':ordenId/liquidaciones')
+  @ApiQuery({ name: 'page', required: false, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, example: 20 })
+  findLiquidacionesDeOrden(
+    @Param('ordenId', ParseIntPipe) ordenId: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.liquidacionesService.findAll({ page, limit, ordenId });
   }
 
   // @Patch(':id')

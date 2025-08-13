@@ -22,7 +22,8 @@ import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
 
     TypeOrmModule.forFeature([
       OrdenServicio,
-      ObservacionOrdenServicio
+      ObservacionOrdenServicio,
+      LiquidacionesModule,
     ]),
     ConfigModule,
     CommonModule,
