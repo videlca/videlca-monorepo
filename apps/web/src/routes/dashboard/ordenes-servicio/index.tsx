@@ -29,10 +29,8 @@ import {
   XIcon,
 } from "lucide-react";
 import Table from "../../../components/common/Table";
-import { StateLabel } from "../../../components/common/StateLabel";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import {
   useCreateOrdenServicio,
@@ -76,12 +74,10 @@ interface AssignedEmployee {
 
 function RouteComponent() {
   const [isOpenAdd, setIsOpenAdd] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [isOpenDetails, setIsOpenDetails] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteOrderId, setDeleteOrderId] = useState<number | null>(null);
 
   const [selectedLocation, setSelectedLocation] = useState<Locacion | null>(
     null,
@@ -89,10 +85,9 @@ function RouteComponent() {
   const [selectedTipoServicio, setSelectedTipoServicio] = useState<
     number | null
   >(null);
-  const [selectedService, setSelectedService] = useState<number | null>(null);
+  const [selectedServices, setSelectedServices] = useState<number[]>([]);
   const [selectedTarifa, setSelectedTarifa] = useState<Tarifa | null>(null);
 
-  const [staffQuantity, setStaffQuantity] = useState(1);
   const [isIndefinite, setIsIndefinite] = useState(false);
   const [assignedEmployees, setAssignedEmployees] = useState<
     AssignedEmployee[]
@@ -150,7 +145,7 @@ function RouteComponent() {
     setCurrentStep(1);
     setSelectedTipoServicio(null);
     setSelectedLocation(null);
-    setSelectedService(null);
+    setSelectedServices([]);
     setSelectedTarifa(null);
     setIsIndefinite(false);
     resetFormOrdenServicio();
@@ -162,29 +157,31 @@ function RouteComponent() {
     const requierePersonal =
       selectedTarifa?.idServicio.idTipoServicio.requierePersonal;
     const requiereHorario = selectedTarifa?.idServicio.horasFijas === 24;
+    // TODO: VALIDAR HORARIOS CON CAMBIOS DE BASE DE DATOS
     if (currentStep === 3) {
-      validateHorariosOrdenServicio(
-        {
-          idTarifa: selectedTarifa?.idTarifa || 0,
-          fechaInicio: dateFormat(new Date(formOrdenServicio.fechaInicio)),
-          fechaFin: isIndefinite
-            ? null
-            : dateFormat(new Date(formOrdenServicio.fechaFin || "")),
-          horaInicio: !requiereHorario
-            ? timeFormat(formOrdenServicio.horaInicio)
-            : "00:00:00",
-          horaFin: !requiereHorario
-            ? timeFormat(formOrdenServicio.horaFin)
-            : "00:00:00",
-          // TODO: Revisar horas descanso
-          horasDescanso: formOrdenServicio.horasDescanso,
-        },
-        {
-          onSuccess: () => {
-            setCurrentStep(4);
-          },
-        },
-      );
+      // validateHorariosOrdenServicio(
+      //   {
+      //     idTarifa: selectedTarifa?.idTarifa || 0,
+      //     fechaInicio: dateFormat(new Date(formOrdenServicio.fechaInicio)),
+      //     fechaFin: isIndefinite
+      //       ? null
+      //       : dateFormat(new Date(formOrdenServicio.fechaFin || "")),
+      //     horaInicio: !requiereHorario
+      //       ? timeFormat(formOrdenServicio.horaInicio)
+      //       : "00:00:00",
+      //     horaFin: !requiereHorario
+      //       ? timeFormat(formOrdenServicio.horaFin)
+      //       : "00:00:00",
+      //     // TODO: Revisar horas descanso
+      //     horasDescanso: formOrdenServicio.horasDescanso,
+      //   },
+      //   {
+      //     onSuccess: () => {
+      //       setCurrentStep(4);
+      //     },
+      //   },
+      // );
+      setCurrentStep(4);
       return;
     }
 
@@ -271,23 +268,31 @@ function RouteComponent() {
     }));
   };
 
+  const handleSelectedServices = (idServicio: number) => {
+    if (!selectedServices.includes(idServicio)) {
+      setSelectedServices((prev) => [...prev, idServicio]);
+    } else {
+      setSelectedServices((prev) => prev.filter((id) => id !== idServicio));
+    }
+  };
+
   const getSelectedEmployeeInfo = (slotIndex: number) => {
     const employeeId = selectedEmployeeForSlot[slotIndex];
     return personalQuery?.data?.find((emp) => emp.idPersonal === employeeId);
   };
 
   useEffect(() => {
-    setSelectedService(null);
+    setSelectedServices([]);
   }, [selectedTipoServicio]);
 
   // Filtrar los servicios por el tipo de servicio seleccionado
-  const filteredServices = selectedTipoServicio
-    ? tarifasQueryPeriodoActivo?.data?.filter(
-        (tarifa) =>
-          tarifa.idServicio.idTipoServicio.idTipoServicio ===
-          selectedTipoServicio,
-      )
-    : [];
+  // const filteredServices = selectedTipoServicio
+  //   ? tarifasQueryPeriodoActivo?.data?.filter(
+  //       (tarifa) =>
+  //         tarifa.idServicio.idTipoServicio.idTipoServicio ===
+  //         selectedTipoServicio,
+  //     )
+  //   : [];
 
   const tipoServiciosOptions =
     tarifasQueryPeriodoActivo?.data
@@ -364,18 +369,17 @@ function RouteComponent() {
       cell: ({ row }) => {
         return (
           <div className="flex items-center gap-2">
-            {/* <ButtonAction
+            <ButtonAction
               Icon={PencilIcon}
-              label=""
+              label="Editar"
               onClick={() => {
                 setIsEditing(true);
-                setIsOpen(true);
-                setCurrentStep(1);
+                setSelectedOrderDetail(row.original);
               }}
-            /> */}
+            />
             <ButtonAction
               Icon={EyeIcon}
-              label=""
+              label="Ver"
               onClick={() => {
                 setIsOpenDetails(true);
                 setSelectedOrderDetail(row.original);
@@ -383,7 +387,7 @@ function RouteComponent() {
             />
             <ButtonAction
               Icon={TrashIcon}
-              label=""
+              label="Eliminar"
               onClick={() => {
                 setIsOpenDelete(true);
               }}
@@ -485,102 +489,17 @@ function RouteComponent() {
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="mb-2 text-lg font-semibold text-gray-900">
-                Servicio a Prestar
+                Fechas de Servicio
               </h3>
               <p className="text-sm text-gray-600">
-                Seleccione el tipo de servicio que se prestará
+                Configure las fechas de inicio y fin de la orden de servicio
               </p>
             </div>
 
             <div className="space-y-4">
-              <InputSelect
-                label="Tipo de Servicio"
-                placeholder="Seleccione el tipo de servicio"
-                id="tipoServicio"
-                options={tipoServiciosOptions}
-                onChange={(e) =>
-                  setSelectedTipoServicio(Number(e.target.value))
-                }
-                value={selectedTipoServicio || 0}
-              />
-
-              {selectedTipoServicio && (
-                <div>
-                  <label className="mb-3 block text-sm font-medium text-gray-700">
-                    Servicios Disponibles
-                  </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {filteredServices?.map((tarifa) => (
-                      <div
-                        key={tarifa.idServicio.idServicio}
-                        className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-                          selectedService === tarifa.idServicio.idServicio
-                            ? "border-blue-500 bg-blue-50 shadow-sm"
-                            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                        }`}
-                        onClick={() => {
-                          setSelectedService(tarifa.idServicio.idServicio);
-                          setSelectedTarifa(tarifa);
-                        }}
-                      >
-                        <div className="mb-2 flex items-start justify-between">
-                          <h4 className="text-sm font-medium text-gray-900">
-                            {tarifa.idServicio.codigo}
-                          </h4>
-                          {selectedService === tarifa.idServicio.idServicio && (
-                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600">
-                              <Check className="h-3 w-3 text-white" />
-                            </div>
-                          )}
-                        </div>
-                        <p className="mb-3 text-xs text-gray-600">
-                          {tarifa.idServicio.descripcion}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                            {
-                              tipoServiciosQuery?.data?.find(
-                                (cat) =>
-                                  cat.idTipoServicio ===
-                                  tarifa.idServicio.idTipoServicio
-                                    .idTipoServicio,
-                              )?.descripcion
-                            }
-                          </span>
-                          <span className="font-semibold text-blue-600">
-                            {priceFormat(tarifa.precioTotal)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedTipoServicio && filteredServices?.length === 0 && (
-                <div className="py-8 text-center text-gray-500">
-                  No hay servicios disponibles para esta categoría
-                </div>
-              )}
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="mb-2 text-lg font-semibold text-gray-900">
-                Fechas y Horarios de Servicio
-              </h3>
-              <p className="text-sm text-gray-600">
-                Configure las fechas y los horarios durante el día para prestar
-                el servicio
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Período de Servicio</h4>
+              <h4 className="font-medium text-gray-900">
+                Período de Servicio(s)
+              </h4>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="">
@@ -640,119 +559,107 @@ function RouteComponent() {
                   />
                   Orden de servicio indefinida (sin fecha de finalización)
                 </label>
-                {/* <label
-                  htmlFor="servicio24horas"
-                  className="flex items-center gap-2 text-sm text-gray-700"
-                >
-                  <input
-                    type="checkbox"
-                    id="servicio24horas"
-                    checked={isServicio24Horas}
-                    onChange={(e) => {
-                      setIsServicio24Horas(e.target.checked);
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  Horario fijo (Servicio de 24 horas)
-                </label> */}
               </div>
             </div>
-            {selectedTarifa?.idServicio.horasFijas === 24 ? (
-              <p className="text-sm font-medium text-gray-700">
-                Horario Fijo (Servicio de 24 horas) no es necesario configurar
-                horarios, se prestará el servicio en el horario fijo de 24 horas
-                de lunes a domingo.
-              </p>
-            ) : (
-              <>
-                <div className="mt-4 rounded-lg border border-yellow-500 bg-yellow-100 p-4 text-left">
-                  <h4 className="text-lg font-medium text-yellow-700">Nota:</h4>{" "}
-                  <p className="mt-2 text-sm text-yellow-700">
-                    Horas recomendadas:{" "}
-                    <span className="font-medium text-yellow-700">
-                      {selectedTarifa?.idServicio.horasMinimas} Horas mínimas -{" "}
-                      {selectedTarifa?.idServicio.horasMaximas} Horas máximas.
-                    </span>
-                  </p>
-                  <p className="mt-2 text-yellow-700">
-                    Segun el tipo de duracion del servicio{" "}
-                    <span className="font-medium text-yellow-700 capitalize">
-                      {selectedTarifa?.idServicio.idTipoDuracion.descripcion}
-                    </span>
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  {/* <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-gray-900">
-                    Horarios Durante el Día
-                  </h4>
-                  <button
-                    type="button"
-                    className="px-0 py-0 text-sm font-medium text-blue-600 hover:text-blue-700"
-                    onClick={addTimeRange}
-                  >
-                    + Agregar Rango de Horario
-                  </button>
-                </div> */}
+          </div>
+        );
 
-                  <div className="space-y-4">
-                    {/* {timeRanges.map((range, index) => ( */}
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="mb-2 text-lg font-semibold text-gray-900">
+                Servicio a Prestar
+              </h3>
+              <p className="text-sm text-gray-600">
+                Seleccione el tipo de servicio que se prestará
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* <InputSelect
+                label="Tipo de Servicio"
+                placeholder="Seleccione el tipo de servicio"
+                id="tipoServicio"
+                options={tipoServiciosOptions}
+                onChange={(e) =>
+                  setSelectedTipoServicio(Number(e.target.value))
+                }
+                value={selectedTipoServicio || 0}
+              /> */}
+
+              {/* {selectedTipoServicio && ( */}
+              <div>
+                <label className="mb-3 flex flex-row items-center justify-between text-sm font-medium text-gray-700">
+                  <span className="font-bold">Servicios Disponibles.</span>
+                  <span className="text-xs">
+                    Servicios seleccionados: {selectedServices.length}
+                  </span>
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  {tarifasQueryPeriodoActivo?.data?.map((tarifa) => (
                     <div
-                      // key={range.id}
-                      className="rounded-lg border border-gray-200 p-4 shadow-sm"
+                      key={tarifa.idServicio.idServicio}
+                      className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
+                        selectedServices.includes(tarifa.idServicio.idServicio)
+                          ? "border-blue-500 bg-blue-50 shadow-sm"
+                          : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                      }`}
+                      onClick={() => {
+                        handleSelectedServices(tarifa.idServicio.idServicio);
+                        // setSelectedService(tarifa.idServicio.idServicio);
+                        setSelectedTarifa(tarifa);
+                      }}
                     >
-                      <div className="mb-3 flex items-center justify-between">
-                        <label className="text-sm font-medium text-gray-700">
-                          Rango de Horario
-                        </label>
-                        {/* {timeRanges.length > 1 && (
-                          <button
-                            type="button"
-                            className="rounded-md p-1 text-red-600 transition-colors hover:bg-red-50 hover:text-red-700"
-                            onClick={() => removeTimeRange(range.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )} */}
+                      <div className="mb-2 flex items-start justify-between">
+                        <h4 className="text-sm font-medium text-gray-900">
+                          {tarifa.idServicio.codigo}
+                        </h4>
+                        {selectedServices.includes(
+                          tarifa.idServicio.idServicio,
+                        ) && (
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600">
+                            <Check className="h-3 w-3 text-white" />
+                          </div>
+                        )}
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <InputTime
-                          label="Hora de inicio"
-                          placeholder="Hora de inicio"
-                          id="horaInicio"
-                          value={formOrdenServicio.horaInicio || ""}
-                          onChange={handleChangeTimeOrdenServicio}
-                        />
-                        <InputTime
-                          label="Hora de fin"
-                          placeholder="Hora de fin"
-                          id="horaFin"
-                          value={formOrdenServicio.horaFin || ""}
-                          onChange={handleChangeTimeOrdenServicio}
-                        />
-                        <InputForm
-                          label="Horas de Descanso"
-                          placeholder="Horas de Descanso"
-                          id="horasDescanso"
-                          value={
-                            formOrdenServicio.horasDescanso.toString() || ""
+                      <p className="mb-3 text-xs text-gray-600">
+                        {tarifa.idServicio.descripcion}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                          {
+                            tipoServiciosQuery?.data?.find(
+                              (cat) =>
+                                cat.idTipoServicio ===
+                                tarifa.idServicio.idTipoServicio.idTipoServicio,
+                            )?.descripcion
                           }
-                          onChange={handleChangeOrdenServicio}
-                          type="number"
-                        />
+                        </span>
+                        <span className="font-semibold text-blue-600">
+                          {priceFormat(tarifa.precioTotal)}
+                        </span>
                       </div>
                     </div>
-                    {/* ))} */}
-                  </div>
+                  ))}
                 </div>
-              </>
-            )}
+              </div>
+              {/* )} */}
+
+              {selectedTipoServicio &&
+                tarifasQueryPeriodoActivo?.data?.length === 0 && (
+                  <div className="py-8 text-center text-gray-500">
+                    No hay servicios disponibles para esta categoría
+                  </div>
+                )}
+            </div>
           </div>
         );
 
       case 4:
         return (
           <>
+            {/* TODO: Revisar asignación de personal y horarios */}
             {!selectedTarifa?.idServicio.idTipoServicio.requierePersonal ? (
               <div className="space-y-6">
                 <h3 className="text-center text-lg font-semibold text-gray-900">
@@ -773,6 +680,95 @@ function RouteComponent() {
                     Define cuánto personal necesita y asígnelo inmediatamente
                   </p>
                 </div>
+                {selectedTarifa?.idServicio.horasFijas === 24 ? (
+                  <p className="text-sm font-medium text-gray-700">
+                    Horario Fijo (Servicio de 24 horas) no es necesario
+                    configurar horarios, se prestará el servicio en el horario
+                    fijo de 24 horas de lunes a domingo.
+                  </p>
+                ) : (
+                  <>
+                    <div className="mt-4 rounded-lg border border-yellow-500 bg-yellow-100 p-4 text-left">
+                      <h4 className="text-lg font-medium text-yellow-700">
+                        Nota:
+                      </h4>{" "}
+                      <p className="mt-2 text-sm text-yellow-700">
+                        Horas recomendadas:{" "}
+                        <span className="font-medium text-yellow-700">
+                          {selectedTarifa?.idServicio.horasMinimas} Horas
+                          mínimas - {selectedTarifa?.idServicio.horasMaximas}{" "}
+                          Horas máximas.
+                        </span>
+                      </p>
+                      <p className="mt-2 text-yellow-700">
+                        Segun el tipo de duracion del servicio{" "}
+                        <span className="font-medium text-yellow-700 capitalize">
+                          {
+                            selectedTarifa?.idServicio.idTipoDuracion
+                              .descripcion
+                          }
+                        </span>
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 p-4 shadow-sm">
+                      <div className="mb-3 flex items-center justify-between">
+                        <label className="text-sm font-medium text-gray-700">
+                          Rango de Horario
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <label
+                          className="text-sm text-gray-700"
+                          htmlFor="horaInicio"
+                        >
+                          Hora de Inicio
+                          <input
+                            type="time"
+                            name="horaInicio"
+                            id="horaInicio"
+                            value={formOrdenServicio.horaInicio}
+                            min="00:00"
+                            max="24:00"
+                            onChange={handleChangeOrdenServicio}
+                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          />
+                        </label>
+                        <label
+                          className="text-sm text-gray-700"
+                          htmlFor="horaFin"
+                        >
+                          Hora de Fin
+                          <input
+                            type="time"
+                            name="horaFin"
+                            id="horaFin"
+                            value={formOrdenServicio.horaFin}
+                            min="00:00"
+                            max="24:00"
+                            onChange={handleChangeOrdenServicio}
+                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          />
+                        </label>
+                        <label
+                          className="text-sm text-gray-700"
+                          htmlFor="horasDescanso"
+                        >
+                          Horas de Descanso
+                          <input
+                            type="number"
+                            name="horasDescanso"
+                            id="horasDescanso"
+                            value={formOrdenServicio.horasDescanso}
+                            min="0"
+                            max="24"
+                            onChange={handleChangeOrdenServicio}
+                            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-6">
                   <label
@@ -791,21 +787,6 @@ function RouteComponent() {
                       className="mt-1 w-32 rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </label>
-
-                  {/* <div>
-                    <label className="mb-3 block text-sm font-medium text-gray-700">
-                      Buscar Empleados Disponibles
-                    </label>
-                    <div className="relative mb-4">
-                      <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Buscar por nombre, apellido o cargo..."
-                        className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      />
-                    </div>
-                  </div> */}
-
                   <div>
                     {/* TODO: Revisar asignación de personal */}
                     <label className="mb-3 block text-sm font-medium text-gray-700">
@@ -872,29 +853,6 @@ function RouteComponent() {
                                     </div>
                                   </label>
                                 </div>
-                                {/* <div>
-                                    <label className="text-sm text-gray-700">
-                                      Rol en esta Orden *
-                                    </label>
-                                    <input
-                                      type="text"
-                                      placeholder="Ej: Supervisor, Guardia, etc."
-                                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                    />
-                                  </div> */}
-                                {/* </div> */}
-
-                                {/* <div>
-                                  <label className="text-sm text-gray-700">
-                                    Notas Adicionales
-                                  </label>
-                                  <textarea
-                                    placeholder="Instrucciones específicas para este empleado..."
-                                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                    rows={3}
-                                  />
-                                </div> */}
-
                                 {selectedEmployee && (
                                   <div className="rounded-lg bg-gray-50 p-3">
                                     <div className="mb-2 flex items-center justify-around gap-4 text-sm text-gray-600">
@@ -920,18 +878,6 @@ function RouteComponent() {
                                         </span>
                                       </div>
                                     </div>
-                                    {/* <div className="flex gap-2">
-                                    {selectedEmployee.idTipoPersonal.habilidades.map(
-                                      (skill, skillIndex) => (
-                                        <span
-                                          key={skillIndex}
-                                          className="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700"
-                                        >
-                                          {skill.descripcion}
-                                        </span>
-                                      ),
-                                    )}
-                                  </div> */}
                                   </div>
                                 )}
                               </div>
@@ -1422,8 +1368,8 @@ function RouteComponent() {
                   isGetPrecioOrdenPending ||
                   isCrearOrdenServicioPending ||
                   (currentStep === 1 && !formOrdenServicio.idLocacion) ||
-                  (currentStep === 2 && !selectedService) ||
-                  (currentStep === 3 && !formOrdenServicio.fechaInicio) ||
+                  (currentStep === 2 && !formOrdenServicio.fechaInicio) ||
+                  (currentStep === 3 && selectedServices.length === 0) ||
                   (currentStep === 4 &&
                     selectedTarifa?.idServicio.idTipoServicio
                       .requierePersonal &&
