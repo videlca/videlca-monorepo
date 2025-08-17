@@ -3,10 +3,13 @@ export enum TipoTarifaInterface {
     // MES
     MES = "mes",
 
-    // TURNO
-    TURNO = "turno",
+    // DIA
+    DIA = "dia",
 
-    // SERVICIO UNICO
-    SERVICIO_UNICO = "servicio unico"
+    // HORA
+    HORA = "hora",
+
+    // UNIDAD
+    UNIDAD = "unidad"
 
 }

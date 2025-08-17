@@ -95,13 +95,6 @@ export class OrdenServicio {
     })
     horaFin: string; // Formato 'HH:mm:ss'
     
-    @Column({
-        type: 'int',
-        name: 'horasDescanso',
-        default: 0,
-    })
-    horasDescanso: number;
-
     // PRECIO TOTAL CON IVA
     @Column({
         type: 'decimal',

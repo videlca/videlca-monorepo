@@ -49,11 +49,6 @@ export class CreateOrdenServicioDto {
         message: 'horaFin debe tener formato HH:mm:ss'
     })
     horaFin: string;
-    
-    @ApiProperty({ description: 'Horas de descanso por dia del servicio', example: 2, required: false})
-    @IsOptional()
-    @IsNumber({}, {message: 'El valor del campo horas descanso debe ser un número'})
-    horasDescanso?: number;
 
     @ApiProperty({ description: 'Fecha de creacion de la orden de servicio, se toma desde el front para tomar fecha del sistema', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
     @Transform(({ value }) => new Date(value))

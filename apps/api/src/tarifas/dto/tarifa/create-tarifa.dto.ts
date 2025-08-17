@@ -21,11 +21,34 @@ export class CreateTarifaDto {
     @Min(1, {message: 'El valor del campo tipo tarifa debe ser minimo 1'})
     idTipoTarifa: number;
 
-    @ApiProperty({ description: 'precio sin iva del servicio', example: 1, required:true})
-    @IsNumber({}, {message: 'El valor del campo precio sin iva debe ser un número'})
-    @IsPositive({message: 'El valor del campo precio sin iva debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo precio sin iva debe ser minimo 1'})
-    precioSinIva: number;
+    @ApiProperty({ description: 'costos directos del servicio', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo costos directos debe ser un número'})
+    @IsPositive({message: 'El valor del campo costos directos debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo costos directos debe ser minimo 1'})
+    costosDirectos: number;
+    
+    @ApiProperty({ description: 'seguro vida del servicio', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo seguro vida debe ser un número'})
+    @Min(0, {message: 'El valor del campo seguro vida debe ser minimo 0'})
+    seguroVida: number;
+    
+    @ApiProperty({ description: 'costos directos + seguro vida del servicio', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo costos directos + seguro vida debe ser un número'})
+    @IsPositive({message: 'El valor del campo costos directos + seguro vida debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo costos directos + seguro vida debe ser minimo 1'})
+    costosDirectosSeguroVida: number;
+
+    @ApiProperty({ description: 'aui del servicio', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo aui debe ser un número'})
+    @IsPositive({message: 'El valor del campo aui debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo aui debe ser minimo 1'})
+    aui: number;
+    
+    @ApiProperty({ description: 'precio antes iva del servicio', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo precio antes iva debe ser un número'})
+    @IsPositive({message: 'El valor del campo precio antes iva debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo precio antes iva debe ser minimo 1'})
+    precioAntesIva: number;
     
     @ApiProperty({ description: 'iva del precio del servicio', example: 1, required:true})
     @IsNumber({}, {message: 'El valor del campo iva debe ser un número'})

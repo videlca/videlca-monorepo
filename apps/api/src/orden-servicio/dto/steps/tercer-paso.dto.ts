@@ -39,9 +39,4 @@ export class TercerPasoDto {
     })
     horaFin: string;
 
-    @ApiProperty({ description: 'Horas de descanso por dia del servicio', example: 2, required: false})
-    @IsOptional()
-    @IsNumber({}, {message: 'El valor del campo horas descanso debe ser un número'})
-    horasDescanso?: number;
-
 }

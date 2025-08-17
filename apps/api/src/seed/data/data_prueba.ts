@@ -74,18 +74,24 @@ export const initialData: SeedData = {
 
     tiposUnidadTiempo: [
         {descripcion: "dias", requiereTiempo: true},
-        {descripcion: "horas", requiereTiempo: true},
         {descripcion: "no aplica", requiereTiempo: false},
     ],
 
+    tiposDuracion: [
+        {descripcion: "fija"},
+        {descripcion: "flexible"},
+    ],
+
     tiposTarifa: [
-        {nombre: "mes", descripcion: "El monto precio total del servicio equivale a un mes, se puede ajustar cantidad de dias que equivale el mes que cobran", tipoUnidadTiempo: "dias", cantidadTiempo: 30},
-        {nombre: "turno", descripcion: "El monto precio total del servicio equivale a un turno, se puede ajustar cantidad de horas que equivale el turno que cobran", tipoUnidadTiempo: "horas", cantidadTiempo: 8},
-        {nombre: "servicio unico", descripcion: "El precio total del servicio es de unico cobro", tipoUnidadTiempo: "no aplica"},
+        {nombre: "mes", descripcion: "El precio total del servicio equivale a un mes", tipoUnidadTiempo: "dias", cantidadTiempo: 30},
+        {nombre: "dia", descripcion: "El precio total del servicio equivale a un dia", tipoUnidadTiempo: "no aplica"},
+        {nombre: "hora", descripcion: "El precio total del servicio equivale a una hora", tipoUnidadTiempo: "no aplica"},
+        {nombre: "unidad", descripcion: "El precio total del servicio equivale a un evento o dia", tipoUnidadTiempo: "no aplica"},
     ],
     
     estadosOrdenServicio: [
-        {nombre: "cancelada", descripcion: "Estado para indicar que una orden de sevricio ha sido cancelada", estado: true, programable: false},
+        {nombre: "anulada", descripcion: "Estado para indicar que una orden de servicio ha sido anulada", estado: true, programable: false},
+        {nombre: "cancelada", descripcion: "Estado para indicar que una orden de servicio ha sido cancelada", estado: true, programable: false},
         {nombre: "programado", descripcion: "Estado para indicar que una orden de servicio ha sido programada", estado: true, programable: false},
         {
             nombre: "por iniciar", 
@@ -131,11 +137,6 @@ export const initialData: SeedData = {
     tiposGenero: [
         {descripcion: 'Masculino'},
         {descripcion: 'Femenino'},
-    ],
-
-    tiposDuracion: [
-        {descripcion: "fija"},
-        {descripcion: "flexible"},
     ],
 
     tiposHorario: [

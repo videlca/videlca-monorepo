@@ -180,7 +180,7 @@ export class OrdenServicioService {
 
   async validacionHorarios(tercerPasoDto: TercerPasoDto){
 
-    const { idTarifa, horaInicio, horaFin, horasDescanso = 0, fechaInicio, fechaFin } = tercerPasoDto;
+    const { idTarifa, horaInicio, horaFin, fechaInicio, fechaFin } = tercerPasoDto;
 
     //! VALIDACION FECHAS
 
@@ -226,8 +226,15 @@ export class OrdenServicioService {
 
     if (tipohorarioDescripcion.nombre === TipoHorarioInterface.DIA_COMPLETO) {
 
-      // Si el tipo de horario es 24 horas, no se valida el horario
+      // Si el tipo de horario es 24 horas no se valida horario ya que son 24 hrs fijas
+
       return;
+
+    }
+
+    if (tipohorarioDescripcion.nombre === TipoHorarioInterface.MIXTO && horaInicio > horaFin){
+
+      throw new BadRequestException(`El horario ${tipohorarioDescripcion.nombre} debe estar en un rango valido`);          
 
     }
 
@@ -250,19 +257,6 @@ export class OrdenServicioService {
     if (!Number.isInteger(duracionServicio)){
 
       throw new BadRequestException(`La duracion del servicio debe ser horas exactas`);
-
-    }
-
-    if (tercerPasoDto.horasDescanso != null && tercerPasoDto.horasDescanso > 0) {
-
-      // Si hay horas de descanso, se resta la duracion del servicio
-      duracionServicio -= tercerPasoDto.horasDescanso;
-
-      if (duracionServicio <= 0) {
-
-        throw new BadRequestException(`La duracion del servicio no puede ser menor o igual a 0 horas`);
-
-      }
 
     }
 
@@ -327,7 +321,7 @@ export class OrdenServicioService {
 
   async obtenerPrecio(validarPrecioOrdenDto: PrecioOrdenDto){
 
-    const { idTarifa, horaInicio, horaFin, horasDescanso = 0, fechaInicio, fechaFin, cantidadPersonal } = validarPrecioOrdenDto;
+    const { idTarifa, horaInicio, horaFin, fechaInicio, fechaFin } = validarPrecioOrdenDto;
 
     // Validar que la tarifa exista
     const tarifa = await this.tarifasService.findOne(idTarifa);
@@ -360,20 +354,20 @@ export class OrdenServicioService {
     const fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
 
 
-    let duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin) - horasDescanso;
+    let duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
 
     let precioTotal: number;  
 
     // VALIDAR SI SE ESTA PIDIENDO SERVICIO POR UN MES EXACTO, ES DECIR TODO ENERO, TODO FEBRERO, ...
     if (this.esMesCompleto(fechaInicioOrden, fechaFinOrden)) {
       
-      // let diaFinmes: number;
+      let diaFinMes: number = diaFin;
 
-      // if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
+      if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
 
-      //   diaFinmes = diaFin - 1;
+        diaFinMes = diaFin - 1;
 
-      // } 
+      } 
 
       // SI EL TIPO DE TARIFA ES POR MES
       if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES){
@@ -382,21 +376,21 @@ export class OrdenServicioService {
 
       }
 
-       // SI ES SERVICIO UNICO
-       else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.SERVICIO_UNICO){
+       // SI ES UNIDAD O DIA
+       else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa.idTipoTarifa.nombre === TipoTarifaInterface.DIA){
 
-        precioTotal = tarifa.precioTotal * diaFin;
+        precioTotal = tarifa.precioTotal * diaFinMes;
 
        }
 
-      // SI ES TIPO TURNO
+      // SI ES TIPO HORA
       else {
 
-        const precioTurnoHora = tarifa.precioTotal / tarifa.idTipoTarifa.cantidadTiempo;
+        const precioHora = tarifa.precioTotal;
 
-        const precioTurnoTotalDia = precioTurnoHora * duracionServicio;
+        const precioTotalDia = precioHora * duracionServicio;
 
-        precioTotal = precioTurnoTotalDia * diaFin;
+        precioTotal = precioTotalDia * diaFinMes;
 
       }
 
@@ -411,13 +405,13 @@ export class OrdenServicioService {
     // VALIDACIONES POR DIA
     let duracionServicioDias = this.calcularDuracionServicioDias(fechaInicioOrden, fechaFinOrden);
 
-    // if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
+    if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
 
-    //   duracionServicioDias -= 1
+      duracionServicioDias -= 1
 
-    //   duracionServicioDias = duracionServicioDias != 0 ? duracionServicioDias : 1;
+      duracionServicioDias = duracionServicioDias != 0 ? duracionServicioDias : 1;
 
-    // }
+    }
 
     // SI EL TIPO DE TARIFA ES POR MES
     if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES){
@@ -428,21 +422,21 @@ export class OrdenServicioService {
 
     }
     
-    // SI ES SERVICIO UNICO
-    else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.SERVICIO_UNICO){
+    // SI ES UNIDAD O DIA
+    else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa.idTipoTarifa.nombre === TipoTarifaInterface.DIA){
 
       precioTotal = tarifa.precioTotal * duracionServicioDias;
 
     }
     
-    // SI ES TIPO TURNO
+    // SI ES TIPO HORA
     else {
 
-      const precioTurnoHora = tarifa.precioTotal / tarifa.idTipoTarifa.cantidadTiempo;
+      const precioHora = tarifa.precioTotal;
 
-      const precioTurnoTotalDia = precioTurnoHora * duracionServicio;
+      const precioTotalDia = precioHora * duracionServicio;
 
-      precioTotal = precioTurnoTotalDia * duracionServicioDias;
+      precioTotal = precioTotalDia * duracionServicioDias;
 
     }
 
