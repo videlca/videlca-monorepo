@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -7,8 +7,9 @@ import { PaginationDto } from '../../common/dto';
 
 import { User } from '../../users/entities/user.entity';
 import { EstadoOrdenServicio as EstadoOrdenEntity} from "../../common/entities";
+import { SendMailOptions } from '../../common/services/email/email.service';
 
-import { EstadoOrdenServicioService } from '../../common/services';
+import { EstadoOrdenServicioService, EmailService } from '../../common/services';
 import { LocacionService } from '../../clientes/services';
 import { TarifasService } from '../../tarifas/services';
 import { TipoHorarioService } from '../../servicios/services';
@@ -54,7 +55,8 @@ export class OrdenServicioService {
       private readonly locacionService: LocacionService,
       private readonly tarifasService: TarifasService,
       private readonly tipoHorarioService: TipoHorarioService,
-              private readonly dataSource: DataSource,
+      private readonly emailService: EmailService, // Servicio de email para envio de correos
+      private readonly dataSource: DataSource,
       private readonly configService: ConfigService,
   ) {
       this.defaultLimit = this.configService.get<number>('defaultLimit');
@@ -165,10 +167,14 @@ export class OrdenServicioService {
 
       const servicios = createOrdenServicioDto.servicios;
 
+      const nombreServicios = []
+
       for (const servicio of servicios) {
               
         // OBTENER TARIFA
         const tarifa = await this.tarifasService.findOne(servicio.idTarifa);
+
+        nombreServicios.push(tarifa.idServicio.descripcion);
         
         // Validar si se debe enviar el precio del servicio
         if (createOrdenServicioDto.fechaFin != null) {
@@ -223,6 +229,22 @@ export class OrdenServicioService {
       }
 
       // envio de correos que se tengan registrados en la locacion
+      const nombreResponsable = `${locacion.primerNombreResponsable} ${locacion.primerApellidoResponsable}`;
+
+      const emails = await this.locacionService.getEmailsByLocacionAndEstado(
+        createOrdenServicioDto.idLocacion, 
+        estadoOrdenServicio.idEstadoOrdenServicio
+      )
+
+      await this.notificationEmail(
+        nombreResponsable, 
+        locacion.nombre, 
+        nombreServicios,
+        fechaInicioOrden.toISOString().split('T')[0],
+        fechaFinOrden != null ? fechaFinOrden.toISOString().split('T')[0] : " ",
+        estadoOrdenServicio.descripcion, 
+        emails
+      );
       
       await queryRunner.commitTransaction();
       
@@ -240,6 +262,59 @@ export class OrdenServicioService {
 
     }
     
+
+  }
+
+  // ENVIAR CORREO PARA INFORMAR CREACION DE ORDEN DE SERVICIO
+  private async notificationEmail(
+    nombreCompleto: string, 
+    locacion: string, 
+    servicios: string[], 
+    fechaInicio: string,
+    fechaFin: string,
+    estadoOrden: string,
+    email: string[]
+  ) {        
+  
+      const html = `
+      <div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 600px; margin: 20px auto; text-align: center; font-family: 'Poppins', sans-serif;">
+          <h2 style="margin-bottom: 20px; color: #333; font-weight: 700;">CORREO INFORMATIVO VIDELCA - GEVID 👮‍♂️</h2>
+          <p style="line-height: 1.6; margin: 10px 0; color: #555;">Buen día ${nombreCompleto}, se ha creado una orden de servicio para la locacion ${locacion}</p>
+          <p style="line-height: 1.6; margin: 10px 0; color: #555;">los servicios para esta orden de servicio son: ${servicios.join(', ')}</p>
+          <p style="line-height: 1.6; margin: 10px 0; color: #555;">Fecha de inicio de la orden: ${fechaInicio}</p>
+          <p style="line-height: 1.6; margin: 10px 0; color: #555;">Fecha de fin de la orden: ${fechaFin}</p>
+          <p style="line-height: 1.6; margin: 10px 0; color: #555;">Estado de la orden: ${estadoOrden}</p>
+          <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no brindo su correo para el sistema de notificaciones, omiste este mensaje.</p>
+          <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
+          <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
+          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+      </div>
+      `;
+      
+      const subject = `CORREO INFORMATIVO VIDELCA - GEVID 👮‍♂️`;
+  
+      // Enviamos correo para notificar al usuario
+      const isEmailSend = await this.sendEmail(email, html, subject);
+  
+      if (!isEmailSend){
+          throw new BadGatewayException(`Error al enviar correo de notificacion al email ${email}, revisar correo`);
+      }
+
+  }
+
+  // EMAIL PARA NOTIFICAR AL USUARIO
+  async sendEmail(email: string[], html: string, subject: string) {
+  
+      // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+      const options: SendMailOptions = {
+          to: email,
+          subject: subject,
+          htmlBody: html
+      }
+      
+      const isSend = await this.emailService.sendEmail(options);
+      
+      return isSend; 
 
   }
 
