@@ -116,20 +116,20 @@ export class OrdenServicioService {
 
     try {
 
-      const ordenServicio = this.ordenServicioRepository.create({
-        ...createOrdenServicioDto,
-        idUsuarioCreacion: user,
-        idEstadoOrdenServicio: estadoOrdenServicio,
-        idLocacion: locacion,
-        idTarifa: tarifa,
-        fechaInicio: fechaInicioOrden,
-        fechaFin: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
-        fechaCreacion: fechaCreacionOrden,
-      });
+      // const ordenServicio = this.ordenServicioRepository.create({
+      //   ...createOrdenServicioDto,
+      //   idUsuarioCreacion: user,
+      //   idEstadoOrdenServicio: estadoOrdenServicio,
+      //   idLocacion: locacion,
+      //   idTarifa: tarifa,
+      //   fechaInicio: fechaInicioOrden,
+      //   fechaFin: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
+      //   fechaCreacion: fechaCreacionOrden,
+      // });
 
-      await this.ordenServicioRepository.save(ordenServicio);
+      // await this.ordenServicioRepository.save(ordenServicio);
 
-      return ordenServicio;
+      // return ordenServicio;
       
     } catch (error) {
 

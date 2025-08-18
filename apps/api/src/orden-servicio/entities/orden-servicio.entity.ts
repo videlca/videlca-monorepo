@@ -1,11 +1,12 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, OneToOne, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { OrdenServicioId } from "./orden-servicio-id.entity";
 import { User } from "../../users/entities/user.entity";
 import { EstadoOrdenServicio } from "../../common/entities";
 import { Locacion } from "../../clientes/entities";
-import { Tarifa } from "../../tarifas/entities";
+import { OrdenServicioTarifa } from "./orden-servicio-tarifa.entity";
 import { ObservacionOrdenServicio } from "./observaciones-orden.entity";
 
-@Entity({name: "orden-servicio"})
+@Entity({name: "orden_servicio"})
 export class OrdenServicio {
     
     @PrimaryGeneratedColumn({
@@ -13,6 +14,18 @@ export class OrdenServicio {
         name: 'idOrdenServicio',
     })
     idOrdenServicio: number;
+
+    // ORDEN SERVICIO ID -> relacion
+    @OneToOne(
+        () => OrdenServicioId, 
+        ordenServicioId => ordenServicioId.ordenServicio, 
+        {
+            nullable: false, // Toda orden debe tener un ID
+            eager: true
+        }
+    )
+    @JoinColumn({ name: 'OrdenServicioId' })
+    ordenServicioId: OrdenServicioId;
 
     // Usuario que creo la orden -> relacion
     @ManyToOne(
@@ -47,24 +60,6 @@ export class OrdenServicio {
     @JoinColumn({name: 'idLocacion'})
     idLocacion: Locacion;
     
-    // tarifa de la orden de servicio -> relacion
-    @ManyToOne(
-        () => Tarifa,
-        (tarifa) => tarifa.ordenesServicio,
-        {
-            eager: true
-        }
-    )
-    @JoinColumn({name: 'idTarifa'})
-    idTarifa: Tarifa;
-    
-    @Column({
-        type: 'int',
-        name: 'cantidadPersonal',
-        default: 0
-    })
-    cantidadPersonal: number; 
-    
     @Column({
         type: 'date',
         name: 'fechaInicio',
@@ -78,32 +73,16 @@ export class OrdenServicio {
         nullable: true
     })
     fechaFin: Date | null;
-
-    @Column({
-        type: 'varchar',
-        length: 8,
-        name: 'horaInicio',
-        nullable: false
-    })
-    horaInicio: string; // Formato 'HH:mm:ss'
-    
-    @Column({
-        type: 'varchar',
-        length: 8,
-        name: 'horaFin',
-        nullable: false
-    })
-    horaFin: string; // Formato 'HH:mm:ss'
     
     // PRECIO TOTAL CON IVA
     @Column({
         type: 'decimal',
-        name: 'precio',
-        precision: 20,
+        name: 'precioTotal',
+        precision: 30,
         scale: 2,
         nullable: true
     })
-    precio: number | null;
+    precioTotal: number | null;
 
     // FECHA CREACION
     @Column({
@@ -119,5 +98,14 @@ export class OrdenServicio {
         {cascade: true}
     )
     observacionesOrdenServicio: ObservacionOrdenServicio[];
+
+    @OneToMany(
+        () => OrdenServicioTarifa, 
+        (ordenServicioTarifa) => ordenServicioTarifa.idOrdenServicio, 
+        {
+            cascade: true,
+        }
+    )
+    tarifas: OrdenServicioTarifa[];
 
 }
