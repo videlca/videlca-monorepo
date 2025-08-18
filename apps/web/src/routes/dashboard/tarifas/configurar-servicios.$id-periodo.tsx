@@ -26,15 +26,28 @@ import { useGuardarTarifas } from "../../../api/queryFunctions/tarifas/tarifa";
 import { useTipoTarifa } from "../../../api/queryFunctions/tarifas";
 import type { CreateTarifaDto } from "../../../api/dtos/tarifas";
 import { toast } from "sonner";
-import { priceFormat } from "../../../utils/PriceFormat";
+import { priceCalculate, priceFormat } from "../../../utils/PriceFormat";
+import type { Tarifa } from "../../../api/types/periodo";
 
 // Interfaz para manejar servicios configurados localmente
-interface ServicioConfigurado {
-  servicio: Servicio;
+interface ServicioConfigurado
+  extends Omit<
+    Tarifa,
+    | "idTarifa"
+    | "idPeriodo"
+    | "idTipoTarifa"
+    | "estado"
+    | "fechaCreacion"
+    | "fechaActualizacion"
+  > {
   idTipoTarifa: number | null;
-  precioBase: number;
+  precioAntesIva: number;
   iva: number;
   precioTotal: number;
+  costosDirectos: number;
+  seguroVida: number;
+  costosDirectosSeguroVida: number;
+  aui: number;
 }
 
 export const Route = createFileRoute(
@@ -71,51 +84,59 @@ function RouteComponent() {
   const { mutate: guardarTarifas, isPending: isLoadingGuardarTarifas } =
     useGuardarTarifas();
 
-  console.log(servicios?.data);
-  // Función para calcular IVA y precio total automáticamente
-  const calcularPrecios = (precioBase: number) => {
-    const iva = precioBase * 0.019; // IVA del 19%
-    const precioTotal = precioBase + iva;
-    return { iva, precioTotal };
-  };
-
   // Función para verificar si un servicio está configurado
   const isServicioConfigurado = (idServicio: number) => {
     return serviciosConfigurados.some(
-      (sc) => sc.servicio.idServicio === idServicio,
+      (sc) => sc.idServicio.idServicio === idServicio,
     );
   };
 
   // Función para obtener la configuración de un servicio
   const getServicioConfigurado = (idServicio: number) => {
     return serviciosConfigurados.find(
-      (sc) => sc.servicio.idServicio === idServicio,
+      (sc) => sc.idServicio.idServicio === idServicio,
     );
   };
 
   // Función para agregar/actualizar un servicio configurado
   const actualizarServicioConfigurado = (
     servicio: Servicio,
-    campo: keyof Omit<ServicioConfigurado, "servicio">,
+    campo: keyof Omit<ServicioConfigurado, "idServicio">,
     valor: number | null,
   ) => {
     setServiciosConfigurados((prev) => {
       const existeIndex = prev.findIndex(
-        (sc) => sc.servicio.idServicio === servicio.idServicio,
+        (sc) => sc.idServicio.idServicio === servicio.idServicio,
       );
 
       if (existeIndex >= 0) {
-        // Actualizar servicio existente
+        // Actualizar servicio existente en la lista de servicios configurados y sus precios
         const updated = [...prev];
         const servicioActual = updated[existeIndex];
 
-        if (campo === "precioBase") {
-          const { iva, precioTotal } = calcularPrecios(valor as number);
-          updated[existeIndex] = {
+        if (
+          campo === "costosDirectos" ||
+          campo === "seguroVida" ||
+          campo === "aui"
+        ) {
+          // Actualizar el campo específico y recalcular precios
+          const updatedServicio = {
             ...servicioActual,
-            precioBase: valor as number,
+            [campo]: valor ?? 0,
+          };
+
+          const { iva, precioTotal, precioAntesIva, costosDirectosSeguroVida } =
+            priceCalculate(
+              updatedServicio.costosDirectos,
+              updatedServicio.seguroVida,
+              updatedServicio.aui,
+            );
+          updated[existeIndex] = {
+            ...updatedServicio,
+            precioAntesIva,
             iva,
             precioTotal,
+            costosDirectosSeguroVida,
           };
         } else {
           updated[existeIndex] = {
@@ -126,20 +147,22 @@ function RouteComponent() {
 
         return updated;
       } else {
-        // Agregar nuevo servicio
-        const { iva, precioTotal } =
-          campo === "precioBase"
-            ? calcularPrecios(valor as number)
-            : { iva: 0, precioTotal: 0 };
+        // Agregar nuevo servicio a la lista de servicios configurados
+        const { iva, precioTotal, precioAntesIva, costosDirectosSeguroVida } =
+          priceCalculate(0, 0, 0);
 
         return [
           ...prev,
           {
-            servicio,
+            idServicio: servicio,
             idTipoTarifa: campo === "idTipoTarifa" ? (valor as number) : null,
-            precioBase: campo === "precioBase" ? (valor as number) : 0,
+            precioAntesIva,
             iva,
             precioTotal,
+            costosDirectos: 0,
+            seguroVida: 0,
+            costosDirectosSeguroVida,
+            aui: 0,
           },
         ];
       }
@@ -149,7 +172,7 @@ function RouteComponent() {
   // Función para remover un servicio configurado
   const removerServicioConfigurado = (idServicio: number) => {
     setServiciosConfigurados((prev) =>
-      prev.filter((sc) => sc.servicio.idServicio !== idServicio),
+      prev.filter((sc) => sc.idServicio.idServicio !== idServicio),
     );
     setServicioEnEdicion(null);
   };
@@ -163,7 +186,7 @@ function RouteComponent() {
 
     // Validar que todos los servicios tengan datos completos
     const serviciosCompletos = serviciosConfigurados.filter(
-      (sc) => sc.idTipoTarifa !== null && sc.precioBase > 0,
+      (sc) => sc.idTipoTarifa !== null && sc.precioAntesIva > 0,
     );
 
     if (serviciosCompletos.length === 0) {
@@ -176,9 +199,13 @@ function RouteComponent() {
     // Crear el DTO para enviar al endpoint
     const tarifasData: CreateTarifaDto[] = serviciosCompletos.map((sc) => ({
       idPeriodo: Number(idPeriodoParam),
-      idServicio: sc.servicio.idServicio,
+      idServicio: sc.idServicio.idServicio,
       idTipoTarifa: sc.idTipoTarifa!,
-      precioSinIva: sc.precioBase,
+      precioAntesIva: sc.precioAntesIva,
+      costosDirectos: sc.costosDirectos,
+      seguroVida: sc.seguroVida,
+      costosDirectosSeguroVida: sc.costosDirectosSeguroVida,
+      aui: sc.aui,
       iva: sc.iva,
       precioTotal: sc.precioTotal,
     }));
@@ -340,35 +367,39 @@ function RouteComponent() {
           </div>
           <div className="divide-y divide-gray-200">
             {serviciosConfigurados.map((sc) => (
-              <div key={sc.servicio.idServicio} className="px-6 py-4">
+              <div key={sc.idServicio.idServicio} className="px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-1 items-center gap-4">
                     <div className="flex-1">
                       <div className="mb-1 flex items-center gap-3">
                         <span className="font-medium text-gray-900">
-                          {sc.servicio.codigo}
+                          {sc.idServicio.codigo}
                         </span>
                         <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                          {sc.servicio.idTipoServicio?.descripcion}
+                          {sc.idServicio.idTipoServicio?.descripcion}
                         </span>
-                        {sc.servicio.idTipoServicio?.requierePersonal && (
+                        {sc.idServicio.idTipoServicio?.requierePersonal && (
                           <UserCheck className="h-4 w-4 text-blue-500" />
                         )}
                       </div>
                       <p className="mb-2 text-sm text-gray-600">
-                        {sc.servicio.descripcion}
+                        {sc.idServicio.descripcion}
                       </p>
                       <div className="flex items-center gap-4 text-sm">
-                        <span>
-                          Tipo:{" "}
+                        <span className="font-semibold capitalize">
+                          Tipo de Tarifa:{" "}
                           {
                             tiposTarifa?.data?.find(
                               (t) => t.idTipoTarifa === sc.idTipoTarifa,
                             )?.nombre
                           }
                         </span>
-                        <span>Precio Base: {priceFormat(sc.precioBase)}</span>
-                        <span>IVA: {priceFormat(sc.iva)}</span>
+                        <span className="font-semibold">
+                          Precio Antes de IVA: {priceFormat(sc.precioAntesIva)}
+                        </span>
+                        <span className="font-semibold">
+                          IVA: {priceFormat(sc.iva)}
+                        </span>
                         <span className="font-semibold">
                           Total: {priceFormat(sc.precioTotal)}
                         </span>
@@ -377,7 +408,7 @@ function RouteComponent() {
                   </div>
                   <button
                     onClick={() =>
-                      removerServicioConfigurado(sc.servicio.idServicio)
+                      removerServicioConfigurado(sc.idServicio.idServicio)
                     }
                     className="ml-4 text-red-500 hover:text-red-700"
                   >
@@ -442,61 +473,83 @@ function RouteComponent() {
                             <UserCheck className="h-4 w-4 text-blue-500" />
                           )}
                         </div>
-                        <p className="mb-2 text-sm text-gray-600">
+                        <p className="mb-6 text-sm text-gray-600">
                           {item.descripcion}
                         </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      {(isEnEdicion || servicioConfig) && (
-                        <div className="flex items-center gap-2">
-                          <InputSelect
-                            label="Tipo de tarifa:"
-                            options={
-                              tiposTarifa?.data?.map((tipo) => ({
-                                id: tipo.idTipoTarifa,
-                                descripcion: tipo.nombre,
-                              })) || []
-                            }
-                            placeholder="Selecciona un tipo de tarifa"
-                            id={`tipoTarifa-${item.idServicio}`}
-                            value={
-                              servicioConfig?.idTipoTarifa?.toString() || ""
-                            }
-                            onChange={(e) => {
-                              actualizarServicioConfigurado(
-                                item,
-                                "idTipoTarifa",
-                                Number(e.target.value),
-                              );
-                            }}
-                          />
-                          <InputPrice
-                            label="Precio Base:"
-                            value={servicioConfig?.precioBase || ""}
-                            onChange={(value) => {
-                              actualizarServicioConfigurado(
-                                item,
-                                "precioBase",
-                                value,
-                              );
-                            }}
-                          />
-                          <InputPrice
-                            label="Precio con IVA:"
-                            value={servicioConfig?.iva || ""}
-                            disabled
-                            readOnly
-                          />
-                          <InputPrice
-                            label="Precio Total:"
-                            value={servicioConfig?.precioTotal || ""}
-                            disabled
-                            readOnly
-                          />
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          {(isEnEdicion || servicioConfig) && (
+                            <>
+                              <div className="space-y-2">
+                                <InputSelect
+                                  label="Tipo de tarifa:"
+                                  options={
+                                    tiposTarifa?.data?.map((tipo) => ({
+                                      id: tipo.idTipoTarifa,
+                                      descripcion: tipo.nombre,
+                                    })) || []
+                                  }
+                                  placeholder="Selecciona un tipo de tarifa"
+                                  id={`tipoTarifa-${item.idServicio}`}
+                                  value={
+                                    servicioConfig?.idTipoTarifa?.toString() ||
+                                    ""
+                                  }
+                                  onChange={(e) => {
+                                    actualizarServicioConfigurado(
+                                      item,
+                                      "idTipoTarifa",
+                                      Number(e.target.value),
+                                    );
+                                  }}
+                                />
+                                <InputPrice
+                                  label="Costos Directos:"
+                                  size="full"
+                                  value={
+                                    servicioConfig?.costosDirectos.toString() ||
+                                    ""
+                                  }
+                                  onChange={(e) => {
+                                    actualizarServicioConfigurado(
+                                      item,
+                                      "costosDirectos",
+                                      Number(e.target.value),
+                                    );
+                                  }}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <InputPrice
+                                  label="Seguro de Vida:"
+                                  size="full"
+                                  value={
+                                    servicioConfig?.seguroVida?.toString() || ""
+                                  }
+                                  onChange={(e) => {
+                                    actualizarServicioConfigurado(
+                                      item,
+                                      "seguroVida",
+                                      Number(e.target.value),
+                                    );
+                                  }}
+                                />
+                                <InputPrice
+                                  label="AUI:"
+                                  size="full"
+                                  value={servicioConfig?.aui?.toString() || ""}
+                                  onChange={(e) => {
+                                    actualizarServicioConfigurado(
+                                      item,
+                                      "aui",
+                                      Number(e.target.value),
+                                    );
+                                  }}
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -36,7 +36,7 @@ import { InputSelect } from "../../../components/common/InputSelect";
 import { InputPrice } from "../../../components/common/InputPrice";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
-import { priceFormat } from "../../../utils/PriceFormat";
+import { priceCalculate, priceFormat } from "../../../utils/PriceFormat";
 
 export const Route = createFileRoute(
   "/dashboard/tarifas/ver-tarifas/$id-periodo",
@@ -71,7 +71,11 @@ function RouteComponent() {
     idPeriodo: Number(idPeriodoParam),
     idServicio: 0,
     idTipoTarifa: 0,
-    precioSinIva: 0,
+    precioAntesIva: 0,
+    aui: 0,
+    costosDirectos: 0,
+    seguroVida: 0,
+    costosDirectosSeguroVida: 0,
     iva: 0,
     precioTotal: 0,
     estado: false,
@@ -79,11 +83,21 @@ function RouteComponent() {
 
   const handleSubmitUpdateTarifa = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const { iva, precioTotal, precioAntesIva, costosDirectosSeguroVida } =
+      priceCalculate(
+        Number(updateTarifaForm.costosDirectos),
+        Number(updateTarifaForm.seguroVida),
+        Number(updateTarifaForm.aui),
+      );
     actualizarTarifa(
       {
         id: tarifaSelected?.idTarifa || 0,
         data: {
           ...updateTarifaForm,
+          iva,
+          precioTotal,
+          precioAntesIva,
+          costosDirectosSeguroVida,
           estado: String(updateTarifaForm.estado) === "true",
         },
       },
@@ -94,22 +108,6 @@ function RouteComponent() {
         },
       },
     );
-  };
-  const calcularPrecios = (precioBase: number) => {
-    const iva = precioBase * 0.019; // IVA del 19%
-    const precioTotal = precioBase + iva;
-    return { iva, precioTotal };
-  };
-
-  const handleChangeUpdateTarifaPrecio = (value: number) => {
-    const { iva, precioTotal } = calcularPrecios(Number(value));
-
-    setUpdateTarifaForm({
-      ...updateTarifaForm,
-      precioSinIva: value,
-      iva: iva,
-      precioTotal: precioTotal,
-    });
   };
 
   const columns: ColumnDef<Tarifa>[] = [
@@ -144,11 +142,11 @@ function RouteComponent() {
     },
     {
       header: "Precio sin IVA",
-      accessorKey: "precioSinIva",
+      accessorKey: "precioAntesIva",
       cell: ({ row }) => {
         return (
           <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
-            {priceFormat(row.original.precioSinIva || 0)}
+            {priceFormat(row.original.precioAntesIva || 0)}
           </span>
         );
       },
@@ -216,9 +214,14 @@ function RouteComponent() {
                   idPeriodo: row.original.idPeriodo.idPeriodo,
                   idServicio: row.original.idServicio.idServicio,
                   idTipoTarifa: row.original.idTipoTarifa.idTipoTarifa,
-                  precioSinIva: row.original.precioSinIva,
+                  precioAntesIva: row.original.precioAntesIva,
                   iva: row.original.iva,
                   precioTotal: row.original.precioTotal,
+                  costosDirectos: row.original.costosDirectos,
+                  seguroVida: row.original.seguroVida || 0,
+                  costosDirectosSeguroVida:
+                    row.original.costosDirectosSeguroVida || 0,
+                  aui: row.original.aui,
                   estado: row.original.estado,
                 });
               }}
@@ -459,7 +462,7 @@ function RouteComponent() {
                   Precio Sin IVA
                 </p>
                 <p className="text-2xl font-bold whitespace-nowrap text-blue-600">
-                  {priceFormat(tarifaSelected?.precioSinIva || 0)}
+                  {priceFormat(tarifaSelected?.precioAntesIva || 0)}
                 </p>
               </div>
               <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
@@ -535,23 +538,24 @@ function RouteComponent() {
                 </h3>
                 <InputPrice
                   size="full"
-                  label="Precio Base:"
-                  value={updateTarifaForm.precioSinIva?.toString() || ""}
-                  onChange={(e) => handleChangeUpdateTarifaPrecio(e)}
+                  label="Costos Directos:"
+                  id="costosDirectos"
+                  value={updateTarifaForm.costosDirectos?.toString() || ""}
+                  onChange={(e) => handleChangeUpdateTarifa(e)}
                 />
                 <InputPrice
                   size="full"
-                  label="Precio con IVA:"
-                  value={updateTarifaForm.iva?.toString() || ""}
-                  disabled
-                  readOnly
+                  label="Seguro de Vida:"
+                  id="seguroVida"
+                  value={updateTarifaForm.seguroVida?.toString() || ""}
+                  onChange={(e) => handleChangeUpdateTarifa(e)}
                 />
                 <InputPrice
                   size="full"
-                  label="Precio Total:"
-                  value={updateTarifaForm.precioTotal?.toString() || ""}
-                  disabled
-                  readOnly
+                  label="AUI:"
+                  id="aui"
+                  value={updateTarifaForm.aui?.toString() || ""}
+                  onChange={(e) => handleChangeUpdateTarifa(e)}
                 />
               </div>
             </div>

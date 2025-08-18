@@ -24,7 +24,11 @@ export interface CreateTarifaDto {
   idPeriodo: number;
   idServicio: number;
   idTipoTarifa: number;
-  precioSinIva: number | string;
+  costosDirectos: number | string;
+  seguroVida: number | string;
+  costosDirectosSeguroVida: number | string;
+  aui: number | string;
+  precioAntesIva: number | string;
   iva: number | string;
   precioTotal: number | string;
 }

@@ -5,13 +5,15 @@ export const InputPrice = ({
   disabled = false,
   readOnly = false,
   size = "sm",
+  id,
 }: {
   label: string;
   value: number | string;
-  onChange?: (value: number) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   readOnly?: boolean;
   size?: "sm" | "md" | "lg" | "full";
+  id?: string;
 }) => {
   const sizeClass = {
     sm: "w-32",
@@ -29,11 +31,10 @@ export const InputPrice = ({
         </span>
         <input
           type="number"
+          id={id}
           min={1}
           value={value}
-          onChange={
-            onChange ? (e) => onChange(Number(e.target.value)) : undefined
-          }
+          onChange={onChange}
           placeholder="0.00"
           disabled={disabled}
           readOnly={readOnly}

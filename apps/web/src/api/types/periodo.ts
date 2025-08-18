@@ -21,7 +21,11 @@ export interface Tarifa {
   idPeriodo: Periodo;
   idServicio: Servicio;
   idTipoTarifa: TipoTarifa;
-  precioSinIva: number;
+  costosDirectos: number;
+  seguroVida: number | null;
+  costosDirectosSeguroVida: number;
+  precioAntesIva: number;
+  aui: number;
   iva: number;
   precioTotal: number;
   estado: boolean;

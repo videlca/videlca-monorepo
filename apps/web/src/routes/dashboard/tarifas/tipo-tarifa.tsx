@@ -22,31 +22,34 @@ export const Route = createFileRoute("/dashboard/tarifas/tipo-tarifa")({
 
 function RouteComponent() {
   // Estados
-  const [isOpenEditModal, setIsOpenEditModal] = useState(false);
-  const [editingRow, setEditingRow] = useState<TipoTarifa | null>(null);
+  // const [isOpenEditModal, setIsOpenEditModal] = useState(false);
+  // const [editingRow, setEditingRow] = useState<TipoTarifa | null>(null);
   // Queries y mutaciones
   const { data: tipoTarifa } = useTipoTarifa();
-  const { mutate: actualizarTipoTarifa, isPending: isLoading } =
-    useActualizarTipoTarifa();
+  // const { mutate: actualizarTipoTarifa, isPending: isLoading } =
+  //   useActualizarTipoTarifa();
 
   // Formularios
-  const {
-    form: formTarifaEditar,
-    handleChange: handleChangeTarifaEditar,
-    resetForm: resetFormTarifaEditar,
-    setForm: setFormTarifaEditar,
-  } = useForm<UpdateTipoTarifaDto>({
-    cantidadTiempo: 0,
-  });
+  // const {
+  //   form: formTarifaEditar,
+  //   handleChange: handleChangeTarifaEditar,
+  //   resetForm: resetFormTarifaEditar,
+  //   setForm: setFormTarifaEditar,
+  // } = useForm<UpdateTipoTarifaDto>({
+  //   cantidadTiempo: 0,
+  // });
 
   const columns: ColumnDef<TipoTarifa>[] = [
-    {
-      header: "ID",
-      accessorKey: "idTipoTarifa",
-    },
+    // {
+    //   header: "ID",
+    //   accessorKey: "idTipoTarifa",
+    // },
     {
       header: "Nombre",
       accessorKey: "nombre",
+      cell: ({ row }) => {
+        return <span className="capitalize">{row.original.nombre}</span>;
+      },
     },
     {
       header: "Descripción",
@@ -55,6 +58,13 @@ function RouteComponent() {
     {
       header: "Tipo de unidad de tiempo",
       accessorKey: "idTipoUnidadTiempo.descripcion",
+      cell: ({ row }) => {
+        return (
+          <span className="capitalize">
+            {row.original.idTipoUnidadTiempo.descripcion}
+          </span>
+        );
+      },
     },
     {
       header: "Cantidad de tiempo",
@@ -63,28 +73,28 @@ function RouteComponent() {
         return <span>{row.original.cantidadTiempo || 0}</span>;
       },
     },
-    {
-      header: "Acciones",
-      accessorKey: "acciones",
-      cell: ({ row }) => {
-        if (!row.original.idTipoUnidadTiempo.requiereTiempo) {
-          return <span>No se puede editar</span>;
-        }
-        return (
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              setEditingRow(row.original);
-              setIsOpenEditModal(true);
-              setFormTarifaEditar({
-                cantidadTiempo: row.original.cantidadTiempo || 0,
-              });
-            }}
-          />
-        );
-      },
-    },
+    // {
+    //   header: "Acciones",
+    //   accessorKey: "acciones",
+    //   cell: ({ row }) => {
+    //     if (!row.original.idTipoUnidadTiempo.requiereTiempo) {
+    //       return <span>No se puede editar</span>;
+    //     }
+    //     return (
+    //       <ButtonAction
+    //         Icon={PencilIcon}
+    //         label="Editar"
+    //         onClick={() => {
+    //           // setEditingRow(row.original);
+    //           setIsOpenEditModal(true);
+    //           setFormTarifaEditar({
+    //             cantidadTiempo: row.original.cantidadTiempo || 0,
+    //           });
+    //         }}
+    //       />
+    //     );
+    //   },
+    // },
   ];
   return (
     <Section>
@@ -96,7 +106,7 @@ function RouteComponent() {
         enablePagination={false}
       />
 
-      <SimpleModal
+      {/* <SimpleModal
         isOpen={isOpenEditModal}
         onClose={() => setIsOpenEditModal(false)}
         title="Editar tipo de tarifa"
@@ -138,7 +148,7 @@ function RouteComponent() {
             />
           </div>
         </FormsModal>
-      </SimpleModal>
+      </SimpleModal> */}
     </Section>
   );
 }
