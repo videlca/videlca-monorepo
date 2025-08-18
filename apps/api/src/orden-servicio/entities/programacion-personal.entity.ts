@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { OrdenServicioTarifa } from "./orden-servicio-tarifa.entity";
 import { Personal } from "../../personal/entities";
 
@@ -28,5 +28,21 @@ export class ProgramacionPersonal {
     )
     @JoinColumn({name: 'idPersonal'})
     idPersonal: Personal;
+
+    @Column({
+            type: 'varchar',
+            length: 8,
+            name: 'horaInicio',
+            nullable: false
+    })
+    horaInicio: string; // Formato 'HH:mm:ss'
+    
+    @Column({
+        type: 'varchar',
+        length: 8,
+        name: 'horaFin',
+        nullable: false
+    })
+    horaFin: string; // Formato 'HH:mm:ss'
 
 }

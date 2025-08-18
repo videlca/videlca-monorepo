@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
@@ -12,6 +12,7 @@ import { EstadoOrdenServicioService } from '../../common/services';
 import { LocacionService } from '../../clientes/services';
 import { TarifasService } from '../../tarifas/services';
 import { TipoHorarioService } from '../../servicios/services';
+import { PersonalService } from '../../personal/services';
 
 import { EstadoOrdenServicio } from '../../common/interfaces/estado-orden-servicio.interface';
 import { TipoDuracionInterface } from '../../servicios/interfaces/tipo-duracion.interface';
@@ -21,7 +22,9 @@ import { AnularIdOrdenServicioDto } from '../dto/orden-servicio/anular-id-orden-
 
 import { 
   OrdenServicio,
-  OrdenServicioId 
+  OrdenServicioId,
+  OrdenServicioTarifa,
+  ProgramacionPersonal
 } from '../entities';
 
 import { 
@@ -42,10 +45,16 @@ export class OrdenServicioService {
       private readonly ordenServicioRepository: Repository<OrdenServicio>,
       @InjectRepository(OrdenServicioId)
       private readonly ordenServicioIdRepository: Repository<OrdenServicioId>,
+      @InjectRepository(OrdenServicioTarifa)
+      private readonly ordenServicioTarifaRepository: Repository<OrdenServicioTarifa>,
+      @InjectRepository(ProgramacionPersonal)
+      private readonly programacionPersonalRepository: Repository<ProgramacionPersonal>,
+      private readonly personalService: PersonalService,
       private readonly estadoOrdenService: EstadoOrdenServicioService,
       private readonly locacionService: LocacionService,
       private readonly tarifasService: TarifasService,
       private readonly tipoHorarioService: TipoHorarioService,
+              private readonly dataSource: DataSource,
       private readonly configService: ConfigService,
   ) {
       this.defaultLimit = this.configService.get<number>('defaultLimit');
@@ -53,12 +62,23 @@ export class OrdenServicioService {
 
   async create(createOrdenServicioDto: CreateOrdenServicioDto, user: User) {
 
+    // Usar QueryRunner para transacción manual
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     // OBTENER LOCACION
     const locacion = await this.locacionService.findOne(createOrdenServicioDto.idLocacion);
 
-    // OBTENER TARIFA
-    const tarifa = await this.tarifasService.findOne(createOrdenServicioDto.idTarifa);
-    
+    // OBTENER NUMERO DE ORDEN O ID DE LA ORDEN DE SERVICIO
+    const numeroOrden = await this.ordenServicioIdRepository.findOneBy({
+      descripcionId: createOrdenServicioDto.numeroOrdenServicio
+    });
+
+    if (numeroOrden){
+      throw new BadRequestException(`El ID "${createOrdenServicioDto.numeroOrdenServicio}" ya existe`);
+    }
+
     // FECHA INICIO ORDEN SERVICIO
                 
     const fechaInicioSplit = createOrdenServicioDto.fechaInicio.toISOString().split('T')[0];
@@ -86,6 +106,12 @@ export class OrdenServicioService {
 
             throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
         
+        }
+
+        if (createOrdenServicioDto.precioTotal == null || createOrdenServicioDto.precioTotal == 0){
+
+            throw new BadRequestException('se debe enviar el precio total al ser una orden definida');          
+
         }
 
     }
@@ -121,31 +147,97 @@ export class OrdenServicioService {
 
     }
 
-    // envio de correos que se tengan registrados en la locacion
-
-    // validar si la orden requiere personal y agregar el personal si es necesario
-
     try {
 
-      // const ordenServicio = this.ordenServicioRepository.create({
-      //   ...createOrdenServicioDto,
-      //   idUsuarioCreacion: user,
-      //   idEstadoOrdenServicio: estadoOrdenServicio,
-      //   idLocacion: locacion,
-      //   idTarifa: tarifa,
-      //   fechaInicio: fechaInicioOrden,
-      //   fechaFin: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
-      //   fechaCreacion: fechaCreacionOrden,
-      // });
+      // Crear la orden sin los servicios primero
+      const ordenServicio = queryRunner.manager.create(OrdenServicio, {
+        ordenServicioId: numeroOrden,
+        idUsuarioCreacion: user,
+        idEstadoOrdenServicio: estadoOrdenServicio,
+        idLocacion: locacion,
+        fechaInicio: fechaInicioOrden,
+        fechaFin: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
+        precioTotal: createOrdenServicioDto.precioTotal,
+        fechaCreacion: fechaCreacionOrden,
+      });
 
-      // await this.ordenServicioRepository.save(ordenServicio);
+      const savedOrdenServicio = await queryRunner.manager.save(OrdenServicio, ordenServicio);
 
-      // return ordenServicio;
+      const servicios = createOrdenServicioDto.servicios;
+
+      for (const servicio of servicios) {
+              
+        // OBTENER TARIFA
+        const tarifa = await this.tarifasService.findOne(servicio.idTarifa);
+        
+        // Validar si se debe enviar el precio del servicio
+        if (createOrdenServicioDto.fechaFin != null) {
+  
+          if (servicio.precio == null || servicio.precio == 0){
+  
+            throw new BadRequestException(`se debe enviar el precio del servicio ${tarifa.idServicio.descripcion} al ser una orden definida`);          
+  
+          }
+
+        }
+
+        // Validar si el servicio requiere personal
+        if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.personal.length <= 0){
+          
+          throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
+
+        }
+
+        // Crear el servicio para la orden
+        const servicioOrden = queryRunner.manager.create(OrdenServicioTarifa, {
+            idOrdenServicio: savedOrdenServicio,
+            idTarifa: tarifa,
+            cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
+            horaInicio: servicio.horaInicio,
+            horaFin: servicio.horaFin,
+            precio: servicio.precio ? servicio.precio : 0
+        });
+
+        const savedServicio = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
+
+        // agregar el personal si es necesario
+        const personalServicio = servicio.personal;
+
+        for (const personalAsignado of personalServicio){
+
+          // OBTENER PERSONAL
+          const personal = await this.personalService.findOne(personalAsignado.idPersonal);
+
+          // asignar personal para el servicio
+          const asignarPersonal = queryRunner.manager.create(ProgramacionPersonal, {
+              idOrdenServicioTarifa: savedServicio,
+              idPersonal: personal,
+              horaInicio: personalAsignado.horaInicio,
+              horaFin: personalAsignado.horaFin
+          });
+
+          const savedPersonal = await queryRunner.manager.save(ProgramacionPersonal, asignarPersonal);
+
+        }        
+
+      }
+
+      // envio de correos que se tengan registrados en la locacion
+      
+      await queryRunner.commitTransaction();
+      
+      return savedOrdenServicio;
       
     } catch (error) {
 
-      this.handleDbExceptions(error);
+      await queryRunner.rollbackTransaction();
+
+      throw error;
       
+    } finally {
+
+      await queryRunner.release();
+
     }
     
 
@@ -534,7 +626,8 @@ export class OrdenServicioService {
       }
 
       const idAnulado = this.ordenServicioIdRepository.create({
-        ...anularIdDto
+        ...anularIdDto,
+        anulado: true
       });
 
       await this.ordenServicioIdRepository.save(idAnulado);

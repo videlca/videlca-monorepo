@@ -26,6 +26,13 @@ export class OrdenServicioId {
     }) 
     fechaCreacion: Date; 
 
+    @Column({ 
+        type: 'boolean',
+        name: 'anulado', 
+        default: false 
+    })
+    anulado: boolean;
+
     // Relación uno a cero-o-uno con OrdenServicio
     @OneToOne(
         () => OrdenServicio, 
