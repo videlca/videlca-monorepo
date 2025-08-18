@@ -9,7 +9,12 @@ import { User } from '../../users/entities/user.entity';
 
 import { OrdenServicioService } from '../services/orden-servicio.service';
 
-import { CreateOrdenServicioDto, TercerPasoDto, PrecioOrdenDto } from '../dto';
+import { 
+  CreateOrdenServicioDto,
+  AnularIdOrdenServicioDto, 
+  TercerPasoDto, 
+  PrecioOrdenDto 
+} from '../dto';
 
 @Controller('orden-servicio')
 @AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -37,6 +42,11 @@ export class OrdenServicioController {
   @Post('obtener-precio')
   obtenerPrecioOrden(@Body() obtenerPrecioOrdenDto: PrecioOrdenDto){
     return this.ordenServicioService.obtenerPrecio(obtenerPrecioOrdenDto);
+  }
+  
+  @Post('anular-id')
+  anularIdOrden(@Body() anularIdDto: AnularIdOrdenServicioDto){
+    return this.ordenServicioService.anularId(anularIdDto);
   }
 
   @Get(':id')

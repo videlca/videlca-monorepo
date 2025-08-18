@@ -17,9 +17,18 @@ import { EstadoOrdenServicio } from '../../common/interfaces/estado-orden-servic
 import { TipoDuracionInterface } from '../../servicios/interfaces/tipo-duracion.interface';
 import { TipoHorarioInterface } from 'src/servicios/interfaces/tipo-horario.interface';
 import { TipoTarifaInterface } from '../../tarifas/interfaces/tipo-tarifa.interface';
+import { AnularIdOrdenServicioDto } from '../dto/orden-servicio/anular-id-orden-servicio.dto';
 
-import { OrdenServicio } from '../entities';
-import { CreateOrdenServicioDto, TercerPasoDto, PrecioOrdenDto } from '../dto';
+import { 
+  OrdenServicio,
+  OrdenServicioId 
+} from '../entities';
+
+import { 
+  CreateOrdenServicioDto, 
+  TercerPasoDto, 
+  PrecioOrdenDto 
+} from '../dto';
 
 @Injectable()
 export class OrdenServicioService {
@@ -31,6 +40,8 @@ export class OrdenServicioService {
   constructor(
       @InjectRepository(OrdenServicio)
       private readonly ordenServicioRepository: Repository<OrdenServicio>,
+      @InjectRepository(OrdenServicioId)
+      private readonly ordenServicioIdRepository: Repository<OrdenServicioId>,
       private readonly estadoOrdenService: EstadoOrdenServicioService,
       private readonly locacionService: LocacionService,
       private readonly tarifasService: TarifasService,
@@ -497,6 +508,44 @@ export class OrdenServicioService {
   // remove(id: number) {
   //   return `This action removes a #${id} ordenServicio`;
   // }
+
+  async anularId(anularIdDto: AnularIdOrdenServicioDto){
+
+    try {
+
+      const idExistente = await this.ordenServicioIdRepository.findOne({
+        where: {
+          descripcionId: anularIdDto.descripcionId
+        },
+        relations: {
+          ordenServicio: true
+        }
+      });
+
+      if (idExistente) {
+        
+        // Si existe y tiene orden asociada, error
+        if (idExistente.ordenServicio) {
+          throw new BadRequestException(`No se puede anular el ID "${anularIdDto.descripcionId}" porque tiene una orden asociada`);
+        }
+
+        // Si existe pero no tiene orden, también es error (ya está anulado)
+        throw new BadRequestException(`El ID "${anularIdDto.descripcionId}" ya existe`);
+      }
+
+      const idAnulado = this.ordenServicioIdRepository.create({
+        ...anularIdDto
+      });
+
+      await this.ordenServicioIdRepository.save(idAnulado);
+      
+    } catch (error) {
+
+      this.handleDbExceptions(error);
+      
+    }
+
+  }
 
   private handleDbExceptions(error: any){
           
