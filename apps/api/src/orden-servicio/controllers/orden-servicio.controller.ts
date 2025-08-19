@@ -13,7 +13,9 @@ import {
   CreateOrdenServicioDto,
   AnularIdOrdenServicioDto, 
   TercerPasoDto, 
-  PrecioOrdenDto 
+  PrecioOrdenDto,
+  ValidarEmpleadosDisponiblesDto,
+  ValidarRangoHorarioPersonalOrdenDto 
 } from '../dto';
 
 @Controller('orden-servicio')
@@ -42,6 +44,16 @@ export class OrdenServicioController {
   @Post('obtener-precio')
   obtenerPrecioOrden(@Body() obtenerPrecioOrdenDto: PrecioOrdenDto){
     return this.ordenServicioService.obtenerPrecio(obtenerPrecioOrdenDto);
+  }
+  
+  @Post('empleados-disponibles')
+  validarEmpleadosDisponibles(@Body() validarEmpleadosDisponiblesDto: ValidarEmpleadosDisponiblesDto){
+    return this.ordenServicioService.getEmpleadosDisponibles(validarEmpleadosDisponiblesDto);
+  }
+  
+  @Post('validar-rango-horarios-orden')
+  validarRangoHorariosPersonal(@Body() validarRangoHorarioEmpleado: ValidarRangoHorarioPersonalOrdenDto){
+    return this.ordenServicioService.validarAsignaciones(validarRangoHorarioEmpleado);
   }
   
   @Post('anular-id')
