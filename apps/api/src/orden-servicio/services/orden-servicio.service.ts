@@ -19,7 +19,6 @@ import { EstadoOrdenServicio } from '../../common/interfaces/estado-orden-servic
 import { TipoDuracionInterface } from '../../servicios/interfaces/tipo-duracion.interface';
 import { TipoHorarioInterface } from 'src/servicios/interfaces/tipo-horario.interface';
 import { TipoTarifaInterface } from '../../tarifas/interfaces/tipo-tarifa.interface';
-import { AnularIdOrdenServicioDto } from '../dto/orden-servicio/anular-id-orden-servicio.dto';
 
 import { Personal } from '../../personal/entities';
 
@@ -32,10 +31,12 @@ import {
 
 import { 
   CreateOrdenServicioDto,
-  TercerPasoDto, 
+  ValidarIdOrdenServicioDto,
+  ValidarHorarioServicioDto, 
   PrecioOrdenDto,
   ValidarEmpleadosDisponiblesDto,
-  ValidarRangoHorarioPersonalOrdenDto 
+  ValidarRangoHorarioPersonalOrdenDto,
+  AnularIdOrdenServicioDto 
 } from '../dto';
 
 @Injectable()
@@ -66,6 +67,20 @@ export class OrdenServicioService {
       private readonly configService: ConfigService,
   ) {
       this.defaultLimit = this.configService.get<number>('defaultLimit');
+  }
+
+  async validarOrdenServicioId(validarIdOrdenServicioDto: ValidarIdOrdenServicioDto){
+
+    const ordenServicioId = await this.ordenServicioIdRepository.findOneBy({
+      descripcionId: validarIdOrdenServicioDto.descripcionId
+    });
+
+    if (ordenServicioId){
+      throw new BadRequestException(`El ID "${validarIdOrdenServicioDto.descripcionId}" ya existe`);
+    }
+
+    return
+
   }
 
   async create(createOrdenServicioDto: CreateOrdenServicioDto, user: User) {
@@ -362,9 +377,9 @@ export class OrdenServicioService {
 
   }
 
-  async validacionHorarios(tercerPasoDto: TercerPasoDto){
+  async validacionHorarios(validarHorarioServicioDto: ValidarHorarioServicioDto){
 
-    const { idTarifa, horaInicio, horaFin, fechaInicio, fechaFin } = tercerPasoDto;
+    const { idTarifa, horaInicio, horaFin, fechaInicio, fechaFin } = validarHorarioServicioDto;
 
     //! VALIDACION FECHAS
 

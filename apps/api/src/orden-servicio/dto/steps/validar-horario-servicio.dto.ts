@@ -2,7 +2,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsString, Matches, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength, IsOptional, IsDate } from 'class-validator';
 
-export class TercerPasoDto {
+export class ValidarHorarioServicioDto {
     
     @ApiProperty({ description: 'Id de tarifa', example: 1, required:true})
     @IsNumber({}, {message: 'El valor del campo tarifa debe ser un número'})

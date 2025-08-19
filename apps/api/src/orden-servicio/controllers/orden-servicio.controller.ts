@@ -10,12 +10,13 @@ import { User } from '../../users/entities/user.entity';
 import { OrdenServicioService } from '../services/orden-servicio.service';
 
 import { 
-  CreateOrdenServicioDto,
-  AnularIdOrdenServicioDto, 
-  TercerPasoDto, 
+  ValidarIdOrdenServicioDto,
+  ValidarHorarioServicioDto, 
   PrecioOrdenDto,
   ValidarEmpleadosDisponiblesDto,
-  ValidarRangoHorarioPersonalOrdenDto 
+  ValidarRangoHorarioPersonalOrdenDto, 
+  CreateOrdenServicioDto,
+  AnularIdOrdenServicioDto, 
 } from '../dto';
 
 @Controller('orden-servicio')
@@ -36,9 +37,14 @@ export class OrdenServicioController {
     return this.ordenServicioService.findAll(paginationDto, paginationDto.pagination);
   }
 
+  @Post('validacion-id')
+  validarIdOrdenServicio(@Body() validarIdOrdenServicioDto: ValidarIdOrdenServicioDto) {
+    return this.ordenServicioService.validarOrdenServicioId(validarIdOrdenServicioDto);
+  }
+  
   @Post('validacion-horarios')
-  validacionHorarios(@Body() tercerPasoDto: TercerPasoDto) {
-    return this.ordenServicioService.validacionHorarios(tercerPasoDto);
+  validacionHorarios(@Body() validarHorarioServicioDto: ValidarHorarioServicioDto) {
+    return this.ordenServicioService.validacionHorarios(validarHorarioServicioDto);
   }
 
   @Post('obtener-precio')
