@@ -6,6 +6,7 @@ export { AnularIdOrdenServicioDto } from "./orden-servicio/anular-id-orden-servi
 // VALIDACIONES POR CADA PASO DE LA CREACION
 export { TercerPasoDto } from "./steps/tercer-paso.dto";
 export { PrecioOrdenDto } from "./steps/precio-orden.dto";
+export { ValidarEmpleadosDisponiblesDto } from "./steps/validar-empleados-disponible.dto";
 export { ValidarRangoHorarioPersonalOrdenDto } from "./steps/validar-rango-horario-empleado-orden.dto";
 
 // OBSERVACIONES ORDEN

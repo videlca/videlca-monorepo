@@ -1,6 +1,6 @@
 import { BadGatewayException, BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
@@ -21,6 +21,8 @@ import { TipoHorarioInterface } from 'src/servicios/interfaces/tipo-horario.inte
 import { TipoTarifaInterface } from '../../tarifas/interfaces/tipo-tarifa.interface';
 import { AnularIdOrdenServicioDto } from '../dto/orden-servicio/anular-id-orden-servicio.dto';
 
+import { Personal } from '../../personal/entities';
+
 import { 
   OrdenServicio,
   OrdenServicioId,
@@ -30,9 +32,9 @@ import {
 
 import { 
   CreateOrdenServicioDto,
-  CreatePersonalServicioDto, 
   TercerPasoDto, 
   PrecioOrdenDto,
+  ValidarEmpleadosDisponiblesDto,
   ValidarRangoHorarioPersonalOrdenDto 
 } from '../dto';
 
@@ -52,6 +54,8 @@ export class OrdenServicioService {
       private readonly ordenServicioTarifaRepository: Repository<OrdenServicioTarifa>,
       @InjectRepository(ProgramacionPersonal)
       private readonly programacionPersonalRepository: Repository<ProgramacionPersonal>,
+      @InjectRepository(Personal)
+      private readonly personalRepository: Repository<Personal>,
       private readonly personalService: PersonalService,
       private readonly estadoOrdenService: EstadoOrdenServicioService,
       private readonly locacionService: LocacionService,
@@ -694,6 +698,10 @@ export class OrdenServicioService {
       const horaInicioEmpleado = this.parseHour(emp.horaInicio);
       const horaFinEmpleado = this.parseHour(emp.horaFin);
       const duracionEmp = this.getDuration(horaInicioEmpleado, horaFinEmpleado);
+
+      if (horaInicioEmpleado == horaFinEmpleado){
+        throw new BadRequestException(`Hora incio y fin de un empleado no puede ser la misma`);
+      }
   
       // Validar que esté dentro del rango de la orden
       // Caso simple: orden normal (ej: 6-15)
@@ -720,7 +728,98 @@ export class OrdenServicioService {
     
   }
 
-  
+  // ------ Helpers de horas (soporta HH:mm:ss, turnos nocturnos y 24h)
+  private timeToMinutes(t: string): number {
+    const [hh, mm = "0", ss = "0"] = t.split(":");
+    return (+hh) * 60 + (+mm) + Math.floor((+ss) / 60);
+  }
+
+  /** Divide un rango horario en 1 o 2 segmentos [ini, fin) en minutos.
+   *  - Normal: [a,b)
+   *  - Nocturno (cruza medianoche): [a,1440) y [0,b)
+   *  - 24h (a==b): [0,1440)
+   */
+  private toSegments(hInicio: string, hFin: string): Array<[number, number]> {
+    const a = this.timeToMinutes(hInicio);
+    const b = this.timeToMinutes(hFin);
+    if (a === b) return [[0, 1440]];                  // 24 horas
+    if (a < b) return [[a, b]];                       // turno normal
+    return [[a, 1440], [0, b]];                       // turno nocturno
+  }
+
+  private rangesOverlap([a1, a2]: [number, number], [b1, b2]: [number, number]): boolean {
+    // solapan si NO (a2 <= b1 o b2 <= a1)
+    return !(a2 <= b1 || b2 <= a1);
+  }
+
+  /** Devuelve true si los horarios (daily) se solapan, considerando nocturnos y 24h */
+  private horasSeSolapan(h1Ini: string, h1Fin: string, h2Ini: string, h2Fin: string): boolean {
+    const A = this.toSegments(h1Ini, h1Fin);
+    const B = this.toSegments(h2Ini, h2Fin);
+    for (const segA of A) for (const segB of B) {
+      if (this.rangesOverlap(segA, segB)) return true;
+    }
+    return false;
+  }
+
+  /** Empleados disponibles según tu regla:
+   *  - Si fechaFin: filtra programaciones cuya ORDEN se superpone a [fechaInicio, fechaFin]
+   *  - Si fechaFin=null: filtra programaciones cuya ORDEN tenga fechaFin NULL o >= fechaInicio
+   *  - Luego marca ocupados si se SOLAPAN las horas
+   *  - Devuelve personal.laborando = true que NO estén ocupados
+   */
+  async getEmpleadosDisponibles(
+    validarEmpleadosDisponiblesDto: ValidarEmpleadosDisponiblesDto,      // "HH:mm:ss"
+  ): Promise<Personal[]> {
+
+    const {fechaInicio, fechaFin, horaInicio, horaFin} = validarEmpleadosDisponiblesDto;
+
+    // 1) Traer programaciones relevantes por FECHA (sin validar horas aquí)
+    const qb = this.dataSource
+      .createQueryBuilder()
+      .select([
+        "pp.idPersonal AS idPersonal",
+        "pp.horaInicio AS horaInicio",
+        "pp.horaFin AS horaFin",
+      ])
+      .from(ProgramacionPersonal, "pp")
+      .innerJoin(OrdenServicioTarifa, "ost", "pp.idOrdenServicioTarifa = ost.idOrdenServicioTarifa")
+      .innerJoin(OrdenServicio, "os", "ost.idOrdenServicio = os.idOrdenServicio");
+
+    if (fechaFin) {
+      // Overlap entre [fechaInicio, fechaFin] y [os.fechaInicio, os.fechaFin (o +∞)]
+      qb.where("os.fechaInicio <= :fFin", { fFin: fechaFin })
+        .andWhere(
+          new Brackets((w) => {
+            w.where("os.fechaFin IS NULL").orWhere("os.fechaFin >= :fIni", { fIni: fechaInicio });
+          })
+        );
+    } else {
+      // Indefinido hacia adelante: órdenes con fechaFin NULL o que no han terminado antes de fechaInicio
+      qb.where("os.fechaFin IS NULL OR os.fechaFin >= :fIni", { fIni: fechaInicio });
+    }
+
+    const programaciones = await qb.getRawMany<{ idPersonal: number; horaInicio: string; horaFin: string }>();
+
+    // 2) Marcar OCUPADOS solo si las HORAS se solapan (incluye nocturnos/24h)
+    const idsOcupados = new Set<number>();
+    for (const p of programaciones) {
+      if (this.horasSeSolapan(horaInicio, horaFin, p.horaInicio, p.horaFin)) {
+        idsOcupados.add(p.idPersonal);
+      }
+    }
+
+    // 3) Disponibles = personal laborando y NO en ocupados
+    const disponiblesQB = this.personalRepository
+      .createQueryBuilder("p")
+      .where("p.laborando = true");
+
+    if (idsOcupados.size > 0) {
+      disponiblesQB.andWhere("p.idPersonal NOT IN (:...ids)", { ids: Array.from(idsOcupados) });
+    }
+
+    return await disponiblesQB.getMany();
+  }
 
   // update(id: number, updateOrdenServicioDto: UpdateOrdenServicioDto) {
   //   return `This action updates a #${id} ordenServicio`;
