@@ -29,9 +29,11 @@ import {
 } from '../entities';
 
 import { 
-  CreateOrdenServicioDto, 
+  CreateOrdenServicioDto,
+  CreatePersonalServicioDto, 
   TercerPasoDto, 
-  PrecioOrdenDto 
+  PrecioOrdenDto,
+  ValidarRangoHorarioPersonalOrdenDto 
 } from '../dto';
 
 @Injectable()
@@ -667,6 +669,58 @@ export class OrdenServicioService {
     return diasDiferencia + 1;
 
   }
+  
+  private parseHour(time: string): number {
+    const [hh] = time.split(":").map(Number);
+    return hh;
+  }
+
+  private getDuration(start: number, end: number): number {
+    if (start === end) return 24; // Orden de 24 horas
+    if (end > start) return end - start;
+    return (24 - start) + end; // Horario nocturno
+  }
+
+  async validarAsignaciones(validarRangoHorarioPersonalOrdenDto: ValidarRangoHorarioPersonalOrdenDto) {
+    
+    const horaInicio = this.parseHour(validarRangoHorarioPersonalOrdenDto.horaInicio);
+    const horaFin = this.parseHour(validarRangoHorarioPersonalOrdenDto.horaFin);
+    const duracionServicio = this.getDuration(horaInicio, horaFin);
+  
+    let totalEmpleadoHoras = 0;
+  
+    for (const emp of validarRangoHorarioPersonalOrdenDto.personal) {
+
+      const horaInicioEmpleado = this.parseHour(emp.horaInicio);
+      const horaFinEmpleado = this.parseHour(emp.horaFin);
+      const duracionEmp = this.getDuration(horaInicioEmpleado, horaFinEmpleado);
+  
+      // Validar que esté dentro del rango de la orden
+      // Caso simple: orden normal (ej: 6-15)
+      if (duracionServicio < 24) {
+        if (!(horaInicioEmpleado >= horaInicio && horaFinEmpleado <= horaFin)) {
+          throw new BadRequestException(`La duracion del horario de los empleados debe estar en el rango de la orden`);
+          //return false; // fuera de rango
+        }
+      }
+      // Caso nocturno o 24h → permitimos más flexibilidad
+      // (se puede refinar según tu necesidad)
+  
+      totalEmpleadoHoras += duracionEmp;
+    }
+  
+    // Validar que los empleados cubran la orden completa
+    if (!(totalEmpleadoHoras === duracionServicio)){
+      throw new BadRequestException(`La duracion del horario de los empleados debe cubrir toda el tiempo de la orden`);
+    }
+
+    return {
+      message: "validacion correcta"
+    }
+    
+  }
+
+  
 
   // update(id: number, updateOrdenServicioDto: UpdateOrdenServicioDto) {
   //   return `This action updates a #${id} ordenServicio`;
