@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMan
 import { Periodo } from "../../periodos/entities/periodo.entity";
 import { Servicio } from "../../servicios/entities";
 import { TipoTarifa } from "./tipo-tarifa.entity";
-import { OrdenServicio } from "../../orden-servicio/entities/orden-servicio.entity";
+import { OrdenServicioTarifa } from "../../orden-servicio/entities/orden-servicio-tarifa.entity";
 
 @Entity({name: 'tarifa'})
 export class Tarifa {
@@ -120,22 +120,22 @@ export class Tarifa {
 
     // FECHA ASIGNACION
     @CreateDateColumn({
-        type: 'timestamp',
+        type: 'datetime',
         name: 'fechaCreacion'
     }) 
     fechaCreacion: Date; 
     
     // FECHA ACTUALIZACION
     @UpdateDateColumn({
-        type: 'timestamp',
+        type: 'datetime',
         name: 'fechaActualizacion'
     }) 
     fechaActualizacion: Date;
 
     @OneToMany(
-        () => OrdenServicio,
-        (ordenServicio) => ordenServicio.idTarifa
+        () => OrdenServicioTarifa,
+        (ordenServicioTarifa) => ordenServicioTarifa.idTarifa
     )
-    ordenesServicio: OrdenServicio[];
+    ordenesServicio: OrdenServicioTarifa[];
 
 }

@@ -20,7 +20,7 @@ export class OrdenServicioId {
 
     // FECHA CREACION
     @CreateDateColumn({
-        type: 'date',
+        type: 'datetime',
         name: 'fechaCreacion',
         nullable: false
     }) 
@@ -29,7 +29,7 @@ export class OrdenServicioId {
     @Column({ 
         type: 'boolean',
         name: 'anulado', 
-        default: false 
+        default: false
     })
     anulado: boolean;
 
