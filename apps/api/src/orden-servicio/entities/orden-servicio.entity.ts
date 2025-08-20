@@ -5,6 +5,7 @@ import { EstadoOrdenServicio } from "../../common/entities";
 import { Locacion } from "../../clientes/entities";
 import { OrdenServicioTarifa } from "./orden-servicio-tarifa.entity";
 import { ObservacionOrdenServicio } from "./observaciones-orden.entity";
+import { Liquidacione } from "src/liquidaciones/entities/liquidacione.entity";
 
 @Entity({name: "orden_servicio"})
 export class OrdenServicio {
@@ -107,5 +108,9 @@ export class OrdenServicio {
         }
     )
     tarifas: OrdenServicioTarifa[];
+  
+    @OneToMany(() => Liquidacione, (liq) => liq.ordenServicio)
+    liquidaciones: Liquidacione[];
+
 
 }

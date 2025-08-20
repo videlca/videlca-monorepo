@@ -17,6 +17,7 @@ import { SeedModule } from './seed/seed.module';
 import { ServiciosModule } from './servicios/servicios.module';
 import { PeriodosModule } from './periodos/periodos.module';
 import { OrdenServicioModule } from './orden-servicio/orden-servicio.module';
+import { LiquidacionesModule } from './liquidaciones/liquidaciones.module';
 
 @Module({
   imports: [
@@ -59,7 +60,7 @@ import { OrdenServicioModule } from './orden-servicio/orden-servicio.module';
     
     CommonModule, 
     
-    SeedModule,
+    SeedModule, LiquidacionesModule,
     
   ],
   controllers: [],
