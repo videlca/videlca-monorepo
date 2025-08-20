@@ -38,12 +38,6 @@ export class TipoTarifaService {
       throw new BadRequestException(`No se puede seleccionar esta cantidad de tiempo para un mes`);
 
     }
-    
-    if (tipoUnidadTiempo.descripcion == TipoUnidadTiempoInterface.HORAS && createTipoTarifaDto.cantidadTiempo > 24){
-
-      throw new BadRequestException(`No se puede seleccionar esta cantidad de tiempo para horas`);
-
-    }
   
     try {
         
@@ -128,12 +122,6 @@ export class TipoTarifaService {
       if (tipoTarifa.idTipoUnidadTiempo.descripcion == TipoUnidadTiempoInterface.DIAS && updateTipoTarifaDto.cantidadTiempo > 31){
 
         throw new BadRequestException(`No se puede seleccionar esta cantidad de tiempo para un mes`);
-
-      }
-    
-      if (tipoTarifa.idTipoUnidadTiempo.descripcion == TipoUnidadTiempoInterface.HORAS && updateTipoTarifaDto.cantidadTiempo > 24){
-
-        throw new BadRequestException(`No se puede seleccionar esta cantidad de tiempo para horas`);
 
       }
       

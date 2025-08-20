@@ -9,9 +9,19 @@ import { User } from '../../users/entities/user.entity';
 
 import { OrdenServicioService } from '../services/orden-servicio.service';
 
+import { 
+  ValidarIdOrdenServicioDto,
+  ValidarHorarioServicioDto, 
+  PrecioOrdenDto,
+  ValidarEmpleadosDisponiblesDto,
+  ValidarRangoHorarioPersonalOrdenDto, 
+  CreateOrdenServicioDto,
+  AnularIdOrdenServicioDto, 
+} from '../dto';
 import { CreateOrdenServicioDto, TercerPasoDto, PrecioOrdenDto } from '../dto';
 import { ApiQuery } from '@nestjs/swagger';
 import { LiquidacionesService } from 'src/liquidaciones/liquidaciones.service';
+
 
 @Controller('orden-servicio')
 @AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -34,14 +44,34 @@ export class OrdenServicioController {
     return this.ordenServicioService.findAll(paginationDto, paginationDto.pagination);
   }
 
+  @Post('validacion-id')
+  validarIdOrdenServicio(@Body() validarIdOrdenServicioDto: ValidarIdOrdenServicioDto) {
+    return this.ordenServicioService.validarOrdenServicioId(validarIdOrdenServicioDto);
+  }
+  
   @Post('validacion-horarios')
-  validacionHorarios(@Body() tercerPasoDto: TercerPasoDto) {
-    return this.ordenServicioService.validacionHorarios(tercerPasoDto);
+  validacionHorarios(@Body() validarHorarioServicioDto: ValidarHorarioServicioDto) {
+    return this.ordenServicioService.validacionHorarios(validarHorarioServicioDto);
   }
 
   @Post('obtener-precio')
   obtenerPrecioOrden(@Body() obtenerPrecioOrdenDto: PrecioOrdenDto){
     return this.ordenServicioService.obtenerPrecio(obtenerPrecioOrdenDto);
+  }
+  
+  @Post('empleados-disponibles')
+  validarEmpleadosDisponibles(@Body() validarEmpleadosDisponiblesDto: ValidarEmpleadosDisponiblesDto){
+    return this.ordenServicioService.getEmpleadosDisponibles(validarEmpleadosDisponiblesDto);
+  }
+  
+  @Post('validar-rango-horarios-orden')
+  validarRangoHorariosPersonal(@Body() validarRangoHorarioEmpleado: ValidarRangoHorarioPersonalOrdenDto){
+    return this.ordenServicioService.validarAsignaciones(validarRangoHorarioEmpleado);
+  }
+  
+  @Post('anular-id')
+  anularIdOrden(@Body() anularIdDto: AnularIdOrdenServicioDto){
+    return this.ordenServicioService.anularId(anularIdDto);
   }
 
   @Get(':id')

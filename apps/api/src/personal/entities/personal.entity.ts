@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 import { TipoIdentificacion, Ciudad } from "../../common/entities";
 import { Novedad } from "../../novedad/entities";
+import { ProgramacionPersonal } from "../../orden-servicio/entities/programacion-personal.entity";
 import { TipoPersonal, TipoGenero } from "../entities";
 
 @Entity({name: 'personal'})
@@ -151,5 +152,13 @@ export class Personal {
     novedades: Novedad[];
 
     // programacion - asignaciones -> relacion tabla para programar personal ()
+    @OneToMany(
+        () => ProgramacionPersonal, 
+        (programacion) => programacion.idPersonal, 
+        {
+            cascade: true,
+        }
+    )
+    programaciones: ProgramacionPersonal[];
 
 }

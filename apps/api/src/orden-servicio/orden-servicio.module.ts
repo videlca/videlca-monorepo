@@ -9,8 +9,15 @@ import { UsersModule } from '../users/users.module';
 import { ClientesModule } from '../clientes/clientes.module';
 import { TarifasModule } from '../tarifas/tarifas.module';
 import { ServiciosModule } from '../servicios/servicios.module';
+import { PersonalModule } from '../personal/personal.module';
 
-import { OrdenServicio, ObservacionOrdenServicio } from './entities';
+import { 
+  OrdenServicio, 
+  OrdenServicioId, 
+  OrdenServicioTarifa, 
+  ObservacionOrdenServicio,
+  ProgramacionPersonal 
+} from './entities';
 
 import { OrdenServicioService, ObservacionesOrdenServicioService } from './services';
 
@@ -22,6 +29,10 @@ import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
 
     TypeOrmModule.forFeature([
       OrdenServicio,
+      OrdenServicioId,
+      OrdenServicioTarifa,
+      ObservacionOrdenServicio,
+      ProgramacionPersonal,
       ObservacionOrdenServicio,
       LiquidacionesModule,
     ]),
@@ -33,6 +44,7 @@ import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
     ClientesModule,
     TarifasModule,
     ServiciosModule,
+    PersonalModule,
     LiquidacionesModule,
 
   ],

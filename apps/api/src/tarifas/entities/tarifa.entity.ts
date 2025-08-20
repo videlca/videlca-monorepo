@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMan
 import { Periodo } from "../../periodos/entities/periodo.entity";
 import { Servicio } from "../../servicios/entities";
 import { TipoTarifa } from "./tipo-tarifa.entity";
-import { OrdenServicio } from "../../orden-servicio/entities/orden-servicio.entity";
+import { OrdenServicioTarifa } from "../../orden-servicio/entities/orden-servicio-tarifa.entity";
 
 @Entity({name: 'tarifa'})
 export class Tarifa {
@@ -46,14 +46,51 @@ export class Tarifa {
     @JoinColumn({name: 'idTipoTarifa'})
     idTipoTarifa: TipoTarifa;
 
-    // PRECIO SIN IVA
+    // COSTOS DIRECTOS
     @Column({
         type: 'decimal',
-        name: 'precioSinIva',
+        name: 'costosDirectos',
         precision: 15,
         scale: 2
     })
-    precioSinIva: number;
+    costosDirectos: number;
+    
+    // COSTOS DIRECTOS
+    @Column({
+        type: 'decimal',
+        name: 'seguroVida',
+        precision: 15,
+        scale: 2,
+        nullable: true
+    })
+    seguroVida: number | null;
+    
+    // COSTOS DIRECTOS + SEGURO VIDA
+    @Column({
+        type: 'decimal',
+        name: 'costosDirectosSeguroVida',
+        precision: 15,
+        scale: 2
+    })
+    costosDirectosSeguroVida: number;
+    
+    // AUI
+    @Column({
+        type: 'decimal',
+        name: 'aui',
+        precision: 15,
+        scale: 2
+    })
+    aui: number;
+    
+    // PRECIO ANTES IVA
+    @Column({
+        type: 'decimal',
+        name: 'precioAntesIva',
+        precision: 15,
+        scale: 2
+    })
+    precioAntesIva: number;
 
     // IVA
     @Column({
@@ -83,22 +120,22 @@ export class Tarifa {
 
     // FECHA ASIGNACION
     @CreateDateColumn({
-        type: 'timestamp',
+        type: 'datetime',
         name: 'fechaCreacion'
     }) 
     fechaCreacion: Date; 
     
     // FECHA ACTUALIZACION
     @UpdateDateColumn({
-        type: 'timestamp',
+        type: 'datetime',
         name: 'fechaActualizacion'
     }) 
     fechaActualizacion: Date;
 
     @OneToMany(
-        () => OrdenServicio,
-        (ordenServicio) => ordenServicio.idTarifa
+        () => OrdenServicioTarifa,
+        (ordenServicioTarifa) => ordenServicioTarifa.idTarifa
     )
-    ordenesServicio: OrdenServicio[];
+    ordenesServicio: OrdenServicioTarifa[];
 
 }
