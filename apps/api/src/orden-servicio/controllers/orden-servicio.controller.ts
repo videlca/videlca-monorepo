@@ -18,7 +18,6 @@ import {
   CreateOrdenServicioDto,
   AnularIdOrdenServicioDto, 
 } from '../dto';
-import { CreateOrdenServicioDto, TercerPasoDto, PrecioOrdenDto } from '../dto';
 import { ApiQuery } from '@nestjs/swagger';
 import { LiquidacionesService } from 'src/liquidaciones/liquidaciones.service';
 
