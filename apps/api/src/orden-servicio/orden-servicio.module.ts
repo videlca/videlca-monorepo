@@ -22,6 +22,7 @@ import {
 import { OrdenServicioService, ObservacionesOrdenServicioService } from './services';
 
 import { OrdenServicioController, ObservacionesOrdenServicioController } from './controllers';
+import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
 
 @Module({
   imports: [
@@ -31,7 +32,9 @@ import { OrdenServicioController, ObservacionesOrdenServicioController } from '.
       OrdenServicioId,
       OrdenServicioTarifa,
       ObservacionOrdenServicio,
-      ProgramacionPersonal
+      ProgramacionPersonal,
+      ObservacionOrdenServicio,
+      LiquidacionesModule,
     ]),
     ConfigModule,
     CommonModule,
@@ -41,7 +44,8 @@ import { OrdenServicioController, ObservacionesOrdenServicioController } from '.
     ClientesModule,
     TarifasModule,
     ServiciosModule,
-    PersonalModule
+    PersonalModule,
+    LiquidacionesModule,
 
   ],
   controllers: [
