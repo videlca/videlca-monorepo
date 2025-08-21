@@ -16,6 +16,7 @@ import {
   fmtYMD
 } from 'src/common/utils/date-helpers';
 import { PrecioOrdenDto } from 'src/orden-servicio/dto';
+import { EstadoOrdenServicio } from 'src/common/interfaces/estado-orden-servicio.interface';
 
 @Injectable()
 export class LiquidacionesService {
@@ -110,13 +111,22 @@ export class LiquidacionesService {
     .leftJoinAndSelect('t.idTipoTarifa', 'tt')
     .leftJoinAndSelect('t.idServicio', 's')
     .leftJoinAndSelect('t.idPeriodo', 'p')
+    .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
     .andWhere('t.estado = 1')
     .andWhere('(p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin))')
     .orderBy('ost.idOrdenServicioTarifa', 'ASC')
     .distinct(true)
     .getOne()
 
+
     if (!orden) throw new NotFoundException('Orden de servicio no encontrada');
+
+    if (
+      orden.idEstadoOrdenServicio.nombre === EstadoOrdenServicio.ANULADA ||
+      orden.idEstadoOrdenServicio.nombre === EstadoOrdenServicio.PROGRAMADO
+    ){
+      throw new BadRequestException(`La orden se encuentra en estado: ${orden.idEstadoOrdenServicio.nombre}`);
+    }
 
     if (orden.fechaFin !== null) {
       const total = orden.precioTotal
