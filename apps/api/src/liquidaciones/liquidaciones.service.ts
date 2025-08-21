@@ -103,9 +103,18 @@ export class LiquidacionesService {
     }
 
     const orden = await this.ordenRepo
-      .createQueryBuilder('os')
-      .leftJoinAndSelect('os.tarifas', 't')
-      .where('os.idOrdenServicio = :id', { id: ordenId }).getOne()
+    .createQueryBuilder('os')
+    .where('os.idOrdenServicio = :id', { id: ordenId })
+    .leftJoinAndSelect('os.tarifas', 'ost')
+    .leftJoinAndSelect('ost.idTarifa', 't') 
+    .leftJoinAndSelect('t.idTipoTarifa', 'tt')
+    .leftJoinAndSelect('t.idServicio', 's')
+    .leftJoinAndSelect('t.idPeriodo', 'p')
+    .andWhere('t.estado = 1')
+    .andWhere('(p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin))')
+    .orderBy('ost.idOrdenServicioTarifa', 'ASC')
+    .distinct(true)
+    .getOne()
 
     if (!orden) throw new NotFoundException('Orden de servicio no encontrada');
 
@@ -167,10 +176,9 @@ export class LiquidacionesService {
       //lógica de orden indefinida.
 
       let totalTarifas = 0;
-
       for (let tarifa of orden.tarifas) {
         const precioOrden: PrecioOrdenDto = {
-          idTarifa: tarifa.idOrdenServicioTarifa,
+          idTarifa: tarifa.idTarifa.idTarifa,
           horaInicio: tarifa.horaInicio,
           horaFin: tarifa.horaFin,
           fechaInicio: orden.fechaInicio,
@@ -244,7 +252,7 @@ export class LiquidacionesService {
         anio,
         mes: mes1a12,
         periodoMes: { desde: fmtYMD(mesIni), hasta: fmtYMD(mesFin) },
-        rangoOrden: { desde: fmtYMD(start), hasta: 'Orden indefinida', dias: totalDiasOrden },
+        rangoOrden: { desde: fmtYMD(start), hasta: 'Orden indefinida', dias: 'Orden indefinida' },
         rangoMesEnOrden: { desde: fmtYMD(desde), hasta: fmtYMD(hasta), dias: diasEnEsteMes },
         montoLiquidacion: saved.valor_liquidacion,
         item: saved,
