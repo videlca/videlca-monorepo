@@ -32,6 +32,7 @@ import {
 import { 
   CreateOrdenServicioDto,
   ValidarIdOrdenServicioDto,
+  ValidarFechasOrdenServicioDto,
   ValidarHorarioServicioDto, 
   PrecioOrdenDto,
   ValidarEmpleadosDisponiblesDto,
@@ -377,9 +378,9 @@ export class OrdenServicioService {
 
   }
 
-  async validacionHorarios(validarHorarioServicioDto: ValidarHorarioServicioDto){
+  async validacionFechas(validarFechasOrdenDto: ValidarFechasOrdenServicioDto){
 
-    const { idTarifa, horaInicio, horaFin, fechaInicio, fechaFin } = validarHorarioServicioDto;
+    const { fechaInicio, fechaFin } = validarFechasOrdenDto;
 
     //! VALIDACION FECHAS
 
@@ -398,21 +399,27 @@ export class OrdenServicioService {
     // Validar que las fechas sean lógicamente correcto
     if (fechaFin != null) {
         
-        // FECHA FIN ORDEN SERVICIO
+      // FECHA FIN ORDEN SERVICIO
 
-        const fechaFinSplit = fechaFin.toISOString().split('T')[0];
-    
-        const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
-                
-        fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
+      const fechaFinSplit = fechaFin.toISOString().split('T')[0];
+  
+      const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+              
+      fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
 
-        if (fechaInicioOrden >= fechaFinOrden) {
+      if (fechaInicioOrden >= fechaFinOrden) {
 
-            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
-        
-        }
+          throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+      
+      }
 
     }
+      
+  }
+
+  async validacionHorarios(validarHorarioServicioDto: ValidarHorarioServicioDto){
+
+    const { idTarifa, horaInicio, horaFin } = validarHorarioServicioDto;
 
     //! VALIDACION HORARIOS
 
@@ -529,7 +536,7 @@ export class OrdenServicioService {
   
       return {
         "message": "La orden de servicio es indefinida, el precio se calculara al momento de hacer la liquidacion o al finalizar el servicio",
-        "precio": tarifa.precioTotal
+        "precio": null
       }
         
     }

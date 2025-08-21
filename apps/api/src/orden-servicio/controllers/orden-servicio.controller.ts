@@ -11,6 +11,7 @@ import { OrdenServicioService } from '../services/orden-servicio.service';
 
 import { 
   ValidarIdOrdenServicioDto,
+  ValidarFechasOrdenServicioDto,
   ValidarHorarioServicioDto, 
   PrecioOrdenDto,
   ValidarEmpleadosDisponiblesDto,
@@ -40,6 +41,11 @@ export class OrdenServicioController {
   @Post('validacion-id')
   validarIdOrdenServicio(@Body() validarIdOrdenServicioDto: ValidarIdOrdenServicioDto) {
     return this.ordenServicioService.validarOrdenServicioId(validarIdOrdenServicioDto);
+  }
+  
+  @Post('validacion-fechas')
+  validarFechasOrdenServicio(@Body() validarFechasOrdenServicioDto: ValidarFechasOrdenServicioDto) {
+    return this.ordenServicioService.validacionFechas(validarFechasOrdenServicioDto);
   }
   
   @Post('validacion-horarios')
