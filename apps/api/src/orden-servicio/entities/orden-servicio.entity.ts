@@ -22,7 +22,8 @@ export class OrdenServicio {
         ordenServicioId => ordenServicioId.ordenServicio, 
         {
             nullable: false, // Toda orden debe tener un ID
-            eager: true
+            eager: true,
+            onDelete: 'CASCADE'
         }
     )
     @JoinColumn({ name: 'OrdenServicioId' })
@@ -75,6 +76,20 @@ export class OrdenServicio {
     })
     fechaFin: Date | null;
     
+    @Column({
+        type: 'date',
+        name: 'fechaInicioOrden',
+        nullable: false
+    })
+    fechaInicioOrden: Date;
+
+    @Column({
+        type: 'date',
+        name: 'fechaFinOrden',
+        nullable: true
+    })
+    fechaFinOrden: Date | null;
+    
     // PRECIO TOTAL CON IVA
     @Column({
         type: 'decimal',
@@ -92,6 +107,14 @@ export class OrdenServicio {
         nullable: false
     }) 
     fechaCreacion: Date; 
+    
+    // FECHA CREACION
+    @Column({
+        type: 'date',
+        name: 'fechaActualizacion',
+        nullable: false
+    }) 
+    fechaActualizacion: Date; 
 
     @OneToMany(
         () => ObservacionOrdenServicio,
@@ -105,11 +128,18 @@ export class OrdenServicio {
         (ordenServicioTarifa) => ordenServicioTarifa.idOrdenServicio, 
         {
             cascade: true,
+            eager: true
         }
     )
     tarifas: OrdenServicioTarifa[];
   
-    @OneToMany(() => Liquidacione, (liq) => liq.ordenServicio)
+    @OneToMany(
+        () => Liquidacione, 
+        (liq) => liq.ordenServicio,
+        {
+            cascade: true
+        }
+    )
     liquidaciones: Liquidacione[];
 
 

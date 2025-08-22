@@ -38,7 +38,8 @@ export class OrdenServicioId {
         () => OrdenServicio, 
         orden => orden.ordenServicioId, 
         {
-            nullable: true // Puede no tener orden asociada (cuando se anula)
+            nullable: true, // Puede no tener orden asociada (cuando se anula)
+            onDelete: 'NO ACTION'
         }
     )
     ordenServicio?: OrdenServicio;

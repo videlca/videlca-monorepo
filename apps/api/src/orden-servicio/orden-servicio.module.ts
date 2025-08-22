@@ -19,9 +19,18 @@ import {
   ProgramacionPersonal 
 } from './entities';
 
-import { OrdenServicioService, ObservacionesOrdenServicioService } from './services';
+import { 
+  OrdenServicioService,
+  OrdenServicioIdService, 
+  ObservacionesOrdenServicioService 
+} from './services';
 
-import { OrdenServicioController, ObservacionesOrdenServicioController } from './controllers';
+import { 
+  OrdenServicioController, 
+  OrdenServicioIdController,
+  ObservacionesOrdenServicioController 
+} from './controllers';
+
 import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
 
 @Module({
@@ -50,15 +59,18 @@ import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
   ],
   controllers: [
     OrdenServicioController,
+    OrdenServicioIdController,
     ObservacionesOrdenServicioController
   ],
   providers: [
     OrdenServicioService,
+    OrdenServicioIdService,
     ObservacionesOrdenServicioService
   ],
   exports: [
     TypeOrmModule,
     OrdenServicioService,
+    OrdenServicioIdService,
     ObservacionesOrdenServicioService
   ]
 })

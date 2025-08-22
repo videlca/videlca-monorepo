@@ -18,4 +18,7 @@ export enum EstadoOrdenServicio {
     // TERMINADO
     TERMINADO = "terminado",
 
+    // ANULADA
+    ANULADA = "anulada"
+
 }
