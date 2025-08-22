@@ -1,4 +1,5 @@
 import type { Ciudad, TipoGenero, TipoIdentificacion, TipoPersonal } from "../../types";
+import type { OrdenServicioTarifa } from "./orden-servicio";
 
 export interface Personal {
   idPersonal: number;
@@ -18,6 +19,8 @@ export interface Personal {
   idCiudad: Ciudad;
   idTipoGenero: TipoGenero;
   idTipoPersonal: TipoPersonal;
+  novedades: Novedad[];
+  programaciones: ProgramacionPersonal[];
 }
 
 export interface Novedad {
@@ -37,4 +40,12 @@ export interface TipoNovedad {
   estado: boolean;
   retirado: boolean;
   novedades: Novedad[];
+}
+
+export interface ProgramacionPersonal {
+  idProgramacionPersonal: number;
+  idOrdenServicioTarifa: OrdenServicioTarifa;
+  idPersonal: Personal;
+  horaInicio: string;
+  horaFin: string;
 }

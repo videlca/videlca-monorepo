@@ -1,30 +1,46 @@
+
 export interface CreateOrdenServicioDto {
+  numeroOrdenServicio: string;
   idLocacion: number;
-  idTarifa: number;
-  cantidadPersonal: number;
   fechaInicio: string;
   fechaFin: string | null;
-  horaInicio: string;
-  horaFin: string;
-  horasDescanso: number;
+  precioTotal: number;
   fechaCreacion: string;
+  servicios: CreateOrdenServicioTarifaDto[];
 }
 
-export interface TercerPasoDto {
+export interface CreateOrdenServicioTarifaDto {
   idTarifa: number;
+  idServicio?: number;
+  cantidadPersonal: number;
+  horaInicio: string;
+  horaFin: string;
+  precio: number;
+  personal: CreatePersonalServicioDto[];
+}
+
+export interface CreatePersonalServicioDto {
+  idPersonal: number;
+  horaInicio: string;
+  horaFin: string;
+}
+
+export interface ValidarFechasOrdenServicioDto {
   fechaInicio: string;
   fechaFin: string | null;
-  horaInicio: string | null;
-  horaFin: string | null;
-  horasDescanso: number;
+}
+
+export interface ValidarHorarioServicioDto {
+  idTarifa: number;
+  idServicio: number;
+  horaInicio: string;
+  horaFin: string;
 }
 
 export interface PrecioOrdenDto {
   idTarifa: number;
   horaInicio: string | null;
   horaFin: string | null;
-  horasDescanso: number;
-  cantidadPersonal: number | null;
   fechaInicio: string;
   fechaFin: string | null;
 }
@@ -36,4 +52,16 @@ export interface CreateObservacionOrdenServicioDto {
 
 export interface UpdateObservacionOrdenServicioDto {
   descripcion: string;
+}
+
+export interface ValidarIdOrdenServicioDto {
+  descripcionId: string;
+}
+
+// orden servicio personal
+export interface ValidarEmpleadosDisponiblesDto {
+  fechaInicio: string;
+  fechaFin: string | null;
+  horaInicio: string;
+  horaFin: string;
 }

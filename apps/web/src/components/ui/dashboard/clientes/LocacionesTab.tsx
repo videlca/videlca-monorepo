@@ -17,18 +17,13 @@ import { useState } from "react";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 import {
   useClientesActivo,
-  useCreateLocacion,
   useDeleteLocacion,
   useLocacionById,
   useLocaciones,
   useUpdateLocacion,
 } from "../../../../api/queryFunctions/clientes";
 import { useForm } from "../../../../hooks/useForm";
-import type {
-  CreateCorreoDto,
-  CreateLocacionDto,
-  UpdateLocacionDto,
-} from "../../../../api/dtos";
+import type { CreateCorreoDto, UpdateLocacionDto } from "../../../../api/dtos";
 import {
   useCiudad,
   useEstadoOrden,
@@ -520,7 +515,6 @@ export function LocacionesTab() {
                                 )}
                                 // Manejo de estados asignados al correo
                                 onChange={(e) => {
-                                  console.log(e.target.checked);
                                   setCorreos(
                                     correos.map((c) =>
                                       c.email === correo.email

@@ -1,7 +1,7 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
-import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, TercerPasoDto, UpdateObservacionOrdenServicioDto } from "../../dtos"
-import type { ApiResponse } from "../../types";
-import type { OrdenServicio } from "../../types/orden-servicio";
+import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto } from "../../dtos"
+import type { ApiResponse, Personal } from "../../types";
+import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 
 export const createOrdenServicio = async (data: CreateOrdenServicioDto): Promise<ApiResponse<OrdenServicio>> => {
   return await apiPost<OrdenServicio>("/orden-servicio", data);
@@ -12,8 +12,8 @@ export const getOrdenesServicio = async (pagination: PaginationDto): Promise<Api
 }
 
 // TODO: revisar respuesta
-export const validateHorariosOrdenServicio = async (data: TercerPasoDto): Promise<ApiResponse<any>> => {
-  return await apiPost<any>("/orden-servicio/validacion-horarios", data);
+export const validateFechasOrdenServicio = async (data: ValidarFechasOrdenServicioDto): Promise<ApiResponse<any>> => {
+  return await apiPost<any>("/orden-servicio/validacion-fechas", data);
 }
 
 export const getOrdenServicioById = async (id: number): Promise<ApiResponse<OrdenServicio>> => {
@@ -43,4 +43,18 @@ export const updateObservacionOrdenServicio = async (id: number, data: UpdateObs
 
 export const deleteObservacionOrdenServicio = async (id: number): Promise<ApiResponse<any>> => {
   return await apiDelete<any>(`/observaciones-orden-servicio/${id}`);
+}
+
+// Identificadores orden servicio
+export const validarIdOrdenServicio = async (data: ValidarIdOrdenServicioDto): Promise<ApiResponse<OrdenServicioId>> => {
+  return await apiPost<OrdenServicioId>("/orden-servicio/validacion-id", data);
+}
+// Validar empleados disponibles
+export const validarEmpleadosDisponibles = async (data: ValidarEmpleadosDisponiblesDto): Promise<ApiResponse> => {
+  return await apiPost<Personal[]>("/orden-servicio/empleados-disponibles", data);
+};
+
+// Validacion horarios servicio orden de servicio
+export const validarHorarioServicioOrdenServicio = async (data: ValidarHorarioServicioDto): Promise<ApiResponse<any>> => {
+  return await apiPost<any>("/orden-servicio/validacion-horarios", data);
 }

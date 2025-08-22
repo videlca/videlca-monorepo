@@ -1,8 +1,8 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { createOrdenServicio, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, validateHorariosOrdenServicio } from "../../functions/orden-servicio";
-import type { CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, TercerPasoDto } from "../../dtos";
-import type { OrdenServicio } from "../../types/orden-servicio";
-import type { ApiResponse } from "../../types";
+import { createOrdenServicio, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
+import type { CreateOrdenServicioDto, PrecioOrdenDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto } from "../../dtos";
+import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
+import type { ApiResponse, Personal } from "../../types";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
@@ -51,9 +51,9 @@ export const useGetOrdenServicioById = (id: number): UseMutationResult<ApiRespon
   });
 }
 
-export const useValidateHorariosOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, TercerPasoDto> => {
+export const useValidateFechasOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, ValidarFechasOrdenServicioDto> => {
   return useMutation({
-    mutationFn: validateHorariosOrdenServicio,
+    mutationFn: validateFechasOrdenServicio,
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         toast.success("Horarios validados correctamente");
@@ -85,6 +85,67 @@ export const useGetPrecioOrdenServicio = (): UseMutationResult<ApiResponse<any>,
     },
     onError: (error) => {
       toast.error(error.message || "Error al obtener el precio de la orden de servicio");
+    },
+  });
+}
+
+// Identificadores orden servicio
+export const useValidarIdOrdenServicio = (): UseMutationResult<ApiResponse<OrdenServicioId>, Error, ValidarIdOrdenServicioDto> => {
+  return useMutation({
+    mutationFn: validarIdOrdenServicio,
+    onSuccess: (data) => {
+      console.log(data);
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Identificador de orden de servicio validado correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["identificadores-orden-servicio"],
+        });
+      } else {
+        throw new Error(data.message || "Error al validar el identificador de la orden de servicio");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al validar el identificador de la orden de servicio");
+    },
+  });
+}
+
+// Validar empleados disponibles
+export const useValidarEmpleadosDisponibles = (): UseMutationResult<ApiResponse<Personal[]>, Error, ValidarEmpleadosDisponiblesDto> => {
+  return useMutation({
+    mutationFn: validarEmpleadosDisponibles,
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Empleados disponibles validados correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["empleados-disponibles"],
+        });
+      } else {
+        throw new Error(data.message || "Error al validar los empleados disponibles");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al validar los empleados disponibles");
+    },
+  });
+}
+
+export const useValidarHorarioServicioOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, ValidarHorarioServicioDto> => {
+  return useMutation({
+    mutationKey: ["validar-horario-servicio-orden-servicio"],
+    mutationFn: validarHorarioServicioOrdenServicio,
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Horarios validados correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["validar-horario-servicio-orden-servicio"],
+        });
+      } else {
+        throw new Error(data.message || "Error al validar los horarios");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al validar los horarios");
     },
   });
 }

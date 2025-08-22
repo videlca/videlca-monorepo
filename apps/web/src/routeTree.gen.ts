@@ -43,6 +43,7 @@ import { Route as DashboardServiciosTipoHorarioRouteImport } from './routes/dash
 import { Route as DashboardServiciosConfigurarHorariosRouteImport } from './routes/dashboard/servicios/configurar-horarios'
 import { Route as DashboardPermisosRolesPermisosRouteImport } from './routes/dashboard/permisos/roles-permisos'
 import { Route as DashboardPermisosRolesRouteImport } from './routes/dashboard/permisos/roles'
+import { Route as DashboardOrdenesServicioIdentificadoresOrdenServicioRouteImport } from './routes/dashboard/ordenes-servicio/identificadores-orden-servicio'
 import { Route as DashboardLiquidacionesHistorialRouteImport } from './routes/dashboard/liquidaciones/historial'
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
 import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
@@ -235,6 +236,12 @@ const DashboardPermisosRolesRoute = DashboardPermisosRolesRouteImport.update({
   path: '/roles',
   getParentRoute: () => DashboardPermisosRoute,
 } as any)
+const DashboardOrdenesServicioIdentificadoresOrdenServicioRoute =
+  DashboardOrdenesServicioIdentificadoresOrdenServicioRouteImport.update({
+    id: '/identificadores-orden-servicio',
+    path: '/identificadores-orden-servicio',
+    getParentRoute: () => DashboardOrdenesServicioRoute,
+  } as any)
 const DashboardLiquidacionesHistorialRoute =
   DashboardLiquidacionesHistorialRouteImport.update({
     id: '/historial',
@@ -335,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
+  '/dashboard/ordenes-servicio/identificadores-orden-servicio': typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
   '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
@@ -373,6 +381,7 @@ export interface FileRoutesByTo {
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
+  '/dashboard/ordenes-servicio/identificadores-orden-servicio': typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
   '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
@@ -422,6 +431,7 @@ export interface FileRoutesById {
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
+  '/dashboard/ordenes-servicio/identificadores-orden-servicio': typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
   '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
@@ -472,6 +482,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/liquidaciones/historial'
+    | '/dashboard/ordenes-servicio/identificadores-orden-servicio'
     | '/dashboard/permisos/roles'
     | '/dashboard/permisos/roles-permisos'
     | '/dashboard/servicios/configurar-horarios'
@@ -510,6 +521,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/liquidaciones/historial'
+    | '/dashboard/ordenes-servicio/identificadores-orden-servicio'
     | '/dashboard/permisos/roles'
     | '/dashboard/permisos/roles-permisos'
     | '/dashboard/servicios/configurar-horarios'
@@ -558,6 +570,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/liquidaciones/historial'
+    | '/dashboard/ordenes-servicio/identificadores-orden-servicio'
     | '/dashboard/permisos/roles'
     | '/dashboard/permisos/roles-permisos'
     | '/dashboard/servicios/configurar-horarios'
@@ -828,6 +841,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPermisosRolesRouteImport
       parentRoute: typeof DashboardPermisosRoute
     }
+    '/dashboard/ordenes-servicio/identificadores-orden-servicio': {
+      id: '/dashboard/ordenes-servicio/identificadores-orden-servicio'
+      path: '/identificadores-orden-servicio'
+      fullPath: '/dashboard/ordenes-servicio/identificadores-orden-servicio'
+      preLoaderRoute: typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRouteImport
+      parentRoute: typeof DashboardOrdenesServicioRoute
+    }
     '/dashboard/liquidaciones/historial': {
       id: '/dashboard/liquidaciones/historial'
       path: '/historial'
@@ -977,11 +997,14 @@ const DashboardLiquidacionesRouteWithChildren =
   )
 
 interface DashboardOrdenesServicioRouteChildren {
+  DashboardOrdenesServicioIdentificadoresOrdenServicioRoute: typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
   DashboardOrdenesServicioIndexRoute: typeof DashboardOrdenesServicioIndexRoute
 }
 
 const DashboardOrdenesServicioRouteChildren: DashboardOrdenesServicioRouteChildren =
   {
+    DashboardOrdenesServicioIdentificadoresOrdenServicioRoute:
+      DashboardOrdenesServicioIdentificadoresOrdenServicioRoute,
     DashboardOrdenesServicioIndexRoute: DashboardOrdenesServicioIndexRoute,
   }
 

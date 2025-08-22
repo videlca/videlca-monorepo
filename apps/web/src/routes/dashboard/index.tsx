@@ -145,7 +145,6 @@ function RouteComponent() {
 
   const exportReport = () => {
     // Simular exportación
-    console.log("Exportando reporte...");
   };
 
   return (

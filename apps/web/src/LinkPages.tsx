@@ -12,6 +12,7 @@ import {
   IdCardIcon,
   LucideCalendarClock,
   LucideCircleUserRound,
+  LucideSlidersVertical,
   MapPinIcon,
   ShieldCheckIcon,
   UserIcon,
@@ -179,6 +180,12 @@ export const linksSideBar: LinksSideBar = {
       label: "Ordenes de Servicio",
       description: "ordenes-de-servicio",
       icon: <FileArchive className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/ordenes-servicio/identificadores-orden-servicio",
+      label: "Identificadores de Orden de Servicio",
+      description: "identificadores",
+      icon: <LucideSlidersVertical className="h-6 w-6" />,
     },
   ],
   servicios: [
