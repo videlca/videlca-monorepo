@@ -17,3 +17,6 @@ export { UpdateValidarFechaOrdenServicioDto } from "./steps/update-validar-fecha
 // OBSERVACIONES ORDEN
 export { CreateObservacionOrdenServicioDto } from "./observacion-orden-servicio/create-observacion-orden-servicio.dto";
 export { UpdateObservacionOrdenServicioDto } from "./observacion-orden-servicio/update-observacion-orden-servicio.dto";
+
+// ORDEN SERVICIO ID
+export { UpdateOrdenServicioIdDto } from "./orden-servicio/update-id-orden-servicio.dto";

@@ -22,7 +22,8 @@ export class OrdenServicio {
         ordenServicioId => ordenServicioId.ordenServicio, 
         {
             nullable: false, // Toda orden debe tener un ID
-            eager: true
+            eager: true,
+            onDelete: 'CASCADE'
         }
     )
     @JoinColumn({ name: 'OrdenServicioId' })
