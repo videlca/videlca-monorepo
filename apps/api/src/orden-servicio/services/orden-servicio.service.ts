@@ -31,6 +31,7 @@ import {
 
 import { 
   CreateOrdenServicioDto,
+  UpdateOrdenServicioDto,
 
   // VALIDACIONES CREACION
   ValidarIdOrdenServicioDto,
@@ -323,7 +324,7 @@ export class OrdenServicioService {
       </div>
       `;
       
-      const subject = `CORREO INFORMATIVO VIDELCA - GEVID 👮‍♂️`;
+      const subject = `CORREO INFORMATIVO VIDELCA - ACTUALIZACION ORDEN DE SERVICIO - GEVID 👮‍♂️`;
   
       // Enviamos correo para notificar al usuario
       const isEmailSend = await this.sendEmail(email, html, subject);
@@ -965,6 +966,239 @@ export class OrdenServicioService {
       }
 
     } 
+
+  }
+
+  async updateOrdenServicio(id: number, updateOrdenServicioDto: UpdateOrdenServicioDto){
+
+    const { fechaInicio, fechaFin, fechaActualizacion, servicios } = updateOrdenServicioDto;
+
+    // Usar QueryRunner para transacción manual
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    // FECHA INICIO ORDEN SERVICIO
+                
+    const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
+
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
+    
+    const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
+
+    // FECHA FIN ORDEN SERVICIO
+
+    let fechaFinOrden = fechaFin != null ? new Date(fechaFin) : null;
+
+    // Validar que las fechas sean lógicamente correcto
+    if (fechaFin != null) {
+        
+        // FECHA FIN ORDEN SERVICIO
+
+        const fechaFinSplit = fechaFin.toISOString().split('T')[0];
+    
+        const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+                
+        fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
+
+        if (fechaInicioOrden >= fechaFinOrden) {
+
+            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        
+        }
+
+        if (updateOrdenServicioDto.precioTotal == null || updateOrdenServicioDto.precioTotal == 0){
+
+            throw new BadRequestException('se debe enviar el precio total al ser una orden definida');          
+
+        }
+
+    }
+
+    // FECHA ACTUALIZACION ORDEN SERVICIO
+                
+    const fechaActualizacionSplit = fechaActualizacion.toISOString().split('T')[0];
+
+    const [añoActualizacion, mesActualizacion, diaActualizacion] = fechaActualizacionSplit.split('-').map(Number);
+    
+    const fechaActualizacionOrden = new Date(añoActualizacion, mesActualizacion - 1, diaActualizacion);
+
+    // OBTENER ID ESTADO ORDEN SERVICIO
+    //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
+    let estadoOrdenServicio: EstadoOrdenEntity;
+
+    if (fechaFin != null && fechaFinOrden < fechaActualizacionOrden) {
+     // Caso 1: Ya terminó (fecha fin es anterior a fecha actualizacion)
+      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.TERMINADO);
+    
+    }
+
+    else if (fechaInicioOrden > fechaActualizacionOrden) {
+      // Caso 2: Está programado para el futuro
+      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.PROGRAMADO);
+
+    }
+
+    else {
+      // Caso 3: Ya inició o debe iniciar (fechaInicio <= fechaActualizacion)
+      // Esto incluye cuando fechaInicio == fechaActualizacion
+      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.INICIADO);
+
+    }
+
+    try {
+
+      const ordenServicio = await this.findOne(id);
+      
+      // actualizar campos
+      ordenServicio.fechaInicio = fechaInicioOrden;
+      ordenServicio.fechaFin = fechaFinOrden;
+      ordenServicio.fechaActualizacion = fechaActualizacionOrden;
+      ordenServicio.precioTotal = updateOrdenServicioDto.precioTotal;
+      ordenServicio.idEstadoOrdenServicio = estadoOrdenServicio;
+
+      const savedOrdenServicio = await queryRunner.manager.save(OrdenServicio, ordenServicio);
+
+      const nombreServicios = []
+
+      if (servicios.length != ordenServicio.tarifas.length){
+
+        throw new BadRequestException(`No se puede actualizar la cantidad de servicios existentes para esta orden`);          
+
+      }
+
+      // eliminar tarifas asociadas a la orden
+      await queryRunner.manager.delete(OrdenServicioTarifa, { idOrdenServicio: {id} });
+
+      for (const servicio of servicios) {
+              
+        // OBTENER TARIFA
+        const tarifa = await this.tarifasService.findOne(servicio.idTarifa);
+
+        nombreServicios.push(tarifa.idServicio.descripcion);
+        
+        // Validar si se debe enviar el precio del servicio
+        if (fechaFinOrden != null) {
+  
+          if (servicio.precio == null || servicio.precio == 0){
+  
+            throw new BadRequestException(`se debe enviar el precio del servicio ${tarifa.idServicio.descripcion} al ser una orden definida`);          
+  
+          }
+
+        }
+
+        // Validar si el servicio requiere personal
+        if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.personal.length <= 0){
+          
+          throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
+
+        }
+
+        // Crear el servicio para la orden
+        const servicioOrden = queryRunner.manager.create(OrdenServicioTarifa, {
+            idOrdenServicio: savedOrdenServicio,
+            idTarifa: tarifa,
+            cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
+            horaInicio: servicio.horaInicio,
+            horaFin: servicio.horaFin,
+            precio: servicio.precio ? servicio.precio : 0
+        });
+
+        const savedServicio = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
+
+        // agregar el personal si es necesario
+        const personalServicio = servicio.personal;
+
+        for (const personalAsignado of personalServicio){
+
+          // OBTENER PERSONAL
+          const personal = await this.personalService.findOne(personalAsignado.idPersonal);
+
+          // asignar personal para el servicio
+          const asignarPersonal = queryRunner.manager.create(ProgramacionPersonal, {
+              idOrdenServicioTarifa: savedServicio,
+              idPersonal: personal,
+              horaInicio: personalAsignado.horaInicio,
+              horaFin: personalAsignado.horaFin
+          });
+
+          const savedPersonal = await queryRunner.manager.save(ProgramacionPersonal, asignarPersonal);
+
+        }        
+
+      }
+
+      // envio de correos que se tengan registrados en la locacion
+      const nombreResponsable = `${ordenServicio.idLocacion.primerNombreResponsable} ${ordenServicio.idLocacion.primerApellidoResponsable}`;
+
+      const emails = await this.locacionService.getEmailsByLocacionAndEstado(
+        ordenServicio.idLocacion.idLocacion, 
+        estadoOrdenServicio.idEstadoOrdenServicio
+      )
+
+      await this.notificationUpdateEmail(
+        nombreResponsable, 
+        ordenServicio.idLocacion.nombre, 
+        nombreServicios,
+        fechaInicioOrden.toISOString().split('T')[0],
+        fechaFinOrden != null ? fechaFinOrden.toISOString().split('T')[0] : " ",
+        estadoOrdenServicio.descripcion, 
+        emails
+      );
+      
+      await queryRunner.commitTransaction();
+      
+      return savedOrdenServicio;
+      
+    } catch (error) {
+
+      await queryRunner.rollbackTransaction();
+
+      throw error;
+      
+    } finally {
+
+      await queryRunner.release();
+
+    }
+
+  }
+
+  // ENVIAR CORREO PARA INFORMAR ACTUALIZACION DE ORDEN DE SERVICIO
+  private async notificationUpdateEmail(
+    nombreCompleto: string, 
+    locacion: string, 
+    servicios: string[], 
+    fechaInicio: string,
+    fechaFin: string,
+    estadoOrden: string,
+    email: string[]
+  ) {        
+  
+    const html = `
+    <div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 600px; margin: 20px auto; text-align: center; font-family: 'Poppins', sans-serif;">
+        <h2 style="margin-bottom: 20px; color: #333; font-weight: 700;">CORREO INFORMATIVO VIDELCA - GEVID 👮‍♂️</h2>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Buen día ${nombreCompleto}, se ha actualizado una orden de servicio para la locacion ${locacion}</p>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">los servicios para esta orden de servicio son: ${servicios.join(', ')}</p>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Fecha de inicio de la orden: ${fechaInicio}</p>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Fecha de fin de la orden: ${fechaFin}</p>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Estado de la orden: ${estadoOrden}</p>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no brindo su correo para el sistema de notificaciones, omiste este mensaje.</p>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+    </div>
+    `;
+    
+    const subject = `CORREO INFORMATIVO VIDELCA - ACTUALIZACION ORDEN DE SERVICIO - GEVID 👮‍♂️`;
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.sendEmail(email, html, subject);
+
+    if (!isEmailSend){
+        throw new BadGatewayException(`Error al enviar correo de notificacion al email ${email}, revisar correo`);
+    }
 
   }
 

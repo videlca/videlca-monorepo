@@ -18,6 +18,7 @@ import {
   PrecioOrdenDto,
   UpdateValidarFechaOrdenServicioDto,
   CreateOrdenServicioDto,
+  UpdateOrdenServicioDto,
   AnularIdOrdenServicioDto, 
 } from '../dto';
 
@@ -89,6 +90,11 @@ export class OrdenServicioController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordenServicioService.findOne(id);
+  }
+  
+  @Patch(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateOrdenServicioDto: UpdateOrdenServicioDto) {
+    return this.ordenServicioService.updateOrdenServicio(id, updateOrdenServicioDto);
   }
   
   @Delete(':id')

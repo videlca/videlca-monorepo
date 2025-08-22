@@ -1,5 +1,6 @@
 // ORDEN SERVICIO
 export { CreateOrdenServicioDto } from "./orden-servicio/create-orden-servicio.dto";
+export { UpdateOrdenServicioDto } from "./orden-servicio/update-orden-servicio.dto";
 export { CreatePersonalServicioDto } from "./orden-servicio/create-orden-servicio.dto";
 export { AnularIdOrdenServicioDto } from "./orden-servicio/anular-id-orden-servicio.dto";
 

@@ -128,6 +128,7 @@ export class OrdenServicio {
         (ordenServicioTarifa) => ordenServicioTarifa.idOrdenServicio, 
         {
             cascade: true,
+            eager: true
         }
     )
     tarifas: OrdenServicioTarifa[];
