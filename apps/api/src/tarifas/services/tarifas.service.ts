@@ -219,7 +219,7 @@ export class TarifasService {
         idPeriodo: true
       }
     });
-        
+    
     if(!tarifa) throw new NotFoundException(`Tarifa con id "${id}" no se ha encontrado`);
 
     return tarifa;
