@@ -11,6 +11,9 @@ export { PrecioOrdenDto } from "./steps/precio-orden.dto";
 export { ValidarEmpleadosDisponiblesDto } from "./steps/validar-empleados-disponible.dto";
 export { ValidarRangoHorarioPersonalOrdenDto } from "./steps/validar-rango-horario-empleado-orden.dto";
 
+// VALIDACIONES POR CADA PASO DE LA ACTUALIZACION
+export { UpdateValidarFechaOrdenServicioDto } from "./steps/update-validar-fecha-orden-servicio.dto";
+
 // OBSERVACIONES ORDEN
 export { CreateObservacionOrdenServicioDto } from "./observacion-orden-servicio/create-observacion-orden-servicio.dto";
 export { UpdateObservacionOrdenServicioDto } from "./observacion-orden-servicio/update-observacion-orden-servicio.dto";

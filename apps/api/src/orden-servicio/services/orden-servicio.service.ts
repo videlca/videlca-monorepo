@@ -31,12 +31,19 @@ import {
 
 import { 
   CreateOrdenServicioDto,
+
+  // VALIDACIONES CREACION
   ValidarIdOrdenServicioDto,
   ValidarFechasOrdenServicioDto,
   ValidarHorarioServicioDto, 
   PrecioOrdenDto,
   ValidarEmpleadosDisponiblesDto,
   ValidarRangoHorarioPersonalOrdenDto,
+
+  // VALIDACIONES ACTUALIZACION
+  UpdateValidarFechaOrdenServicioDto,
+
+  // ANULAR ORDEN
   AnularIdOrdenServicioDto 
 } from '../dto';
 
@@ -180,9 +187,12 @@ export class OrdenServicioService {
         idEstadoOrdenServicio: estadoOrdenServicio,
         idLocacion: locacion,
         fechaInicio: fechaInicioOrden,
+        fechaInicioOrden: fechaInicioOrden,
         fechaFin: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
+        fechaFinOrden: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
         precioTotal: createOrdenServicioDto.precioTotal,
         fechaCreacion: fechaCreacionOrden,
+        fechaActualizacion: fechaCreacionOrden
       });
 
       const savedOrdenServicio = await queryRunner.manager.save(OrdenServicio, ordenServicio);
@@ -843,13 +853,143 @@ export class OrdenServicioService {
     return await disponiblesQB.getMany();
   }
 
-  // update(id: number, updateOrdenServicioDto: UpdateOrdenServicioDto) {
-  //   return `This action updates a #${id} ordenServicio`;
-  // }
+  async updateValidarFechasOrdenServicio(id: number, updateValidarFechaOrdenServicioDto: UpdateValidarFechaOrdenServicioDto) {
+    
+    const { fechaInicio, fechaFin, fechaActualizacion } = updateValidarFechaOrdenServicioDto;
+    
+    // validar orden logico de las fechas
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} ordenServicio`;
-  // }
+    // FECHA INICIO ORDEN SERVICIO
+                
+    const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
+
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
+    
+    const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
+
+    // FECHA FIN ORDEN SERVICIO
+
+    let fechaFinOrden = fechaFin != null ? new Date(fechaFin) : null;
+
+    // Validar que las fechas sean lógicamente correcto
+    if (fechaFin != null) {
+        
+        // FECHA FIN ORDEN SERVICIO
+
+        const fechaFinSplit = fechaFin.toISOString().split('T')[0];
+    
+        const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+                
+        fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
+
+        if (fechaInicioOrden >= fechaFinOrden) {
+
+            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        
+        }
+
+    }
+    
+    // Obtener orden de servicio
+    const ordenServicio = await this.findOne(id);
+
+    const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.descripcion;
+
+    // validar si es diferente a la que se coloco
+    // si es diferente validar que el estado de la orden sea programado o por iniciar
+    if(fechaInicioOrden != ordenServicio.fechaInicio){
+    
+      if(descripcionEstadoOrdenServicio != EstadoOrdenServicio.PROGRAMADO && descripcionEstadoOrdenServicio != EstadoOrdenServicio.POR_INICIAR){
+
+          throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden aun no ha iniciado');
+
+      }
+
+    }
+    
+    // validar fecha fin de la orden y si es diferente a la que se coloco
+    // si es diferente validar - que el estado de la orden sea PROGRAMADO , POR INICIAR , INICIADO , POR TERMINAR 
+
+    if(fechaFinOrden != null && fechaFinOrden != ordenServicio.fechaFin){
+
+      if(
+        descripcionEstadoOrdenServicio != EstadoOrdenServicio.PROGRAMADO && 
+        descripcionEstadoOrdenServicio != EstadoOrdenServicio.POR_INICIAR &&
+        descripcionEstadoOrdenServicio != EstadoOrdenServicio.INICIADO &&
+        descripcionEstadoOrdenServicio != EstadoOrdenServicio.POR_TERMINAR
+      ){
+
+        throw new BadRequestException('La fecha de fin solo se puede modificar si la orden aun no ha sido cancelada, terminada o anulada');
+
+      }
+
+    }
+
+    // VALIDAR ESTADO DE LA ORDEN, TENER EN CUENTA SI LAS FECHAS SON IGUALES QUEDA COMO ESTA, SI CAMBIARON ENTONCES VALIDAR EN QUE ESTADO QUEDA
+    
+    // FECHA ACTUALIZACION ORDEN SERVICIO
+                
+    const fechaActualizacionSplit = fechaActualizacion.toISOString().split('T')[0];
+
+    const [añoActualizacion, mesActualizacion, diaActualizacion] = fechaActualizacionSplit.split('-').map(Number);
+    
+    const fechaActualizacionOrden = new Date(añoActualizacion, mesActualizacion - 1, diaActualizacion);
+
+    // OBTENER ID ESTADO ORDEN SERVICIO
+    //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
+
+    if (fechaFinOrden != null && fechaFinOrden < fechaActualizacionOrden) {
+      // Caso 1: Ya terminó (fecha fin es anterior a fecha actualizacion)
+
+      return {
+        message: `Estado Orden servicio luego de la actualizacion ${EstadoOrdenServicio.TERMINADO}`
+      }
+    
+    }
+
+    else if (fechaInicioOrden > fechaActualizacionOrden) {
+      // Caso 2: Está programado para el futuro
+      
+      return {
+        message: `Estado Orden servicio luego de la actualizacion ${EstadoOrdenServicio.PROGRAMADO}`
+      }
+
+    }
+
+    else {
+      // Caso 3: Ya inició o debe iniciar (fechaInicio <= fechaActualizacionOrden)
+      // Esto incluye cuando fechaInicio == fechaActualizacionOrden
+
+      return {
+        message: `Estado Orden servicio luego de la actualizacion ${EstadoOrdenServicio.INICIADO}`
+      }
+
+    } 
+
+  }
+
+  // ELIMINAR ORDEN DE LA BD
+  async removeOrdenServicio(id: number) {
+    
+    const ordenServicio = await this.findOne(id);
+    
+    try {
+
+      await this.ordenServicioRepository.remove(ordenServicio);
+      
+    } catch (error) {
+      
+      this.logger.error(error);
+
+      if(error.errno == 1451){
+        throw new BadRequestException(`La orden de servicio ${ordenServicio.ordenServicioId.descripcionId} no se puede eliminar debido a que se esta usando en el sistema`); 
+      }
+        
+      throw new InternalServerErrorException(`Unexpected error, check server logs`);
+
+    }
+
+  }
 
   async anularId(anularIdDto: AnularIdOrdenServicioDto){
 

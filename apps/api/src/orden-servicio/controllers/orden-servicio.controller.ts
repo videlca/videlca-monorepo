@@ -16,6 +16,7 @@ import {
   ValidarEmpleadosDisponiblesDto,
   ValidarRangoHorarioPersonalOrdenDto, 
   PrecioOrdenDto,
+  UpdateValidarFechaOrdenServicioDto,
   CreateOrdenServicioDto,
   AnularIdOrdenServicioDto, 
 } from '../dto';
@@ -75,6 +76,11 @@ export class OrdenServicioController {
     return this.ordenServicioService.validarAsignaciones(validarRangoHorarioEmpleado);
   }
   
+  @Post('update-validacion-fechas/:id')
+  updateValidarFechasOrdenServicio(@Param('id', ParseIntPipe) id: number, @Body() updateValidarFechaOrdenServicioDto: UpdateValidarFechaOrdenServicioDto){
+    return this.ordenServicioService.updateValidarFechasOrdenServicio(id, updateValidarFechaOrdenServicioDto);
+  }
+  
   @Post('anular-id')
   anularIdOrden(@Body() anularIdDto: AnularIdOrdenServicioDto){
     return this.ordenServicioService.anularId(anularIdDto);
@@ -83,6 +89,11 @@ export class OrdenServicioController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordenServicioService.findOne(id);
+  }
+  
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.ordenServicioService.removeOrdenServicio(id);
   }
 
    @Get(':ordenId/liquidaciones')

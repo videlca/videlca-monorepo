@@ -75,6 +75,20 @@ export class OrdenServicio {
     })
     fechaFin: Date | null;
     
+    @Column({
+        type: 'date',
+        name: 'fechaInicioOrden',
+        nullable: false
+    })
+    fechaInicioOrden: Date;
+
+    @Column({
+        type: 'date',
+        name: 'fechaFinOrden',
+        nullable: true
+    })
+    fechaFinOrden: Date | null;
+    
     // PRECIO TOTAL CON IVA
     @Column({
         type: 'decimal',
@@ -92,6 +106,14 @@ export class OrdenServicio {
         nullable: false
     }) 
     fechaCreacion: Date; 
+    
+    // FECHA CREACION
+    @Column({
+        type: 'date',
+        name: 'fechaActualizacion',
+        nullable: false
+    }) 
+    fechaActualizacion: Date; 
 
     @OneToMany(
         () => ObservacionOrdenServicio,
@@ -109,7 +131,13 @@ export class OrdenServicio {
     )
     tarifas: OrdenServicioTarifa[];
   
-    @OneToMany(() => Liquidacione, (liq) => liq.ordenServicio)
+    @OneToMany(
+        () => Liquidacione, 
+        (liq) => liq.ordenServicio,
+        {
+            cascade: true
+        }
+    )
     liquidaciones: Liquidacione[];
 
 
