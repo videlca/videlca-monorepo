@@ -8,8 +8,14 @@ export class ValidarHorarioServicioDto {
     @IsNumber({}, {message: 'El valor del campo tarifa debe ser un número'})
     @IsPositive({message: 'El valor del campo tarifa debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo tarifa debe ser minimo 1'})
-    idTarifa: number;
+    idTarifa?: number;
     
+    @ApiProperty({ description: 'Id de servicio', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo servicio debe ser un número'})
+    @IsPositive({message: 'El valor del campo servicio debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo servicio debe ser minimo 1'})
+    idServicio?: number;
+
     @ApiProperty({ description: 'Hora de inicio por dia del servicio', example: '06:00:00', required:true})
     @IsString({ message: 'El campo Hora de inicio debe ser un string'})
     @IsNotEmpty({ message: 'El campo Hora de inicio no puede estar vacío'})

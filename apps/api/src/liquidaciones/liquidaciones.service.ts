@@ -102,7 +102,7 @@ export class LiquidacionesService {
     const orden = await this.ordenRepo.findOne({ where: { idOrdenServicio: ordenId } });
     if (!orden) throw new NotFoundException('Orden de servicio no encontrada');
 
-    const total = orden.precio
+    const total = orden.precioTotal
     if (!isFinite(total) || total <= 0) {
 
       throw new BadRequestException('La orden no tiene un valor total válido');

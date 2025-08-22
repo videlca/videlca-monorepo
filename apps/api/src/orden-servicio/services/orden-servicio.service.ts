@@ -12,7 +12,7 @@ import { SendMailOptions } from '../../common/services/email/email.service';
 import { EstadoOrdenServicioService, EmailService } from '../../common/services';
 import { LocacionService } from '../../clientes/services';
 import { TarifasService } from '../../tarifas/services';
-import { TipoHorarioService } from '../../servicios/services';
+import { ServiciosService, TipoHorarioService } from '../../servicios/services';
 import { PersonalService } from '../../personal/services';
 
 import { EstadoOrdenServicio } from '../../common/interfaces/estado-orden-servicio.interface';
@@ -63,6 +63,7 @@ export class OrdenServicioService {
       private readonly locacionService: LocacionService,
       private readonly tarifasService: TarifasService,
       private readonly tipoHorarioService: TipoHorarioService,
+      private readonly servicioService: ServiciosService,
       private readonly emailService: EmailService, // Servicio de email para envio de correos
       private readonly dataSource: DataSource,
       private readonly configService: ConfigService,
@@ -419,16 +420,23 @@ export class OrdenServicioService {
 
   async validacionHorarios(validarHorarioServicioDto: ValidarHorarioServicioDto){
 
-    const { idTarifa, horaInicio, horaFin } = validarHorarioServicioDto;
+    const { idTarifa, idServicio, horaInicio, horaFin } = validarHorarioServicioDto;
+
+    console.log(idServicio);
 
     //! VALIDACION HORARIOS
 
     // Validar que la tarifa exista
-    const tarifa = await this.tarifasService.findOne(idTarifa);
+    // const tarifa = await this.tarifasService.findOne(idTarifa);
 
-    const servicio = tarifa.idServicio;
+    const servicio = await this.servicioService.findOne(idServicio);
+    
 
-    const tipohorarioDescripcion = servicio.idTipoHorarioDescripcion;
+    console.log(servicio.codigo);
+
+    const tipohorarioDescripcion = servicio?.idTipoHorarioDescripcion;
+
+    console.log(tipohorarioDescripcion.nombre);
 
     if (tipohorarioDescripcion.nombre === TipoHorarioInterface.DIA_COMPLETO) {
 
