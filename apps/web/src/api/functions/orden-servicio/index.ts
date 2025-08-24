@@ -1,5 +1,5 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
-import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto } from "../../dtos"
+import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
 import type { ApiResponse, Personal } from "../../types";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 
@@ -57,4 +57,8 @@ export const validarEmpleadosDisponibles = async (data: ValidarEmpleadosDisponib
 // Validacion horarios servicio orden de servicio
 export const validarHorarioServicioOrdenServicio = async (data: ValidarHorarioServicioDto): Promise<ApiResponse<any>> => {
   return await apiPost<any>("/orden-servicio/validacion-horarios", data);
+}
+
+export const validarRangoHorarioPersonalOrdenServicio = async (data: ValidarRangoHorarioPersonalOrdenDto): Promise<ApiResponse<any>> => {
+  return await apiPost<any>("/orden-servicio/validar-rango-horarios-orden", data);
 }

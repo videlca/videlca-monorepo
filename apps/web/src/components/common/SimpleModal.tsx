@@ -7,6 +7,7 @@ interface SimpleModalProps {
   children: ReactNode;
   title?: string;
   size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
+  clickOutsideClose?: boolean;
 }
 
 export const SimpleModal: React.FC<SimpleModalProps> = ({
@@ -15,6 +16,7 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
   children,
   title,
   size = "md",
+  clickOutsideClose = true,
 }) => {
   const sizeClasses = {
     sm: "max-w-sm",
@@ -34,7 +36,7 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
     >
       <div
         className="absolute inset-0 min-h-screen bg-black/40 transition-opacity"
-        onClick={onClose}
+        onClick={clickOutsideClose ? onClose : undefined}
       />
       <div
         className={`relative mx-4 w-full rounded-lg bg-white shadow-xl ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}

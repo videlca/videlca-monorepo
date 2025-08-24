@@ -1,6 +1,6 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { createOrdenServicio, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
-import type { CreateOrdenServicioDto, PrecioOrdenDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto } from "../../dtos";
+import { createOrdenServicio, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
+import type { CreateOrdenServicioDto, PrecioOrdenDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 import type { ApiResponse, Personal } from "../../types";
 import { toast } from "sonner";
@@ -113,12 +113,13 @@ export const useValidarIdOrdenServicio = (): UseMutationResult<ApiResponse<Orden
 // Validar empleados disponibles
 export const useValidarEmpleadosDisponibles = (): UseMutationResult<ApiResponse<Personal[]>, Error, ValidarEmpleadosDisponiblesDto> => {
   return useMutation({
+    mutationKey: ["validar-empleados-disponibles"],
     mutationFn: validarEmpleadosDisponibles,
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         toast.success("Empleados disponibles validados correctamente");
         queryClient.invalidateQueries({
-          queryKey: ["empleados-disponibles"],
+          queryKey: ["validar-empleados-disponibles"],
         });
       } else {
         throw new Error(data.message || "Error al validar los empleados disponibles");
@@ -146,6 +147,26 @@ export const useValidarHorarioServicioOrdenServicio = (): UseMutationResult<ApiR
     },
     onError: (error) => {
       toast.error(error.message || "Error al validar los horarios");
+    },
+  });
+}
+
+export const useValidarRangoHorarioPersonalOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, ValidarRangoHorarioPersonalOrdenDto> => {
+  return useMutation({
+    mutationKey: ["validar-rango-horario-personal-orden-servicio"],
+    mutationFn: validarRangoHorarioPersonalOrdenServicio,
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Rango horario personal validado correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["validar-rango-horario-personal-orden-servicio"],
+        });
+      } else {
+        throw new Error(data.message || "Error al validar el rango horario personal");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al validar el rango horario personal");
     },
   });
 }

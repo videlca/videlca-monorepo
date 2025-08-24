@@ -65,3 +65,9 @@ export interface ValidarEmpleadosDisponiblesDto {
   horaInicio: string;
   horaFin: string;
 }
+
+export interface ValidarRangoHorarioPersonalOrdenDto {
+  horaInicio: string;
+  horaFin: string;
+  personal: CreatePersonalServicioDto[];
+}

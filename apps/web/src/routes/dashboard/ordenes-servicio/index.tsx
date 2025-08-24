@@ -39,6 +39,7 @@ import {
   useValidarEmpleadosDisponibles,
   useValidarHorarioServicioOrdenServicio,
   useValidarIdOrdenServicio,
+  useValidarRangoHorarioPersonalOrdenServicio,
   useValidateFechasOrdenServicio,
 } from "../../../api/queryFunctions/orden-servicio";
 import type {
@@ -115,7 +116,7 @@ function RouteComponent() {
     isPending: isValidateFechasOrdenServicioPending,
   } = useValidateFechasOrdenServicio();
   const {
-    mutate: getPrecioOrdenServicio,
+    mutateAsync: getPrecioOrdenServicio,
     isPending: isGetPrecioOrdenPending,
     data: getPrecioOrdenServicioData,
   } = useGetPrecioOrdenServicio();
@@ -126,9 +127,16 @@ function RouteComponent() {
     isPending: isValidarIdOrdenServicioPending,
   } = useValidarIdOrdenServicio();
   const {
-    mutate: validarEmpleadosDisponibles,
+    mutateAsync: validarEmpleadosDisponibles,
     data: validarEmpleadosDisponiblesData,
+    isPending: isValidarEmpleadosDisponiblesPending,
   } = useValidarEmpleadosDisponibles();
+
+  const {
+    mutateAsync: validarRangoHorarioPersonalOrdenServicio,
+    isPending: isValidarRangoHorarioPersonalOrdenServicioPending,
+    data: validarRangoHorarioPersonalOrdenServicioData,
+  } = useValidarRangoHorarioPersonalOrdenServicio();
 
   const {
     data: validarHorarioServicioOrdenServicioData,
@@ -275,64 +283,65 @@ function RouteComponent() {
       } catch (error) {
         console.log(error);
       }
-      //   configuracionServicioTarifa.forEach((servicio) => {
-      //     validarHorarioServicioOrdenServicio(
-      //     {
-      //       idTarifa: servicio.idTarifa,
-      //       idServicio:
-      //         selectedServices.find((s) => s.idServicio === servicio.idTarifa)
-      //           ?.idServicio || 0,
-      //       horaInicio: timeFormat(servicio.horaInicio),
-      //       horaFin: timeFormat(servicio.horaFin),
-      //     },
-      //     {
-      //       onSuccess: (data) => {
-      //         if (data.status === 200) {
-      //           success = true;
-      //         } else {
-      //           success = false;
-      //         }
-      //       },
-      //     },
-      //   );
-      //   if (success) {
-      //     setCurrentStep(6);
-      //   }
-      //   console.log(validarHorarioServicioOrdenServicioData);
-      // });
-      // return;
       return;
     }
 
-    // if (currentStep === 6) {
-    // getPrecioOrdenServicio(
-    //   {
-    //     idTarifa: selectedTarifa?.idTarifa || 0,
-    //     fechaInicio: formOrdenServicio.fechaInicio,
-    //     fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
-    //     horaInicio: "00:00:00",
-    //     horaFin: "00:00:00",
-    //   },
-    //   {
-    //     onSuccess: (data) => {
-    //       if (data.status === 201) {
-    //         setCurrentStep(5);
-    //       }
-    //     },
-    //   },
-    // );
-    //   return;
-    // }
+    if (currentStep === 6) {
+      let allValidated = true;
+      let precioTotal = 0;
+      try {
+        const responseRangoHorarioValidacion = await Promise.allSettled(
+          configuracionServicioTarifa.map(async (servicio) => {
+            return validarRangoHorarioPersonalOrdenServicio({
+              horaInicio: servicio.horaInicio,
+              horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+              personal: servicio.personal,
+            });
+          }),
+        );
 
-    // if (currentStep === 6) {
-    //   validarEmpleadosDisponibles({
-    //     fechaInicio: formOrdenServicio.fechaInicio,
-    //     fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
-    //     // TODO: Validar rango de horas o si son necesarias
-    //     horaInicio: "00:00:00",
-    //     horaFin: "23:00:00",
-    //   });
-    // }
+        const responsePrecioOrdenServicio = await Promise.allSettled(
+          configuracionServicioTarifa.map(async (servicio) => {
+            return getPrecioOrdenServicio(
+              {
+                horaInicio: servicio.horaInicio,
+                horaFin:
+                  servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+                fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
+                fechaInicio: formOrdenServicio.fechaInicio,
+                idTarifa: servicio.idTarifa,
+              },
+              {
+                onSuccess: (data) => {
+                  console.log("data precio orden servicio: ", data);
+                  if (data.status === 201 && data.data.precio > 0) {
+                    servicio.precio = data.data.precio;
+                    precioTotal += data.data.precio;
+                  }
+                },
+              },
+            );
+          }),
+        );
+        allValidated =
+          responseRangoHorarioValidacion.every(
+            (r) => r.status === "fulfilled",
+          ) &&
+          responsePrecioOrdenServicio.every((r) => r.status === "fulfilled");
+      } catch (error) {
+        console.log(error);
+      }
+
+      if (allValidated) {
+        console.log("precio total: ", precioTotal);
+        setFormOrdenServicio({
+          ...formOrdenServicio,
+          precioTotal: precioTotal,
+        });
+        setCurrentStep(7);
+      }
+      return;
+    }
 
     if (currentStep < 7) {
       setCurrentStep(currentStep + 1);
@@ -348,13 +357,13 @@ function RouteComponent() {
   const handleSaveOrder = async () => {
     // const requiereHorario = selectedTarifa?.idServicio.horasFijas === 24;
     const ordenesDeServicioMutation: CreateOrdenServicioDto = {
+      numeroOrdenServicio: formOrdenServicio.numeroOrdenServicio,
       idLocacion: formOrdenServicio.idLocacion || 0,
       fechaInicio: formOrdenServicio.fechaInicio,
       fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
-      precioTotal: 0,
+      precioTotal: formOrdenServicio.precioTotal,
       fechaCreacion: new Date().toISOString(),
-      numeroOrdenServicio: formOrdenServicio.numeroOrdenServicio,
-      servicios: [],
+      servicios: configuracionServicioTarifa,
     };
 
     crearOrdenServicio(ordenesDeServicioMutation, {
@@ -363,7 +372,29 @@ function RouteComponent() {
       },
     });
   };
-  const handleEmployeeSelection = (slotIndex: number, employeeId: number) => {
+
+  const handleValidarEmpleadosDisponibles = async (
+    idServicio: number,
+    indexEmpleado: number,
+  ) => {
+    const servicio = configuracionServicioTarifa.find(
+      (s) => s.idServicio === idServicio,
+    );
+    console.log(servicio?.personal[indexEmpleado]);
+    const response = await validarEmpleadosDisponibles({
+      fechaInicio: formOrdenServicio.fechaInicio,
+      fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
+      horaInicio: servicio?.personal[indexEmpleado].horaInicio || "00:00:00",
+      horaFin: servicio?.personal[indexEmpleado].horaFin || "00:00:00",
+    });
+    console.log(response);
+  };
+
+  const handleEmployeeSelection = (
+    slotIndex: number,
+    employeeId: number,
+    serviceId: number,
+  ) => {
     const employee = personalQuery?.data?.find(
       (emp) => emp.idPersonal === employeeId,
     );
@@ -381,6 +412,45 @@ function RouteComponent() {
       ...prev,
       [slotIndex]: employeeId,
     }));
+
+    // TODO: Revisar esta logica de seleccion de personal
+    // Update the configuracionServicioTarifa with the selected employee for the specific service
+    setConfiguracionServicioTarifa((prev) => {
+      const newArray = [...prev];
+      const indexServicio = newArray.findIndex(
+        (s) => s.idServicio === serviceId,
+      );
+
+      if (indexServicio !== -1) {
+        // Ensure personal array exists and has enough elements
+        if (!newArray[indexServicio].personal) {
+          newArray[indexServicio].personal = [];
+        }
+
+        // Ensure the personal array has the correct length
+        while (newArray[indexServicio].personal.length <= slotIndex) {
+          newArray[indexServicio].personal.push({
+            idPersonal: 0,
+            horaInicio: "",
+            horaFin: "",
+          });
+        }
+
+        // Update the personal array at the specific index
+        const updatedPersonal = [...newArray[indexServicio].personal];
+        updatedPersonal[slotIndex] = {
+          ...updatedPersonal[slotIndex],
+          idPersonal: employeeId,
+        };
+
+        newArray[indexServicio] = {
+          ...newArray[indexServicio],
+          personal: updatedPersonal,
+        };
+      }
+
+      return newArray;
+    });
   };
 
   const handleSelectedServices = (servicio: Servicio) => {
@@ -465,11 +535,13 @@ function RouteComponent() {
       header: "Servicio",
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
-          {row.original.tarifas.map((tarifa) => (
-            <span className="font-medium text-gray-500">
-              {tarifa.idServicio.codigo}
-            </span>
-          ))}
+          {row.original.tarifas.map((tarifa) => {
+            return (
+              <span className="font-medium text-gray-500">
+                {/* {tarifa.idServicio.descripcion} */}
+              </span>
+            );
+          })}
         </div>
       ),
     },
@@ -890,7 +962,9 @@ function RouteComponent() {
                               );
                               newArray[index] = {
                                 ...newArray[index],
-                                horaInicio: e.target.value,
+                                // Al ser servicio de 24 horas, se debe setear la hora de fin a 00:00:00
+                                horaInicio: timeFormat(e.target.value),
+                                horaFin: "00:00:00",
                               };
                               return newArray;
                             })
@@ -923,7 +997,7 @@ function RouteComponent() {
                                   );
                                   newArray[index] = {
                                     ...newArray[index],
-                                    horaInicio: e.target.value,
+                                    horaInicio: timeFormat(e.target.value),
                                   };
                                   return newArray;
                                 })
@@ -946,7 +1020,7 @@ function RouteComponent() {
                                   );
                                   newArray[index] = {
                                     ...newArray[index],
-                                    horaFin: e.target.value,
+                                    horaFin: timeFormat(e.target.value),
                                   };
                                   return newArray;
                                 })
@@ -1070,50 +1144,206 @@ function RouteComponent() {
                                 </h3>
                               </div>
                               <div className="space-y-4">
-                                {/* <div className="grid grid-cols-2 gap-4"> */}
-                                <div>
-                                  <label
-                                    htmlFor={`empleado-${index}`}
-                                    className="text-sm text-gray-700"
-                                  >
-                                    Seleccionar Empleado *
-                                    <div className="relative mt-1">
-                                      <select
-                                        value={
-                                          selectedEmployeeForSlot[
-                                            index
-                                          ]?.toString() || ""
-                                        }
-                                        onChange={(e) => {
-                                          handleEmployeeSelection(
-                                            index,
-                                            Number.parseInt(e.target.value),
-                                          );
-                                        }}
-                                        className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                      >
-                                        <option value="">
-                                          Seleccionar empleado...
-                                        </option>
-                                        {validarEmpleadosDisponiblesData?.data?.map(
-                                          (employee) => (
-                                            <option
-                                              key={employee.idPersonal}
-                                              value={employee.idPersonal.toString()}
-                                            >
-                                              {employee.primerNombre}{" "}
-                                              {employee.primerApellido}
-                                            </option>
-                                          ),
-                                        )}
-                                      </select>
-                                      <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                                    </div>
-                                  </label>
+                                <div className="flex items-center gap-4">
+                                  <div className="flex-1">
+                                    <InputTime
+                                      label="Hora de Inicio"
+                                      placeholder="00:00"
+                                      id={`horaInicio-${index}`}
+                                      value={
+                                        configuracionServicioTarifa.find(
+                                          (s) =>
+                                            s.idServicio === service.idServicio,
+                                        )?.personal[index]?.horaInicio || ""
+                                      }
+                                      onChange={(e) =>
+                                        setConfiguracionServicioTarifa(
+                                          (prev) => {
+                                            const newArray = [...prev];
+                                            const indexServicio =
+                                              newArray.findIndex(
+                                                (s) =>
+                                                  s.idServicio ===
+                                                  service.idServicio,
+                                              );
+
+                                            // Ensure personal array exists and has enough elements
+                                            if (
+                                              !newArray[indexServicio].personal
+                                            ) {
+                                              newArray[indexServicio].personal =
+                                                [];
+                                            }
+
+                                            // Ensure the personal array has the correct length
+                                            while (
+                                              newArray[indexServicio].personal
+                                                .length <= index
+                                            ) {
+                                              newArray[
+                                                indexServicio
+                                              ].personal.push({
+                                                idPersonal: 0,
+                                                horaInicio: "",
+                                                horaFin: "",
+                                              });
+                                            }
+
+                                            // Update the personal array at the specific index
+                                            const updatedPersonal = [
+                                              ...newArray[indexServicio]
+                                                .personal,
+                                            ];
+                                            updatedPersonal[index] = {
+                                              ...updatedPersonal[index],
+                                              horaInicio: timeFormat(
+                                                e.target.value,
+                                              ),
+                                            };
+
+                                            newArray[indexServicio] = {
+                                              ...newArray[indexServicio],
+                                              personal: updatedPersonal,
+                                            };
+                                            return newArray;
+                                          },
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <InputTime
+                                      label="Hora de Fin"
+                                      placeholder="00:00"
+                                      id={`horaFin-${index}`}
+                                      value={
+                                        configuracionServicioTarifa.find(
+                                          (s) =>
+                                            s.idServicio === service.idServicio,
+                                        )?.personal[index]?.horaFin || ""
+                                      }
+                                      onChange={(e) =>
+                                        setConfiguracionServicioTarifa(
+                                          (prev) => {
+                                            const newArray = [...prev];
+                                            const indexServicio =
+                                              newArray.findIndex(
+                                                (s) =>
+                                                  s.idServicio ===
+                                                  service.idServicio,
+                                              );
+
+                                            // Ensure personal array exists and has enough elements
+                                            if (
+                                              !newArray[indexServicio].personal
+                                            ) {
+                                              newArray[indexServicio].personal =
+                                                [];
+                                            }
+
+                                            // Ensure the personal array has the correct length
+                                            while (
+                                              newArray[indexServicio].personal
+                                                .length <= index
+                                            ) {
+                                              newArray[
+                                                indexServicio
+                                              ].personal.push({
+                                                idPersonal: 0,
+                                                horaInicio: "",
+                                                horaFin: "",
+                                              });
+                                            }
+
+                                            // Update the personal array at the specific index
+                                            const updatedPersonal = [
+                                              ...newArray[indexServicio]
+                                                .personal,
+                                            ];
+                                            updatedPersonal[index] = {
+                                              ...updatedPersonal[index],
+                                              horaFin: timeFormat(
+                                                e.target.value,
+                                              ),
+                                            };
+
+                                            newArray[indexServicio] = {
+                                              ...newArray[indexServicio],
+                                              personal: updatedPersonal,
+                                            };
+                                            return newArray;
+                                          },
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                  <div className="mb-1 flex flex-col gap-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                      Buscar Empleado
+                                    </label>
+                                    <ButtonAction
+                                      Icon={Search}
+                                      label=""
+                                      color="blue"
+                                      disabled={
+                                        configuracionServicioTarifa.find(
+                                          (s) =>
+                                            s.idServicio === service.idServicio,
+                                        )?.personal[index]?.horaInicio === "" ||
+                                        isValidarEmpleadosDisponiblesPending
+                                      }
+                                      onClick={() => {
+                                        handleValidarEmpleadosDisponibles(
+                                          service.idServicio,
+                                          index,
+                                        );
+                                      }}
+                                    />
+                                  </div>
                                 </div>
+                                <label
+                                  htmlFor={`empleado-${index}`}
+                                  className="text-sm text-gray-700"
+                                >
+                                  Seleccionar Empleado *
+                                  <div className="relative mt-1">
+                                    <select
+                                      value={
+                                        selectedEmployeeForSlot[
+                                          index
+                                        ]?.toString() || ""
+                                      }
+                                      onChange={(e) => {
+                                        handleEmployeeSelection(
+                                          index,
+                                          Number.parseInt(e.target.value),
+                                          service.idServicio,
+                                        );
+                                      }}
+                                      className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    >
+                                      <option value="">
+                                        Seleccionar empleado...
+                                      </option>
+                                      {validarEmpleadosDisponiblesData?.data?.map(
+                                        (employee) => (
+                                          <option
+                                            key={employee.idPersonal}
+                                            value={employee.idPersonal.toString()}
+                                          >
+                                            {employee.primerNombre}{" "}
+                                            {employee.primerApellido}
+                                          </option>
+                                        ),
+                                      )}
+                                    </select>
+                                    <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                                  </div>
+                                </label>
+
                                 {selectedEmployee && (
                                   <>
-                                    <div className="rounded-lg bg-gray-50 p-3">
+                                    <div className="mt-2 rounded-lg bg-gray-50 p-3">
                                       <div className="mb-2 flex items-center justify-around gap-4 text-sm text-gray-600">
                                         <div className="flex items-center gap-1">
                                           <IdCard className="h-4 w-4" />
@@ -1140,7 +1370,7 @@ function RouteComponent() {
                                         </div>
                                       </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    {/* <div className="grid grid-cols-2 gap-4">
                                       <InputTime
                                         label="Hora de Inicio"
                                         placeholder="00:00"
@@ -1196,7 +1426,7 @@ function RouteComponent() {
                                           )
                                         }
                                       />
-                                    </div>
+                                    </div> */}
                                   </>
                                 )}
                               </div>
@@ -1611,6 +1841,7 @@ function RouteComponent() {
         onClose={() => {
           handleCloseModal();
         }}
+        clickOutsideClose={false}
         title={"Agregar orden de servicio"}
         size="3xl"
       >
