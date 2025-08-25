@@ -1,5 +1,5 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
-import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
+import type { AnularIdOrdenServicioDto, CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
 import type { ApiResponse, Personal } from "../../types";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 

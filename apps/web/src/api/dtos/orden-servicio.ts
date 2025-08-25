@@ -71,3 +71,12 @@ export interface ValidarRangoHorarioPersonalOrdenDto {
   horaFin: string;
   personal: CreatePersonalServicioDto[];
 }
+
+// orden de servicio id
+export interface UpdateOrdenServicioIdDto {
+  descripcionId: string;
+}
+
+export interface AnularIdOrdenServicioDto {
+  descripcionId: string;
+}
