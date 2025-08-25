@@ -37,6 +37,12 @@ export class CreateOrdenServicioTarifaDto {
     @IsPositive({message: 'El valor del campo tarifa debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo tarifa debe ser minimo 1'})
     idTarifa: number;
+
+    @ApiProperty({ description: 'Id de servicio', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo servicio debe ser un número'})
+    @IsPositive({message: 'El valor del campo servicio debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo servicio debe ser minimo 1'})
+    idServicio: number;
     
     @ApiProperty({ description: 'cantidad personal', example: 1, required:true})
     @IsOptional()

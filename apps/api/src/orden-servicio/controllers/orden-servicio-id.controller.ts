@@ -6,18 +6,24 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { PaginationDto } from '../../common/dto';
 
 import { OrdenServicioIdService } from '../services';
-import { UpdateOrdenServicioIdDto } from '../dto';
+import { AnularIdOrdenServicioDto, UpdateOrdenServicioIdDto } from '../dto';
 
 @Controller('orden-servicio-id')
 @AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class OrdenServicioIdController {
 
   constructor(private readonly ordenServicioIdService: OrdenServicioIdService) {}
-  
+
   // RUTA PROTEGIDA: Obtener todos los orden servicio id
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.ordenServicioIdService.findAll(paginationDto, paginationDto.pagination);
+  }
+  
+  // RUTA PROTEGIDA: ANULAR UN ORDEN SERVICIO ID
+  @Post('anular-id')
+  anularIdOrden(@Body() anularIdDto: AnularIdOrdenServicioDto){
+    return this.ordenServicioIdService.anularId(anularIdDto);
   }
 
   // RUTA PROTEGIDA: OBTENER UN ORDEN SERVICIO ID
@@ -25,6 +31,7 @@ export class OrdenServicioIdController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordenServicioIdService.findOne(id);
   }
+
 
   // RUTA PROTEGIDA: EDITAR UN ORDEN SERVICIO ID
   @Patch(':id')

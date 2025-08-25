@@ -103,12 +103,12 @@ export class OrdenServicioService {
     // OBTENER LOCACION
     const locacion = await this.locacionService.findOne(createOrdenServicioDto.idLocacion);
 
-    // OBTENER NUMERO DE ORDEN O ID DE LA ORDEN DE SERVICIO
-    const numeroOrden = await this.ordenServicioIdRepository.findOneBy({
+    // VERIFICAR QUE NO EXISTA EL NUMERO DE ORDEN
+    const existeNumeroOrden = await this.ordenServicioIdRepository.findOneBy({
       descripcionId: createOrdenServicioDto.numeroOrdenServicio
     });
 
-    if (numeroOrden){
+    if (existeNumeroOrden){
       throw new BadRequestException(`El ID "${createOrdenServicioDto.numeroOrdenServicio}" ya existe`);
     }
 
@@ -182,9 +182,17 @@ export class OrdenServicioService {
 
     try {
 
+      // Primero crear el OrdenServicioId
+      const numeroOrden = queryRunner.manager.create(OrdenServicioId, {
+        descripcionId: createOrdenServicioDto.numeroOrdenServicio,
+        anulado: false
+      });
+
+      const savedNumeroOrden = await queryRunner.manager.save(OrdenServicioId, numeroOrden);
+
       // Crear la orden sin los servicios primero
       const ordenServicio = queryRunner.manager.create(OrdenServicio, {
-        ordenServicioId: numeroOrden,
+        ordenServicioId: savedNumeroOrden,
         idUsuarioCreacion: user,
         idEstadoOrdenServicio: estadoOrdenServicio,
         idLocacion: locacion,
@@ -544,12 +552,16 @@ export class OrdenServicioService {
 
   }
 
+  // TODO: REVISAR LOGICA DE CALCULO DE PRECIO, PARA QUE FUNCIONE POR SERVICIO Y NO POR TARIFA
   async obtenerPrecio(validarPrecioOrdenDto: PrecioOrdenDto){
 
     const { idTarifa, horaInicio, horaFin, fechaInicio, fechaFin } = validarPrecioOrdenDto;
 
     // Validar que la tarifa exista
     const tarifa = await this.tarifasService.findOne(idTarifa);
+    // const servicio = await this.servicioService.findOne(idServicio);
+
+    console.log(tarifa);
 
     if (!fechaFin) {
   
@@ -673,6 +685,146 @@ export class OrdenServicioService {
     
   }
 
+  async obtenerPrecioServicio(validarPrecioOrdenDto: PrecioOrdenDto){
+
+    const { idTarifa, idServicio, horaInicio, horaFin, fechaInicio, fechaFin } = validarPrecioOrdenDto;
+
+    // Validar que la tarifa exista
+    // const tarifa = await this.tarifasService.findOne(idTarifa);
+    const servicio = await this.servicioService.findOne(idServicio);
+
+    const tarifa = await this.tarifasService.findTarifaByServicio(idServicio);
+    console.log('--------------------------------------------------------');
+    console.log('tarifa: ', tarifa);
+    console.log('--------------------------------------------------------');
+    console.log(servicio);
+
+    if (!fechaFin) {
+  
+      return {
+        "message": "La orden de servicio es indefinida, el precio se calculara al momento de hacer la liquidacion o al finalizar el servicio",
+        "precio": null
+      }
+        
+    }
+    
+    //! DESESTRUCTURAR FECHAS PARA EL MANEJO CORRECTO
+
+    // FECHA INICIO ORDEN SERVICIO
+                
+    const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
+
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
+    
+    const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
+    
+    // FECHA FIN ORDEN SERVICIO
+                
+    const fechaFinSplit = fechaFin.toISOString().split('T')[0];
+
+    const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+    
+    const fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
+
+
+    let duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
+
+    let precioTotal: number;  
+
+    // VALIDAR SI SE ESTA PIDIENDO SERVICIO POR UN MES EXACTO, ES DECIR TODO ENERO, TODO FEBRERO, ...
+    if (this.esMesCompleto(fechaInicioOrden, fechaFinOrden)) {
+      
+      let diaFinMes: number = diaFin;
+      console.log('--------------------------------------------------------');
+      console.log('tarifa[0].idServicio.idTipoHorarioDescripcion.nombre: ', tarifa[0].idServicio);
+      if (tarifa[0].idServicio.idTipoHorarioDescripcion.nombre == TipoHorarioInterface.NOCTURNO){
+
+        diaFinMes = diaFin - 1;
+
+      } 
+
+      // SI EL TIPO DE TARIFA ES POR MES
+      if (tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.MES){
+
+        precioTotal = tarifa[0].precioTotal;
+
+      }
+
+       // SI ES UNIDAD O DIA
+       else if (tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.DIA){
+
+        precioTotal = tarifa[0].precioTotal * diaFinMes;
+
+       }
+
+      // SI ES TIPO HORA
+      else {
+
+        const precioHora = tarifa[0].precioTotal;
+
+        const precioTotalDia = precioHora * duracionServicio;
+
+        precioTotal = precioTotalDia * diaFinMes;
+
+      }
+
+
+      return {
+        "message": "El servicio es por un mes completo exacto",
+        "precio": precioTotal
+      }
+
+    }
+
+    // VALIDACIONES POR DIA
+    let duracionServicioDias = this.calcularDuracionServicioDias(fechaInicioOrden, fechaFinOrden);
+
+    if (servicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
+
+      duracionServicioDias -= 1
+
+      duracionServicioDias = duracionServicioDias != 0 ? duracionServicioDias : 1;
+
+    }
+
+    // SI EL TIPO DE TARIFA ES POR MES
+    if (tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.MES){
+
+      const precioServicioDia = tarifa[0].precioTotal / tarifa[0].idTipoTarifa.cantidadTiempo;
+
+      precioTotal = precioServicioDia * duracionServicioDias;
+
+    }
+    
+    // SI ES UNIDAD O DIA
+    else if (tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.DIA){
+
+      precioTotal = tarifa[0].precioTotal * duracionServicioDias;
+
+    }
+    
+    // SI ES TIPO HORA
+    else {
+
+      const precioHora = tarifa[0].precioTotal;
+
+      const precioTotalDia = precioHora * duracionServicio;
+
+      precioTotal = precioTotalDia * duracionServicioDias;
+
+    }
+
+
+    console.log('--------------------------------------------------------');
+    console.log(`precioTotal final: ${precioTotal}, servicio: ${servicio.codigo}`);
+    console.log('--------------------------------------------------------');
+    return {
+      "message": `El servicio tiene una duracion de ${duracionServicioDias} dia(s)`,
+      "precio": precioTotal
+    }
+    
+  }
+
   private esMesCompleto(fechaInicio: Date, fechaFin: Date): boolean {
     
     // Verificar que sean del mismo mes y año
@@ -721,7 +873,7 @@ export class OrdenServicioService {
   }
 
   private getDuration(start: number, end: number): number {
-    if (start === end) return 24; // Orden de 24 horas
+    if (end === 0) return 24; // Orden de 24 horas
     if (end > start) return end - start;
     return (24 - start) + end; // Horario nocturno
   }
@@ -733,6 +885,8 @@ export class OrdenServicioService {
     const duracionServicio = this.getDuration(horaInicio, horaFin);
   
     let totalEmpleadoHoras = 0;
+    console.log("horaInicio", horaInicio);
+    console.log("horaFin", horaFin);
   
     for (const emp of validarRangoHorarioPersonalOrdenDto.personal) {
 
@@ -740,9 +894,11 @@ export class OrdenServicioService {
       const horaFinEmpleado = this.parseHour(emp.horaFin);
       const duracionEmp = this.getDuration(horaInicioEmpleado, horaFinEmpleado);
 
-      if (horaInicioEmpleado == horaFinEmpleado){
-        throw new BadRequestException(`Hora incio y fin de un empleado no puede ser la misma`);
-      }
+      console.log("duracionServicio", duracionServicio);
+      console.log("duracionEmp", duracionEmp);
+      // if (horaInicioEmpleado == horaFinEmpleado){
+      //   throw new BadRequestException(`Hora incio y fin de un empleado no puede ser la misma`);
+      // }
   
       // Validar que esté dentro del rango de la orden
       // Caso simple: orden normal (ej: 6-15)
@@ -752,11 +908,21 @@ export class OrdenServicioService {
           //return false; // fuera de rango
         }
       }
+
       // Caso nocturno o 24h → permitimos más flexibilidad
       // (se puede refinar según tu necesidad)
+      // if (duracionServicio === 24) {
+      //   // Para servicios de 24 horas, los empleados pueden trabajar en cualquier momento del día
+      //   // Solo validamos que las horas del empleado sean válidas (no iguales)
+      //   if (horaInicioEmpleado === horaFinEmpleado) {
+      //     throw new BadRequestException(`Para servicios de 24 horas, el empleado debe tener horarios diferentes de inicio y fin`);
+      //   }
+      // }
   
       totalEmpleadoHoras += duracionEmp;
     }
+
+    console.log("totalEmpleadoHoras", totalEmpleadoHoras);
   
     // Validar que los empleados cubran la orden completa
     if (!(totalEmpleadoHoras === duracionServicio)){
@@ -1233,44 +1399,44 @@ export class OrdenServicioService {
 
   }
 
-  async anularId(anularIdDto: AnularIdOrdenServicioDto){
+  // async anularId(anularIdDto: AnularIdOrdenServicioDto){
 
-    try {
+  //   try {
 
-      const idExistente = await this.ordenServicioIdRepository.findOne({
-        where: {
-          descripcionId: anularIdDto.descripcionId
-        },
-        relations: {
-          ordenServicio: true
-        }
-      });
+  //     const idExistente = await this.ordenServicioIdRepository.findOne({
+  //       where: {
+  //         descripcionId: anularIdDto.descripcionId
+  //       },
+  //       relations: {
+  //         ordenServicio: true
+  //       }
+  //     });
 
-      if (idExistente) {
+  //     if (idExistente) {
         
-        // Si existe y tiene orden asociada, error
-        if (idExistente.ordenServicio) {
-          throw new BadRequestException(`No se puede anular el ID "${anularIdDto.descripcionId}" porque tiene una orden asociada`);
-        }
+  //       // Si existe y tiene orden asociada, error
+  //       if (idExistente.ordenServicio) {
+  //         throw new BadRequestException(`No se puede anular el ID "${anularIdDto.descripcionId}" porque tiene una orden asociada`);
+  //       }
 
-        // Si existe pero no tiene orden, también es error (ya está anulado)
-        throw new BadRequestException(`El ID "${anularIdDto.descripcionId}" ya existe`);
-      }
+  //       // Si existe pero no tiene orden, también es error (ya está anulado)
+  //       throw new BadRequestException(`El ID "${anularIdDto.descripcionId}" ya existe`);
+  //     }
 
-      const idAnulado = this.ordenServicioIdRepository.create({
-        ...anularIdDto,
-        anulado: true
-      });
+  //     const idAnulado = this.ordenServicioIdRepository.create({
+  //       ...anularIdDto,
+  //       anulado: true
+  //     });
 
-      await this.ordenServicioIdRepository.save(idAnulado);
+  //     await this.ordenServicioIdRepository.save(idAnulado);
       
-    } catch (error) {
+  //   } catch (error) {
 
-      this.handleDbExceptions(error);
+  //     this.handleDbExceptions(error);
       
-    }
+  //   }
 
-  }
+  // }
 
   private handleDbExceptions(error: any){
           

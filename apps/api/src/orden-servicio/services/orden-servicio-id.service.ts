@@ -6,7 +6,7 @@ import { Repository } from 'typeorm';
 import { PaginationDto } from '../../common/dto';
 
 import { OrdenServicioId } from '../entities';
-import { UpdateOrdenServicioIdDto } from '../dto';
+import { AnularIdOrdenServicioDto, UpdateOrdenServicioIdDto } from '../dto';
 
 
 @Injectable()
@@ -91,6 +91,45 @@ export class OrdenServicioIdService {
         }
 
     }
+
+    async anularId(anularIdDto: AnularIdOrdenServicioDto){
+
+    try {
+
+      const idExistente = await this.OrdenServicioIdRepository.findOne({
+        where: {
+          descripcionId: anularIdDto.descripcionId
+        },
+        relations: {
+          ordenServicio: true
+        }
+      });
+
+      if (idExistente) {
+        
+        // Si existe y tiene orden asociada, error
+        if (idExistente.ordenServicio) {
+          throw new BadRequestException(`No se puede anular el ID "${anularIdDto.descripcionId}" porque tiene una orden asociada`);
+        }
+
+        // Si existe pero no tiene orden, también es error (ya está anulado)
+        throw new BadRequestException(`El ID "${anularIdDto.descripcionId}" ya existe`);
+      }
+
+      const idAnulado = this.OrdenServicioIdRepository.create({
+        ...anularIdDto,
+        anulado: true
+      });
+
+      await this.OrdenServicioIdRepository.save(idAnulado);
+      
+    } catch (error) {
+
+      this.handleDbExceptions(error);
+      
+    }
+
+  }
     
   
     // ELIMINAR UN ORDEN SERVICIO ID
@@ -109,6 +148,11 @@ export class OrdenServicioIdService {
             await this.OrdenServicioIdRepository.remove(ordenServicioId);
             
         } catch (error) {
+            
+            // Si es una BadRequestException (que viene de la validación de orden de servicio asociada), la re-lanzamos
+            if (error instanceof BadRequestException) {
+                throw error;
+            }
             
             this.logger.error(error);
     
