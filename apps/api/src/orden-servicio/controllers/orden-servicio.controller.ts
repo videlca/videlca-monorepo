@@ -19,7 +19,6 @@ import {
   UpdateValidarFechaOrdenServicioDto,
   CreateOrdenServicioDto,
   UpdateOrdenServicioDto,
-  AnularIdOrdenServicioDto, 
 } from '../dto';
 
 import { ApiQuery } from '@nestjs/swagger';
@@ -64,7 +63,7 @@ export class OrdenServicioController {
 
   @Post('obtener-precio')
   obtenerPrecioOrden(@Body() obtenerPrecioOrdenDto: PrecioOrdenDto){
-    return this.ordenServicioService.obtenerPrecio(obtenerPrecioOrdenDto);
+    return this.ordenServicioService.obtenerPrecioServicio(obtenerPrecioOrdenDto);
   }
   
   @Post('empleados-disponibles')
@@ -82,11 +81,6 @@ export class OrdenServicioController {
     return this.ordenServicioService.updateValidarFechasOrdenServicio(id, updateValidarFechaOrdenServicioDto);
   }
   
-  @Post('anular-id')
-  anularIdOrden(@Body() anularIdDto: AnularIdOrdenServicioDto){
-    return this.ordenServicioService.anularId(anularIdDto);
-  }
-
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordenServicioService.findOne(id);

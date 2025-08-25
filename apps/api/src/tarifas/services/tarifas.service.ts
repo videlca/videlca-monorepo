@@ -226,6 +226,29 @@ export class TarifasService {
 
   }
 
+  async findTarifaByServicio(idServicio: number) {
+    
+    // Use QueryBuilder to avoid ambiguous column issue
+    const tarifas = await this.tarifaRepository
+      .createQueryBuilder('tarifa')
+      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
+      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('tipoTarifa.idTipoUnidadTiempo', 'tipoUnidadTiempo')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
+      .where('tarifa.idServicio = :idServicio', { idServicio })
+      .andWhere('tarifa.estado = :estado', { estado: true })
+      .orderBy('tarifa.fechaCreacion', 'DESC')
+      .getMany();
+    
+    if(!tarifas || tarifas.length === 0) {
+      throw new NotFoundException(`No se encontraron tarifas para el servicio con ID ${idServicio}`);
+    }
+
+    return tarifas;
+
+  }
+
   async update(id: number, updateTarifaDto: UpdateTarifaDto) {
     
     const { idTipoTarifa, idServicio, idPeriodo, ...tarifaData } = updateTarifaDto;
