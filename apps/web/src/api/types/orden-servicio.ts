@@ -10,10 +10,24 @@ export interface OrdenServicio {
   idLocacion: Locacion;
   fechaInicio: string;
   fechaFin: string;
+  fechaInicioOrden: string;
+  fechaFinOrden: string;
   precioTotal: number;
   fechaCreacion: string;
+  fechaActualizacion: string;
   observacionesOrdenServicio: ObservacionOrdenServicio[];
-  tarifas: Tarifa[];
+  tarifas: TarifaOrdenServicio[];
+  // TODO: Verificar tipo
+  liquidaciones: any[];
+}
+
+export interface TarifaOrdenServicio {
+  idTarifa: Tarifa;
+  cantidadPersonal: number;
+  horaInicio: string;
+  horaFin: string;
+  idOrdenServicioTarifa: number;
+  precio: number | null;
 }
 
 export interface OrdenServicioId {

@@ -34,6 +34,7 @@ import { useEffect, useState } from "react";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import {
   useCreateOrdenServicio,
+  useDeleteOrdenServicio,
   useGetOrdenesServicio,
   useGetPrecioOrdenServicio,
   useValidarEmpleadosDisponibles,
@@ -70,16 +71,16 @@ import { InputForm } from "../../../components/common/InputForm";
 import { InputTime } from "../../../components/common/InputTime";
 import { toast } from "sonner";
 import type { Servicio } from "../../../api/types/servicio";
+import type { Personal } from "../../../api/types";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
 });
 
-interface AssignedEmployee {
-  nombreCompleto: string;
-  numeroIdentificacion: string;
-  telefono: string;
-  tipoPersonal: string;
+interface SelectedPersonal {
+  idPersonal: number;
+  idServicio: number;
+  infoPersonal: Personal;
 }
 
 function RouteComponent() {
@@ -97,11 +98,11 @@ function RouteComponent() {
   >(null);
   const [selectedServices, setSelectedServices] = useState<Servicio[]>([]);
   const [selectedTarifa, setSelectedTarifa] = useState<Tarifa | null>(null);
+  const [selectedPersonal, setSelectedPersonal] = useState<SelectedPersonal[]>(
+    [],
+  );
 
   const [isIndefinite, setIsIndefinite] = useState(false);
-  const [assignedEmployees, setAssignedEmployees] = useState<
-    AssignedEmployee[]
-  >([]);
 
   // Queries y mutaciones
   const { data: ordenesDeServicioQuery } = useGetOrdenesServicio();
@@ -122,6 +123,9 @@ function RouteComponent() {
   } = useGetPrecioOrdenServicio();
   const { mutate: crearOrdenServicio, isPending: isCrearOrdenServicioPending } =
     useCreateOrdenServicio();
+
+  const { mutate: deleteOrdenServicio } = useDeleteOrdenServicio();
+
   const {
     mutate: validarIdOrdenServicio,
     isPending: isValidarIdOrdenServicioPending,
@@ -164,9 +168,6 @@ function RouteComponent() {
   const [configuracionServicioTarifa, setConfiguracionServicioTarifa] =
     useState<CreateOrdenServicioTarifaDto[]>([]);
 
-  const [configuracionPersonalServicio, setConfiguracionPersonalServicio] =
-    useState<CreatePersonalServicioDto[]>([]);
-
   // TODO: Asignar el personal al objeto
   const [selectedEmployeeForSlot, setSelectedEmployeeForSlot] = useState<{
     [key: number]: number;
@@ -185,7 +186,6 @@ function RouteComponent() {
     setSelectedTarifa(null);
     setIsIndefinite(false);
     resetFormOrdenServicio();
-    setAssignedEmployees([]);
     setSelectedEmployeeForSlot({});
   };
 
@@ -289,9 +289,14 @@ function RouteComponent() {
     if (currentStep === 6) {
       let allValidated = true;
       let precioTotal = 0;
+      console.log(configuracionServicioTarifa);
       try {
         const responseRangoHorarioValidacion = await Promise.allSettled(
           configuracionServicioTarifa.map(async (servicio) => {
+            console.log(
+              `personal por servicio ${servicio.idServicio}: `,
+              servicio.personal,
+            );
             return validarRangoHorarioPersonalOrdenServicio({
               horaInicio: servicio.horaInicio,
               horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
@@ -302,6 +307,7 @@ function RouteComponent() {
 
         const responsePrecioOrdenServicio = await Promise.allSettled(
           configuracionServicioTarifa.map(async (servicio) => {
+            console.log("servicio: ", servicio);
             return getPrecioOrdenServicio(
               {
                 horaInicio: servicio.horaInicio,
@@ -310,10 +316,15 @@ function RouteComponent() {
                 fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
                 fechaInicio: formOrdenServicio.fechaInicio,
                 idTarifa: servicio.idTarifa,
+                idServicio: servicio.idServicio || 0,
               },
               {
                 onSuccess: (data) => {
                   console.log("data precio orden servicio: ", data);
+                  console.log(
+                    `precio por servicio ${servicio.idServicio}: `,
+                    data.data.precio,
+                  );
                   if (data.status === 201 && data.data.precio > 0) {
                     servicio.precio = data.data.precio;
                     precioTotal += data.data.precio;
@@ -322,6 +333,11 @@ function RouteComponent() {
               },
             );
           }),
+        );
+
+        console.log(
+          "responsePrecioOrdenServicio: ",
+          responsePrecioOrdenServicio,
         );
         allValidated =
           responseRangoHorarioValidacion.every(
@@ -390,68 +406,68 @@ function RouteComponent() {
     console.log(response);
   };
 
-  const handleEmployeeSelection = (
-    slotIndex: number,
-    employeeId: number,
-    serviceId: number,
-  ) => {
-    const employee = personalQuery?.data?.find(
-      (emp) => emp.idPersonal === employeeId,
-    );
-    const selectedEmployee = {
-      nombreCompleto: `${employee?.primerNombre} ${employee?.primerApellido}`,
-      numeroIdentificacion: employee?.numeroIdentificacion,
-      telefono: employee?.telefono,
-      tipoPersonal: employee?.idTipoPersonal.descripcion,
-    };
-    setAssignedEmployees((prev) => [
-      ...prev,
-      selectedEmployee as AssignedEmployee,
-    ]);
-    setSelectedEmployeeForSlot((prev) => ({
-      ...prev,
-      [slotIndex]: employeeId,
-    }));
+  // const handleEmployeeSelection = (
+  //   slotIndex: number,
+  //   employeeId: number,
+  //   serviceId: number,
+  // ) => {
+  //   const employee = personalQuery?.data?.find(
+  //     (emp) => emp.idPersonal === employeeId,
+  //   );
+  //   const selectedEmployee = {
+  //     nombreCompleto: `${employee?.primerNombre} ${employee?.primerApellido}`,
+  //     numeroIdentificacion: employee?.numeroIdentificacion,
+  //     telefono: employee?.telefono,
+  //     tipoPersonal: employee?.idTipoPersonal.descripcion,
+  //   };
+  //   setAssignedEmployees((prev) => [
+  //     ...prev,
+  //     selectedEmployee as AssignedEmployee,
+  //   ]);
+  //   setSelectedEmployeeForSlot((prev) => ({
+  //     ...prev,
+  //     [slotIndex]: employeeId,
+  //   }));
 
-    // TODO: Revisar esta logica de seleccion de personal
-    // Update the configuracionServicioTarifa with the selected employee for the specific service
-    setConfiguracionServicioTarifa((prev) => {
-      const newArray = [...prev];
-      const indexServicio = newArray.findIndex(
-        (s) => s.idServicio === serviceId,
-      );
+  //   // TODO: Revisar esta logica de seleccion de personal
+  //   // Update the configuracionServicioTarifa with the selected employee for the specific service
+  //   setConfiguracionServicioTarifa((prev) => {
+  //     const newArray = [...prev];
+  //     const indexServicio = newArray.findIndex(
+  //       (s) => s.idServicio === serviceId,
+  //     );
 
-      if (indexServicio !== -1) {
-        // Ensure personal array exists and has enough elements
-        if (!newArray[indexServicio].personal) {
-          newArray[indexServicio].personal = [];
-        }
+  //     if (indexServicio !== -1) {
+  //       // Ensure personal array exists and has enough elements
+  //       if (!newArray[indexServicio].personal) {
+  //         newArray[indexServicio].personal = [];
+  //       }
 
-        // Ensure the personal array has the correct length
-        while (newArray[indexServicio].personal.length <= slotIndex) {
-          newArray[indexServicio].personal.push({
-            idPersonal: 0,
-            horaInicio: "",
-            horaFin: "",
-          });
-        }
+  //       // Ensure the personal array has the correct length
+  //       while (newArray[indexServicio].personal.length <= slotIndex) {
+  //         newArray[indexServicio].personal.push({
+  //           idPersonal: 0,
+  //           horaInicio: "",
+  //           horaFin: "",
+  //         });
+  //       }
 
-        // Update the personal array at the specific index
-        const updatedPersonal = [...newArray[indexServicio].personal];
-        updatedPersonal[slotIndex] = {
-          ...updatedPersonal[slotIndex],
-          idPersonal: employeeId,
-        };
+  //       // Update the personal array at the specific index
+  //       const updatedPersonal = [...newArray[indexServicio].personal];
+  //       updatedPersonal[slotIndex] = {
+  //         ...updatedPersonal[slotIndex],
+  //         idPersonal: employeeId,
+  //       };
 
-        newArray[indexServicio] = {
-          ...newArray[indexServicio],
-          personal: updatedPersonal,
-        };
-      }
+  //       newArray[indexServicio] = {
+  //         ...newArray[indexServicio],
+  //         personal: updatedPersonal,
+  //       };
+  //     }
 
-      return newArray;
-    });
-  };
+  //     return newArray;
+  //   });
+  // };
 
   const handleSelectedServices = (servicio: Servicio) => {
     if (!selectedServices.includes(servicio)) {
@@ -481,21 +497,20 @@ function RouteComponent() {
       precio: 0,
       personal: [],
     }));
-    console.log(initialConfig);
     setConfiguracionServicioTarifa(initialConfig);
   }, [selectedServices]);
 
-  useEffect(() => {
-    console.log(selectedEmployeeForSlot);
-    const initialConfig = Object.values(selectedEmployeeForSlot).map(
-      (employeeId) => ({
-        idPersonal: employeeId,
-        horaInicio: "00:00:00",
-        horaFin: "23:00:00",
-      }),
-    );
-    setConfiguracionPersonalServicio(initialConfig);
-  }, [selectedEmployeeForSlot]);
+  // useEffect(() => {
+  //   console.log(selectedEmployeeForSlot);
+  //   const initialConfig = Object.values(selectedEmployeeForSlot).map(
+  //     (employeeId) => ({
+  //       idPersonal: employeeId,
+  //       horaInicio: "00:00:00",
+  //       horaFin: "00:00:00",
+  //     }),
+  //   );
+  //   setConfiguracionPersonalServicio(initialConfig);
+  // }, [selectedEmployeeForSlot]);
 
   // Filtrar los servicios por el tipo de servicio seleccionado
   // const filteredServices = selectedTipoServicio
@@ -537,8 +552,11 @@ function RouteComponent() {
         <div className="flex flex-col gap-1">
           {row.original.tarifas.map((tarifa) => {
             return (
-              <span className="font-medium text-gray-500">
-                {/* {tarifa.idServicio.descripcion} */}
+              <span
+                key={tarifa.idTarifa.idServicio.idServicio}
+                className="font-medium text-gray-500"
+              >
+                {tarifa.idTarifa.idServicio.codigo}
               </span>
             );
           })}
@@ -608,6 +626,7 @@ function RouteComponent() {
               label="Eliminar"
               onClick={() => {
                 setIsOpenDelete(true);
+                setSelectedOrderDetail(row.original);
               }}
               color="red"
             />
@@ -616,6 +635,8 @@ function RouteComponent() {
       },
     },
   ];
+
+  console.log("selectedPersonal: ", configuracionServicioTarifa);
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -1107,7 +1128,7 @@ function RouteComponent() {
                             index
                           ]?.cantidadPersonal.toString() || "0"
                         }
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setConfiguracionServicioTarifa((prev) => {
                             const newArray = [...prev];
                             const index = newArray.findIndex(
@@ -1118,8 +1139,8 @@ function RouteComponent() {
                               cantidadPersonal: Number(e.target.value),
                             };
                             return newArray;
-                          })
-                        }
+                          });
+                        }}
                       />
 
                       {Array.from(
@@ -1309,16 +1330,58 @@ function RouteComponent() {
                                   <div className="relative mt-1">
                                     <select
                                       value={
-                                        selectedEmployeeForSlot[
-                                          index
-                                        ]?.toString() || ""
+                                        configuracionServicioTarifa
+                                          .find(
+                                            (s) =>
+                                              s.idServicio ===
+                                              service.idServicio,
+                                          )
+                                          ?.personal[
+                                            index
+                                          ]?.idPersonal.toString() || ""
                                       }
                                       onChange={(e) => {
-                                        handleEmployeeSelection(
-                                          index,
-                                          Number.parseInt(e.target.value),
-                                          service.idServicio,
+                                        console.log(
+                                          "e.target personal: ",
+                                          e.target,
                                         );
+                                        setConfiguracionServicioTarifa(
+                                          (prev) => {
+                                            const newArray = [...prev];
+                                            const indexServicio =
+                                              newArray.findIndex(
+                                                (s) =>
+                                                  s.idServicio ===
+                                                  service.idServicio,
+                                              );
+                                            newArray[indexServicio].personal[
+                                              index
+                                            ] = {
+                                              ...newArray[indexServicio]
+                                                .personal[index],
+                                              idPersonal: Number.parseInt(
+                                                e.target.value,
+                                              ),
+                                            };
+                                            return newArray;
+                                          },
+                                        );
+                                        setSelectedPersonal((prev) => {
+                                          const newArray = [...prev];
+                                          newArray[index] = {
+                                            idPersonal: index,
+                                            idServicio: service.idServicio,
+                                            infoPersonal:
+                                              validarEmpleadosDisponiblesData?.data?.find(
+                                                (personal) =>
+                                                  personal.idPersonal ===
+                                                  Number.parseInt(
+                                                    e.target.value,
+                                                  ),
+                                              )!,
+                                          };
+                                          return newArray;
+                                        });
                                       }}
                                       className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                     >
@@ -1341,7 +1404,7 @@ function RouteComponent() {
                                   </div>
                                 </label>
 
-                                {selectedEmployee && (
+                                {selectedPersonal[index]?.idPersonal !== 0 && (
                                   <>
                                     <div className="mt-2 rounded-lg bg-gray-50 p-3">
                                       <div className="mb-2 flex items-center justify-around gap-4 text-sm text-gray-600">
@@ -1349,84 +1412,33 @@ function RouteComponent() {
                                           <IdCard className="h-4 w-4" />
                                           <span>
                                             {
-                                              selectedEmployee.numeroIdentificacion
+                                              selectedPersonal[index]
+                                                ?.infoPersonal
+                                                ?.numeroIdentificacion
                                             }
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-1">
                                           <Phone className="h-4 w-4" />
                                           <span>
-                                            {selectedEmployee.telefono}
+                                            {
+                                              selectedPersonal[index]
+                                                ?.infoPersonal?.telefono
+                                            }
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-1">
                                           <UserSquare2Icon className="h-4 w-4" />
                                           <span>
                                             {
-                                              selectedEmployee.idTipoPersonal
+                                              selectedPersonal[index]
+                                                ?.infoPersonal?.idTipoPersonal
                                                 .descripcion
                                             }
                                           </span>
                                         </div>
                                       </div>
                                     </div>
-                                    {/* <div className="grid grid-cols-2 gap-4">
-                                      <InputTime
-                                        label="Hora de Inicio"
-                                        placeholder="00:00"
-                                        id="horaInicio"
-                                        value={
-                                          configuracionServicioTarifa.find(
-                                            (s) =>
-                                              s.idServicio ===
-                                              service.idServicio,
-                                          )?.horaInicio || ""
-                                        }
-                                        onChange={(e) =>
-                                          setConfiguracionServicioTarifa(
-                                            (prev) => {
-                                              const newArray = [...prev];
-                                              const index = newArray.findIndex(
-                                                (s) =>
-                                                  s.idServicio ===
-                                                  service.idServicio,
-                                              );
-                                              newArray[index] = {
-                                                ...newArray[index],
-                                                horaInicio: e.target.value,
-                                              };
-                                              return newArray;
-                                            },
-                                          )
-                                        }
-                                      />
-                                      <InputTime
-                                        label="Hora de Fin"
-                                        placeholder="00:00"
-                                        id="horaFin"
-                                        value={
-                                          configuracionServicioTarifa[index]
-                                            ?.horaFin || ""
-                                        }
-                                        onChange={(e) =>
-                                          setConfiguracionServicioTarifa(
-                                            (prev) => {
-                                              const newArray = [...prev];
-                                              const index = newArray.findIndex(
-                                                (s) =>
-                                                  s.idServicio ===
-                                                  service.idServicio,
-                                              );
-                                              newArray[index] = {
-                                                ...newArray[index],
-                                                horaFin: e.target.value,
-                                              };
-                                              return newArray;
-                                            },
-                                          )
-                                        }
-                                      />
-                                    </div> */}
                                   </>
                                 )}
                               </div>
@@ -1655,6 +1667,7 @@ function RouteComponent() {
               </div>
 
               {/* Información del Personal */}
+              {/* TODO: Revisar información de personal */}
               {selectedTarifa?.idServicio.idTipoServicio.requierePersonal && (
                 <div className="rounded-lg border border-gray-200 p-4">
                   <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
@@ -1676,8 +1689,8 @@ function RouteComponent() {
                           Personal Asignado:
                         </span>{" "}
                         <span className="text-gray-600">
-                          {assignedEmployees.length > 0
-                            ? `${assignedEmployees.length} asignado(s)`
+                          {configuracionServicioTarifa.length > 0
+                            ? `${configuracionServicioTarifa.length} asignado(s)`
                             : "Pendiente de asignación"}
                         </span>
                       </p>
@@ -1902,22 +1915,19 @@ function RouteComponent() {
               <button
                 type="button"
                 onClick={currentStep < 7 ? handleNext : handleSaveOrder}
-                // disabled={
-                //   isValidateFechasOrdenServicioPending ||
-                //   isGetPrecioOrdenPending ||
-                //   isCrearOrdenServicioPending ||
-                //   isValidarIdOrdenServicioPending ||
-                //   (currentStep === 1 &&
-                //     !formOrdenServicio.numeroOrdenServicio) ||
-                //   (currentStep === 2 && !formOrdenServicio.idLocacion) ||
-                //   (currentStep === 3 && selectedServices.length === 0)
-                // TODO: Revisar validaciones de los pasos
-                // ||
-                // (currentStep === 4 &&
-                //   selectedTarifa?.idServicio.idTipoServicio
-                //     .requierePersonal &&
-                //   Object.values(selectedEmployeeForSlot).length < 0)
-                // }
+                disabled={
+                  isValidateFechasOrdenServicioPending ||
+                  isGetPrecioOrdenPending ||
+                  isCrearOrdenServicioPending ||
+                  isValidarIdOrdenServicioPending ||
+                  (currentStep === 1 &&
+                    !formOrdenServicio.numeroOrdenServicio) ||
+                  (currentStep === 2 && !formOrdenServicio.idLocacion) ||
+                  (currentStep === 3 && !formOrdenServicio.fechaInicio) ||
+                  (currentStep === 4 &&
+                    configuracionServicioTarifa.length === 0)
+                  // TODO: Revisar validaciones de los pasos
+                }
                 className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                   currentStep < 7
                     ? "bg-blue-600 hover:bg-blue-700"
@@ -2157,7 +2167,14 @@ function RouteComponent() {
       <ConfirmarDelete
         isOpenDelete={isOpenDelete}
         text="¿Estás seguro de querer eliminar esta orden de servicio? Esta acción no se puede deshacer."
-        onDelete={() => {}}
+        onDelete={() => {
+          deleteOrdenServicio(selectedOrderDetail?.idOrdenServicio || 0, {
+            onSuccess: () => {
+              setIsOpenDelete(false);
+              setSelectedOrderDetail(null);
+            },
+          });
+        }}
         onClose={() => setIsOpenDelete(false)}
       />
     </Section>

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { createOrdenServicio, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
+import { createOrdenServicio, deleteOrdenServicio, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
 import type { CreateOrdenServicioDto, PrecioOrdenDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 import type { ApiResponse, Personal } from "../../types";
@@ -47,6 +47,25 @@ export const useGetOrdenServicioById = (id: number): UseMutationResult<ApiRespon
     },
     onError: (error) => {
       toast.error(error.message || "Error al obtener la orden de servicio");
+    },
+  });
+}
+
+export const useDeleteOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, number> => {
+  return useMutation({
+    mutationFn: (id: number) => deleteOrdenServicio(id),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Orden de servicio eliminada correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["orden-servicio"],
+        });
+      } else {
+        throw new Error(data.message || "Error al eliminar la orden de servicio");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al eliminar la orden de servicio");
     },
   });
 }

@@ -11,13 +11,17 @@ export const getOrdenesServicio = async (pagination: PaginationDto): Promise<Api
   return await apiGet<OrdenServicio[]>("/orden-servicio", pagination);
 }
 
+export const getOrdenServicioById = async (id: number): Promise<ApiResponse<OrdenServicio>> => {
+  return await apiGet<OrdenServicio>(`/orden-servicio/${id}`);
+}
+
+export const deleteOrdenServicio = async (id: number): Promise<ApiResponse<any>> => {
+  return await apiDelete<any>(`/orden-servicio/${id}`);
+}
+
 // TODO: revisar respuesta
 export const validateFechasOrdenServicio = async (data: ValidarFechasOrdenServicioDto): Promise<ApiResponse<any>> => {
   return await apiPost<any>("/orden-servicio/validacion-fechas", data);
-}
-
-export const getOrdenServicioById = async (id: number): Promise<ApiResponse<OrdenServicio>> => {
-  return await apiGet<OrdenServicio>(`/orden-servicio/${id}`);
 }
 
 export const getPrecioOrdenServicio = async (data: PrecioOrdenDto): Promise<ApiResponse<any>> => {
