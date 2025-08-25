@@ -94,7 +94,6 @@ export const useGetPrecioOrdenServicio = (): UseMutationResult<ApiResponse<any>,
     mutationFn: getPrecioOrdenServicio,
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
-        toast.success("Precio de orden de servicio obtenido correctamente");
         queryClient.invalidateQueries({
           queryKey: ["orden-servicio"],
         });
@@ -156,7 +155,6 @@ export const useValidarHorarioServicioOrdenServicio = (): UseMutationResult<ApiR
     mutationFn: validarHorarioServicioOrdenServicio,
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
-        toast.success("Horarios validados correctamente");
         queryClient.invalidateQueries({
           queryKey: ["validar-horario-servicio-orden-servicio"],
         });
@@ -176,7 +174,6 @@ export const useValidarRangoHorarioPersonalOrdenServicio = (): UseMutationResult
     mutationFn: validarRangoHorarioPersonalOrdenServicio,
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
-        toast.success("Rango horario personal validado correctamente");
         queryClient.invalidateQueries({
           queryKey: ["validar-rango-horario-personal-orden-servicio"],
         });
