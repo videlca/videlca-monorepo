@@ -28,10 +28,12 @@ import {
 import { 
   OrdenServicioController, 
   OrdenServicioIdController,
-  ObservacionesOrdenServicioController 
+  ObservacionesOrdenServicioController, 
+  ProgramacionPersonalController
 } from './controllers';
 
 import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
+import { ProgramacionPersonalService } from './services/programacion-personal.service';
 
 @Module({
   imports: [
@@ -60,18 +62,21 @@ import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
   controllers: [
     OrdenServicioController,
     OrdenServicioIdController,
-    ObservacionesOrdenServicioController
+    ObservacionesOrdenServicioController,
+    ProgramacionPersonalController
   ],
   providers: [
     OrdenServicioService,
     OrdenServicioIdService,
-    ObservacionesOrdenServicioService
+    ObservacionesOrdenServicioService,
+    ProgramacionPersonalService
   ],
   exports: [
     TypeOrmModule,
     OrdenServicioService,
     OrdenServicioIdService,
-    ObservacionesOrdenServicioService
+    ObservacionesOrdenServicioService,
+    ProgramacionPersonalService
   ]
 })
 export class OrdenServicioModule {}
