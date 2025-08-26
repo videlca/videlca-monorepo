@@ -1754,7 +1754,6 @@ function RouteComponent() {
     }
   };
 
-  console.log(ordenesDeServicioQuery?.data);
   return (
     <Section>
       <div className="flex flex-col gap-8">
