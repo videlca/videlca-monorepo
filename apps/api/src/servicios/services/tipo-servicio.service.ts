@@ -25,10 +25,15 @@ export class TipoServicioService {
   
   // CREAR TIPO SERVICIO
   async create(createTipoServicioDto: CreateTipoServicioDto){
+
+    const prefijo = createTipoServicioDto.prefijo.trim().toUpperCase();
   
     try {
         
-      const tipoServicio = this.tipoServicioRepository.create(createTipoServicioDto);
+      const tipoServicio = this.tipoServicioRepository.create({
+        ...createTipoServicioDto,
+        prefijo
+      });
       
       await this.tipoServicioRepository.save(tipoServicio);
 
@@ -178,6 +183,12 @@ export class TipoServicioService {
     if (!tipoServicio) throw new NotFoundException(`Tipo de servicio con id "${id}" no se ha encontrado`);
 
     try {
+
+      const prefijo = updateTipoServicioDto.prefijo?.trim().toUpperCase();
+
+      if(prefijo){
+        tipoServicio.prefijo = prefijo;
+      }
       
       await this.tipoServicioRepository.save(tipoServicio);
 
