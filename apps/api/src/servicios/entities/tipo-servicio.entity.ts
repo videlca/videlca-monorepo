@@ -25,6 +25,14 @@ export class TipoServicio {
         unique: true
     })
     descripcion: string;
+    
+    @Column({
+        type: 'varchar',
+        length: 10,
+        name: 'prefijo',
+        unique: true
+    })
+    prefijo: string;
 
     @Column({
         type: 'boolean',

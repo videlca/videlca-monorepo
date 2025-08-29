@@ -32,6 +32,13 @@ export class TarifasController {
     return this.tarifasService.findAllActivesByPeriodo(id, paginationDto, paginationDto.pagination);
   }
 
+  // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO ACTIVO DE FACTURACION FILTRADAS POR SU TIPO DE SERVICIO
+  @Get('periodo-activo-facturacion/:idTipoServicio')
+  @ValidateJwtAuth()
+  findAllActivesByPeriodoActivoTipoServicio(@Param('idTipoServicio') idTipoServicio: number, @Query() paginationDto: PaginationDto){
+    return this.tarifasService.findAllActivesByPeriodoActivoTipoServicio(idTipoServicio, paginationDto, paginationDto.pagination);
+  }
+
   // RUTA PROTEGIDA: guardar tarifas para un periodo
   @Post('guardar-tarifas')
   bulk(@Body() bulkCreateTarifaDto: SaveTarifaDto) {
