@@ -54,6 +54,7 @@ function RouteComponent() {
   } = useForm<CreateTipoServicioDto>({
     nombre: "",
     descripcion: "",
+    prefijo: "",
     requierePersonal: false,
   });
 
@@ -65,6 +66,7 @@ function RouteComponent() {
   } = useForm<UpdateTipoServicioDto>({
     nombre: "",
     descripcion: "",
+    prefijo: "",
     requierePersonal: false,
     estado: false,
   });
@@ -81,6 +83,13 @@ function RouteComponent() {
     {
       header: "Descripción",
       accessorKey: "descripcion",
+    },
+    {
+      header: "Prefijo",
+      accessorKey: "prefijo",
+      cell: ({ row }) => {
+        return <span className="capitalize">{row.original.prefijo}</span>;
+      },
     },
     {
       header: "Requiere personal",
@@ -107,6 +116,7 @@ function RouteComponent() {
                 setIdTipoServicio(row.original.idTipoServicio);
                 formEditTipoServicio.nombre = row.original.nombre;
                 formEditTipoServicio.descripcion = row.original.descripcion;
+                formEditTipoServicio.prefijo = row.original.prefijo;
                 formEditTipoServicio.requierePersonal =
                   row.original.requierePersonal;
                 formEditTipoServicio.estado = row.original.estado;
@@ -188,6 +198,15 @@ function RouteComponent() {
               value={formAddTipoServicio.descripcion}
               onChange={handleChangeAddTipoServicio}
             />
+            <InputForm
+              label="Prefijo"
+              id="prefijo"
+              type="text"
+              required
+              placeholder="Prefijo"
+              value={formAddTipoServicio.prefijo}
+              onChange={handleChangeAddTipoServicio}
+            />
             <CheckboxForm
               label="Requiere personal"
               id="requierePersonal"
@@ -244,6 +263,15 @@ function RouteComponent() {
               required={false}
               placeholder="Descripción"
               value={formEditTipoServicio.descripcion || ""}
+              onChange={handleChangeEditTipoServicio}
+            />
+            <InputForm
+              label="Prefijo"
+              id="prefijo"
+              type="text"
+              required={false}
+              placeholder="Prefijo"
+              value={formEditTipoServicio.prefijo || ""}
               onChange={handleChangeEditTipoServicio}
             />
             <InputSelectStateBoolean

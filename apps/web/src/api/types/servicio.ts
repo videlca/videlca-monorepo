@@ -19,6 +19,7 @@ export interface Servicio {
 export interface TipoServicio {
   idTipoServicio: number;
   nombre: string;
+  prefijo: string;
   descripcion: string;
   requierePersonal: boolean;
   estado: boolean;

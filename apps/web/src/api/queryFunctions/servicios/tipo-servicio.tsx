@@ -7,6 +7,7 @@ import {
 import {
   createTipoServicio,
   deleteTipoServicio,
+  getPrefijosTipoServicio,
   getTipoServicioById,
   getTipoServicios,
   getTipoServiciosActivo,
@@ -35,6 +36,16 @@ export const useTipoServiciosActivo = (): UseQueryResult<
   return useQuery({
     queryKey: ["tipo-servicios-activo"],
     queryFn: () => getTipoServiciosActivo({ pagination: false }),
+  });
+};
+
+export const usePrefijosTipoServicio = (): UseQueryResult<
+  ApiResponse<{ idTipoServicio: number; prefijo: string }[]>,
+  Error
+> => {
+  return useQuery({
+    queryKey: ["prefijos-tipo-servicio"],
+    queryFn: () => getPrefijosTipoServicio({ pagination: false }),
   });
 };
 

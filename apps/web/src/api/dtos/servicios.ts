@@ -1,5 +1,6 @@
 export interface CreateTipoServicioDto {
   nombre: string;
+  prefijo: string;
   descripcion: string;
   requierePersonal: boolean;
 }

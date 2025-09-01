@@ -16,6 +16,10 @@ export const getTipoServiciosActivo = async (pagination: PaginationDto): Promise
   return await apiGet<TipoServicio[]>("/tipo-servicio/actives", pagination);
 }
 
+export const getPrefijosTipoServicio = async (pagination: PaginationDto): Promise<ApiResponse<{idTipoServicio: number, prefijo: string}[]>> => {
+  return await apiGet<{idTipoServicio: number, prefijo: string}[]>("/tipo-servicio/prefixes", pagination);
+}
+
 export const createTipoServicio = async (data: CreateTipoServicioDto): Promise<ApiResponse> => {
   return await apiPost<TipoServicio>("/tipo-servicio", data);
 }
