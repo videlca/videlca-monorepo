@@ -9,6 +9,14 @@ export interface CreateOrdenServicioDto {
   servicios: CreateOrdenServicioTarifaDto[];
 }
 
+export interface UpdateOrdenServicioDto {
+  fechaInicio: string;
+  fechaFin: string | null;
+  precioTotal: number;
+  fechaActualizacion: string;
+  servicios: UpdateOrdenServicioTarifaDto[];
+}
+
 export interface CreateOrdenServicioTarifaDto {
   idTarifa: number;
   idServicio?: number;
@@ -19,13 +27,31 @@ export interface CreateOrdenServicioTarifaDto {
   personal: CreatePersonalServicioDto[];
 }
 
+export interface UpdateOrdenServicioTarifaDto {
+  idTarifa: number;
+  cantidadPersonal: number;
+  horaInicio: string;
+  horaFin: string;
+  precio: number;
+  personal: UpdatePersonalServicioDto[];
+}
+
 export interface CreatePersonalServicioDto {
   idPersonal: number;
   horaInicio: string;
   horaFin: string;
 }
 
+export interface UpdatePersonalServicioDto extends CreatePersonalServicioDto {}
+
+// validaciones
 export interface ValidarFechasOrdenServicioDto {
+  fechaInicio: string;
+  fechaFin: string | null;
+}
+
+export interface UpdateValidarFechaOrdenServicioDto {
+  fechaActualizacion: string;
   fechaInicio: string;
   fechaFin: string | null;
 }

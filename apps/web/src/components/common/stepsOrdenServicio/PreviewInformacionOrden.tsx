@@ -10,10 +10,15 @@ import {
 import { priceFormat } from "../../../utils/PriceFormat";
 import type { Locacion } from "../../../types";
 import type { Tarifa } from "../../../api/types/periodo";
-import type { CreateOrdenServicioDto } from "../../../api/dtos";
+import type {
+  CreateOrdenServicioDto,
+  UpdateOrdenServicioDto,
+  UpdateOrdenServicioTarifaDto,
+} from "../../../api/dtos";
 import type { CreateOrdenServicioTarifaDto } from "../../../api/dtos";
 
-export const PreviewCreacionOrden = ({
+export const PreviewInformacionOrden = ({
+  isEditing = false,
   selectedLocation,
   selectedTarifa,
   formOrdenServicio,
@@ -21,10 +26,13 @@ export const PreviewCreacionOrden = ({
   mensajeRespuesta,
   isIndefinite,
 }: {
+  isEditing?: boolean;
   selectedLocation: Locacion | null;
   selectedTarifa: Tarifa | null;
-  formOrdenServicio: CreateOrdenServicioDto;
-  configuracionServicioTarifa: CreateOrdenServicioTarifaDto[];
+  formOrdenServicio: CreateOrdenServicioDto | UpdateOrdenServicioDto;
+  configuracionServicioTarifa:
+    | CreateOrdenServicioTarifaDto[]
+    | UpdateOrdenServicioTarifaDto[];
   mensajeRespuesta: string;
   isIndefinite: boolean;
 }) => {
@@ -32,10 +40,10 @@ export const PreviewCreacionOrden = ({
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center">
         <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          Detalles de la orden de servicio
+          Información de la orden de servicio
         </h3>
         <p className="text-sm text-gray-600">
-          Revisa los detalles de la orden de servicio y confirma la creación
+          Revisa los detalles de la orden de servicio y confirma la información
         </p>
       </div>
 
@@ -343,18 +351,43 @@ export const PreviewCreacionOrden = ({
             Información de Creación
           </h4>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Fecha de Creación:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {formOrdenServicio.fechaCreacion
-                    ? new Date(formOrdenServicio.fechaCreacion).toLocaleString()
-                    : new Date().toLocaleString()}
-                </span>
-              </p>
-            </div>
+            {isEditing ? (
+              <div>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">
+                    Fecha de Actualización:
+                  </span>{" "}
+                  <span className="text-gray-600">
+                    {(formOrdenServicio as UpdateOrdenServicioDto)
+                      .fechaActualizacion
+                      ? new Date(
+                          (
+                            formOrdenServicio as UpdateOrdenServicioDto
+                          ).fechaActualizacion,
+                        ).toLocaleString()
+                      : new Date().toLocaleString()}
+                  </span>
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">
+                    Fecha de Creación:
+                  </span>{" "}
+                  <span className="text-gray-600">
+                    {(formOrdenServicio as CreateOrdenServicioDto).fechaCreacion
+                      ? new Date(
+                          (
+                            formOrdenServicio as CreateOrdenServicioDto
+                          ).fechaCreacion,
+                        ).toLocaleString()
+                      : new Date().toLocaleString()}
+                  </span>
+                </p>
+              </div>
+            )}
+
             <div>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">

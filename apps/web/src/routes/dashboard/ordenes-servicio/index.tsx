@@ -10,6 +10,7 @@ import {
   EyeIcon,
   FileText,
   MapPin,
+  MessageCircle,
   PencilIcon,
   PlusIcon,
   TrashIcon,
@@ -22,7 +23,10 @@ import {
   useCreateOrdenServicio,
   useDeleteOrdenServicio,
   useGetOrdenesServicio,
+  useGetOrdenServicioById,
   useGetPrecioOrdenServicio,
+  useUpdateOrdenServicio,
+  useUpdateValidateFechasOrdenServicio,
   useValidarEmpleadosDisponibles,
   useValidarHorarioServicioOrdenServicio,
   useValidarIdOrdenServicio,
@@ -32,6 +36,8 @@ import {
 import type {
   CreateOrdenServicioDto,
   CreateOrdenServicioTarifaDto,
+  UpdateOrdenServicioDto,
+  UpdateOrdenServicioTarifaDto,
 } from "../../../api/dtos";
 import type { OrdenServicio } from "../../../api/types/orden-servicio";
 import { useTipoServiciosActivo } from "../../../api/queryFunctions/servicios";
@@ -51,11 +57,17 @@ import { ConfigurarFechaOrdenServicio } from "../../../components/common/stepsOr
 import { SeleccionarServicio } from "../../../components/common/stepsOrdenServicio/SeleccionarServicio";
 import { ConfigurarHorariosServicios } from "../../../components/common/stepsOrdenServicio/ConfigurarHorariosServicios";
 import { AsignacionPersonalServicio } from "../../../components/common/stepsOrdenServicio/AsignacionPersonalServicio";
-import { PreviewCreacionOrden } from "../../../components/common/stepsOrdenServicio/PreviewCreacionOrden";
+import { PreviewInformacionOrden } from "../../../components/common/stepsOrdenServicio/PreviewInformacionOrden";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
 });
+
+// Temporary interface for internal edit state (includes idServicio for component logic)
+interface UpdateOrdenServicioTarifaDtoInternal
+  extends UpdateOrdenServicioTarifaDto {
+  idServicio?: number;
+}
 
 function RouteComponent() {
   const [isOpenAdd, setIsOpenAdd] = useState(false);
@@ -86,20 +98,34 @@ function RouteComponent() {
   const { data: ordenesDeServicioQuery } = useGetOrdenesServicio();
   const { data: tipoServiciosQuery } = useTipoServiciosActivo();
 
+  const { mutateAsync: obtenerOrdenServicioById } = useGetOrdenServicioById();
   const {
     mutate: tarifasPeriodoActivoByIdTipoServicio,
     data: tarifasPeriodoActivoByIdTipoServicioData,
   } = useTarifasPeriodoActivoByIdTipoServicio();
+
+  // Validaciones fechas
   const {
     mutate: validateFechasOrdenServicio,
     isPending: isValidateFechasOrdenServicioPending,
   } = useValidateFechasOrdenServicio();
+
+  const {
+    mutate: updateValidateFechasOrdenServicio,
+    isPending: isUpdateValidateFechasOrdenServicioPending,
+  } = useUpdateValidateFechasOrdenServicio();
+
+  // Precio orden servicio
   const {
     mutateAsync: getPrecioOrdenServicio,
     isPending: isGetPrecioOrdenPending,
   } = useGetPrecioOrdenServicio();
   const { mutate: crearOrdenServicio, isPending: isCrearOrdenServicioPending } =
     useCreateOrdenServicio();
+  const {
+    mutate: actualizarOrdenServicio,
+    isPending: isActualizarOrdenServicioPending,
+  } = useUpdateOrdenServicio();
 
   const { mutate: deleteOrdenServicio } = useDeleteOrdenServicio();
 
@@ -138,8 +164,23 @@ function RouteComponent() {
     servicios: [],
   });
 
+  const {
+    form: formOrdenServicioEdit,
+    setForm: setFormOrdenServicioEdit,
+    resetForm: resetFormOrdenServicioEdit,
+  } = useForm<UpdateOrdenServicioDto>({
+    fechaInicio: "",
+    fechaFin: "",
+    fechaActualizacion: "",
+    precioTotal: 0,
+    servicios: [],
+  });
+
   const [configuracionServicioTarifa, setConfiguracionServicioTarifa] =
     useState<CreateOrdenServicioTarifaDto[]>([]);
+
+  const [configuracionServicioTarifaEdit, setConfiguracionServicioTarifaEdit] =
+    useState<UpdateOrdenServicioTarifaDtoInternal[]>([]);
 
   // Sample data for order details modal
   const [selectedOrderDetail, setSelectedOrderDetail] =
@@ -147,6 +188,7 @@ function RouteComponent() {
 
   const handleCloseModal = () => {
     setIsOpenAdd(false);
+    setIsEditing(false);
     setCurrentStep(1);
     setSelectedTipoServicio(null);
     setSelectedLocation(null);
@@ -154,6 +196,7 @@ function RouteComponent() {
     setSelectedTarifa(null);
     setIsIndefinite(false);
     resetFormOrdenServicio();
+    resetFormOrdenServicioEdit();
   };
 
   const handleNext = async () => {
@@ -210,6 +253,7 @@ function RouteComponent() {
           },
         },
       );
+      setSelectedServices([]);
       return;
     }
 
@@ -310,6 +354,87 @@ function RouteComponent() {
     }
   };
 
+  const handleNextEdit = async () => {
+    if (currentStep === 1) {
+      updateValidateFechasOrdenServicio(
+        {
+          id: selectedOrderDetail?.idOrdenServicio || 0,
+          data: {
+            fechaInicio: formOrdenServicioEdit.fechaInicio,
+            fechaFin: isIndefinite ? null : formOrdenServicioEdit.fechaFin,
+            fechaActualizacion: new Date().toISOString(),
+          },
+        },
+        {
+          onSuccess: () => {
+            setCurrentStep(2);
+          },
+        },
+      );
+      return;
+    }
+
+    if (currentStep === 2) {
+      let allValidated = true;
+      let precioTotal = 0;
+      try {
+        const responseRangoHorarioValidacion = await Promise.allSettled(
+          configuracionServicioTarifaEdit.map(async (servicio) => {
+            return validarRangoHorarioPersonalOrdenServicio({
+              horaInicio: servicio.horaInicio,
+              horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+              personal: servicio.personal,
+            });
+          }),
+        );
+
+        const responsePrecioOrdenServicio = await Promise.allSettled(
+          configuracionServicioTarifaEdit.map(async (servicio) => {
+            const response = await getPrecioOrdenServicio({
+              horaInicio: servicio.horaInicio,
+              horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+              fechaFin: isIndefinite ? null : formOrdenServicioEdit.fechaFin,
+              fechaInicio: formOrdenServicioEdit.fechaInicio,
+              idTarifa: servicio.idTarifa,
+              idServicio: servicio.idServicio || 0,
+            });
+
+            if (response.status === 201) {
+              servicio.precio = response.data.precio;
+              precioTotal += response.data.precio;
+              setMensajeRespuesta(response.data.message);
+            }
+            return response;
+          }),
+        );
+
+        allValidated =
+          responseRangoHorarioValidacion.every(
+            (r) => r.status === "fulfilled",
+          ) &&
+          responsePrecioOrdenServicio.every((r) => r.status === "fulfilled");
+      } catch (error) {
+        console.log(error);
+      }
+
+      if (allValidated) {
+        setFormOrdenServicioEdit({
+          ...formOrdenServicioEdit,
+          precioTotal: precioTotal,
+        });
+        toast.success(
+          "Rango horario personal y precio de orden de servicio validados correctamente",
+        );
+        setCurrentStep(3);
+      }
+      return;
+    }
+
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
   const handlePrevious = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
@@ -334,6 +459,72 @@ function RouteComponent() {
     });
   };
 
+  const handleUpdateOrder = async () => {
+    // Clean the services data to match UpdateOrdenServicioTarifaDto structure
+    const cleanedServicios = configuracionServicioTarifaEdit.map(
+      ({ idServicio, ...rest }) => rest,
+    );
+
+    const ordenesDeServicioMutation: UpdateOrdenServicioDto = {
+      fechaInicio: formOrdenServicioEdit.fechaInicio,
+      fechaFin: isIndefinite ? null : formOrdenServicioEdit.fechaFin,
+      precioTotal: formOrdenServicioEdit.precioTotal,
+      fechaActualizacion: new Date().toISOString(),
+      servicios: cleanedServicios,
+    };
+
+    actualizarOrdenServicio(
+      {
+        id: selectedOrderDetail?.idOrdenServicio || 0,
+        data: ordenesDeServicioMutation,
+      },
+      {
+        onSuccess: () => {
+          handleCloseModal();
+          setIsEditing(false);
+        },
+      },
+    );
+  };
+
+  const handleEditOrder = async (idOrdenServicio: number) => {
+    const ordenServicioById = await obtenerOrdenServicioById(idOrdenServicio);
+    setFormOrdenServicioEdit({
+      ...ordenServicioById?.data,
+      fechaInicio: ordenServicioById?.data?.fechaInicio || "",
+      fechaFin: ordenServicioById?.data?.fechaFin || null,
+      fechaActualizacion: ordenServicioById?.data?.fechaActualizacion || "",
+      precioTotal: ordenServicioById?.data?.precioTotal || 0,
+      servicios: [],
+    });
+
+    setConfiguracionServicioTarifaEdit(
+      ordenServicioById?.data?.tarifas.map((servicio) => ({
+        idTarifa: servicio.idTarifa.idTarifa,
+        cantidadPersonal: servicio.cantidadPersonal,
+        horaInicio: servicio.horaInicio,
+        horaFin: servicio.horaFin,
+        precio: servicio.precio || 0,
+        personal: [], // Will be populated when user assigns staff
+        // Keep idServicio for internal component logic, but remove before sending to API
+        idServicio: servicio.idTarifa.idServicio.idServicio,
+      })) || [],
+    );
+
+    console.log(
+      "ordenServicioById?.data?.tarifas: ",
+      ordenServicioById?.data?.tarifas,
+    );
+    setSelectedServices(
+      ordenServicioById?.data?.tarifas.map((servicio) => ({
+        ...servicio.idTarifa.idServicio,
+      })) || [],
+    );
+
+    console.log("ordenServicioByIdQuery?.data: ", ordenServicioById?.data);
+    setIsIndefinite(ordenServicioById?.data?.fechaFin === null);
+  };
+
   const handleLiquidarOrdenServicio = (idOrdenServicio: number) => {
     console.log("idOrdenServicio: ", idOrdenServicio);
   };
@@ -342,14 +533,32 @@ function RouteComponent() {
     idServicio: number,
     indexEmpleado: number,
   ) => {
-    const servicio = configuracionServicioTarifa.find(
-      (s) => s.idServicio === idServicio,
-    );
+    const servicio = isEditing
+      ? configuracionServicioTarifaEdit.find((s) => s.idServicio === idServicio)
+      : configuracionServicioTarifa.find((s) => s.idServicio === idServicio);
+
+    // Ensure personal array exists and has the required index
+    if (!servicio?.personal || !servicio.personal[indexEmpleado]) {
+      console.warn("Personal data not found for validation");
+      return;
+    }
+
+    const fechaInicio = isEditing
+      ? formOrdenServicioEdit.fechaInicio
+      : formOrdenServicio.fechaInicio;
+    const fechaFin = isEditing
+      ? isIndefinite
+        ? null
+        : formOrdenServicioEdit.fechaFin
+      : isIndefinite
+        ? null
+        : formOrdenServicio.fechaFin;
+
     await validarEmpleadosDisponibles({
-      fechaInicio: formOrdenServicio.fechaInicio,
-      fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
-      horaInicio: servicio?.personal[indexEmpleado].horaInicio || "00:00:00",
-      horaFin: servicio?.personal[indexEmpleado].horaFin || "00:00:00",
+      fechaInicio,
+      fechaFin,
+      horaInicio: servicio.personal[indexEmpleado].horaInicio || "00:00:00",
+      horaFin: servicio.personal[indexEmpleado].horaFin || "00:00:00",
     });
   };
 
@@ -424,7 +633,7 @@ function RouteComponent() {
       accessorKey: "precioTotal",
       header: "Precio Total",
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap text-gray-500">
+        <span className="font-medium whitespace-nowrap text-green-500">
           {priceFormat(Number(row.original.precioTotal))}
         </span>
       ),
@@ -452,6 +661,7 @@ function RouteComponent() {
               onClick={() => {
                 setIsEditing(true);
                 setSelectedOrderDetail(row.original);
+                handleEditOrder(row.original.idOrdenServicio);
               }}
             />
             <ButtonAction
@@ -460,6 +670,15 @@ function RouteComponent() {
               onClick={() => {
                 setIsOpenDetails(true);
                 setSelectedOrderDetail(row.original);
+              }}
+            />
+            <ButtonAction
+              Icon={MessageCircle}
+              label="Comentarios"
+              onClick={() => {
+                // setIsEditing(true);
+                // setSelectedOrderDetail(row.original);
+                // handleEditOrder(row.original.idOrdenServicio);
               }}
             />
             <ButtonAction
@@ -507,7 +726,9 @@ function RouteComponent() {
         return (
           <ConfigurarFechaOrdenServicio
             formOrdenServicio={formOrdenServicio}
-            setFormOrdenServicio={setFormOrdenServicio}
+            setFormOrdenServicio={(newForm) =>
+              setFormOrdenServicio(newForm as CreateOrdenServicioDto)
+            }
             isIndefinite={isIndefinite}
             setIsIndefinite={setIsIndefinite}
           />
@@ -555,11 +776,61 @@ function RouteComponent() {
         );
       case 7:
         return (
-          <PreviewCreacionOrden
+          <PreviewInformacionOrden
             selectedLocation={selectedLocation}
             selectedTarifa={selectedTarifa}
             formOrdenServicio={formOrdenServicio}
             configuracionServicioTarifa={configuracionServicioTarifa}
+            mensajeRespuesta={mensajeRespuesta}
+            isIndefinite={isIndefinite}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const renderStepEditContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <ConfigurarFechaOrdenServicio
+            formOrdenServicio={formOrdenServicioEdit}
+            setFormOrdenServicio={(newForm) =>
+              setFormOrdenServicioEdit(newForm as UpdateOrdenServicioDto)
+            }
+            isIndefinite={isIndefinite}
+            setIsIndefinite={setIsIndefinite}
+          />
+        );
+
+      case 2:
+        return (
+          <AsignacionPersonalServicio
+            selectedServices={selectedServices}
+            configuracionServicioTarifa={configuracionServicioTarifaEdit}
+            setConfiguracionServicioTarifa={setConfiguracionServicioTarifaEdit}
+            handleValidarEmpleadosDisponibles={
+              handleValidarEmpleadosDisponibles
+            }
+            isValidarEmpleadosDisponiblesPending={
+              isValidarEmpleadosDisponiblesPending
+            }
+            validarEmpleadosDisponiblesData={
+              validarEmpleadosDisponiblesData?.data || []
+            }
+          />
+        );
+
+      case 3:
+        return (
+          <PreviewInformacionOrden
+            isEditing={isEditing}
+            selectedLocation={selectedOrderDetail?.idLocacion || null}
+            selectedTarifa={selectedTarifa}
+            formOrdenServicio={formOrdenServicioEdit}
+            configuracionServicioTarifa={configuracionServicioTarifaEdit}
             mensajeRespuesta={mensajeRespuesta}
             isIndefinite={isIndefinite}
           />
@@ -586,6 +857,7 @@ function RouteComponent() {
           columns={columns}
           data={ordenesDeServicioQuery?.data || []}
           enableFiltering={true}
+          enablePagination={true}
         />
       </div>
 
@@ -686,6 +958,103 @@ function RouteComponent() {
                   "Siguiente"
                 ) : (
                   "Crear Orden"
+                )}
+              </button>
+            </div>
+          </div>
+        </>
+      </SimpleModal>
+
+      <SimpleModal
+        isOpen={isEditing}
+        onClose={() => {
+          setIsEditing(false);
+        }}
+        clickOutsideClose={false}
+        title={"Editar orden de servicio"}
+        size="3xl"
+      >
+        <>
+          {/* Step Indicator */}
+          <div className="flex items-center justify-center px-6 py-6">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+                    step < currentStep
+                      ? "bg-green-500 text-white"
+                      : step === currentStep
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {step < currentStep ? <Check className="h-4 w-4" /> : step}
+                </div>
+                {step < 3 && (
+                  <div
+                    className={`mx-2 h-0.5 w-16 ${step < currentStep ? `bg-green-500` : `bg-gray-200`}`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Step Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {renderStepEditContent()}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between border-t border-gray-200 px-6 pt-6 pb-4">
+            <div className="text-sm text-gray-500">
+              Paso {currentStep} de {3}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+                onClick={() => {
+                  handleCloseModal();
+                }}
+              >
+                Cancelar
+              </button>
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+                  onClick={handlePrevious}
+                >
+                  Anterior
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={currentStep < 3 ? handleNextEdit : handleUpdateOrder}
+                // disabled={
+                //   isValidateFechasOrdenServicioPending ||
+                //   isGetPrecioOrdenPending ||
+                //   (currentStep === 1 &&
+                //     (identificador.codigoTipoServicio === 0 ||
+                //       identificador.codigo === 0)) ||
+                //   (currentStep === 2 && !formOrdenServicio.idLocacion)
+                //   // TODO: Revisar validaciones de los pasos
+                // }
+                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
+                  currentStep < 3
+                    ? "bg-blue-600 hover:bg-blue-700"
+                    : "bg-green-600 hover:bg-green-700"
+                } ${isActualizarOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
+              >
+                {isActualizarOrdenServicioPending ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    Actualizando...
+                  </div>
+                ) : currentStep < 3 ? (
+                  "Siguiente"
+                ) : (
+                  "Actualizar Orden"
                 )}
               </button>
             </div>

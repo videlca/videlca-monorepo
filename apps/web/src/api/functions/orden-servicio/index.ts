@@ -1,10 +1,14 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
-import type { AnularIdOrdenServicioDto, CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
+import type { AnularIdOrdenServicioDto, CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
 import type { ApiResponse, Personal } from "../../types";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 
 export const createOrdenServicio = async (data: CreateOrdenServicioDto): Promise<ApiResponse<OrdenServicio>> => {
   return await apiPost<OrdenServicio>("/orden-servicio", data);
+}
+
+export const updateOrdenServicio = async (id: number, data: UpdateOrdenServicioDto): Promise<ApiResponse<OrdenServicio>> => {
+  return await apiPatch<OrdenServicio>(`/orden-servicio/${id}`, data);
 }
 
 export const getOrdenesServicio = async (pagination: PaginationDto): Promise<ApiResponse<OrdenServicio[]>> => {
@@ -65,4 +69,8 @@ export const validarHorarioServicioOrdenServicio = async (data: ValidarHorarioSe
 
 export const validarRangoHorarioPersonalOrdenServicio = async (data: ValidarRangoHorarioPersonalOrdenDto): Promise<ApiResponse<any>> => {
   return await apiPost<any>("/orden-servicio/validar-rango-horarios-orden", data);
+}
+
+export const updateValidarFechasOrdenServicio = async (id: number, data: UpdateValidarFechaOrdenServicioDto): Promise<ApiResponse<any>> => {
+  return await apiPost<any>(`/orden-servicio/update-validacion-fechas/${id}`, data);
 }

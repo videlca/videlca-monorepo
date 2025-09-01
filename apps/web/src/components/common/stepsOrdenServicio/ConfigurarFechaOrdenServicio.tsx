@@ -1,4 +1,7 @@
-import type { CreateOrdenServicioDto } from "../../../api/dtos/orden-servicio";
+import type {
+  CreateOrdenServicioDto,
+  UpdateOrdenServicioDto,
+} from "../../../api/dtos/orden-servicio";
 
 export const ConfigurarFechaOrdenServicio = ({
   formOrdenServicio,
@@ -6,8 +9,10 @@ export const ConfigurarFechaOrdenServicio = ({
   isIndefinite,
   setIsIndefinite,
 }: {
-  formOrdenServicio: CreateOrdenServicioDto;
-  setFormOrdenServicio: (formOrdenServicio: CreateOrdenServicioDto) => void;
+  formOrdenServicio: CreateOrdenServicioDto | UpdateOrdenServicioDto;
+  setFormOrdenServicio: (
+    formOrdenServicio: CreateOrdenServicioDto | UpdateOrdenServicioDto,
+  ) => void;
   isIndefinite: boolean;
   setIsIndefinite: (isIndefinite: boolean) => void;
 }) => {
