@@ -37,3 +37,10 @@ export const getTarifasPeriodoActivo = async (
 ): Promise<ApiResponse<Tarifa[]>> => {
   return await apiGet<Tarifa[]>(`/tarifas/periodo-activo`, pagination);
 };
+
+export const getTarifasPeriodoActivoByIdTipoServicio = async (
+  idTipoServicio: number,
+  pagination: PaginationDto,
+): Promise<ApiResponse<Tarifa[]>> => {
+  return await apiGet<Tarifa[]>(`/tarifas/periodo-activo-facturacion/${idTipoServicio}`, pagination);
+};

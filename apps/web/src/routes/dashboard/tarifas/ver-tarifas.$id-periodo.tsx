@@ -141,6 +141,50 @@ function RouteComponent() {
       },
     },
     {
+      header: "Seguro de vida",
+      accessorKey: "seguroVida",
+      cell: ({ row }) => {
+        return (
+          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+            {priceFormat(row.original.seguroVida || 0)}
+          </span>
+        );
+      },
+    },
+    {
+      header: "AUI",
+      accessorKey: "aui",
+      cell: ({ row }) => {
+        return (
+          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+            {priceFormat(row.original.aui || 0)}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Costos directos",
+      accessorKey: "costosDirectos",
+      cell: ({ row }) => {
+        return (
+          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+            {priceFormat(row.original.costosDirectos || 0)}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Costos directos + seguro de vida",
+      accessorKey: "costosDirectosSeguroVida",
+      cell: ({ row }) => {
+        return (
+          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+            {priceFormat(row.original.costosDirectosSeguroVida || 0)}
+          </span>
+        );
+      },
+    },
+    {
       header: "Precio sin IVA",
       accessorKey: "precioAntesIva",
       cell: ({ row }) => {

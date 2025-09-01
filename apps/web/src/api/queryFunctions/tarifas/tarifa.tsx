@@ -11,6 +11,7 @@ import {
   getTarifasActivo,
   getTarifasByPeriodo,
   getTarifasPeriodoActivo,
+  getTarifasPeriodoActivoByIdTipoServicio,
   saveTarifas,
   updateTarifa,
 } from "../../functions/tarifas/tarifa";
@@ -106,6 +107,20 @@ export const useTarifasPeriodoActivo = (): UseQueryResult<
   return useQuery({
     queryKey: ["tarifas-periodo-activo"],
     queryFn: () => getTarifasPeriodoActivo({ pagination: false }),
+  });
+};
+
+export const useTarifasPeriodoActivoByIdTipoServicio = (): UseMutationResult<
+  ApiResponse<Tarifa[]>,
+  Error,
+  number
+> => {
+  return useMutation({
+    mutationKey: ["tarifas-periodo-activo-id-tipo-servicio"],
+    mutationFn: (idTipoServicio: number) =>
+      getTarifasPeriodoActivoByIdTipoServicio(idTipoServicio, {
+        pagination: false,
+      }),
   });
 };
 
