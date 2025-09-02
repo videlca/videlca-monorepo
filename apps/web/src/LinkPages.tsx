@@ -40,6 +40,8 @@ interface LinksSideBar {
   "ordenes-servicio": LinkSideBar[];
   servicios: LinkSideBar[];
   liquidaciones: LinkSideBar[];
+  "aprobacion-liquidaciones-ordenes": LinkSideBar[];
+  "exportaciones-base-facturacion": LinkSideBar[];
 }
 
 export const linksSideBar: LinksSideBar = {
@@ -225,6 +227,22 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/liquidaciones/historial",
       label: "Historial",
       description: "historial",
+      icon: <FileTextIcon className="h-6 w-6" />,
+    },
+  ],
+  "aprobacion-liquidaciones-ordenes": [
+    {
+      to: "/dashboard/aprobacion-liquidaciones-ordenes",
+      label: "Aprobación de Liquidaciones de Ordenes",
+      description: "aprobacion-liquidaciones-ordenes",
+      icon: <FileTextIcon className="h-6 w-6" />,
+    },
+  ],
+  "exportaciones-base-facturacion": [
+    {
+      to: "/dashboard/exportaciones-base-facturacion",
+      label: "Exportaciones Base de Facturación",
+      description: "exportaciones-base-facturacion",
       icon: <FileTextIcon className="h-6 w-6" />,
     },
   ],

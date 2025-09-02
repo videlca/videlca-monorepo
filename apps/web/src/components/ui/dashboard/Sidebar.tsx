@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Calendar,
+  CheckSquareIcon,
   ChevronRight,
   DollarSign,
   FileSpreadsheetIcon,
@@ -121,6 +122,20 @@ export function Sidebar({
       icon: DollarSign,
       subItems: linksSideBar.liquidaciones,
       requiredPermission: "liquidaciones",
+    },
+    {
+      id: "aprobacion-liquidaciones-ordenes",
+      label: "Aprobación de Liquidaciones de Ordenes",
+      icon: CheckSquareIcon,
+      subItems: linksSideBar["aprobacion-liquidaciones-ordenes"],
+      requiredPermission: "aprobacion-liquidaciones-ordenes",
+    },
+    {
+      id: "exportaciones-base-facturacion",
+      label: "Exportaciones Base de Facturación",
+      icon: FileSpreadsheetIcon,
+      subItems: linksSideBar["exportaciones-base-facturacion"],
+      requiredPermission: "exportaciones-base-facturacion",
     },
   ];
 
