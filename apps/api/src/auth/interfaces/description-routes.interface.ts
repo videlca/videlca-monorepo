@@ -19,9 +19,20 @@ export enum DescriptionRoutes {
     TARIFAS = "tarifas",
 
     // SERVICIOS
-    SERVICIOS = "servicios"
+    SERVICIOS = "servicios",
 
     // ORDENES SERVICIO
-    , ORDENES_SERVICIO = "ordenes-servicio",
+    ORDENES_SERVICIO = "ordenes-servicio",
 
+    // LIQUIDACIONES
+    LIQUIDACIONES = "liquidaciones",
+
+    // APROBACION LIQUIDACION ORDENES SERVICIO
+    APROBACION_LIQUIDACION_ORDENES_SERVICIO = "aprobacion-liquidacion-ordenes-servicio",
+
+    // REPORTES
+    REPORTES = "reportes",
+
+    // EXPORTACIONES
+    EXPORTACIONES = "exportaciones",
 }

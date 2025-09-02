@@ -11,14 +11,19 @@ import {
   DefaultValuePipe,
   HttpCode,
 } from '@nestjs/common';
-import { LiquidacionesService } from './liquidaciones.service';
-import { UpdateLiquidacioneDto } from './dto/update-liquidacione.dto';
-import { CreateLiquidacioneDto } from './dto/create-liquidacione.dto'
 import { ApiTags, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { OrdenBody } from './dto/orden-body.dto';
+
+import { AppAuth } from '../../auth/decorators';
+import { DescriptionRoutes } from '../../auth/interfaces';
+
+import { LiquidacionesService } from '../services/liquidaciones.service';
+import { UpdateLiquidacioneDto } from '../dto/update-liquidacione.dto';
+import { CreateLiquidacioneDto } from '../dto/create-liquidacione.dto'
+import { OrdenBody } from '../dto/orden-body.dto';
 
 @ApiTags('liquidaciones')
 @Controller('liquidaciones')
+@AppAuth(DescriptionRoutes.LIQUIDACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class LiquidacionesController {
   constructor(private readonly service: LiquidacionesService) { }
 

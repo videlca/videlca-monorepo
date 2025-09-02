@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { Liquidacione } from './entities/liquidacione.entity';
-import { UpdateLiquidacioneDto } from './dto/update-liquidacione.dto';
-import { CreateLiquidacioneDto } from './dto/create-liquidacione.dto'
-import { OrdenServicio } from 'src/orden-servicio/entities';
-import { OrdenServicioService } from 'src/orden-servicio/services/orden-servicio.service';
+import { Liquidacione } from '../entities/liquidacione.entity';
+import { UpdateLiquidacioneDto } from '../dto/update-liquidacione.dto';
+import { CreateLiquidacioneDto } from '../dto/create-liquidacione.dto'
+import { OrdenServicio } from '../../orden-servicio/entities';
+import { OrdenServicioService } from '../../orden-servicio/services/orden-servicio.service';
 import {
   toUTCDateOnly,
   endOfMonth,
@@ -14,9 +14,9 @@ import {
   diffDaysInclusive,
   round2,
   fmtYMD
-} from 'src/common/utils/date-helpers';
-import { PrecioOrdenDto } from 'src/orden-servicio/dto';
-import { EstadoOrdenServicio } from 'src/common/interfaces/estado-orden-servicio.interface';
+} from '../../common/utils/date-helpers';
+import { PrecioOrdenDto } from '../../orden-servicio/dto';
+import { EstadoOrdenServicio } from '../../common/interfaces/estado-orden-servicio.interface';
 
 @Injectable()
 export class LiquidacionesService {

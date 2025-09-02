@@ -1,10 +1,17 @@
 import { forwardRef, Module } from '@nestjs/common';
-import { LiquidacionesService } from './liquidaciones.service';
-import { LiquidacionesController } from './liquidaciones.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { CommonModule } from '../common/common.module';
+import { OrdenServicioModule } from '../orden-servicio/orden-servicio.module';
+
 import { Liquidacione } from './entities/liquidacione.entity';
-import { OrdenServicioModule } from 'src/orden-servicio/orden-servicio.module';
-import { CommonModule } from 'src/common/common.module';
+import { LiquidacionesService } from './services/liquidaciones.service';
+
+import { 
+  LiquidacionesController, 
+  AprobacionLiquidacionOrdenServicioController, 
+  ExportacionController 
+} from './controllers';
 
 @Module({
   imports: [
@@ -12,8 +19,16 @@ import { CommonModule } from 'src/common/common.module';
     forwardRef(() => OrdenServicioModule), // usa forwardRef si hay circularidad
     CommonModule,
   ],
-  controllers: [LiquidacionesController],
-  providers: [LiquidacionesService],
-  exports: [LiquidacionesService],
+  controllers: [
+    LiquidacionesController, 
+    AprobacionLiquidacionOrdenServicioController, 
+    ExportacionController
+  ],
+  providers: [
+    LiquidacionesService
+  ],
+  exports: [
+    LiquidacionesService
+  ],
 })
 export class LiquidacionesModule {}

@@ -22,7 +22,7 @@ import {
 } from '../dto';
 
 import { ApiQuery } from '@nestjs/swagger';
-import { LiquidacionesService } from 'src/liquidaciones/liquidaciones.service';
+import { LiquidacionesService } from '../../liquidaciones/services/liquidaciones.service';
 
 
 @Controller('orden-servicio')
