@@ -61,7 +61,6 @@ export class ValidarRangoHorarioPersonalOrdenDto {
         ]
     })
     @IsArray()  
-    @ArrayMinSize(1, { message: 'el servicio debe tener al menos un personal' })
     @ValidateNested({ each: true })
     @Type(() => CreatePersonalServicioDto)
     personal: CreatePersonalServicioDto[];

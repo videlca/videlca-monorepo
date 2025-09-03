@@ -873,7 +873,7 @@ export class OrdenServicioService {
   }
 
   private getDuration(start: number, end: number): number {
-    if (end === 0) return 24; // Orden de 24 horas
+    if (start === end) return 24; // Orden de 24 horas
     if (end > start) return end - start;
     return (24 - start) + end; // Horario nocturno
   }
@@ -887,6 +887,12 @@ export class OrdenServicioService {
     let totalEmpleadoHoras = 0;
     console.log("horaInicio", horaInicio);
     console.log("horaFin", horaFin);
+
+    if (validarRangoHorarioPersonalOrdenDto.personal.length === 0){
+      return {
+        message: "No se asigno personal, no es necesario validar horarios"
+      }
+    }
   
     for (const emp of validarRangoHorarioPersonalOrdenDto.personal) {
 
@@ -896,28 +902,41 @@ export class OrdenServicioService {
 
       console.log("duracionServicio", duracionServicio);
       console.log("duracionEmp", duracionEmp);
-      // if (horaInicioEmpleado == horaFinEmpleado){
-      //   throw new BadRequestException(`Hora incio y fin de un empleado no puede ser la misma`);
-      // }
-  
-      // Validar que esté dentro del rango de la orden
-      // Caso simple: orden normal (ej: 6-15)
-      if (duracionServicio < 24) {
-        if (!(horaInicioEmpleado >= horaInicio && horaFinEmpleado <= horaFin)) {
-          throw new BadRequestException(`La duracion del horario de los empleados debe estar en el rango de la orden`);
-          //return false; // fuera de rango
-        }
+
+      if (horaInicioEmpleado == horaFinEmpleado){
+        throw new BadRequestException(`Hora inicio y fin de un empleado no puede ser la misma`);
       }
 
-      // Caso nocturno o 24h → permitimos más flexibilidad
-      // (se puede refinar según tu necesidad)
-      // if (duracionServicio === 24) {
-      //   // Para servicios de 24 horas, los empleados pueden trabajar en cualquier momento del día
-      //   // Solo validamos que las horas del empleado sean válidas (no iguales)
-      //   if (horaInicioEmpleado === horaFinEmpleado) {
-      //     throw new BadRequestException(`Para servicios de 24 horas, el empleado debe tener horarios diferentes de inicio y fin`);
-      //   }
-      // }
+      if (duracionServicio < 24){
+
+        // Validar que horario sea durante las horas del dia: hora inicio mayor a hora fin
+        if(horaInicio < horaFin){
+
+          // Validar que el horario del empleado este dentro del rango de la orden de servicio
+          if (!(horaInicioEmpleado >= horaInicio && horaFinEmpleado <= horaFin)) {
+            throw new BadRequestException(`El horario del empleado debe estar dentro del rango de la orden de servicio`);
+          }
+
+        }
+        else {
+
+          // Validar que el horario del empleado este dentro del rango de la orden de servicio (turno nocturno) o pasa por la medianoche
+          const inicioEnRango = horaInicioEmpleado >= horaInicio || horaInicioEmpleado < horaFin;
+      
+          const finEnRango = horaFinEmpleado <= horaFin || horaFinEmpleado > horaInicio;
+        
+          // Validar que el turno del empleado esté dentro del rango
+          if (!(inicioEnRango && finEnRango)) {
+
+            throw new BadRequestException(
+              `El horario del empleado debe estar dentro del rango de la orden de servicio`
+            );
+
+          }
+
+        }
+
+      }
   
       totalEmpleadoHoras += duracionEmp;
     }
@@ -932,7 +951,7 @@ export class OrdenServicioService {
     return {
       message: "validacion correcta"
     }
-    
+
   }
 
   // ------ Helpers de horas (soporta HH:mm:ss, turnos nocturnos y 24h)
@@ -1068,11 +1087,22 @@ export class OrdenServicioService {
     // Obtener orden de servicio
     const ordenServicio = await this.findOne(id);
 
-    const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.descripcion;
+    if(fechaInicioOrden == ordenServicio.fechaInicio || fechaFinOrden == ordenServicio.fechaFin){
+      return {
+        message: 'Las fechas son iguales a las que ya tiene la orden de servicio, no se realizo ningun cambio'
+      }
+    }
+
+    const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.nombre;
+
+    console.log(ordenServicio.fechaInicio);
+    console.log(fechaInicioOrden.toISOString().split('T')[0]);
 
     // validar si es diferente a la que se coloco
     // si es diferente validar que el estado de la orden sea programado o por iniciar
     if(fechaInicioOrden != ordenServicio.fechaInicio){
+
+      console.log('entro a validar fecha inicio');
     
       if(descripcionEstadoOrdenServicio != EstadoOrdenServicio.PROGRAMADO && descripcionEstadoOrdenServicio != EstadoOrdenServicio.POR_INICIAR){
 
@@ -1242,7 +1272,7 @@ export class OrdenServicioService {
       }
 
       // eliminar tarifas asociadas a la orden
-      await queryRunner.manager.delete(OrdenServicioTarifa, { idOrdenServicio: {id} });
+      await queryRunner.manager.delete(OrdenServicioTarifa, { idOrdenServicio: id });
 
       for (const servicio of servicios) {
               
