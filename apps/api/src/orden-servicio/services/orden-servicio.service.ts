@@ -441,21 +441,14 @@ export class OrdenServicioService {
 
     const { idTarifa, idServicio, horaInicio, horaFin } = validarHorarioServicioDto;
 
-    console.log(idServicio);
-
     //! VALIDACION HORARIOS
 
     // Validar que la tarifa exista
     // const tarifa = await this.tarifasService.findOne(idTarifa);
 
     const servicio = await this.servicioService.findOne(idServicio);
-    
-
-    console.log(servicio.codigo);
 
     const tipohorarioDescripcion = servicio?.idTipoHorarioDescripcion;
-
-    console.log(tipohorarioDescripcion.nombre);
 
     if (tipohorarioDescripcion.nombre === TipoHorarioInterface.DIA_COMPLETO) {
 
@@ -560,8 +553,6 @@ export class OrdenServicioService {
     // Validar que la tarifa exista
     const tarifa = await this.tarifasService.findOne(idTarifa);
     // const servicio = await this.servicioService.findOne(idServicio);
-
-    console.log(tarifa);
 
     if (!fechaFin) {
   
@@ -694,10 +685,6 @@ export class OrdenServicioService {
     const servicio = await this.servicioService.findOne(idServicio);
 
     const tarifa = await this.tarifasService.findTarifaByServicio(idServicio);
-    console.log('--------------------------------------------------------');
-    console.log('tarifa: ', tarifa);
-    console.log('--------------------------------------------------------');
-    console.log(servicio);
 
     if (!fechaFin) {
   
@@ -735,8 +722,6 @@ export class OrdenServicioService {
     if (this.esMesCompleto(fechaInicioOrden, fechaFinOrden)) {
       
       let diaFinMes: number = diaFin;
-      console.log('--------------------------------------------------------');
-      console.log('tarifa[0].idServicio.idTipoHorarioDescripcion.nombre: ', tarifa[0].idServicio);
       if (tarifa[0].idServicio.idTipoHorarioDescripcion.nombre == TipoHorarioInterface.NOCTURNO){
 
         diaFinMes = diaFin - 1;
@@ -815,9 +800,7 @@ export class OrdenServicioService {
     }
 
 
-    console.log('--------------------------------------------------------');
-    console.log(`precioTotal final: ${precioTotal}, servicio: ${servicio.codigo}`);
-    console.log('--------------------------------------------------------');
+
     return {
       "message": `El servicio tiene una duracion de ${duracionServicioDias} dia(s)`,
       "precio": precioTotal
@@ -885,8 +868,6 @@ export class OrdenServicioService {
     const duracionServicio = this.getDuration(horaInicio, horaFin);
   
     let totalEmpleadoHoras = 0;
-    console.log("horaInicio", horaInicio);
-    console.log("horaFin", horaFin);
 
     if (validarRangoHorarioPersonalOrdenDto.personal.length === 0){
       return {
@@ -899,9 +880,6 @@ export class OrdenServicioService {
       const horaInicioEmpleado = this.parseHour(emp.horaInicio);
       const horaFinEmpleado = this.parseHour(emp.horaFin);
       const duracionEmp = this.getDuration(horaInicioEmpleado, horaFinEmpleado);
-
-      console.log("duracionServicio", duracionServicio);
-      console.log("duracionEmp", duracionEmp);
 
       if (horaInicioEmpleado == horaFinEmpleado){
         throw new BadRequestException(`Hora inicio y fin de un empleado no puede ser la misma`);
@@ -941,7 +919,6 @@ export class OrdenServicioService {
       totalEmpleadoHoras += duracionEmp;
     }
 
-    console.log("totalEmpleadoHoras", totalEmpleadoHoras);
   
     // Validar que los empleados cubran la orden completa
     if (!(totalEmpleadoHoras === duracionServicio)){
@@ -1087,7 +1064,12 @@ export class OrdenServicioService {
     // Obtener orden de servicio
     const ordenServicio = await this.findOne(id);
 
-    if(fechaInicioOrden == ordenServicio.fechaInicio || fechaFinOrden == ordenServicio.fechaFin){
+    // Convert ordenServicio.fechaInicio to Date if it's a string
+    const fechaInicioOrdenString = new Date(ordenServicio.fechaInicio).toISOString().split('T')[0];
+    const fechaFinOrdenString = new Date(ordenServicio.fechaFin).toISOString().split('T')[0];
+
+
+    if(fechaInicioOrden.toISOString().split('T')[0] == fechaInicioOrdenString && fechaFinOrden.toISOString().split('T')[0] == fechaFinOrdenString){
       return {
         message: 'Las fechas son iguales a las que ya tiene la orden de servicio, no se realizo ningun cambio'
       }
@@ -1095,14 +1077,9 @@ export class OrdenServicioService {
 
     const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.nombre;
 
-    console.log(ordenServicio.fechaInicio);
-    console.log(fechaInicioOrden.toISOString().split('T')[0]);
-
     // validar si es diferente a la que se coloco
     // si es diferente validar que el estado de la orden sea programado o por iniciar
-    if(fechaInicioOrden != ordenServicio.fechaInicio){
-
-      console.log('entro a validar fecha inicio');
+    if(fechaInicioOrden.toISOString().split('T')[0] != fechaInicioOrdenString){
     
       if(descripcionEstadoOrdenServicio != EstadoOrdenServicio.PROGRAMADO && descripcionEstadoOrdenServicio != EstadoOrdenServicio.POR_INICIAR){
 
@@ -1115,7 +1092,7 @@ export class OrdenServicioService {
     // validar fecha fin de la orden y si es diferente a la que se coloco
     // si es diferente validar - que el estado de la orden sea PROGRAMADO , POR INICIAR , INICIADO , POR TERMINAR 
 
-    if(fechaFinOrden != null && fechaFinOrden != ordenServicio.fechaFin){
+    if(fechaFinOrden != null && fechaFinOrden.toISOString().split('T')[0] != fechaFinOrdenString){
 
       if(
         descripcionEstadoOrdenServicio != EstadoOrdenServicio.PROGRAMADO && 
