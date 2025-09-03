@@ -1,11 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Section } from "../../../components/ui/dashboard/Section";
 import { useProgramacionPersonal } from "../../../api/queryFunctions/programacion-personal";
-import Table from "../../../components/common/Table";
-import type { ColumnDef } from "@tanstack/react-table";
-import type { ProgramacionPersonal } from "../../../api/types";
 import { useMemo, useState } from "react";
-import { dateFormat } from "../../../utils/DateFormat";
 import {
   startOfWeek,
   endOfWeek,
@@ -20,12 +15,11 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Plus,
   X,
   Calendar,
   Clock,
-  Edit2,
 } from "lucide-react";
+import { useTipoPersonal } from "../../../api/queryFunctions/configuracion";
 
 export const Route = createFileRoute("/dashboard/programaciones/")({
   component: RouteComponent,
@@ -34,13 +28,7 @@ export const Route = createFileRoute("/dashboard/programaciones/")({
 interface Event {
   id: string;
   title: string;
-  type:
-    | "guardia"
-    | "standby"
-    | "vacaciones"
-    | "formacion"
-    | "reunion"
-    | "personal";
+  type: "asignado" | "permiso" | "vacaciones" | "incapacitado";
   startDate: Date;
   endDate: Date;
   startTime: string;
@@ -49,182 +37,85 @@ interface Event {
   description?: string;
 }
 
-interface Person {
-  id: string;
-  name: string;
-  code: string;
-  department: string;
-}
-
+// TODO: Agregar los tipos de programaciones en la base de datos y en este archivo
 const eventTypes = {
-  guardia: {
-    label: "Guardia",
+  asignado: {
+    label: "Asignado",
     color: "bg-purple-500",
     textColor: "text-white",
   },
-  standby: { label: "Stand By", color: "bg-blue-500", textColor: "text-white" },
+  permiso: {
+    label: "Permiso",
+    color: "bg-yellow-500",
+    textColor: "text-white",
+  },
   vacaciones: {
     label: "Vacaciones",
-    color: "bg-orange-500",
+    color: "bg-red-500",
     textColor: "text-white",
   },
-  formacion: {
-    label: "Formación",
-    color: "bg-green-500",
-    textColor: "text-white",
-  },
-  reunion: { label: "Reunión", color: "bg-red-500", textColor: "text-white" },
-  personal: {
-    label: "Personal",
-    color: "bg-gray-500",
+  incapacitado: {
+    label: "Incapacitado",
+    color: "bg-blue-500",
     textColor: "text-white",
   },
 };
 
-const initialPeople: Person[] = [
-  {
-    id: "1",
-    name: "Juan Carlos Meneses",
-    code: "192h",
-    department: "Operaciones",
-  },
-  { id: "2", name: "Vasco Céspedes", code: "176h", department: "Logística" },
-  {
-    id: "3",
-    name: "Reyes Escudero",
-    code: "152h",
-    department: "Mantenimiento",
-  },
-  { id: "4", name: "Mario Castro", code: "173h", department: "Operaciones" },
-  {
-    id: "5",
-    name: "Marleny Higuera",
-    code: "224h",
-    department: "Administración",
-  },
-  { id: "6", name: "Matarrita Arana", code: "217h", department: "Seguridad" },
-  { id: "7", name: "José Vivas", code: "175h", department: "Operaciones" },
-  { id: "8", name: "Cantillo Ruiz", code: "192h", department: "Logística" },
-  {
-    id: "9",
-    name: "Hernández Mendoza",
-    code: "223h",
-    department: "Operaciones",
-  },
-  {
-    id: "10",
-    name: "Zelaya Christian",
-    code: "237h",
-    department: "Mantenimiento",
-  },
-  { id: "11", name: "Stevens Herman", code: "208h", department: "Seguridad" },
-  {
-    id: "12",
-    name: "Rodríguez Ávila",
-    code: "211h",
-    department: "Administración",
-  },
-  { id: "13", name: "Flores López", code: "168h", department: "Logística" },
-  {
-    id: "14",
-    name: "Guerra de Fuentes",
-    code: "206h",
-    department: "Operaciones",
-  },
-  {
-    id: "15",
-    name: "Alonzo Cardona",
-    code: "205h",
-    department: "Mantenimiento",
-  },
-];
-
-const initialEvents: Event[] = [
-  {
-    id: "1",
-    title: "Guardia Nocturna",
-    type: "guardia",
-    startDate: new Date(2025, 0, 15),
-    endDate: new Date(2025, 0, 17),
-    startTime: "22:00",
-    endTime: "06:00",
-    personId: "1",
-  },
-  {
-    id: "2",
-    title: "Vacaciones Anuales",
-    type: "vacaciones",
-    startDate: new Date(2025, 0, 20),
-    endDate: new Date(2025, 0, 25),
-    startTime: "00:00",
-    endTime: "23:59",
-    personId: "2",
-  },
-  {
-    id: "3",
-    title: "Stand By Fin de Semana",
-    type: "standby",
-    startDate: new Date(2025, 0, 18),
-    endDate: new Date(2025, 0, 19),
-    startTime: "08:00",
-    endTime: "18:00",
-    personId: "3",
-  },
-];
-
 function RouteComponent() {
   const { data: programacionPersonalQuery } = useProgramacionPersonal();
+  const { data: tipoPersonalQuery } = useTipoPersonal();
 
-  console.log(programacionPersonalQuery);
-
-  // const columns: ColumnDef<ProgramacionPersonal>[] = [
-  //   {
-  //     header: "Id. Orden de Servicio",
-  //     accessorKey: "idOrdenServicioTarifa",
-  //   },
-  //   {
-  //     header: "Personal",
-  //     accessorKey: "personal",
-  //     cell: ({ row }) => {
-  //       return (
-  //         <span className="font-medium whitespace-nowrap text-gray-500">
-  //           {row.original.idPersonal.primerNombre}{" "}
-  //           {row.original.idPersonal.primerApellido}
-  //         </span>
-  //       );
-  //     },
-  //   },
-  //   {
-  //     header: "Hora Inicio",
-  //     accessorKey: "horaInicio",
-  //   },
-  //   {
-  //     header: "Hora Fin",
-  //     accessorKey: "horaFin",
-  //   },
-  // ];
+  const personalAsignado =
+    programacionPersonalQuery?.data?.map((item) => ({
+      id: item.idPersonal.idPersonal,
+      name: item.idPersonal.primerNombre + " " + item.idPersonal.primerApellido,
+      department: item.idPersonal.idTipoPersonal.descripcion,
+      code: item.idPersonal.numeroIdentificacion,
+      idTipoPersonal: item.idPersonal.idTipoPersonal.idTipoPersonal,
+      horaInicio: item.horaInicio,
+      horaFin: item.horaFin,
+    })) || [];
 
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [people, setPeople] = useState<Person[]>(initialPeople);
-  const [events, setEvents] = useState<Event[]>(initialEvents);
-  const [selectedPerson, setSelectedPerson] = useState<string>("all");
-  const [isAddingEvent, setIsAddingEvent] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  // TODO: Eliminar este mock, se debe traer de la base de datos las programaciones
+  const [events] = useState<Event[]>([
+    {
+      id: "1",
+      title: "Evento 1",
+      type: "asignado",
+      startDate: new Date("2025-09-02"),
+      endDate: new Date("2025-09-20"),
+      startTime: "08:00",
+      endTime: "17:00",
+      personId: "3",
+    },
+    {
+      id: "2",
+      title: "Evento 2",
+      type: "vacaciones",
+      startDate: new Date("2025-09-20"),
+      endDate: new Date("2025-09-28"),
+      startTime: "00:00",
+      endTime: "23:00",
+      personId: "3",
+    },
+    {
+      id: "3",
+      title: "Evento 3",
+      type: "asignado",
+      startDate: new Date("2025-09-02"),
+      endDate: new Date("2025-09-03"),
+      startTime: "08:00",
+      endTime: "17:00",
+      personId: "4",
+    },
+  ]);
+  const [selectedTipoPersonal, setSelectedTipoPersonal] = useState<number>(0);
   const [selectedEventDetails, setSelectedEventDetails] =
     useState<Event | null>(null);
-  const [newEvent, setNewEvent] = useState({
-    title: "",
-    type: "guardia" as keyof typeof eventTypes,
-    startDate: format(new Date(), "yyyy-MM-dd"),
-    endDate: format(new Date(), "yyyy-MM-dd"),
-    startTime: "09:00",
-    endTime: "17:00",
-    description: "",
-  });
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
-  const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   const extendedEnd = addDays(weekEnd, 7);
   const extendedDays = eachDayOfInterval({
@@ -233,24 +124,17 @@ function RouteComponent() {
   });
 
   const filteredPeople = useMemo(() => {
-    return selectedPerson === "all"
-      ? people
-      : people.filter((p) => p.id === selectedPerson);
-  }, [people, selectedPerson]);
+    return selectedTipoPersonal === 0
+      ? personalAsignado
+      : personalAsignado?.filter(
+          (p) => p.idTipoPersonal === selectedTipoPersonal,
+        );
+  }, [personalAsignado, selectedTipoPersonal]);
 
-  const getEventsForPersonAndDay = (personId: string, day: Date) => {
+  const getUniqueEventsForPerson = (personId: number) => {
     return events.filter(
       (event) =>
-        event.personId === personId &&
-        day >= event.startDate &&
-        day <= event.endDate,
-    );
-  };
-
-  const getUniqueEventsForPerson = (personId: string) => {
-    return events.filter(
-      (event) =>
-        event.personId === personId &&
+        event.personId === personId.toString() &&
         event.startDate <= extendedEnd &&
         event.endDate >= weekStart,
     );
@@ -262,88 +146,25 @@ function RouteComponent() {
       differenceInDays(event.startDate, weekStart),
     );
     const eventEndIndex = Math.min(
-      13,
+      extendedDays.length - 1,
       differenceInDays(event.endDate, weekStart),
     );
+
+    // Calculate the width based on how many days the event spans within the visible calendar
     const eventDuration = eventEndIndex - eventStartIndex + 1;
 
+    // Calculate the remaining width from the current day to the end of the event
+    const remainingDays = eventEndIndex - dayIndex + 1;
+    const widthFromCurrentDay = Math.max(0, remainingDays);
+
     return {
-      shouldShow: dayIndex === eventStartIndex,
-      width: eventDuration,
+      shouldShow:
+        dayIndex === eventStartIndex &&
+        eventStartIndex <= extendedDays.length - 1,
+      width: widthFromCurrentDay,
       isMultiDay: differenceInDays(event.endDate, event.startDate) > 0,
+      totalEventDays: eventDuration,
     };
-  };
-
-  const handleAddEvent = () => {
-    if (!newEvent.title || selectedPerson === "all") return;
-
-    const event: Event = {
-      id: Date.now().toString(),
-      title: newEvent.title,
-      type: newEvent.type,
-      startDate: new Date(newEvent.startDate),
-      endDate: new Date(newEvent.endDate),
-      startTime: newEvent.startTime,
-      endTime: newEvent.endTime,
-      personId: selectedPerson,
-      description: newEvent.description,
-    };
-
-    setEvents([...events, event]);
-    setNewEvent({
-      title: "",
-      type: "guardia",
-      startDate: format(new Date(), "yyyy-MM-dd"),
-      endDate: format(new Date(), "yyyy-MM-dd"),
-      startTime: "09:00",
-      endTime: "17:00",
-      description: "",
-    });
-    setIsAddingEvent(false);
-  };
-
-  const handleEditEvent = (event: Event) => {
-    setEditingEvent(event);
-    setNewEvent({
-      title: event.title,
-      type: event.type,
-      startDate: format(event.startDate, "yyyy-MM-dd"),
-      endDate: format(event.endDate, "yyyy-MM-dd"),
-      startTime: event.startTime,
-      endTime: event.endTime,
-      description: event.description || "",
-    });
-  };
-
-  const handleUpdateEvent = () => {
-    if (!editingEvent) return;
-
-    const updatedEvent: Event = {
-      ...editingEvent,
-      title: newEvent.title,
-      type: newEvent.type,
-      startDate: new Date(newEvent.startDate),
-      endDate: new Date(newEvent.endDate),
-      startTime: newEvent.startTime,
-      endTime: newEvent.endTime,
-      description: newEvent.description,
-    };
-
-    setEvents(events.map((e) => (e.id === editingEvent.id ? updatedEvent : e)));
-    setEditingEvent(null);
-    setNewEvent({
-      title: "",
-      type: "guardia",
-      startDate: format(new Date(), "yyyy-MM-dd"),
-      endDate: format(new Date(), "yyyy-MM-dd"),
-      startTime: "09:00",
-      endTime: "17:00",
-      description: "",
-    });
-  };
-
-  const handleDeleteEvent = (eventId: string) => {
-    setEvents(events.filter((e) => e.id !== eventId));
   };
 
   const goToPreviousWeek = () => {
@@ -363,15 +184,26 @@ function RouteComponent() {
     setSelectedEventDetails(event);
   };
 
-  // return (
-  //   // <Section>
-  //   //   <Table data={programacionPersonalQuery?.data || []} columns={columns} />
-  //   // </Section>
-
-  // );
-
   return (
     <div className="space-y-4">
+      {/* Leyenda de colores */}
+      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+        <h3 className="mb-3 font-semibold text-gray-900">
+          Tipos de Actividades del Equipo
+        </h3>
+        <div className="flex flex-wrap gap-4">
+          {Object.entries(eventTypes).map(([key, type]) => (
+            <div key={key} className="flex items-center gap-2">
+              <div
+                className={`h-5 w-5 rounded-md ${type.color} shadow-sm`}
+              ></div>
+              <span className="text-sm font-medium text-gray-700">
+                {type.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
       {/* Controles superiores */}
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -406,288 +238,170 @@ function RouteComponent() {
 
           <div className="flex gap-2">
             <select
-              value={selectedPerson}
-              onChange={(e) => setSelectedPerson(e.target.value)}
+              value={selectedTipoPersonal}
+              onChange={(e) => setSelectedTipoPersonal(Number(e.target.value))}
               className="w-48 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
-              <option value="all">Todo el equipo</option>
-              {people.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.name} - {person.department}
+              <option value="0">Todo el equipo</option>
+              {tipoPersonalQuery?.data?.map((tipo) => (
+                <option key={tipo.idTipoPersonal} value={tipo.idTipoPersonal}>
+                  {tipo.descripcion}
                 </option>
               ))}
             </select>
-
-            <button
-              onClick={() => setIsAddingEvent(true)}
-              className="inline-flex items-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Programar Actividad
-            </button>
           </div>
         </div>
       </div>
 
       {/* Calendario principal */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg">
         <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
+          <div className="min-w-[1200px]">
             {/* Encabezado de días */}
-            <div className="grid grid-cols-[250px_1fr] border-b">
-              <div className="border-r bg-gray-50 p-3 font-semibold">
-                <div className="flex items-center gap-2">
+            <div className="grid grid-cols-[280px_1fr] border-b border-gray-300">
+              <div className="border-r border-gray-300 p-4">
+                <div className="flex items-center gap-2 font-semibold">
                   <Users className="h-4 w-4" />
                   Miembros del Equipo
                 </div>
               </div>
               <div className="grid grid-cols-14 gap-0">
-                {extendedDays.map((day, index) => (
-                  <div
-                    key={index}
-                    className="border-r bg-gray-50 p-2 text-center text-sm font-medium last:border-r-0"
-                  >
-                    <div>{format(day, "EEE", { locale: es })}</div>
-                    <div className="text-xs text-gray-500">
-                      {format(day, "d")}
+                {extendedDays.map((day, index) => {
+                  const isToday =
+                    format(day, "yyyy-MM-dd") ===
+                    format(new Date(), "yyyy-MM-dd");
+                  return (
+                    <div
+                      key={index}
+                      className={`border-r border-gray-300 p-3 text-center text-white last:border-r-0 ${
+                        isToday ? "bg-blue-600" : "bg-gray-50"
+                      }`}
+                    >
+                      <div className="text-xs font-medium tracking-wide uppercase">
+                        {format(day, "EEE", { locale: es })}
+                      </div>
+                      <div
+                        className={`text-lg font-bold ${isToday ? "text-white" : "text-gray-900"}`}
+                      >
+                        {format(day, "dd")}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {format(day, "MM-yy")}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             {/* Filas de personas */}
-            {filteredPeople.map((person) => (
+            {filteredPeople?.map((person, personIndex) => (
               <div
-                key={person.id}
-                className="grid grid-cols-[250px_1fr] border-b hover:bg-gray-50"
+                key={person.idTipoPersonal}
+                className={`grid grid-cols-[280px_1fr] border-b border-gray-200 hover:bg-gray-50 ${
+                  personIndex % 2 === 0 ? "bg-white" : "bg-gray-25"
+                }`}
               >
-                <div className="border-r p-3">
-                  <div className="text-sm font-medium">{person.name}</div>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{person.department}</span>
-                    <span className="inline-flex items-center rounded-md border bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+                <div className="border-r border-gray-200 p-4">
+                  <div className="text-sm font-semibold text-gray-900">
+                    {person.name}
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-xs text-gray-600">
+                    <span className="font-medium">{person.department}</span>
+                    <span className="inline-flex items-center rounded-md border bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
                       {person.code}
                     </span>
                   </div>
                 </div>
                 <div className="relative grid grid-cols-14 gap-0">
-                  {extendedDays.map((day, dayIndex) => (
-                    <div
-                      key={dayIndex}
-                      className="relative min-h-[60px] border-r p-1 last:border-r-0"
-                    >
-                      {getUniqueEventsForPerson(person.id).map((event) => {
-                        const eventType = eventTypes[event.type];
-                        const position = getEventPosition(event, dayIndex);
+                  {extendedDays.map((day, dayIndex) => {
+                    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                    return (
+                      <div
+                        key={dayIndex}
+                        className={`relative min-h-[100px] border-r border-gray-200 p-2 last:border-r-0 ${
+                          isWeekend ? "bg-gray-50" : "bg-white"
+                        }`}
+                      >
+                        {getUniqueEventsForPerson(person.id).map((event) => {
+                          const eventType =
+                            eventTypes[event.type as keyof typeof eventTypes];
+                          const position = getEventPosition(event, dayIndex);
 
-                        if (!position.shouldShow) return null;
+                          if (!position.shouldShow) return null;
 
-                        return (
-                          <div
-                            key={event.id}
-                            className={` ${eventType.color} ${eventType.textColor} relative mb-1 cursor-pointer rounded-md p-1 text-xs transition-opacity hover:opacity-90 ${position.isMultiDay ? "font-medium" : ""} `}
-                            style={{
-                              width: position.isMultiDay
-                                ? `${position.width * 100}%`
-                                : "100%",
-                              minWidth: position.isMultiDay
-                                ? `${position.width * 100}%`
-                                : "auto",
-                              zIndex: 10,
-                            }}
-                            onClick={(e) => handleEventClick(event, e)}
-                          >
-                            <div className="flex items-center gap-1 truncate font-medium">
-                              {position.isMultiDay && (
-                                <Calendar className="h-3 w-3 flex-shrink-0" />
+                          const isFirstDay =
+                            dayIndex ===
+                            Math.max(
+                              0,
+                              differenceInDays(event.startDate, weekStart),
+                            );
+                          const isLastDay =
+                            dayIndex ===
+                            Math.min(
+                              extendedDays.length - 1,
+                              differenceInDays(event.endDate, weekStart),
+                            );
+
+                          return (
+                            <div
+                              key={event.id}
+                              className={`${eventType.color} ${eventType.textColor} relative mb-1 cursor-pointer transition-all ${
+                                position.isMultiDay ? "font-medium" : ""
+                              }`}
+                              style={{
+                                width: position.isMultiDay
+                                  ? `calc(${position.width * 100}% + ${(position.width - 1) * 2}px)`
+                                  : "100%",
+                                zIndex: 10,
+                                borderRadius: position.isMultiDay
+                                  ? isFirstDay && isLastDay
+                                    ? "6px"
+                                    : isFirstDay
+                                      ? "6px 0 0 6px"
+                                      : isLastDay
+                                        ? "0 6px 6px 0"
+                                        : "0"
+                                  : "6px",
+                                height: "32px",
+                                display: "flex",
+                                alignItems: "center",
+                                padding: "0 8px",
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                border: "1px solid rgba(255,255,255,0.2)",
+                              }}
+                              onClick={(e) => handleEventClick(event, e)}
+                            >
+                              <div className="flex w-full items-center gap-1 truncate">
+                                {isFirstDay && position.isMultiDay && (
+                                  <Calendar className="h-3 w-3 flex-shrink-0" />
+                                )}
+                                <span className="truncate text-xs font-semibold">
+                                  {event.title}
+                                </span>
+                                {position.isMultiDay && isFirstDay && (
+                                  <span className="ml-auto flex-shrink-0 text-xs opacity-75">
+                                    ({position.totalEventDays}d)
+                                  </span>
+                                )}
+                              </div>
+                              {!position.isMultiDay && (
+                                <div className="absolute right-1 -bottom-1 left-1 truncate text-[10px] opacity-75">
+                                  {event.startTime}-{event.endTime}
+                                </div>
                               )}
-                              {event.title}
                             </div>
-                            {position.isMultiDay && (
-                              <div className="truncate text-xs opacity-75">
-                                {format(event.startDate, "dd/MM")}{" "}
-                                {event.startTime} -{" "}
-                                {format(event.endDate, "dd/MM")} {event.endTime}
-                              </div>
-                            )}
-                            {!position.isMultiDay && (
-                              <div className="truncate text-xs opacity-75">
-                                {event.startTime} - {event.endTime}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
-
-      {/* Modal para agregar evento */}
-      {isAddingEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="bg-opacity-50 fixed inset-0 bg-black"
-            onClick={() => setIsAddingEvent(false)}
-          ></div>
-          <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-lg">
-            <div className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">
-                  Programar Nueva Actividad
-                </h2>
-                <button
-                  onClick={() => setIsAddingEvent(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Miembro del Equipo
-                  </label>
-                  <select
-                    value={selectedPerson === "all" ? "" : selectedPerson}
-                    onChange={(e) => setSelectedPerson(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <option value="">Seleccionar miembro del equipo</option>
-                    {people.map((person) => (
-                      <option key={person.id} value={person.id}>
-                        {person.name} - {person.department} - {person.code}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Título
-                  </label>
-                  <input
-                    type="text"
-                    value={newEvent.title}
-                    onChange={(e) =>
-                      setNewEvent({ ...newEvent, title: e.target.value })
-                    }
-                    placeholder="Título del evento"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Tipo
-                  </label>
-                  <select
-                    value={newEvent.type}
-                    onChange={(e) =>
-                      setNewEvent({
-                        ...newEvent,
-                        type: e.target.value as keyof typeof eventTypes,
-                      })
-                    }
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    {Object.entries(eventTypes).map(([key, type]) => (
-                      <option key={key} value={key}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      Fecha Inicio
-                    </label>
-                    <input
-                      type="date"
-                      value={newEvent.startDate}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, startDate: e.target.value })
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      Fecha Fin
-                    </label>
-                    <input
-                      type="date"
-                      value={newEvent.endDate}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, endDate: e.target.value })
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      Hora Inicio
-                    </label>
-                    <input
-                      type="time"
-                      value={newEvent.startTime}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, startTime: e.target.value })
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      Hora Fin
-                    </label>
-                    <input
-                      type="time"
-                      value={newEvent.endTime}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, endTime: e.target.value })
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Descripción
-                  </label>
-                  <input
-                    type="text"
-                    value={newEvent.description}
-                    onChange={(e) =>
-                      setNewEvent({ ...newEvent, description: e.target.value })
-                    }
-                    placeholder="Descripción opcional"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <button
-                  onClick={handleAddEvent}
-                  className="w-full rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  Programar Actividad
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal para detalles del evento */}
       {selectedEventDetails && (
@@ -713,13 +427,17 @@ function RouteComponent() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div
-                    className={`h-4 w-4 rounded ${eventTypes[selectedEventDetails.type].color}`}
+                    className={`h-4 w-4 rounded ${eventTypes[selectedEventDetails.type as keyof typeof eventTypes].color}`}
                   ></div>
                   <span className="text-lg font-semibold">
                     {selectedEventDetails.title}
                   </span>
                   <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                    {eventTypes[selectedEventDetails.type].label}
+                    {
+                      eventTypes[
+                        selectedEventDetails.type as keyof typeof eventTypes
+                      ].label
+                    }
                   </span>
                 </div>
 
@@ -777,196 +495,11 @@ function RouteComponent() {
                     </div>
                   </div>
                 )}
-
-                <div className="flex gap-2 pt-4">
-                  <button
-                    onClick={() => {
-                      setSelectedEventDetails(null);
-                      handleEditEvent(selectedEventDetails);
-                    }}
-                    className="inline-flex flex-1 items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <Edit2 className="mr-2 h-4 w-4" />
-                    Editar Evento
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleDeleteEvent(selectedEventDetails.id);
-                      setSelectedEventDetails(null);
-                    }}
-                    className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Eliminar
-                  </button>
-                </div>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Modal para editar evento */}
-      {editingEvent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="bg-opacity-50 fixed inset-0 bg-black"
-            onClick={() => setEditingEvent(null)}
-          ></div>
-          <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-lg">
-            <div className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Editar Evento</h2>
-                <button
-                  onClick={() => setEditingEvent(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Título
-                  </label>
-                  <input
-                    type="text"
-                    value={newEvent.title}
-                    onChange={(e) =>
-                      setNewEvent({ ...newEvent, title: e.target.value })
-                    }
-                    placeholder="Título del evento"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Tipo
-                  </label>
-                  <select
-                    value={newEvent.type}
-                    onChange={(e) =>
-                      setNewEvent({
-                        ...newEvent,
-                        type: e.target.value as keyof typeof eventTypes,
-                      })
-                    }
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    {Object.entries(eventTypes).map(([key, type]) => (
-                      <option key={key} value={key}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      Fecha Inicio
-                    </label>
-                    <input
-                      type="date"
-                      value={newEvent.startDate}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, startDate: e.target.value })
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      Fecha Fin
-                    </label>
-                    <input
-                      type="date"
-                      value={newEvent.endDate}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, endDate: e.target.value })
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      Hora Inicio
-                    </label>
-                    <input
-                      type="time"
-                      value={newEvent.startTime}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, startTime: e.target.value })
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      Hora Fin
-                    </label>
-                    <input
-                      type="time"
-                      value={newEvent.endTime}
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, endTime: e.target.value })
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Descripción
-                  </label>
-                  <input
-                    type="text"
-                    value={newEvent.description}
-                    onChange={(e) =>
-                      setNewEvent({ ...newEvent, description: e.target.value })
-                    }
-                    placeholder="Descripción opcional"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleUpdateEvent}
-                    className="flex-1 rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    Actualizar Evento
-                  </button>
-                  <button
-                    onClick={() => setEditingEvent(null)}
-                    className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Leyenda de colores */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <h3 className="mb-3 font-semibold">Tipos de Actividades del Equipo</h3>
-        <div className="flex flex-wrap gap-3">
-          {Object.entries(eventTypes).map(([key, type]) => (
-            <div key={key} className="flex items-center gap-2">
-              <div className={`h-4 w-4 rounded ${type.color}`}></div>
-              <span className="text-sm">{type.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
