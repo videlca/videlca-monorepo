@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { CommonModule } from '../common/common.module';
+import { AuthModule } from '../auth/auth.module';
 import { OrdenServicioModule } from '../orden-servicio/orden-servicio.module';
 
 import { Liquidacione } from './entities/liquidacione.entity';
@@ -18,6 +19,8 @@ import {
     TypeOrmModule.forFeature([Liquidacione]),
     forwardRef(() => OrdenServicioModule), // usa forwardRef si hay circularidad
     CommonModule,
+    AuthModule,
+    
   ],
   controllers: [
     LiquidacionesController, 
