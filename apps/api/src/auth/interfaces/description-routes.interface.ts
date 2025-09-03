@@ -28,11 +28,11 @@ export enum DescriptionRoutes {
     LIQUIDACIONES = "liquidaciones",
 
     // APROBACION LIQUIDACION ORDENES SERVICIO
-    APROBACION_LIQUIDACION_ORDENES_SERVICIO = "aprobacion-liquidacion-ordenes-servicio",
+    APROBACION_LIQUIDACION_ORDENES_SERVICIO = "aprobacion-liquidaciones-ordenes",
 
     // REPORTES
     REPORTES = "reportes",
 
     // EXPORTACIONES
-    EXPORTACIONES = "exportaciones",
+    EXPORTACIONES = "exportaciones-base-facturacion",
 }
