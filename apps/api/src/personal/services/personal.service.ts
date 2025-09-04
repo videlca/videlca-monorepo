@@ -82,6 +82,23 @@ export class PersonalService {
     const [añoNacimiento, mesNacimiento, diaNacimiento] = fechaNacimientoSplit.split('-').map(Number);
     
     const fechaNacimiento = new Date(añoNacimiento, mesNacimiento - 1, diaNacimiento);
+    
+    // FECHA NACIMIENTO
+    const fechaActualSplit = createPersonalDto.fechaActual.toISOString().split('T')[0];
+
+    const [añoActual, mesActual, diaActual] = fechaActualSplit.split('-').map(Number);
+
+    let edad = añoActual - añoNacimiento;
+
+    const cumpleañosPasado =  mesActual < mesNacimiento || (mesActual === mesNacimiento && diaActual < diaNacimiento)
+
+    if(!cumpleañosPasado){
+      edad--;
+    }
+
+    if(edad < 18){
+      throw new BadRequestException('El empleado debe ser mayor de edad');
+    }
 
     // OBTENER TIPO DE ID
     const tipoIdentificacion = await this.tipoIdentificacionService.findOne(createPersonalDto.idTipoIdentificacion);
@@ -289,6 +306,23 @@ export class PersonalService {
       const fechaNacimientoSplit = updatePersonalDto.fechaNacimiento.toISOString().split('T')[0];
   
       const [añoNacimiento, mesNacimiento, diaNacimiento] = fechaNacimientoSplit.split('-').map(Number);
+
+      // FECHA NACIMIENTO
+      const fechaActualSplit = updatePersonalDto.fechaActual.toISOString().split('T')[0];
+  
+      const [añoActual, mesActual, diaActual] = fechaActualSplit.split('-').map(Number);
+  
+      let edad = añoActual - añoNacimiento;
+  
+      const cumpleañosPasado =  mesActual < mesNacimiento || (mesActual === mesNacimiento && diaActual < diaNacimiento)
+  
+      if(!cumpleañosPasado){
+        edad--;
+      }
+  
+      if(edad < 18){
+        throw new BadRequestException('El empleado debe ser mayor de edad');
+      }
       
       empleado.fechaNacimiento = new Date(añoNacimiento, mesNacimiento - 1, diaNacimiento);
 

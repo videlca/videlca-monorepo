@@ -56,6 +56,11 @@ export class CreatePersonalDto {
     @IsDate()
     fechaNacimiento: Date;
     
+    @ApiProperty({ description: 'Fecha actual', example: '15/01/1995', required:true})
+    @Transform(({ value }) => new Date(value))
+    @IsDate()
+    fechaActual: Date;
+    
     @ApiProperty({ description: 'Dirección de residencia del personal', example: 'Calle 1 # 2 - 3', required:true})
     @IsString({ message: 'El campo direccion residencia debe ser un string'})
     @IsNotEmpty({ message: 'El campo direccion residencia no puede estar vacío' })
