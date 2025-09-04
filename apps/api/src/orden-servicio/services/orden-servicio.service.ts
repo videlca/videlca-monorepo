@@ -987,7 +987,11 @@ export class OrdenServicioService {
       ])
       .from(ProgramacionPersonal, "pp")
       .innerJoin(OrdenServicioTarifa, "ost", "pp.idOrdenServicioTarifa = ost.idOrdenServicioTarifa")
-      .innerJoin(OrdenServicio, "os", "ost.idOrdenServicio = os.idOrdenServicio");
+      .innerJoin(OrdenServicio, "os", "ost.idOrdenServicio = os.idOrdenServicio")
+      .innerJoin(EstadoOrdenEntity, "eos", "os.idEstadoOrdenServicio = eos.idEstadoOrdenServicio")
+      .where("eos.nombre NOT IN (:...estadosIgnorados)", { 
+        estadosIgnorados: [EstadoOrdenServicio.CANCELADA, EstadoOrdenServicio.ANULADA, EstadoOrdenServicio.TERMINADO] 
+      });
 
     if (fechaFin) {
       // Overlap entre [fechaInicio, fechaFin] y [os.fechaInicio, os.fechaFin (o +∞)]
