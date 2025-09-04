@@ -94,7 +94,7 @@ export class Personal {
     @Column({
         type: 'varchar',
         name: 'telefono',
-        length: 50,
+        length: 10,
     })
     telefono: string;
     
