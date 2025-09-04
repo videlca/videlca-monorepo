@@ -881,11 +881,11 @@ export class OrdenServicioService {
       const horaFinEmpleado = this.parseHour(emp.horaFin);
       const duracionEmp = this.getDuration(horaInicioEmpleado, horaFinEmpleado);
 
-      if (horaInicioEmpleado == horaFinEmpleado){
-        throw new BadRequestException(`Hora inicio y fin de un empleado no puede ser la misma`);
-      }
-
       if (duracionServicio < 24){
+
+        if (horaInicioEmpleado == horaFinEmpleado){
+          throw new BadRequestException(`Hora inicio y fin de un empleado no puede ser la misma`);
+        }
 
         // Validar que horario sea durante las horas del dia: hora inicio mayor a hora fin
         if(horaInicio < horaFin){
