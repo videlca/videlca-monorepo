@@ -24,6 +24,9 @@ export enum DescriptionRoutes {
     // ORDENES SERVICIO
     ORDENES_SERVICIO = "ordenes-servicio",
 
+    // PROGRAMACION PERSONAL
+    PROGRAMACION_PERSONAL = "programaciones",
+
     // LIQUIDACIONES
     LIQUIDACIONES = "liquidaciones",
 

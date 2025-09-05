@@ -29,11 +29,9 @@ import {
   OrdenServicioController, 
   OrdenServicioIdController,
   ObservacionesOrdenServicioController, 
-  ProgramacionPersonalController
 } from './controllers';
 
 import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
-import { ProgramacionPersonalService } from './services/programacion-personal.service';
 
 @Module({
   imports: [
@@ -63,20 +61,17 @@ import { ProgramacionPersonalService } from './services/programacion-personal.se
     OrdenServicioController,
     OrdenServicioIdController,
     ObservacionesOrdenServicioController,
-    ProgramacionPersonalController
   ],
   providers: [
     OrdenServicioService,
     OrdenServicioIdService,
     ObservacionesOrdenServicioService,
-    ProgramacionPersonalService
   ],
   exports: [
     TypeOrmModule,
     OrdenServicioService,
     OrdenServicioIdService,
     ObservacionesOrdenServicioService,
-    ProgramacionPersonalService
   ]
 })
 export class OrdenServicioModule {}

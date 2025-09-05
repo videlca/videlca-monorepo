@@ -5,13 +5,14 @@ import { AppAuth } from "src/auth/decorators/app-auth.decorator";
 import { PaginationDto } from "src/common/dto";
 
 @Controller('programacion-personal')
-@AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+@AppAuth(DescriptionRoutes.PROGRAMACION_PERSONAL) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class ProgramacionPersonalController {
 
   constructor(private readonly programacionPersonalService: ProgramacionPersonalService) {}
 
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
+    console.log(paginationDto);
     return this.programacionPersonalService.findAll(paginationDto, paginationDto.pagination);
   }
 

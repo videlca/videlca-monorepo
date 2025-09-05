@@ -16,9 +16,9 @@ import {
 
 } from './entities';
 
-import { PersonalService, TipoPersonalService, TipoGeneroService } from './services';
+import { PersonalService, TipoPersonalService, TipoGeneroService, ProgramacionPersonalService } from './services';
 
-import { PersonalController, TipoPersonalController, TipoGeneroController } from './controllers';
+import { PersonalController, TipoPersonalController, TipoGeneroController, ProgramacionPersonalController } from './controllers';
 
 @Module({
   imports: [
@@ -38,17 +38,20 @@ import { PersonalController, TipoPersonalController, TipoGeneroController } from
     PersonalController,
     TipoPersonalController,
     TipoGeneroController,
+    ProgramacionPersonalController
   ],
   providers: [
     PersonalService,
     TipoPersonalService,
     TipoGeneroService,
+    ProgramacionPersonalService
   ],
   exports: [
     TypeOrmModule, 
     PersonalService,
     TipoPersonalService,
     TipoGeneroService,
+    ProgramacionPersonalService
   ]
 })
 export class PersonalModule {}
