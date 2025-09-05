@@ -103,6 +103,15 @@ export class LiquidacionesService {
       throw new BadRequestException('Parámetros de fecha inválidos (anio, mes)');
     }
 
+    const today = new Date();
+    if(today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth()+1 < mes1a12)) 
+      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+
+    if(today.getMonth()+1 === mes1a12 && today.getDay() < 20)
+      throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
+      
+
+
     const orden = await this.ordenRepo
     .createQueryBuilder('os')
     .where('os.idOrdenServicio = :id', { id: ordenId })
@@ -271,4 +280,6 @@ export class LiquidacionesService {
 
     }
   }
+
+
 }
