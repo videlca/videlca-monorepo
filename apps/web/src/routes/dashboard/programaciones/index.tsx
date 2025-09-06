@@ -20,22 +20,12 @@ import {
   Clock,
 } from "lucide-react";
 import { useTipoPersonal } from "../../../api/queryFunctions/configuracion";
+import type { Event, PersonalAsignado } from "../../../api/types";
+import { safeParseDate } from "../../../utils/DateUtils";
 
 export const Route = createFileRoute("/dashboard/programaciones/")({
   component: RouteComponent,
 });
-
-interface Event {
-  id: string;
-  title: string;
-  type: "asignado" | "permiso" | "vacaciones" | "incapacitado";
-  startDate: Date;
-  endDate: Date;
-  startTime: string;
-  endTime: string;
-  personId: string;
-  description?: string;
-}
 
 // TODO: Agregar los tipos de programaciones en la base de datos y en este archivo
 const eventTypes = {
@@ -59,57 +49,18 @@ const eventTypes = {
     color: "bg-blue-500",
     textColor: "text-white",
   },
+  default: {
+    label: "Desconocido",
+    color: "bg-gray-500",
+    textColor: "text-white",
+  },
 };
 
 function RouteComponent() {
   const { data: programacionPersonalQuery } = useProgramacionPersonal();
   const { data: tipoPersonalQuery } = useTipoPersonal();
 
-  const personalAsignado =
-    programacionPersonalQuery?.data?.map((item) => ({
-      id: item.idPersonal.idPersonal,
-      name: item.idPersonal.primerNombre + " " + item.idPersonal.primerApellido,
-      department: item.idPersonal.idTipoPersonal.descripcion,
-      code: item.idPersonal.numeroIdentificacion,
-      idTipoPersonal: item.idPersonal.idTipoPersonal.idTipoPersonal,
-      horaInicio: item.horaInicio,
-      horaFin: item.horaFin,
-    })) || [];
-
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  // TODO: Eliminar este mock, se debe traer de la base de datos las programaciones
-  const [events] = useState<Event[]>([
-    {
-      id: "1",
-      title: "Evento 1",
-      type: "asignado",
-      startDate: new Date("2025-09-02"),
-      endDate: new Date("2025-09-20"),
-      startTime: "08:00",
-      endTime: "17:00",
-      personId: "3",
-    },
-    {
-      id: "2",
-      title: "Evento 2",
-      type: "vacaciones",
-      startDate: new Date("2025-09-20"),
-      endDate: new Date("2025-09-28"),
-      startTime: "00:00",
-      endTime: "23:00",
-      personId: "3",
-    },
-    {
-      id: "3",
-      title: "Evento 3",
-      type: "asignado",
-      startDate: new Date("2025-09-02"),
-      endDate: new Date("2025-09-03"),
-      startTime: "08:00",
-      endTime: "17:00",
-      personId: "4",
-    },
-  ]);
   const [selectedTipoPersonal, setSelectedTipoPersonal] = useState<number>(0);
   const [selectedEventDetails, setSelectedEventDetails] =
     useState<Event | null>(null);
@@ -125,29 +76,29 @@ function RouteComponent() {
 
   const filteredPeople = useMemo(() => {
     return selectedTipoPersonal === 0
-      ? personalAsignado
-      : personalAsignado?.filter(
+      ? programacionPersonalQuery?.data
+      : programacionPersonalQuery?.data?.filter(
           (p) => p.idTipoPersonal === selectedTipoPersonal,
         );
-  }, [personalAsignado, selectedTipoPersonal]);
+  }, [programacionPersonalQuery?.data, selectedTipoPersonal]);
 
   const getUniqueEventsForPerson = (personId: number) => {
-    return events.filter(
-      (event) =>
-        event.personId === personId.toString() &&
-        event.startDate <= extendedEnd &&
-        event.endDate >= weekStart,
+    return programacionPersonalQuery?.data?.find(
+      (event) => event.idPersonal === personId,
     );
   };
 
   const getEventPosition = (event: Event, dayIndex: number) => {
+    const eventStartDate = safeParseDate(event.fechaInicioEvento);
+    const eventEndDate = safeParseDate(event.fechaFinEvento);
+
     const eventStartIndex = Math.max(
       0,
-      differenceInDays(event.startDate, weekStart),
+      differenceInDays(eventStartDate, weekStart),
     );
     const eventEndIndex = Math.min(
       extendedDays.length - 1,
-      differenceInDays(event.endDate, weekStart),
+      differenceInDays(eventEndDate, weekStart),
     );
 
     // Calculate the width based on how many days the event spans within the visible calendar
@@ -162,7 +113,7 @@ function RouteComponent() {
         dayIndex === eventStartIndex &&
         eventStartIndex <= extendedDays.length - 1,
       width: widthFromCurrentDay,
-      isMultiDay: differenceInDays(event.endDate, event.startDate) > 0,
+      isMultiDay: differenceInDays(eventEndDate, eventStartDate) > 0,
       totalEventDays: eventDuration,
     };
   };
@@ -232,7 +183,7 @@ function RouteComponent() {
             </div>
             <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
               <Users className="mr-1 h-3 w-3" />
-              {filteredPeople.length} miembros
+              {filteredPeople?.length} personal
             </span>
           </div>
 
@@ -242,7 +193,7 @@ function RouteComponent() {
               onChange={(e) => setSelectedTipoPersonal(Number(e.target.value))}
               className="w-48 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
-              <option value="0">Todo el equipo</option>
+              <option value="0">Todo el personal</option>
               {tipoPersonalQuery?.data?.map((tipo) => (
                 <option key={tipo.idTipoPersonal} value={tipo.idTipoPersonal}>
                   {tipo.descripcion}
@@ -262,7 +213,7 @@ function RouteComponent() {
               <div className="border-r border-gray-300 p-4">
                 <div className="flex items-center gap-2 font-semibold">
                   <Users className="h-4 w-4" />
-                  Miembros del Equipo
+                  Personal
                 </div>
               </div>
               <div className="grid grid-cols-14 gap-0">
@@ -297,19 +248,19 @@ function RouteComponent() {
             {/* Filas de personas */}
             {filteredPeople?.map((person, personIndex) => (
               <div
-                key={person.idTipoPersonal}
+                key={person.idPersonal}
                 className={`grid grid-cols-[280px_1fr] border-b border-gray-200 hover:bg-gray-50 ${
                   personIndex % 2 === 0 ? "bg-white" : "bg-gray-25"
                 }`}
               >
                 <div className="border-r border-gray-200 p-4">
                   <div className="text-sm font-semibold text-gray-900">
-                    {person.name}
+                    {person.nombreCompleto}
                   </div>
                   <div className="mt-1 flex items-center justify-between text-xs text-gray-600">
-                    <span className="font-medium">{person.department}</span>
+                    <span className="font-medium">{person.idTipoPersonal}</span>
                     <span className="inline-flex items-center rounded-md border bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
-                      {person.code}
+                      {person.numeroIdentificacion}
                     </span>
                   </div>
                 </div>
@@ -323,29 +274,40 @@ function RouteComponent() {
                           isWeekend ? "bg-gray-50" : "bg-white"
                         }`}
                       >
-                        {getUniqueEventsForPerson(person.id).map((event) => {
+                        {getUniqueEventsForPerson(
+                          person.idPersonal,
+                        )?.eventos?.map((event) => {
                           const eventType =
-                            eventTypes[event.type as keyof typeof eventTypes];
+                            eventTypes[
+                              event.tipoEvento as keyof typeof eventTypes
+                            ] || eventTypes.default;
                           const position = getEventPosition(event, dayIndex);
 
                           if (!position.shouldShow) return null;
+
+                          const eventStartDate = safeParseDate(
+                            event.fechaInicioEvento,
+                          );
+                          const eventEndDate = safeParseDate(
+                            event.fechaFinEvento,
+                          );
 
                           const isFirstDay =
                             dayIndex ===
                             Math.max(
                               0,
-                              differenceInDays(event.startDate, weekStart),
+                              differenceInDays(eventStartDate, weekStart),
                             );
                           const isLastDay =
                             dayIndex ===
                             Math.min(
                               extendedDays.length - 1,
-                              differenceInDays(event.endDate, weekStart),
+                              differenceInDays(eventEndDate, weekStart),
                             );
 
                           return (
                             <div
-                              key={event.id}
+                              key={event.idEvento}
                               className={`${eventType.color} ${eventType.textColor} relative mb-1 cursor-pointer transition-all ${
                                 position.isMultiDay ? "font-medium" : ""
                               }`}
@@ -370,14 +332,19 @@ function RouteComponent() {
                                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                                 border: "1px solid rgba(255,255,255,0.2)",
                               }}
-                              onClick={(e) => handleEventClick(event, e)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                console.log("event", event);
+                                handleEventClick(event, e);
+                              }}
                             >
                               <div className="flex w-full items-center gap-1 truncate">
                                 {isFirstDay && position.isMultiDay && (
                                   <Calendar className="h-3 w-3 flex-shrink-0" />
                                 )}
                                 <span className="truncate text-xs font-semibold">
-                                  {event.title}
+                                  {event.tituloEvento}
                                 </span>
                                 {position.isMultiDay && isFirstDay && (
                                   <span className="ml-auto flex-shrink-0 text-xs opacity-75">
@@ -387,7 +354,7 @@ function RouteComponent() {
                               </div>
                               {!position.isMultiDay && (
                                 <div className="absolute right-1 -bottom-1 left-1 truncate text-[10px] opacity-75">
-                                  {event.startTime}-{event.endTime}
+                                  {event.horaInicioEvento}-{event.horaFinEvento}
                                 </div>
                               )}
                             </div>
@@ -427,16 +394,18 @@ function RouteComponent() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div
-                    className={`h-4 w-4 rounded ${eventTypes[selectedEventDetails.type as keyof typeof eventTypes].color}`}
+                    className={`h-4 w-4 rounded ${(eventTypes[selectedEventDetails.tipoEvento as keyof typeof eventTypes] || eventTypes.default).color}`}
                   ></div>
                   <span className="text-lg font-semibold">
-                    {selectedEventDetails.title}
+                    {selectedEventDetails.tituloEvento}
                   </span>
                   <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
                     {
-                      eventTypes[
-                        selectedEventDetails.type as keyof typeof eventTypes
-                      ].label
+                      (
+                        eventTypes[
+                          selectedEventDetails.tipoEvento as keyof typeof eventTypes
+                        ] || eventTypes.default
+                      ).label
                     }
                   </span>
                 </div>
@@ -449,12 +418,12 @@ function RouteComponent() {
                     </label>
                     <div className="rounded bg-gray-50 p-2 text-sm">
                       {format(
-                        selectedEventDetails.startDate,
+                        safeParseDate(selectedEventDetails.fechaInicioEvento),
                         "EEEE, dd 'de' MMMM 'de' yyyy",
                         { locale: es },
                       )}
                       <div className="mt-1 text-xs text-gray-500">
-                        Hora: {selectedEventDetails.startTime}
+                        Hora: {selectedEventDetails.horaInicioEvento}
                       </div>
                     </div>
                   </div>
@@ -465,12 +434,12 @@ function RouteComponent() {
                     </label>
                     <div className="rounded bg-gray-50 p-2 text-sm">
                       {format(
-                        selectedEventDetails.endDate,
+                        safeParseDate(selectedEventDetails.fechaFinEvento),
                         "EEEE, dd 'de' MMMM 'de' yyyy",
                         { locale: es },
                       )}
                       <div className="mt-1 text-xs text-gray-500">
-                        Hora: {selectedEventDetails.endTime}
+                        Hora: {selectedEventDetails.horaFinEvento}
                       </div>
                     </div>
                   </div>
@@ -480,21 +449,21 @@ function RouteComponent() {
                   <label className="text-sm font-medium">Duración</label>
                   <div className="rounded bg-gray-50 p-2 text-sm">
                     {differenceInDays(
-                      selectedEventDetails.endDate,
-                      selectedEventDetails.startDate,
+                      safeParseDate(selectedEventDetails.fechaFinEvento),
+                      safeParseDate(selectedEventDetails.fechaInicioEvento),
                     ) + 1}{" "}
                     día(s)
                   </div>
                 </div>
 
-                {selectedEventDetails.description && (
+                {/* {selectedEventDetails.descripcionEvento && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Descripción</label>
                     <div className="rounded bg-gray-50 p-2 text-sm">
-                      {selectedEventDetails.description}
+                      {selectedEventDetails.descripcionEvento}
                     </div>
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           </div>

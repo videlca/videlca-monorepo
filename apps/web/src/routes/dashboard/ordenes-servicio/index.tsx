@@ -197,6 +197,7 @@ function RouteComponent() {
     setIsIndefinite(false);
     resetFormOrdenServicio();
     resetFormOrdenServicioEdit();
+    setIdentificador({ prefijo: "", codigo: 0, codigoTipoServicio: 0 });
   };
 
   const handleNext = async () => {

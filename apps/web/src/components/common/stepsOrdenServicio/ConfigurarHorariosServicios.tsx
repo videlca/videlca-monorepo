@@ -68,7 +68,7 @@ export const ConfigurarHorariosServicios = ({
                             ...newArray[index],
                             // Al ser servicio de 24 horas, se debe setear la hora de fin a 00:00:00
                             horaInicio: timeFormat(e.target.value),
-                            horaFin: "00:00:00",
+                            horaFin: timeFormat(e.target.value),
                           };
                           return newArray;
                         },
