@@ -207,7 +207,7 @@ function RouteComponent() {
       {/* Calendario principal */}
       <div className="overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg">
         <div className="overflow-x-auto">
-          <div className="min-w-[1200px]">
+          <div className="min-w-[1200px] overflow-x-hidden">
             {/* Encabezado de días */}
             <div className="grid grid-cols-[280px_1fr] border-b border-gray-300">
               <div className="border-r border-gray-300 p-4">
@@ -270,13 +270,14 @@ function RouteComponent() {
                     return (
                       <div
                         key={dayIndex}
-                        className={`relative min-h-[100px] border-r border-gray-200 p-2 last:border-r-0 ${
+                        className={`relative min-h-[100px] border-r border-gray-200 pt-2 pr-2 *:space-y-2 last:border-r-0 ${
                           isWeekend ? "bg-gray-50" : "bg-white"
                         }`}
+                        id={`day-${dayIndex}`}
                       >
                         {getUniqueEventsForPerson(
                           person.idPersonal,
-                        )?.eventos?.map((event) => {
+                        )?.eventos?.map((event, eventIndex) => {
                           const eventType =
                             eventTypes[
                               event.tipoEvento as keyof typeof eventTypes
@@ -304,7 +305,6 @@ function RouteComponent() {
                               extendedDays.length - 1,
                               differenceInDays(eventEndDate, weekStart),
                             );
-
                           return (
                             <div
                               key={event.idEvento}
@@ -313,7 +313,7 @@ function RouteComponent() {
                               }`}
                               style={{
                                 width: position.isMultiDay
-                                  ? `calc(${position.width * 100}% + ${(position.width - 1) * 2}px)`
+                                  ? `calc(${position.width * 100}% + ${(position.width - 1) * 11}px)`
                                   : "100%",
                                 zIndex: 10,
                                 borderRadius: position.isMultiDay
@@ -325,17 +325,17 @@ function RouteComponent() {
                                         ? "0 6px 6px 0"
                                         : "0"
                                   : "6px",
-                                height: "32px",
-                                display: "flex",
+                                height: "36px",
+                                display: eventEndDate > day ? "flex" : "none",
                                 alignItems: "center",
                                 padding: "0 8px",
                                 boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                                 border: "1px solid rgba(255,255,255,0.2)",
+                                // marginTop: `${eventIndex * 20}px`,
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                console.log("event", event);
                                 handleEventClick(event, e);
                               }}
                             >
@@ -348,7 +348,10 @@ function RouteComponent() {
                                 </span>
                                 {position.isMultiDay && isFirstDay && (
                                   <span className="ml-auto flex-shrink-0 text-xs opacity-75">
-                                    ({position.totalEventDays}d)
+                                    (
+                                    {eventEndDate.getDate() -
+                                      eventStartDate.getDate()}
+                                    d)
                                   </span>
                                 )}
                               </div>
