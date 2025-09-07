@@ -14,11 +14,13 @@ import {
 
   TipoGenero,
 
+  TipoContrato
+
 } from './entities';
 
-import { PersonalService, TipoPersonalService, TipoGeneroService } from './services';
+import { PersonalService, TipoPersonalService, TipoGeneroService, TipoContratoService, ProgramacionPersonalService } from './services';
 
-import { PersonalController, TipoPersonalController, TipoGeneroController } from './controllers';
+import { PersonalController, TipoPersonalController, TipoGeneroController, TipoContratoController, ProgramacionPersonalController } from './controllers';
 
 @Module({
   imports: [
@@ -27,6 +29,7 @@ import { PersonalController, TipoPersonalController, TipoGeneroController } from
       Personal,
       TipoPersonal,
       TipoGenero,
+      TipoContrato
     ]),
     ConfigModule,
     AuthModule,
@@ -38,17 +41,23 @@ import { PersonalController, TipoPersonalController, TipoGeneroController } from
     PersonalController,
     TipoPersonalController,
     TipoGeneroController,
+    TipoContratoController,
+    ProgramacionPersonalController
   ],
   providers: [
     PersonalService,
     TipoPersonalService,
     TipoGeneroService,
+    TipoContratoService,
+    ProgramacionPersonalService
   ],
   exports: [
     TypeOrmModule, 
     PersonalService,
     TipoPersonalService,
     TipoGeneroService,
+    TipoContratoService,
+    ProgramacionPersonalService
   ]
 })
 export class PersonalModule {}

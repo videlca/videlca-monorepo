@@ -1,7 +1,8 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 import { TipoIdentificacion, Ciudad } from "../../common/entities";
 import { Novedad } from "../../novedad/entities";
-import { TipoPersonal, TipoGenero } from "../entities";
+import { ProgramacionPersonal } from "../../orden-servicio/entities/programacion-personal.entity";
+import { TipoPersonal, TipoGenero, TipoContrato } from "../entities";
 
 @Entity({name: 'personal'})
 export class Personal {
@@ -93,7 +94,7 @@ export class Personal {
     @Column({
         type: 'varchar',
         name: 'telefono',
-        length: 50,
+        length: 10,
     })
     telefono: string;
     
@@ -131,6 +132,15 @@ export class Personal {
     )
     @JoinColumn({name: 'idTipoPersonal'})
     idTipoPersonal: TipoPersonal;
+    
+    // Tipo contrato -> relacion tabla menor (listo)
+    @ManyToOne(
+        () => TipoContrato,
+        (tipoContrato) => tipoContrato.personal,
+        {eager: true}
+    )
+    @JoinColumn({name: 'idTipoContrato'})
+    idTipoContrato: TipoContrato;
 
     // estado -> para ver si el user esta activo o no
     @Column({
@@ -151,5 +161,13 @@ export class Personal {
     novedades: Novedad[];
 
     // programacion - asignaciones -> relacion tabla para programar personal ()
+    @OneToMany(
+        () => ProgramacionPersonal, 
+        (programacion) => programacion.idPersonal, 
+        {
+            cascade: true,
+        }
+    )
+    programaciones: ProgramacionPersonal[];
 
 }

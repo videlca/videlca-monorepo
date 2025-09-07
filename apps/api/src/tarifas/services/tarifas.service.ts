@@ -208,6 +208,29 @@ export class TarifasService {
     return await queryBuilder.getMany();
 
   }
+  
+  async findAllActivesByPeriodoActivoTipoServicio(idTipoServicio: number, paginationDto: PaginationDto, pagination: boolean = true) {
+
+    const periodoActivoFacturacion = await this.periodoService.obtenerPeriodoActivo();
+    
+    const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
+      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
+      .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion')
+      .where('tarifa.idPeriodo = :id', { id: periodoActivoFacturacion.idPeriodo })
+      .andWhere('tipoServicio.idTipoServicio = :idTipoServicio', { idTipoServicio })
+      .andWhere('tarifa.estado = :estado', { estado: true })
+
+    if (pagination) {
+      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+      queryBuilder.take(limit).skip(offset);
+    }
+
+    return await queryBuilder.getMany();
+
+  }
 
   async findOne(id: number) {
     
@@ -219,10 +242,33 @@ export class TarifasService {
         idPeriodo: true
       }
     });
-        
+    
     if(!tarifa) throw new NotFoundException(`Tarifa con id "${id}" no se ha encontrado`);
 
     return tarifa;
+
+  }
+
+  async findTarifaByServicio(idServicio: number) {
+    
+    // Use QueryBuilder to avoid ambiguous column issue
+    const tarifas = await this.tarifaRepository
+      .createQueryBuilder('tarifa')
+      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
+      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('tipoTarifa.idTipoUnidadTiempo', 'tipoUnidadTiempo')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
+      .where('tarifa.idServicio = :idServicio', { idServicio })
+      .andWhere('tarifa.estado = :estado', { estado: true })
+      .orderBy('tarifa.fechaCreacion', 'DESC')
+      .getMany();
+    
+    if(!tarifas || tarifas.length === 0) {
+      throw new NotFoundException(`No se encontraron tarifas para el servicio con ID ${idServicio}`);
+    }
+
+    return tarifas;
 
   }
 

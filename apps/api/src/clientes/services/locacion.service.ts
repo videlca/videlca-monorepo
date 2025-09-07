@@ -26,6 +26,8 @@ export class LocacionService {
         private readonly locacionRepository: Repository<Locacion>,
         @InjectRepository(EstadoOrdenServicio)
         private readonly estadoOrdenServicioRepository: Repository<EstadoOrdenServicio>,
+        @InjectRepository(Correo)
+        private readonly correoRepository: Repository<Correo>,
         private readonly ubicacionService: UbicacionService,   
         private readonly clienteService: ClientesService,
         private readonly emailService: EmailService, // Servicio de email para envio de correos
@@ -537,6 +539,22 @@ export class LocacionService {
             estado => !estadosAsignados.has(estado.idEstadoOrdenServicio)
         );
     
+    }
+
+    async getEmailsByLocacionAndEstado(
+        idLocacion: number, 
+        idEstadoOrden: number
+    ): Promise<string[]> {
+        
+        const result = await this.correoRepository
+            .createQueryBuilder('correo')
+            .innerJoin('correo_estado', 'ce', 'ce.correo_id = correo.idCorreo')
+            .where('correo.idLocacion = :idLocacion', { idLocacion })
+            .andWhere('ce.estado_id = :idEstadoOrden', { idEstadoOrden })
+            .select('correo.email')
+            .getMany();
+            
+        return result.map(correo => correo.email);
     }
 
     async remove(id: number) {

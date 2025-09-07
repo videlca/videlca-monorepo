@@ -10,6 +10,12 @@ export class PrecioOrdenDto {
     @Min(1, {message: 'El valor del campo tarifa debe ser minimo 1'})
     idTarifa: number;
     
+    @ApiProperty({ description: 'Id de servicio', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo servicio debe ser un número'})
+    @IsPositive({message: 'El valor del campo servicio debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo servicio debe ser minimo 1'})
+    idServicio?: number;
+
     @ApiProperty({ description: 'Hora de inicio por dia del servicio', example: '06:00:00', required:true})
     @IsString({ message: 'El campo Hora de inicio debe ser un string'})
     @IsNotEmpty({ message: 'El campo Hora de inicio no puede estar vacío'})
@@ -27,16 +33,6 @@ export class PrecioOrdenDto {
         message: 'horaFin debe tener formato HH:mm:ss'
     })
     horaFin: string;
-
-    @ApiProperty({ description: 'Horas de descanso por dia del servicio', example: 2, required: false})
-    @IsOptional()
-    @IsNumber({}, {message: 'El valor del campo horas descanso debe ser un número'})
-    horasDescanso?: number;
-
-    @ApiProperty({ description: 'cantidad personal', example: 1, required:true})
-    @IsOptional()
-    @IsNumber({}, {message: 'El valor del campo cantidad personal debe ser un número'})
-    cantidadPersonal?: number | null;
 
     @ApiProperty({ description: 'Fecha de inicio de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
     @Transform(({ value }) => new Date(value))

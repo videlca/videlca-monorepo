@@ -25,10 +25,15 @@ export class TipoServicioService {
   
   // CREAR TIPO SERVICIO
   async create(createTipoServicioDto: CreateTipoServicioDto){
+
+    const prefijo = createTipoServicioDto.prefijo.trim().toUpperCase();
   
     try {
         
-      const tipoServicio = this.tipoServicioRepository.create(createTipoServicioDto);
+      const tipoServicio = this.tipoServicioRepository.create({
+        ...createTipoServicioDto,
+        prefijo
+      });
       
       await this.tipoServicioRepository.save(tipoServicio);
 
@@ -92,6 +97,48 @@ export class TipoServicioService {
     });
   
   }
+  // OBTENER TODOS LOS PREFIJOS DE LOS TIPO SERVICIO
+  async findAllPrefixes(paginationDto: PaginationDto, pagination: boolean = true) {
+    
+    if (pagination) {
+
+      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
+      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+      
+      // Se hace la consulta de manera paginada
+      const tiposServicio = await this.tipoServicioRepository.find({
+          take: limit,
+          skip: offset,
+          order: {
+              descripcion: 'ASC'
+          }
+      });
+  
+      return tiposServicio.map(ts => {
+        return {
+          prefijo: ts.prefijo,
+          idTipoServicio: ts.idTipoServicio
+        }
+      });
+
+    }
+
+    const tiposServicio = await this.tipoServicioRepository.find({
+      order: {
+        descripcion: 'ASC'
+      }
+    });
+
+    return tiposServicio.map(ts => {
+      return {
+        prefijo: ts.prefijo,
+        idTipoServicio: ts.idTipoServicio
+      }
+    });
+  
+  }
+
+
   
   // OBTENER TODOS LOS TIPO SERVICIO ACTIVOS
   async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
@@ -136,6 +183,12 @@ export class TipoServicioService {
     if (!tipoServicio) throw new NotFoundException(`Tipo de servicio con id "${id}" no se ha encontrado`);
 
     try {
+
+      const prefijo = updateTipoServicioDto.prefijo?.trim().toUpperCase();
+
+      if(prefijo){
+        tipoServicio.prefijo = prefijo;
+      }
       
       await this.tipoServicioRepository.save(tipoServicio);
 

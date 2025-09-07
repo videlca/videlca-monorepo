@@ -9,19 +9,41 @@ import { UsersModule } from '../users/users.module';
 import { ClientesModule } from '../clientes/clientes.module';
 import { TarifasModule } from '../tarifas/tarifas.module';
 import { ServiciosModule } from '../servicios/servicios.module';
+import { PersonalModule } from '../personal/personal.module';
 
-import { OrdenServicio, ObservacionOrdenServicio } from './entities';
+import { 
+  OrdenServicio, 
+  OrdenServicioId, 
+  OrdenServicioTarifa, 
+  ObservacionOrdenServicio,
+  ProgramacionPersonal 
+} from './entities';
 
-import { OrdenServicioService, ObservacionesOrdenServicioService } from './services';
+import { 
+  OrdenServicioService,
+  OrdenServicioIdService, 
+  ObservacionesOrdenServicioService 
+} from './services';
 
-import { OrdenServicioController, ObservacionesOrdenServicioController } from './controllers';
+import { 
+  OrdenServicioController, 
+  OrdenServicioIdController,
+  ObservacionesOrdenServicioController, 
+} from './controllers';
+
+import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
 
 @Module({
   imports: [
 
     TypeOrmModule.forFeature([
       OrdenServicio,
-      ObservacionOrdenServicio
+      OrdenServicioId,
+      OrdenServicioTarifa,
+      ObservacionOrdenServicio,
+      ProgramacionPersonal,
+      ObservacionOrdenServicio,
+      LiquidacionesModule,
     ]),
     ConfigModule,
     CommonModule,
@@ -30,21 +52,26 @@ import { OrdenServicioController, ObservacionesOrdenServicioController } from '.
     UsersModule,
     ClientesModule,
     TarifasModule,
-    ServiciosModule
+    ServiciosModule,
+    PersonalModule,
+    LiquidacionesModule,
 
   ],
   controllers: [
     OrdenServicioController,
-    ObservacionesOrdenServicioController
+    OrdenServicioIdController,
+    ObservacionesOrdenServicioController,
   ],
   providers: [
     OrdenServicioService,
-    ObservacionesOrdenServicioService
+    OrdenServicioIdService,
+    ObservacionesOrdenServicioService,
   ],
   exports: [
     TypeOrmModule,
     OrdenServicioService,
-    ObservacionesOrdenServicioService
+    OrdenServicioIdService,
+    ObservacionesOrdenServicioService,
   ]
 })
 export class OrdenServicioModule {}

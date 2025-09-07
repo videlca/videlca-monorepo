@@ -25,6 +25,13 @@ export class TipoServicioController {
   findAll(@Query() paginationDto: PaginationDto) {
     return this.tipoServicioService.findAll(paginationDto, paginationDto.pagination);
   }
+  
+  // RUTA PUBLICA: Obtener todos los prefijos de los tipos de servicio
+  @Get('prefixes')
+  @ValidateJwtAuth()
+  findAllPrefixes(@Query() paginationDto: PaginationDto) {
+    return this.tipoServicioService.findAllPrefixes(paginationDto, paginationDto.pagination);
+  }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS SERVICIO
   @Get('actives')

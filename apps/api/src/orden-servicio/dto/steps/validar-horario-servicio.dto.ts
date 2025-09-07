@@ -2,25 +2,20 @@ import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
 import { IsString, Matches, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength, IsOptional, IsDate } from 'class-validator';
 
-export class TercerPasoDto {
+export class ValidarHorarioServicioDto {
     
     @ApiProperty({ description: 'Id de tarifa', example: 1, required:true})
     @IsNumber({}, {message: 'El valor del campo tarifa debe ser un número'})
     @IsPositive({message: 'El valor del campo tarifa debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo tarifa debe ser minimo 1'})
-    idTarifa: number;
+    idTarifa?: number;
+    
+    @ApiProperty({ description: 'Id de servicio', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo servicio debe ser un número'})
+    @IsPositive({message: 'El valor del campo servicio debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo servicio debe ser minimo 1'})
+    idServicio?: number;
 
-    @ApiProperty({ description: 'Fecha de inicio de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
-    @Transform(({ value }) => new Date(value))
-    @IsDate()
-    fechaInicio: Date;
-    
-    @ApiProperty({ description: 'Fecha de fin de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: false}) 
-    @IsOptional()   
-    @Transform(({ value }) => value ? new Date(value) : null)
-    @IsDate()
-    fechaFin?: Date | null;
-    
     @ApiProperty({ description: 'Hora de inicio por dia del servicio', example: '06:00:00', required:true})
     @IsString({ message: 'El campo Hora de inicio debe ser un string'})
     @IsNotEmpty({ message: 'El campo Hora de inicio no puede estar vacío'})
@@ -38,10 +33,5 @@ export class TercerPasoDto {
         message: 'horaFin debe tener formato HH:mm:ss'
     })
     horaFin: string;
-
-    @ApiProperty({ description: 'Horas de descanso por dia del servicio', example: 2, required: false})
-    @IsOptional()
-    @IsNumber({}, {message: 'El valor del campo horas descanso debe ser un número'})
-    horasDescanso?: number;
 
 }
