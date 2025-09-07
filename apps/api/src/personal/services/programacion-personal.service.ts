@@ -62,6 +62,7 @@ export class ProgramacionPersonalService {
   async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
 
     let programacionPersonal;
+    try {
 
     if (pagination) {
 
@@ -74,7 +75,15 @@ export class ProgramacionPersonalService {
           novedades: true,
           programaciones: {
             idOrdenServicioTarifa: {
-              idOrdenServicio: true,
+              idOrdenServicio: {
+                idLocacion: {
+                  idCiudad: true,
+                  idCliente: true,
+                }
+              },
+              idTarifa: {
+                idServicio: true,
+              }
             },
           }
         },
@@ -157,28 +166,28 @@ export class ProgramacionPersonalService {
 
       // Añadir programaciones como eventos
       for (const programacion of programaciones) {
-
+        const ordenServicio = programacion.idOrdenServicioTarifa.idOrdenServicio;
         // Crear el evento
         const evento: Event = {
           idEvento: programacion.idProgramacionPersonal.toString(),
           tituloEvento: `Orden Servicio (${programacion.idOrdenServicioTarifa.idOrdenServicio.ordenServicioId.descripcionId}) - ${programacion.idOrdenServicioTarifa.idTarifa.idServicio.codigo} ${programacion.idOrdenServicioTarifa.idTarifa.idServicio.descripcion}`,
           tipoEvento: 'asignado', // Por ahora fijo; podrías mapear según estado
-          fechaInicioEvento: programacion.idOrdenServicioTarifa.idOrdenServicio.fechaInicio,
-          fechaFinEvento: programacion.idOrdenServicioTarifa.idOrdenServicio.fechaFin,
+          fechaInicioEvento: ordenServicio.fechaInicioOrden,
+          fechaFinEvento: ordenServicio.fechaFinOrden,
           horaInicioEvento: programacion.idOrdenServicioTarifa.horaInicio,
           horaFinEvento: programacion.idOrdenServicioTarifa.horaFin,
           horaInicioEmpleado: programacion.horaInicio,
           horaFinEmpleado: programacion.horaFin,
           ordenServicio: {
-            ordenServicioId: programacion.idOrdenServicioTarifa.idOrdenServicio.idOrdenServicio,
-            estado: programacion.idOrdenServicioTarifa.idOrdenServicio.idEstadoOrdenServicio.nombre,
-            fechaCreacion: programacion.idOrdenServicioTarifa.idOrdenServicio.fechaCreacion,
+            ordenServicioId: ordenServicio.idOrdenServicio,
+            estado: ordenServicio.idEstadoOrdenServicio?.nombre || 'Sin estado',
+            fechaCreacion: ordenServicio.fechaCreacion,
             locacion: {
-              nombre: programacion.idOrdenServicioTarifa.idOrdenServicio.idLocacion.nombre,
-              direccion: programacion.idOrdenServicioTarifa.idOrdenServicio.idLocacion.direccion,
-              telefono: programacion.idOrdenServicioTarifa.idOrdenServicio.idLocacion.telefono,
-              nombreCliente: programacion.idOrdenServicioTarifa.idOrdenServicio.idLocacion.idCliente.nombre,
-              Ciudad: programacion.idOrdenServicioTarifa.idOrdenServicio.idLocacion.idCiudad.descripcion
+              nombre: ordenServicio.idLocacion?.nombre || 'Sin nombre',
+              direccion: ordenServicio.idLocacion?.direccion || 'Sin dirección',
+              telefono: ordenServicio.idLocacion?.telefono || 'Sin teléfono',
+              nombreCliente: ordenServicio.idLocacion?.idCliente?.nombre || 'Sin cliente',
+              Ciudad: ordenServicio.idLocacion?.idCiudad?.descripcion || 'Sin ciudad'
             }
           }
         };
@@ -192,6 +201,10 @@ export class ProgramacionPersonalService {
 
     return Object.values(personalMap);
 
+    } catch (error) {
+      this.logger.error('Error en findAll:', error);
+      throw error;
+    }
   }
 
 }
