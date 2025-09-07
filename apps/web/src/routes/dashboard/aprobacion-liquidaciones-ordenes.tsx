@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { PermissionGuard } from "../../components/common/PermissionGuard";
 
 export const Route = createFileRoute(
   "/dashboard/aprobacion-liquidaciones-ordenes",
@@ -7,5 +8,9 @@ export const Route = createFileRoute(
 });
 
 function RouteComponent() {
-  return <></>;
+  return (
+    <PermissionGuard requiredModule="aprobacion-liquidaciones-ordenes">
+      <Outlet />
+    </PermissionGuard>
+  );
 }

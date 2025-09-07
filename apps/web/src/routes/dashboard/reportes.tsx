@@ -7,10 +7,8 @@ export const Route = createFileRoute("/dashboard/reportes")({
 
 function RouteComponent() {
   return (
-    // <PermissionGuard requiredModule="reportes">
-    //   <Outlet />
-    // </PermissionGuard>
-
-    <></>
+    <PermissionGuard requiredModule="reportes">
+      <Outlet />
+    </PermissionGuard>
   );
 }
