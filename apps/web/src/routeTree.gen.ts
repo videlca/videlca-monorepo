@@ -54,6 +54,7 @@ import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes
 import { Route as DashboardConfiguracionTipoPersonalesRouteImport } from './routes/dashboard/configuracion/tipo-personales'
 import { Route as DashboardConfiguracionTipoIdRouteImport } from './routes/dashboard/configuracion/tipo-id'
 import { Route as DashboardConfiguracionTipoGeneroRouteImport } from './routes/dashboard/configuracion/tipo-genero'
+import { Route as DashboardConfiguracionTipoContratoRouteImport } from './routes/dashboard/configuracion/tipo-contrato'
 import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/dashboard/configuracion/tipo-cliente'
 import { Route as DashboardConfiguracionEstadoOrdenServicioRouteImport } from './routes/dashboard/configuracion/estado-orden-servicio'
 import { Route as DashboardTarifasVerTarifasIdPeriodoRouteImport } from './routes/dashboard/tarifas/ver-tarifas.$id-periodo'
@@ -306,6 +307,12 @@ const DashboardConfiguracionTipoGeneroRoute =
     path: '/tipo-genero',
     getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
+const DashboardConfiguracionTipoContratoRoute =
+  DashboardConfiguracionTipoContratoRouteImport.update({
+    id: '/tipo-contrato',
+    path: '/tipo-contrato',
+    getParentRoute: () => DashboardConfiguracionRoute,
+  } as any)
 const DashboardConfiguracionTipoClienteRoute =
   DashboardConfiguracionTipoClienteRouteImport.update({
     id: '/tipo-cliente',
@@ -366,6 +373,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
+  '/dashboard/configuracion/tipo-contrato': typeof DashboardConfiguracionTipoContratoRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
   '/dashboard/configuracion/tipo-personales': typeof DashboardConfiguracionTipoPersonalesRoute
@@ -407,6 +415,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
+  '/dashboard/configuracion/tipo-contrato': typeof DashboardConfiguracionTipoContratoRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
   '/dashboard/configuracion/tipo-personales': typeof DashboardConfiguracionTipoPersonalesRoute
@@ -461,6 +470,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
+  '/dashboard/configuracion/tipo-contrato': typeof DashboardConfiguracionTipoContratoRoute
   '/dashboard/configuracion/tipo-genero': typeof DashboardConfiguracionTipoGeneroRoute
   '/dashboard/configuracion/tipo-id': typeof DashboardConfiguracionTipoIdRoute
   '/dashboard/configuracion/tipo-personales': typeof DashboardConfiguracionTipoPersonalesRoute
@@ -516,6 +526,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
+    | '/dashboard/configuracion/tipo-contrato'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
     | '/dashboard/configuracion/tipo-personales'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
+    | '/dashboard/configuracion/tipo-contrato'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
     | '/dashboard/configuracion/tipo-personales'
@@ -610,6 +622,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
+    | '/dashboard/configuracion/tipo-contrato'
     | '/dashboard/configuracion/tipo-genero'
     | '/dashboard/configuracion/tipo-id'
     | '/dashboard/configuracion/tipo-personales'
@@ -966,6 +979,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardConfiguracionTipoGeneroRouteImport
       parentRoute: typeof DashboardConfiguracionRoute
     }
+    '/dashboard/configuracion/tipo-contrato': {
+      id: '/dashboard/configuracion/tipo-contrato'
+      path: '/tipo-contrato'
+      fullPath: '/dashboard/configuracion/tipo-contrato'
+      preLoaderRoute: typeof DashboardConfiguracionTipoContratoRouteImport
+      parentRoute: typeof DashboardConfiguracionRoute
+    }
     '/dashboard/configuracion/tipo-cliente': {
       id: '/dashboard/configuracion/tipo-cliente'
       path: '/tipo-cliente'
@@ -1043,6 +1063,7 @@ const DashboardClientesRouteWithChildren =
 interface DashboardConfiguracionRouteChildren {
   DashboardConfiguracionEstadoOrdenServicioRoute: typeof DashboardConfiguracionEstadoOrdenServicioRoute
   DashboardConfiguracionTipoClienteRoute: typeof DashboardConfiguracionTipoClienteRoute
+  DashboardConfiguracionTipoContratoRoute: typeof DashboardConfiguracionTipoContratoRoute
   DashboardConfiguracionTipoGeneroRoute: typeof DashboardConfiguracionTipoGeneroRoute
   DashboardConfiguracionTipoIdRoute: typeof DashboardConfiguracionTipoIdRoute
   DashboardConfiguracionTipoPersonalesRoute: typeof DashboardConfiguracionTipoPersonalesRoute
@@ -1056,6 +1077,8 @@ const DashboardConfiguracionRouteChildren: DashboardConfiguracionRouteChildren =
       DashboardConfiguracionEstadoOrdenServicioRoute,
     DashboardConfiguracionTipoClienteRoute:
       DashboardConfiguracionTipoClienteRoute,
+    DashboardConfiguracionTipoContratoRoute:
+      DashboardConfiguracionTipoContratoRoute,
     DashboardConfiguracionTipoGeneroRoute:
       DashboardConfiguracionTipoGeneroRoute,
     DashboardConfiguracionTipoIdRoute: DashboardConfiguracionTipoIdRoute,

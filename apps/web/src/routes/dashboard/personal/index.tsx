@@ -25,6 +25,7 @@ import { useState } from "react";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import {
   useCiudadActiva,
+  useTipoContratoActivo,
   useTipoGenero,
   useTipoIdentificacion,
   useTipoNovedad,
@@ -67,6 +68,7 @@ function RouteComponent() {
   const { data: tiposGenero } = useTipoGenero();
   const { data: tiposPersonal } = useTipoPersonalActivo();
   const { data: tiposNovedades } = useTipoNovedad();
+  const { data: tiposContrato } = useTipoContratoActivo();
 
   const { mutate: createPersonal, isPending: isCreatingPersonal } =
     useCreatePersonal();
@@ -83,12 +85,14 @@ function RouteComponent() {
     form: formAddPersonal,
     handleChange: handleChangeAddPersonal,
     resetForm: resetFormAddPersonal,
+    setForm: setFormAddPersonal,
   } = useForm<CreatePersonalDto>({
     primerNombre: "",
     segundoNombre: "",
     primerApellido: "",
     segundoApellido: "",
     numeroIdentificacion: "",
+    fechaActual: "",
     fechaInicioContrato: "",
     fechaFinContrato: "",
     fechaNacimiento: "",
@@ -99,6 +103,7 @@ function RouteComponent() {
     idCiudad: 0,
     idTipoGenero: 0,
     idTipoPersonal: 0,
+    idTipoContrato: 0,
   });
 
   const {
@@ -112,6 +117,7 @@ function RouteComponent() {
     primerApellido: "",
     segundoApellido: "",
     numeroIdentificacion: "",
+    fechaActual: "",
     fechaInicioContrato: "",
     fechaFinContrato: "",
     fechaNacimiento: "",
@@ -122,6 +128,7 @@ function RouteComponent() {
     idCiudad: 0,
     idTipoGenero: 0,
     idTipoPersonal: 0,
+    idTipoContrato: 0,
     laborando: false,
   });
 
@@ -141,12 +148,18 @@ function RouteComponent() {
 
   const handleSubmitAddPersonal = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    createPersonal(formAddPersonal, {
-      onSuccess: () => {
-        setIsOpenAddModal(false);
-        resetFormAddPersonal();
+    createPersonal(
+      {
+        ...formAddPersonal,
+        fechaActual: new Date().toISOString(),
       },
-    });
+      {
+        onSuccess: () => {
+          setIsOpenAddModal(false);
+          resetFormAddPersonal();
+        },
+      },
+    );
   };
 
   const handleSubmitEditPersonal = (e: React.FormEvent<HTMLFormElement>) => {
@@ -154,7 +167,10 @@ function RouteComponent() {
     updatePersonal(
       {
         id: selectedPersonal?.idPersonal || 0,
-        data: formEditPersonal,
+        data: {
+          ...formEditPersonal,
+          fechaActual: new Date().toISOString(),
+        },
       },
       {
         onSuccess: () => {
@@ -258,7 +274,7 @@ function RouteComponent() {
                     segundoApellido: data.data?.segundoApellido || "",
                     numeroIdentificacion: data.data?.numeroIdentificacion || "",
                     fechaInicioContrato: data.data?.fechaInicioContrato || "",
-                    fechaFinContrato: data.data?.fechaFinContrato || "",
+                    fechaFinContrato: data.data?.fechaFinContrato || null,
                     fechaNacimiento: data.data?.fechaNacimiento || "",
                     direccionResidencia: data.data?.direccionResidencia || "",
                     telefono: data.data?.telefono || "",
@@ -271,6 +287,8 @@ function RouteComponent() {
                     idTipoPersonal:
                       data.data?.idTipoPersonal?.idTipoPersonal || 0,
                     laborando: data.data?.laborando || false,
+                    idTipoContrato:
+                      data.data?.idTipoContrato?.idTipoContrato || 0,
                   });
                 },
               });
@@ -453,6 +471,28 @@ function RouteComponent() {
               description="Información laboral del personal"
               Icon={BriefcaseIcon}
             >
+              <InputSelect
+                label="Tipo de contrato"
+                id="idTipoContrato"
+                placeholder="Tipo de contrato"
+                required
+                options={
+                  tiposContrato?.data?.map((contrato) => ({
+                    id: contrato.idTipoContrato,
+                    descripcion: contrato.descripcion,
+                  })) || []
+                }
+                value={formAddPersonal.idTipoContrato}
+                onChange={(e) => {
+                  handleChangeAddPersonal(e);
+                  console.log(e.target.selectedOptions[0].text);
+                  if (e.target.selectedOptions[0].text.includes("Indefinido")) {
+                    formAddPersonal.fechaFinContrato = null;
+                  } else {
+                    formAddPersonal.fechaFinContrato = "";
+                  }
+                }}
+              />
               <InputForm
                 label="Fecha de inicio de contrato"
                 id="fechaInicioContrato"
@@ -467,8 +507,9 @@ function RouteComponent() {
                 id="fechaFinContrato"
                 type="date"
                 placeholder="Fecha de fin de contrato"
+                disabled={formAddPersonal.fechaFinContrato === null}
                 required
-                value={formAddPersonal.fechaFinContrato}
+                value={formAddPersonal.fechaFinContrato || ""}
                 onChange={handleChangeAddPersonal}
               />
 
@@ -643,6 +684,28 @@ function RouteComponent() {
               description="Información laboral del personal"
               Icon={BriefcaseIcon}
             >
+              <InputSelect
+                label="Tipo de contrato"
+                id="idTipoContrato"
+                placeholder="Tipo de contrato"
+                required
+                options={
+                  tiposContrato?.data?.map((contrato) => ({
+                    id: contrato.idTipoContrato,
+                    descripcion: contrato.descripcion,
+                  })) || []
+                }
+                value={formEditPersonal.idTipoContrato || 0}
+                onChange={(e) => {
+                  handleChangeEditPersonal(e);
+                  console.log(e.target.selectedOptions[0].text);
+                  if (e.target.selectedOptions[0].text.includes("Indefinido")) {
+                    formEditPersonal.fechaFinContrato = null;
+                  } else {
+                    formEditPersonal.fechaFinContrato = "";
+                  }
+                }}
+              />
               <InputForm
                 label="Fecha de inicio de contrato"
                 id="fechaInicioContrato"
@@ -657,6 +720,7 @@ function RouteComponent() {
                 id="fechaFinContrato"
                 type="date"
                 placeholder="Fecha de fin de contrato"
+                disabled={formEditPersonal.fechaFinContrato === null}
                 required
                 value={formEditPersonal.fechaFinContrato || ""}
                 onChange={handleChangeEditPersonal}

@@ -1,3 +1,5 @@
+import type { Personal } from "./personal";
+
 // Estados de orden
 export interface CrearEstadoOrden {
   descripcion: string
@@ -49,4 +51,14 @@ export interface CreateTipoNovedad {
 
 export interface ActualizarTipoNovedad extends Partial<CreateTipoNovedad> {
   estado: boolean
+}
+
+
+// Tipo contrato
+export interface TipoContrato {
+  idTipoContrato: number
+  descripcion: string
+  indefinido: boolean
+  estado: boolean
+  personal: Personal[]
 }

@@ -1,5 +1,6 @@
 import type { Ciudad, TipoGenero, TipoIdentificacion, TipoPersonal } from "../../types";
-import type { ProgramacionPersonal } from "./programacion-personal";
+import type { TipoContrato } from "./configuracion";
+import type { PersonalAsignado } from "./programacion-personal";
 
 export interface Personal {
   idPersonal: number;
@@ -20,7 +21,8 @@ export interface Personal {
   idTipoGenero: TipoGenero;
   idTipoPersonal: TipoPersonal;
   novedades: Novedad[];
-  programaciones: ProgramacionPersonal[];
+  programaciones: PersonalAsignado[];
+  idTipoContrato: TipoContrato;
 }
 
 export interface Novedad {

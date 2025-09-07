@@ -46,3 +46,13 @@ export interface UpdateDepartamentoDto {
   pais?: number
   codigoDepartamento?: string
 }
+
+// Tipo contrato
+export interface CreateTipoContrato {
+  descripcion: string
+  indefinido: boolean
+}
+
+export interface ActualizarTipoContrato extends Partial<CreateTipoContrato> {
+  estado: boolean
+}

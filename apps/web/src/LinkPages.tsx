@@ -95,6 +95,12 @@ export const linksSideBar: LinksSideBar = {
       description: "ubicacion",
       icon: <MapPinIcon className="h-6 w-6" />,
     },
+    {
+      to: "/dashboard/configuracion/tipo-contrato",
+      label: "Tipo de Contrato",
+      description: "tipo-contrato",
+      icon: <FileTextIcon className="h-6 w-6" />,
+    },
   ],
   clientes: [
     {

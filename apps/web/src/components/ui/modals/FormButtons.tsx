@@ -13,7 +13,7 @@ export const FormButtons = ({
     <div className="flex justify-end space-x-2">
       <Button
         onClick={onCancel}
-        className="w-auto bg-gray-500 hover:bg-gray-600"
+        className="w-auto cursor-pointer rounded-lg bg-gray-500 hover:bg-gray-600"
       >
         Cancelar
       </Button>

@@ -5,8 +5,9 @@ export interface CreatePersonalDto {
   segundoApellido: string;
   numeroIdentificacion: string;
   idTipoIdentificacion: number;
+  fechaActual: string;
   fechaInicioContrato: string;
-  fechaFinContrato: string;
+  fechaFinContrato: string | null;
   fechaNacimiento: string;
   direccionResidencia: string;
   telefono: string;
@@ -14,6 +15,7 @@ export interface CreatePersonalDto {
   idCiudad: number;
   idTipoGenero: number;
   idTipoPersonal: number;
+  idTipoContrato: number;
 }
 
 export interface UpdatePersonalDto extends Partial<CreatePersonalDto> {
