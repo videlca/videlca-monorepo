@@ -9,7 +9,7 @@ import { NovedadService } from '../../novedad/services';
 import { PaginationDto } from '../../common/dto';
 
 import { Personal } from '../entities';
-import { TipoGeneroService, TipoPersonalService } from '.';
+import { TipoGeneroService, TipoPersonalService, TipoContratoService } from '.';
 
 import { CreatePersonalDto, UpdatePersonalDto } from '../dto';
 
@@ -31,6 +31,8 @@ export class PersonalService {
     private readonly tipoGeneroService: TipoGeneroService,
     @Inject(forwardRef(() => TipoPersonalService))
     private readonly tipoPersonalService: TipoPersonalService,
+    @Inject(forwardRef(() => TipoContratoService))
+    private readonly tipoContratoService: TipoContratoService,
     private readonly configService: ConfigService,
     private readonly dataSource: DataSource
   ) {
@@ -111,6 +113,13 @@ export class PersonalService {
     
     // OBTENER TIPO DE PERSONAL
     const tipoPersonal = await this.tipoPersonalService.findOne(createPersonalDto.idTipoPersonal);
+    
+    // OBTENER TIPO DE CONTRATO
+    const tipoContrato = await this.tipoContratoService.findOne(createPersonalDto.idTipoContrato);
+
+    if (!tipoContrato.indefinido && createPersonalDto.fechaFinContrato == null) {
+      throw new BadRequestException(`El tipo de contrato ${tipoContrato.descripcion} requiere fecha de fin`);
+    }
 
     const empleado = this.personalRepository.create({
       ...createPersonalDto,
@@ -120,7 +129,8 @@ export class PersonalService {
       idTipoIdentificacion: tipoIdentificacion,
       idCiudad: ciudad,
       idTipoGenero: tipoGenero,
-      idTipoPersonal: tipoPersonal
+      idTipoPersonal: tipoPersonal,
+      idTipoContrato: tipoContrato
     });
 
     try {
@@ -242,6 +252,7 @@ export class PersonalService {
       idTipoIdentificacion,
       idTipoGenero,
       idTipoPersonal,
+      idTipoContrato,
       idCiudad, 
       fechaInicioContrato,
       fechaFinContrato,
@@ -361,6 +372,19 @@ export class PersonalService {
       const tipoPersonal = await this.tipoPersonalService.findOne(updatePersonalDto.idTipoPersonal);
     
       empleado.idTipoPersonal = tipoPersonal;
+
+    }
+    
+    if (updatePersonalDto.idTipoContrato){
+
+      // OBTENER TIPO DE CONTRATO
+      const tipoContrato = await this.tipoContratoService.findOne(updatePersonalDto.idTipoContrato);
+  
+      if (!tipoContrato.indefinido && updatePersonalDto.fechaFinContrato == null) {
+        throw new BadRequestException(`El tipo de contrato ${tipoContrato.descripcion} requiere fecha de fin`);
+      }
+    
+      empleado.idTipoContrato = tipoContrato;
 
     }
 

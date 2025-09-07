@@ -96,4 +96,10 @@ export class CreatePersonalDto {
     @Min(1, {message: 'El valor del tipo personal debe ser minimo 1'})
     idTipoPersonal: number;   
     
+    @ApiProperty({ description: 'Id del tipo de contrato', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo tipo contrato debe ser un número'})
+    @IsPositive({message: 'El valor del tipo contrato debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del tipo contrato debe ser minimo 1'})
+    idTipoContrato: number;   
+    
 }
