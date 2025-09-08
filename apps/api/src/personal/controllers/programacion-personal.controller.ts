@@ -12,7 +12,6 @@ export class ProgramacionPersonalController {
 
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    console.log(paginationDto);
     return this.programacionPersonalService.findAll(paginationDto, paginationDto.pagination);
   }
 

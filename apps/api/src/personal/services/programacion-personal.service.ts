@@ -40,6 +40,7 @@ export interface PersonalAsignado {
   nombreCompleto: string;
   numeroIdentificacion: string;
   idTipoPersonal: number;
+  tipoPersonal: string;
   eventos?: Event[];
 }
 
@@ -140,6 +141,7 @@ export class ProgramacionPersonalService {
         nombreCompleto: `${personal.primerNombre} ${personal.segundoNombre ?? ''} ${personal.primerApellido} ${personal.segundoApellido ?? ''}`.trim(),
         numeroIdentificacion: personal.numeroIdentificacion,
         idTipoPersonal: personal.idTipoPersonal.idTipoPersonal,
+        tipoPersonal: personal.idTipoPersonal.descripcion,
         eventos: [],
       };
 
