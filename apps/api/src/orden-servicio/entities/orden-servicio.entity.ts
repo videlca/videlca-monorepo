@@ -18,13 +18,14 @@ export class OrdenServicio {
 
     // ORDEN SERVICIO ID -> relacion
     @OneToOne(
-        () => OrdenServicioId, 
-        ordenServicioId => ordenServicioId.ordenServicio, 
-        {
-            nullable: false, // Toda orden debe tener un ID
-            eager: true,
-            onDelete: 'CASCADE'
-        }
+      () => OrdenServicioId,
+      ordenServicioId => ordenServicioId.ordenServicio,
+      {
+        nullable: false,
+        eager: true,
+        cascade: true, // 🔥 Esto hace que al borrar OrdenServicio también borre el ID
+        onDelete: 'CASCADE',
+      },
     )
     @JoinColumn({ name: 'OrdenServicioId' })
     ordenServicioId: OrdenServicioId;
