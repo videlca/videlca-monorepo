@@ -26,8 +26,8 @@ export const deleteRole = async (id: number): Promise<ApiResponse<Rol>> => {
 }
 
 // Modulos
-export const getModulos = async (pagination: PaginationDto): Promise<ApiResponse<Modulos>> => {
-  return await apiGet<Modulos>("/permissions", pagination);
+export const getModulos = async (pagination?: PaginationDto): Promise<ApiResponse<Modulos>> => {
+  return await apiGet<Modulos>("/permissions?pagination");
 }
 
 // Permisos

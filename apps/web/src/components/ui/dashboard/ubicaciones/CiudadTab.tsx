@@ -95,8 +95,8 @@ export const CiudadTab = () => {
   };
   const columnsCiudades: ColumnDef<Ciudad>[] = [
     {
-      header: "ID",
-      accessorKey: "idCiudad",
+      header: "Código ciudad",
+      accessorKey: "codigoCiudad",
     },
     {
       header: "Ciudad",

@@ -17,7 +17,7 @@ export interface OrdenServicio {
 export interface Event {
   idEvento: string;
   tituloEvento: string;
-  tipoEvento: "asignado" | "permiso" | "vacaciones" | "incapacitado";
+  tipoEvento: "asignado" | "permiso" | "vacaciones" | "incapacidad";
   fechaInicioEvento: string;
   fechaFinEvento: string;
   horaInicioEvento: string;
@@ -32,5 +32,6 @@ export interface PersonalAsignado {
   nombreCompleto: string;
   numeroIdentificacion: string;
   idTipoPersonal: number;
+  tipoPersonal: string;
   eventos?: Event[];
 }

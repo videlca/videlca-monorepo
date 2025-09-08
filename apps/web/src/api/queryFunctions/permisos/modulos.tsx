@@ -9,6 +9,6 @@ export const useGetModulos = (): UseQueryResult<
 > => {
   return useQuery({
     queryKey: ["modulos"],
-    queryFn: () => getModulos({ pagination: false }),
+    queryFn: () => getModulos(),
   });
 };

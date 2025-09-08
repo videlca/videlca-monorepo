@@ -44,8 +44,8 @@ const eventTypes = {
     color: "bg-red-500",
     textColor: "text-white",
   },
-  incapacitado: {
-    label: "Incapacitado",
+  incapacidad: {
+    label: "Incapacidad",
     color: "bg-blue-500",
     textColor: "text-white",
   },
@@ -258,7 +258,7 @@ function RouteComponent() {
                     {person.nombreCompleto}
                   </div>
                   <div className="mt-1 flex items-center justify-between text-xs text-gray-600">
-                    <span className="font-medium">{person.idTipoPersonal}</span>
+                    <span className="font-medium">{person.tipoPersonal}</span>
                     <span className="inline-flex items-center rounded-md border bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
                       {person.numeroIdentificacion}
                     </span>
