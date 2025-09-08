@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../common/dto';
@@ -260,35 +260,47 @@ export class PermissionsService {
   // OBTENER TODOS LOS RELES CON SUS PERMISOS
   async findAllRoleWithPermissions(paginationDto: PaginationDto, pagination: boolean = true){
 
+    let roles: Role[] = [];
+
     if (pagination) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const roles = await this.roleRepository.find({
-          take: limit,
-          skip: offset,
-          relations: {
-            permissions: true
-          },
-          order: {
-              descripcion: 'ASC'
-          }
+      roles = await this.roleRepository.find({
+        take: limit,
+        skip: offset,
+        relations: {
+          permissions: true
+        },
+        where: {
+          nombreRol: Not(Roles.SUPER_ADMIN) // Excluir el rol super admin
+        },
+        order: {
+            descripcion: 'ASC'
+        }
       });
-  
-      return roles;
 
     }
 
-    return await this.roleRepository.find({
-      relations: {
-        permissions: true
-      },
-      order: {
-        descripcion: 'ASC'
-      }
-    });
+    else {
+
+      roles = await this.roleRepository.find({
+        relations: {
+          permissions: true
+        },
+        where: {
+          nombreRol: Not(Roles.SUPER_ADMIN) // Excluir el rol super admin
+        },
+        order: {
+          descripcion: 'ASC'
+        }
+      });
+
+    }
+    
+    return roles;
 
   }
   
