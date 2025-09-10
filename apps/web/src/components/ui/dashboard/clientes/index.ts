@@ -1,4 +1,4 @@
 export { ClientesTab } from "./ClientesTab";
-export { LocacionesTab } from "./LocacionesTab";
+export { PosicionesTab } from "./PosicionesTab";
 export { SegmentacionTab } from "./SegmentacionTab";
 export { SubSegmentacionTab } from "./SubSegmentacionTab";

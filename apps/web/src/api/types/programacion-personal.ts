@@ -1,5 +1,4 @@
-
-interface Locacion {
+export interface Posicion {
   nombre: string;
   direccion: string;
   telefono: string;
@@ -11,7 +10,7 @@ export interface OrdenServicio {
   ordenServicioId: string;
   estado: string;
   fechaCreacion: string;
-  locacion: Locacion;
+  posicion: Posicion;
 }
 
 export interface Event {

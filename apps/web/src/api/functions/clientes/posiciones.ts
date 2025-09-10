@@ -1,10 +1,10 @@
-import type { Locacion } from "../../../types";
+import type { Posicion } from "../../../types";
 import { axiosClient } from "../../config";
-import type { CreateLocacionDto, UpdateLocacionDto } from "../../dtos/clientes";
+import type { CreatePosicionDto, UpdatePosicionDto } from "../../dtos/clientes";
 import type { PaginationDto } from "../../dtos/common";
 import type { ApiResponse } from "../../types";
 
-export const getLocaciones = async (pagination: PaginationDto): Promise<ApiResponse<Locacion[]>> => {
+export const getPosiciones = async (pagination: PaginationDto): Promise<ApiResponse<Posicion[]>> => {
   const response = await axiosClient.get("/locaciones", { params: pagination }).then((res) => {
     return {
       status: res.status,
@@ -19,9 +19,9 @@ export const getLocaciones = async (pagination: PaginationDto): Promise<ApiRespo
   return response;
 };
 
-export const getLocacionesByCliente = async (idCliente: number, pagination: PaginationDto): Promise<ApiResponse<Locacion[]>> => {
+export const getPosicionesByCliente = async (idCliente: number, pagination: PaginationDto): Promise<ApiResponse<Posicion[]>> => {
   const response = await axiosClient.get(`/locaciones`, { params: pagination }).then((res) => {
-    const clientesFiltrados = res.data.filter((cliente: Locacion) => cliente.idCliente.idCliente === idCliente);
+    const clientesFiltrados = res.data.filter((cliente: Posicion) => cliente.idCliente.idCliente === idCliente);
     return {
       status: res.status,
       data: clientesFiltrados,
@@ -35,7 +35,7 @@ export const getLocacionesByCliente = async (idCliente: number, pagination: Pagi
   return response;
 };
 
-export const getLocacionById = async (id: number): Promise<ApiResponse<Locacion | null>> => {
+export const getPosicionById = async (id: number): Promise<ApiResponse<Posicion | null>> => {
   const response = await axiosClient.get(`/locaciones/${id}`).then((res) => {
     return {
       status: res.status,
@@ -50,7 +50,7 @@ export const getLocacionById = async (id: number): Promise<ApiResponse<Locacion 
   return response;
 };
 
-export const getLocacionesActivo = async (pagination: PaginationDto): Promise<ApiResponse<Locacion[]>> => {
+export const getPosicionesActivo = async (pagination: PaginationDto): Promise<ApiResponse<Posicion[]>> => {
   const response = await axiosClient.get("/locaciones/actives", { params: pagination }).then((res) => {
     return {
       status: res.status,
@@ -65,7 +65,7 @@ export const getLocacionesActivo = async (pagination: PaginationDto): Promise<Ap
   return response;
 };
 
-export const createLocacion = async (data: CreateLocacionDto): Promise<ApiResponse> => {
+export const createPosicion = async (data: CreatePosicionDto): Promise<ApiResponse> => {
   const response = await axiosClient.post("/locaciones", data).then((res) => {
     return {
       status: res.status,
@@ -80,7 +80,7 @@ export const createLocacion = async (data: CreateLocacionDto): Promise<ApiRespon
   return response;
 };
 
-export const updateLocacion = async (id: number, data: UpdateLocacionDto): Promise<ApiResponse> => {
+export const updatePosicion = async (id: number, data: UpdatePosicionDto): Promise<ApiResponse> => {
   const response = await axiosClient.patch(`/locaciones/${id}`, data).then((res) => {
     return {
       status: res.status,
@@ -95,7 +95,7 @@ export const updateLocacion = async (id: number, data: UpdateLocacionDto): Promi
   return response;
 };
 
-export const deleteLocacion = async (id: number): Promise<ApiResponse> => {
+export const deletePosicion = async (id: number): Promise<ApiResponse> => {
   const response = await axiosClient.delete(`/locaciones/${id}`).then((res) => {
     return {
       status: res.status,

@@ -8,7 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { priceFormat } from "../../../utils/PriceFormat";
-import type { Locacion } from "../../../types";
+import type { Posicion } from "../../../types";
 import type { Tarifa } from "../../../api/types/periodo";
 import type {
   CreateOrdenServicioDto,
@@ -19,7 +19,7 @@ import type { CreateOrdenServicioTarifaDto } from "../../../api/dtos";
 
 export const PreviewInformacionOrden = ({
   isEditing = false,
-  selectedLocation,
+  selectedPosicion,
   selectedTarifa,
   formOrdenServicio,
   configuracionServicioTarifa,
@@ -27,7 +27,7 @@ export const PreviewInformacionOrden = ({
   isIndefinite,
 }: {
   isEditing?: boolean;
-  selectedLocation: Locacion | null;
+  selectedPosicion: Posicion | null;
   selectedTarifa: Tarifa | null;
   formOrdenServicio: CreateOrdenServicioDto | UpdateOrdenServicioDto;
   configuracionServicioTarifa:
@@ -59,19 +59,19 @@ export const PreviewInformacionOrden = ({
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Cliente:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedLocation?.idCliente.nombre}
+                  {selectedPosicion?.idCliente.nombre}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Ubicación:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedLocation?.nombre}
+                  {selectedPosicion?.nombre}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Dirección:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedLocation?.direccion}
+                  {selectedPosicion?.direccion}
                 </span>
               </p>
             </div>
@@ -79,20 +79,20 @@ export const PreviewInformacionOrden = ({
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Ciudad:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedLocation?.idCiudad.descripcion}
+                  {selectedPosicion?.idCiudad.descripcion}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Responsable:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedLocation?.primerNombreResponsable}{" "}
-                  {selectedLocation?.primerApellidoResponsable}
+                  {selectedPosicion?.primerNombreResponsable}{" "}
+                  {selectedPosicion?.primerApellidoResponsable}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Teléfono:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedLocation?.telefono}
+                  {selectedPosicion?.telefono}
                 </span>
               </p>
             </div>

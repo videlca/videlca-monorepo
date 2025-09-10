@@ -1,4 +1,4 @@
 export * from './clientes'
-export * from './locaciones'
+export * from './posiciones'
 export * from "./segmentacion";
 export * from "./sub-segmentacion";

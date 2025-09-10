@@ -27,7 +27,7 @@ import { useForm } from "../../../../hooks/useForm";
 import type {
   CreateClienteDto,
   CreateCorreoDto,
-  CreateLocacionDto,
+  CreatePosicionDto,
   UpdateClienteDto,
 } from "../../../../api/dtos/clientes";
 import { InputForm } from "../../../common/InputForm";
@@ -38,7 +38,7 @@ import {
   useTipoIdentificacionActivo,
 } from "../../../../api/queryFunctions/configuracion";
 import {
-  useCreateLocacion,
+  useCreatePosicion,
   useSubSegmentaciones,
 } from "../../../../api/queryFunctions/clientes";
 import { InputSelect } from "../../../common/InputSelect";
@@ -51,7 +51,7 @@ import { useNavigate } from "@tanstack/react-router";
 export function ClientesTab() {
   const navigate = useNavigate({ from: "/dashboard/clientes" });
   // Estados
-  const [isAddLocacionModalOpen, setIsAddLocacionModalOpen] = useState(false);
+  const [isAddPosicionModalOpen, setIsAddPosicionModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
@@ -77,8 +77,8 @@ export function ClientesTab() {
     useUpdateCliente();
   const { mutate: deleteCliente } = useDeleteCliente();
 
-  const { mutate: createLocacion, isPending: isCreatingLocacion } =
-    useCreateLocacion();
+  const { mutate: createPosicion, isPending: isCreatingPosicion } =
+    useCreatePosicion();
 
   const { data: tipoIdentificacion } = useTipoIdentificacionActivo();
   const { data: tipoCliente } = useTipoCliente();
@@ -116,12 +116,12 @@ export function ClientesTab() {
   });
 
   const {
-    form: formAddLocacion,
-    handleChange: handleChangeAddLocacion,
-    handleNumericChange: handleNumericChangeAddLocacion,
-    setForm: setFormAddLocacion,
-    resetForm: resetFormAddLocacion,
-  } = useForm<CreateLocacionDto>({
+    form: formAddPosicion,
+    handleChange: handleChangeAddPosicion,
+    handleNumericChange: handleNumericChangeAddPosicion,
+    setForm: setFormAddPosicion,
+    resetForm: resetFormAddPosicion,
+  } = useForm<CreatePosicionDto>({
     idCliente: 0,
     nombre: "",
     idCiudad: 0,
@@ -157,9 +157,9 @@ export function ClientesTab() {
     setIsEditModalOpen(true);
   };
 
-  const handleCloseAddLocacion = () => {
-    setIsAddLocacionModalOpen(false);
-    resetFormAddLocacion();
+  const handleCloseAddPosicion = () => {
+    setIsAddPosicionModalOpen(false);
+    resetFormAddPosicion();
     setCorreos([]);
     setCorreoInput({
       nombre: "",
@@ -168,9 +168,9 @@ export function ClientesTab() {
     });
   };
 
-  const handleShowViewLocacionModal = (row: Row<Cliente>) => {
+  const handleShowViewPosicionModal = (row: Row<Cliente>) => {
     navigate({
-      to: "/dashboard/clientes/$idCliente/locaciones",
+      to: "/dashboard/clientes/$idCliente/posiciones",
       params: {
         idCliente: row.original.idCliente.toString(),
       },
@@ -216,19 +216,19 @@ export function ClientesTab() {
         <div className="flex gap-2">
           <ButtonAction
             Icon={PlusIcon}
-            label="Agregar locacion"
+            label="Agregar posición"
             onClick={() => {
-              setIsAddLocacionModalOpen(true);
-              setFormAddLocacion({
-                ...formAddLocacion,
+              setIsAddPosicionModalOpen(true);
+              setFormAddPosicion({
+                ...formAddPosicion,
                 idCliente: row.original.idCliente || 0,
               });
             }}
           />
           <ButtonAction
             Icon={EyeIcon}
-            label="Ver locaciones"
-            onClick={() => handleShowViewLocacionModal(row)}
+            label="Ver posiciones"
+            onClick={() => handleShowViewPosicionModal(row)}
           />
           <ButtonAction
             Icon={PencilIcon}
@@ -468,31 +468,31 @@ export function ClientesTab() {
         </FormsModal>
       </SimpleModal>
 
-      {/* Modal para agregar una locacion a cliente*/}
+      {/* Modal para agregar una posición a cliente*/}
       <SimpleModal
-        isOpen={isAddLocacionModalOpen}
+        isOpen={isAddPosicionModalOpen}
         onClose={() => {
-          handleCloseAddLocacion();
+          handleCloseAddPosicion();
         }}
-        title="Agregar locación"
+        title="Agregar posición"
         size="4xl"
       >
         <FormsModal
-          isLoading={isCreatingLocacion}
+          isLoading={isCreatingPosicion}
           onCancel={() => {
-            handleCloseAddLocacion();
+            handleCloseAddPosicion();
           }}
           updating={false}
           onSubmit={(e) => {
             e.preventDefault();
-            createLocacion(
+            createPosicion(
               {
-                ...formAddLocacion,
+                ...formAddPosicion,
                 correos: correos,
               },
               {
                 onSuccess: () => {
-                  handleCloseAddLocacion();
+                  handleCloseAddPosicion();
                 },
               },
             );
@@ -500,8 +500,8 @@ export function ClientesTab() {
         >
           <div className="flex flex-col gap-4">
             <FormSection
-              title="Información de la locación"
-              description="Información de la locación"
+              title="Información de la posición"
+              description="Información de la posición"
               Icon={Building2}
             >
               <InputForm
@@ -509,16 +509,16 @@ export function ClientesTab() {
                 placeholder="Nombre"
                 type="text"
                 id="nombre"
-                value={formAddLocacion.nombre}
-                onChange={handleChangeAddLocacion}
+                value={formAddPosicion.nombre}
+                onChange={handleChangeAddPosicion}
                 required
               />
               {/* <InputSelect
                 label="Cliente*"
                 placeholder="Cliente"
                 id="idCliente"
-                value={formAddLocacion.idCliente}
-                onChange={handleNumericChangeAddLocacion}
+                value={formAddPosicion.idCliente}
+                onChange={handleNumericChangeAddPosicion}
                 options={
                   clientes?.data?.map((cliente) => ({
                     id: cliente.idCliente,
@@ -531,8 +531,8 @@ export function ClientesTab() {
                 label="Ciudad*"
                 placeholder="Ciudad"
                 id="idCiudad"
-                value={formAddLocacion.idCiudad}
-                onChange={handleNumericChangeAddLocacion}
+                value={formAddPosicion.idCiudad}
+                onChange={handleNumericChangeAddPosicion}
                 options={
                   ciudades?.data?.map((ciudad) => ({
                     id: ciudad.idCiudad,
@@ -546,8 +546,8 @@ export function ClientesTab() {
                 placeholder="Dirección"
                 type="text"
                 id="direccion"
-                value={formAddLocacion.direccion}
-                onChange={handleChangeAddLocacion}
+                value={formAddPosicion.direccion}
+                onChange={handleChangeAddPosicion}
                 required
               />
               <InputForm
@@ -555,8 +555,8 @@ export function ClientesTab() {
                 placeholder="Días de anticipación de notificación"
                 type="number"
                 id="diasAnticipaticionNotificacion"
-                value={formAddLocacion.diasAnticipaticionNotificacion?.toString()}
-                onChange={handleChangeAddLocacion}
+                value={formAddPosicion.diasAnticipaticionNotificacion?.toString()}
+                onChange={handleChangeAddPosicion}
                 required
               />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -565,8 +565,8 @@ export function ClientesTab() {
                   placeholder="Latitud"
                   type="number"
                   id="latitud"
-                  value={formAddLocacion.latitud?.toString()}
-                  onChange={handleChangeAddLocacion}
+                  value={formAddPosicion.latitud?.toString()}
+                  onChange={handleChangeAddPosicion}
                   required
                 />
                 <InputForm
@@ -574,8 +574,8 @@ export function ClientesTab() {
                   placeholder="Longitud"
                   type="number"
                   id="longitud"
-                  value={formAddLocacion.longitud?.toString()}
-                  onChange={handleChangeAddLocacion}
+                  value={formAddPosicion.longitud?.toString()}
+                  onChange={handleChangeAddPosicion}
                   required
                 />
               </div>
@@ -590,8 +590,8 @@ export function ClientesTab() {
                 placeholder="Primer nombre responsable"
                 type="text"
                 id="primerNombreResponsable"
-                value={formAddLocacion.primerNombreResponsable}
-                onChange={handleChangeAddLocacion}
+                value={formAddPosicion.primerNombreResponsable}
+                onChange={handleChangeAddPosicion}
                 required
               />
               <InputForm
@@ -599,8 +599,8 @@ export function ClientesTab() {
                 placeholder="Primer apellido responsable"
                 type="text"
                 id="primerApellidoResponsable"
-                value={formAddLocacion.primerApellidoResponsable}
-                onChange={handleChangeAddLocacion}
+                value={formAddPosicion.primerApellidoResponsable}
+                onChange={handleChangeAddPosicion}
                 required
               />
               <InputForm
@@ -608,8 +608,8 @@ export function ClientesTab() {
                 placeholder="Teléfono"
                 type="number"
                 id="telefono"
-                value={formAddLocacion.telefono}
-                onChange={handleChangeAddLocacion}
+                value={formAddPosicion.telefono}
+                onChange={handleChangeAddPosicion}
                 required
               />
               <InputForm
@@ -617,8 +617,8 @@ export function ClientesTab() {
                 placeholder="Teléfono 2"
                 type="number"
                 id="segundoTelefono"
-                value={formAddLocacion.segundoTelefono || ""}
-                onChange={handleChangeAddLocacion}
+                value={formAddPosicion.segundoTelefono || ""}
+                onChange={handleChangeAddPosicion}
                 required={false}
               />
             </FormSection>

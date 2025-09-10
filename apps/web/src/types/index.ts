@@ -1,7 +1,7 @@
 // Configuraciones
 
 export type TableType = "ciudades" | "departamentos" | "paises";
-export type ClientesTableType = "clientes" | "locaciones" | "segmentacion" | "sub-segmentacion";
+export type ClientesTableType = "clientes" | "posiciones" | "segmentacion" | "sub-segmentacion";
 
 export interface TipoNovedad {
   idTipoNovedad: number;
@@ -15,7 +15,7 @@ export interface Correo {
   nombre: string;
   apellido: string;
   email: string;
-  locacion?: Locacion;
+  posicion?: Posicion;
   estados: EstadoOrden[];
 }
 
@@ -99,7 +99,7 @@ export interface Segmentacion {
   subSegmentaciones?: SubSegmentacion[];
 }
 
-export interface Locacion {
+export interface Posicion {
   idLocacion: number;
   nombre: string;
   direccion: string;

@@ -1,18 +1,18 @@
 import { Building2, Check, MapPin, Phone, Search, User } from "lucide-react";
-import type { Locacion } from "../../../types";
-import { useLocacionesActivo } from "../../../api/queryFunctions/clientes";
+import type { Posicion } from "../../../types";
+import { usePosicionesActivo } from "../../../api/queryFunctions/clientes";
 import type { CreateOrdenServicioDto } from "../../../api/dtos/orden-servicio";
 
-export const SeleccionarLocacionCliente = ({
+export const SeleccionarPosicionCliente = ({
   formOrdenServicio,
   setFormOrdenServicio,
-  setSelectedLocation,
+  setSelectedPosicion,
 }: {
   formOrdenServicio: CreateOrdenServicioDto;
   setFormOrdenServicio: (formOrdenServicio: CreateOrdenServicioDto) => void;
-  setSelectedLocation: (location: Locacion) => void;
+  setSelectedPosicion: (posicion: Posicion) => void;
 }) => {
-  const { data: locacionesQuery } = useLocacionesActivo();
+  const { data: posicionesQuery } = usePosicionesActivo();
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center">
@@ -35,20 +35,20 @@ export const SeleccionarLocacionCliente = ({
       </div>
 
       <div className="max-h-80 space-y-3 overflow-y-auto">
-        {locacionesQuery?.data?.map((location) => (
+        {posicionesQuery?.data?.map((posicion) => (
           <div
-            key={location.idLocacion}
+            key={posicion.idLocacion}
             className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-              formOrdenServicio.idLocacion === location.idLocacion
+              formOrdenServicio.idLocacion === posicion.idLocacion
                 ? "border-blue-500 bg-blue-50 shadow-sm"
                 : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
             }`}
             onClick={() => {
               setFormOrdenServicio({
                 ...formOrdenServicio,
-                idLocacion: location.idLocacion,
+                idLocacion: posicion.idLocacion,
               });
-              setSelectedLocation(location);
+              setSelectedPosicion(posicion);
             }}
           >
             <div className="flex items-start justify-between">
@@ -56,9 +56,9 @@ export const SeleccionarLocacionCliente = ({
                 <div className="mb-1 flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-blue-600" />
                   <h4 className="font-medium text-gray-900">
-                    {location.nombre}
+                    {posicion.nombre}
                   </h4>
-                  {formOrdenServicio.idLocacion === location.idLocacion && (
+                  {formOrdenServicio.idLocacion === posicion.idLocacion && (
                     <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-blue-600">
                       <Check className="h-4 w-4 text-white" />
                     </div>
@@ -66,25 +66,25 @@ export const SeleccionarLocacionCliente = ({
                 </div>
                 <div className="mb-1 flex items-center gap-1 text-sm text-gray-600">
                   <Building2 className="h-3 w-3" />
-                  <span>{location.idCliente.nombre}</span>
+                  <span>{posicion.idCliente.nombre}</span>
                 </div>
                 <div className="mb-1 flex items-center gap-1 text-sm text-gray-600">
                   <MapPin className="h-3 w-3" />
                   <span>
-                    {location.direccion} - {location.idCiudad.descripcion}
+                    {posicion.direccion} - {posicion.idCiudad.descripcion}
                   </span>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-600">
                   <div className="flex items-center gap-1">
                     <User className="h-3 w-3" />
                     <span>
-                      {location.primerNombreResponsable}{" "}
-                      {location.primerApellidoResponsable}
+                      {posicion.primerNombreResponsable}{" "}
+                      {posicion.primerApellidoResponsable}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Phone className="h-3 w-3" />
-                    <span>{location.telefono}</span>
+                    <span>{posicion.telefono}</span>
                   </div>
                 </div>
               </div>

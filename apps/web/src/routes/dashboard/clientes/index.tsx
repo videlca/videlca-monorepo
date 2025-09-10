@@ -3,7 +3,6 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import type { ClientesTableType } from "../../../types";
 import {
   ClientesTab,
-  LocacionesTab,
   SegmentacionTab,
 } from "../../../components/ui/dashboard/clientes";
 import { useState } from "react";
@@ -19,9 +18,7 @@ function RouteComponent() {
 
   const tabs = [
     { id: "clientes" as ClientesTableType, label: "Clientes" },
-    // { id: "locaciones" as ClientesTableType, label: "Locaciones" },
     { id: "segmentacion" as ClientesTableType, label: "Segmentación" },
-    // { id: "sub-segmentacion" as ClientesTableType, label: "Sub-Segmentación" },
   ];
 
   return (
@@ -34,7 +31,6 @@ function RouteComponent() {
 
       <div className="flex flex-col gap-8">
         {activeTab === "clientes" && <ClientesTab />}
-        {/* {activeTab === "locaciones" && <LocacionesTab />} */}
         {activeTab === "segmentacion" && <SegmentacionTab />}
       </div>
     </Section>

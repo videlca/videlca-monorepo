@@ -48,11 +48,11 @@ import { dateFormat } from "../../../utils/DateFormat";
 import type { Tarifa } from "../../../api/types/periodo";
 import { useForm } from "../../../hooks/useForm";
 import { OrderStateLabel } from "../../../components/common/OrderStateLabel";
-import type { Locacion } from "../../../types";
+import type { Posicion } from "../../../types";
 import { toast } from "sonner";
 import type { Servicio } from "../../../api/types/servicio";
 import { SeleccionarIdentificadorOrden } from "../../../components/common/stepsOrdenServicio/SeleccionarIdentificadorOrden";
-import { SeleccionarLocacionCliente } from "../../../components/common/stepsOrdenServicio/SeleccionarLocacionCliente";
+import { SeleccionarPosicionCliente } from "../../../components/common/stepsOrdenServicio/SeleccionarPosicionCliente";
 import { ConfigurarFechaOrdenServicio } from "../../../components/common/stepsOrdenServicio/ConfigurarFechaOrdenServicio";
 import { SeleccionarServicio } from "../../../components/common/stepsOrdenServicio/SeleccionarServicio";
 import { ConfigurarHorariosServicios } from "../../../components/common/stepsOrdenServicio/ConfigurarHorariosServicios";
@@ -81,7 +81,7 @@ function RouteComponent() {
     codigoTipoServicio: number;
   }>({ prefijo: "", codigo: 0, codigoTipoServicio: 0 });
 
-  const [selectedLocation, setSelectedLocation] = useState<Locacion | null>(
+  const [selectedPosicion, setSelectedPosicion] = useState<Posicion | null>(
     null,
   );
   const [selectedTipoServicio, setSelectedTipoServicio] = useState<
@@ -191,7 +191,7 @@ function RouteComponent() {
     setIsEditing(false);
     setCurrentStep(1);
     setSelectedTipoServicio(null);
-    setSelectedLocation(null);
+    setSelectedPosicion(null);
     setSelectedServices([]);
     setSelectedTarifa(null);
     setIsIndefinite(false);
@@ -610,7 +610,7 @@ function RouteComponent() {
     },
     {
       accessorKey: "idLocacion",
-      header: "Localización",
+      header: "Posición",
       cell: ({ row }) => (
         <span className="flex flex-col gap-1 font-medium whitespace-nowrap text-black capitalize">
           {row.original.idLocacion?.nombre || "No especificado"}
@@ -716,10 +716,10 @@ function RouteComponent() {
 
       case 2:
         return (
-          <SeleccionarLocacionCliente
+          <SeleccionarPosicionCliente
             formOrdenServicio={formOrdenServicio}
             setFormOrdenServicio={setFormOrdenServicio}
-            setSelectedLocation={setSelectedLocation}
+            setSelectedPosicion={setSelectedPosicion}
           />
         );
 
@@ -778,7 +778,7 @@ function RouteComponent() {
       case 7:
         return (
           <PreviewInformacionOrden
-            selectedLocation={selectedLocation}
+            selectedPosicion={selectedPosicion}
             selectedTarifa={selectedTarifa}
             formOrdenServicio={formOrdenServicio}
             configuracionServicioTarifa={configuracionServicioTarifa}
@@ -828,7 +828,7 @@ function RouteComponent() {
         return (
           <PreviewInformacionOrden
             isEditing={isEditing}
-            selectedLocation={selectedOrderDetail?.idLocacion || null}
+            selectedPosicion={selectedOrderDetail?.idLocacion || null}
             selectedTarifa={selectedTarifa}
             formOrdenServicio={formOrdenServicioEdit}
             configuracionServicioTarifa={configuracionServicioTarifaEdit}

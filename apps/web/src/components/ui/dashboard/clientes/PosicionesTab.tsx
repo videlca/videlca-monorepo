@@ -1,28 +1,5 @@
+import { ButtonAction } from "../../../common/ButtonAction";
 import {
-  createFileRoute,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
-import { useState } from "react";
-import type { CreateCorreoDto, UpdateLocacionDto } from "../../../api/dtos";
-import {
-  useClientesActivo,
-  useDeleteLocacion,
-  useLocacionById,
-  useLocacionesByCliente,
-  useUpdateLocacion,
-} from "../../../api/queryFunctions/clientes";
-import {
-  useCiudad,
-  useEstadoOrden,
-} from "../../../api/queryFunctions/configuracion";
-import { useForm } from "../../../hooks/useForm";
-import type { Locacion } from "../../../types";
-import type { ColumnDef, Row } from "@tanstack/react-table";
-import { StateLabel } from "../../../components/common/StateLabel";
-import { ButtonAction } from "../../../components/common/ButtonAction";
-import {
-  ArrowLeftIcon,
   Building2,
   Mail,
   PencilIcon,
@@ -31,27 +8,35 @@ import {
   User,
   XIcon,
 } from "lucide-react";
-import Table from "../../../components/common/Table";
-import { SimpleModal } from "../../../components/common/SimpleModal";
-import { FormsModal } from "../../../components/ui/modals/FormsModal";
-import { FormSection } from "../../../components/common/FormSection";
-import { InputForm } from "../../../components/common/InputForm";
-import { InputSelect } from "../../../components/common/InputSelect";
+import type { ColumnDef, Row } from "@tanstack/react-table";
+import Table from "../../../common/Table";
+import { StateLabel } from "../../../common/StateLabel";
+import type { Posicion } from "../../../../types";
+import { SimpleModal } from "../../../common/SimpleModal";
+import { useState } from "react";
+import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
+import {
+  useClientesActivo,
+  useDeletePosicion,
+  usePosicionById,
+  usePosiciones,
+  useUpdatePosicion,
+} from "../../../../api/queryFunctions/clientes";
+import { useForm } from "../../../../hooks/useForm";
+import type { CreateCorreoDto, UpdatePosicionDto } from "../../../../api/dtos";
+import {
+  useCiudad,
+  useEstadoOrden,
+} from "../../../../api/queryFunctions/configuracion";
+import { InputForm } from "../../../common/InputForm";
+import { InputSelect } from "../../../common/InputSelect";
 import { toast } from "sonner";
-import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
+import { FormsModal } from "../../modals/FormsModal";
+import { FormSection } from "../../../common/FormSection";
 
-export const Route = createFileRoute(
-  "/dashboard/clientes/$idCliente/locaciones",
-)({
-  component: RouteComponent,
-});
-
-export function RouteComponent() {
-  const { idCliente } = useParams({
-    from: "/dashboard/clientes/$idCliente/locaciones",
-  });
+export function PosicionesTab() {
   // Estados
-  const navigate = useNavigate({ from: "/dashboard/clientes" });
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [correoInput, setCorreoInput] = useState<{
@@ -64,32 +49,32 @@ export function RouteComponent() {
     correo: "",
   });
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
-  const [idLocationSelected, setIdLocationSelected] = useState<number | null>(
+  const [idPosicionSelected, setIdPosicionSelected] = useState<number | null>(
     null,
   );
 
   // Mutaciones y Queries
-  const { data: locaciones } = useLocacionesByCliente(Number(idCliente));
+  const { data: posiciones } = usePosiciones();
   const { data: ciudades } = useCiudad();
-  // const { data: clientes } = useClientesActivo();
+  const { data: clientes } = useClientesActivo();
   const { data: estadosOrdenServicio } = useEstadoOrden();
 
-  const { mutate: updateLocacion, isPending: isUpdatingLocacion } =
-    useUpdateLocacion();
-  const { mutate: getLocacionById } = useLocacionById();
-  const { mutate: deleteLocacion } = useDeleteLocacion();
+  const { mutate: updatePosicion, isPending: isUpdatingPosicion } =
+    useUpdatePosicion();
+  const { mutate: getPosicionById } = usePosicionById();
+  const { mutate: deletePosicion } = useDeletePosicion();
 
   // Formularios
 
   // TODO: Agregar correos
 
   const {
-    form: formEditLocacion,
-    handleChange: handleChangeEditLocacion,
-    handleNumericChange: handleNumericChangeEditLocacion,
-    setForm: setFormEditLocacion,
-    resetForm: resetFormEditLocacion,
-  } = useForm<UpdateLocacionDto>({
+    form: formEditPosicion,
+    handleChange: handleChangeEditPosicion,
+    handleNumericChange: handleNumericChangeEditPosicion,
+    setForm: setFormEditPosicion,
+    resetForm: resetFormEditPosicion,
+  } = useForm<UpdatePosicionDto>({
     idCliente: 0,
     nombre: "",
     idCiudad: 0,
@@ -106,19 +91,11 @@ export function RouteComponent() {
 
   // Handlers
 
-  const handleShowEditLocacionModal = (row: Row<Locacion>) => {
-    getLocacionById(row.original.idLocacion, {
+  const handleShowEditPosicionModal = (row: Row<Posicion>) => {
+    getPosicionById(row.original.idLocacion, {
       onSuccess: (data) => {
         if (data.data) {
-          const correosFormatted = data.data.correos.map((correo) => ({
-            nombre: correo.nombre,
-            apellido: correo.apellido,
-            email: correo.email,
-            estados: correo.estados.map(
-              (estado) => estado.idEstadoOrdenServicio,
-            ),
-          }));
-          setFormEditLocacion({
+          setFormEditPosicion({
             idCliente: data.data.idCliente.idCliente,
             nombre: data.data.nombre,
             idCiudad: data.data.idCiudad.idCiudad,
@@ -131,40 +108,27 @@ export function RouteComponent() {
             diasAnticipaticionNotificacion:
               data.data.diasAnticipaticionNotificacion,
             estado: data.data.estado,
-            correos: [...correosFormatted],
+            correos: [...data.data.correos] as unknown as CreateCorreoDto[],
           });
-          setCorreos(correosFormatted);
+          setCorreos(data.data.correos as unknown as CreateCorreoDto[]);
         }
       },
     });
     setIsEditModalOpen(true);
   };
 
-  const columnsLocaciones: ColumnDef<Locacion>[] = [
+  const columnsPosiciones: ColumnDef<Posicion>[] = [
     {
       accessorKey: "idLocacion",
       header: "ID",
     },
     {
-      accessorKey: "idCliente.nombre",
-      header: "Cliente",
-    },
-    {
       accessorKey: "nombre",
-      header: "Nombre de la locación",
-    },
-    {
-      accessorKey: "idCiudad.descripcion",
-      header: "Ciudad",
+      header: "Nombre",
     },
     {
       accessorKey: "direccion",
       header: "Dirección",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium whitespace-nowrap text-gray-900">
-          {row.original.direccion}
-        </span>
-      ),
     },
     {
       accessorKey: "latitud",
@@ -189,24 +153,14 @@ export function RouteComponent() {
     {
       accessorKey: "segundoTelefono",
       header: "Teléfono 2",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium text-gray-900">
-          {row.original.segundoTelefono || "N/A"}
-        </span>
-      ),
     },
     {
-      accessorKey: "diasAnticipaticionNotificacion",
-      header: "Días de anticipación de notificación",
+      accessorKey: "idCliente.nombre",
+      header: "Cliente",
     },
     {
-      accessorKey: "correos",
-      header: "Correos",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium text-gray-900">
-          {row.original.correos.map((correo) => correo.email).join(", ")}
-        </span>
-      ),
+      accessorKey: "idCiudad.descripcion",
+      header: "Ciudad",
     },
     {
       accessorKey: "estado",
@@ -222,15 +176,15 @@ export function RouteComponent() {
             Icon={PencilIcon}
             label="Editar"
             onClick={() => {
-              handleShowEditLocacionModal(row);
-              setIdLocationSelected(row.original.idLocacion);
+              handleShowEditPosicionModal(row);
+              setIdPosicionSelected(row.original.idLocacion);
             }}
           />
           <ButtonAction
             Icon={TrashIcon}
             label="Eliminar"
             onClick={() => {
-              setIdLocationSelected(row.original.idLocacion);
+              setIdPosicionSelected(row.original.idLocacion);
               setIsOpenDelete(true);
             }}
             color="red"
@@ -240,9 +194,9 @@ export function RouteComponent() {
     },
   ];
 
-  const handleCloseEditLocacion = () => {
+  const handleCloseEditPosicion = () => {
     setIsEditModalOpen(false);
-    resetFormEditLocacion();
+    resetFormEditPosicion();
     setCorreos([]);
     setCorreoInput({
       nombre: "",
@@ -253,53 +207,48 @@ export function RouteComponent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between">
-        <h1 className="text-2xl font-bold">Locaciones de por cliente</h1>
+      {/* <div className="flex justify-end">
         <ButtonAction
-          Icon={ArrowLeftIcon}
-          label="Volver"
-          onClick={() => {
-            navigate({
-              to: "/dashboard/clientes",
-            });
-          }}
+          Icon={PlusIcon}
+          label="Agregar posición"
+          onClick={() => setIsAddModalOpen(true)}
         />
-      </div>
+      </div> */}
       <Table
-        data={locaciones?.data || []}
-        columns={columnsLocaciones}
+        data={posiciones?.data || []}
+        columns={columnsPosiciones}
         enablePagination={true}
         pageSize={10}
         enableSorting={true}
         enableFiltering={true}
       />
 
-      {/* Modal para editar locación */}
+      {/* Modal para editar posición */}
       <SimpleModal
         isOpen={isEditModalOpen}
-        onClose={() => handleCloseEditLocacion()}
-        title="Editar locación"
+        onClose={() => handleCloseEditPosicion()}
+        title="Editar posición"
         size="4xl"
       >
         <FormsModal
-          isLoading={isUpdatingLocacion}
+          isLoading={isUpdatingPosicion}
           onCancel={() => {
-            handleCloseEditLocacion();
+            handleCloseEditPosicion();
           }}
           updating={true}
           onSubmit={(e) => {
             e.preventDefault();
-            updateLocacion(
+            updatePosicion(
               {
-                id: idLocationSelected as number,
+                id: idPosicionSelected as number,
                 data: {
-                  ...formEditLocacion,
+                  ...formEditPosicion,
                   correos: correos,
                 },
               },
               {
                 onSuccess: () => {
-                  handleCloseEditLocacion();
+                  handleCloseEditPosicion();
                 },
               },
             );
@@ -307,8 +256,8 @@ export function RouteComponent() {
         >
           <div className="flex flex-col gap-4">
             <FormSection
-              title="Información de la locación"
-              description="Información de la locación"
+              title="Información de la posición"
+              description="Información de la posición"
               Icon={Building2}
             >
               <InputForm
@@ -316,16 +265,16 @@ export function RouteComponent() {
                 placeholder="Nombre"
                 type="text"
                 id="nombre"
-                value={formEditLocacion.nombre || ""}
-                onChange={handleChangeEditLocacion}
+                value={formEditPosicion.nombre || ""}
+                onChange={handleChangeEditPosicion}
                 required
               />
-              {/* <InputSelect
+              <InputSelect
                 label="Cliente*"
                 placeholder="Cliente"
                 id="idCliente"
-                value={formEditLocacion.idCliente || 0}
-                onChange={handleNumericChangeEditLocacion}
+                value={formEditPosicion.idCliente || 0}
+                onChange={handleNumericChangeEditPosicion}
                 options={
                   clientes?.data?.map((cliente) => ({
                     id: cliente.idCliente,
@@ -333,13 +282,13 @@ export function RouteComponent() {
                   })) || []
                 }
                 required
-              /> */}
+              />
               <InputSelect
                 label="Ciudad*"
                 placeholder="Ciudad"
                 id="idCiudad"
-                value={formEditLocacion.idCiudad || 0}
-                onChange={handleNumericChangeEditLocacion}
+                value={formEditPosicion.idCiudad || 0}
+                onChange={handleNumericChangeEditPosicion}
                 options={
                   ciudades?.data?.map((ciudad) => ({
                     id: ciudad.idCiudad,
@@ -353,8 +302,8 @@ export function RouteComponent() {
                 placeholder="Dirección"
                 type="text"
                 id="direccion"
-                value={formEditLocacion.direccion || ""}
-                onChange={handleChangeEditLocacion}
+                value={formEditPosicion.direccion || ""}
+                onChange={handleChangeEditPosicion}
                 required
               />
               <InputForm
@@ -363,10 +312,10 @@ export function RouteComponent() {
                 type="number"
                 id="diasAnticipaticionNotificacion"
                 value={
-                  formEditLocacion.diasAnticipaticionNotificacion?.toString() ||
+                  formEditPosicion.diasAnticipaticionNotificacion?.toString() ||
                   "0"
                 }
-                onChange={handleChangeEditLocacion}
+                onChange={handleChangeEditPosicion}
                 required
               />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -375,8 +324,8 @@ export function RouteComponent() {
                   placeholder="Latitud"
                   type="number"
                   id="latitud"
-                  value={formEditLocacion.latitud?.toString() || ""}
-                  onChange={handleChangeEditLocacion}
+                  value={formEditPosicion.latitud?.toString() || ""}
+                  onChange={handleChangeEditPosicion}
                   required
                 />
                 <InputForm
@@ -384,8 +333,8 @@ export function RouteComponent() {
                   placeholder="Longitud"
                   type="number"
                   id="longitud"
-                  value={formEditLocacion.longitud?.toString() || ""}
-                  onChange={handleChangeEditLocacion}
+                  value={formEditPosicion.longitud?.toString() || ""}
+                  onChange={handleChangeEditPosicion}
                   required
                 />
               </div>
@@ -401,8 +350,8 @@ export function RouteComponent() {
                 placeholder="Primer nombre responsable"
                 type="text"
                 id="primerNombreResponsable"
-                value={formEditLocacion.primerNombreResponsable || ""}
-                onChange={handleChangeEditLocacion}
+                value={formEditPosicion.primerNombreResponsable || ""}
+                onChange={handleChangeEditPosicion}
                 required
               />
               <InputForm
@@ -410,8 +359,8 @@ export function RouteComponent() {
                 placeholder="Primer apellido responsable"
                 type="text"
                 id="primerApellidoResponsable"
-                value={formEditLocacion.primerApellidoResponsable || ""}
-                onChange={handleChangeEditLocacion}
+                value={formEditPosicion.primerApellidoResponsable || ""}
+                onChange={handleChangeEditPosicion}
                 required
               />
               <InputForm
@@ -419,8 +368,8 @@ export function RouteComponent() {
                 placeholder="Teléfono"
                 type="number"
                 id="telefono"
-                value={formEditLocacion.telefono || ""}
-                onChange={handleChangeEditLocacion}
+                value={formEditPosicion.telefono || ""}
+                onChange={handleChangeEditPosicion}
                 required
               />
               <InputForm
@@ -428,8 +377,8 @@ export function RouteComponent() {
                 placeholder="Teléfono 2"
                 type="number"
                 id="segundoTelefono"
-                value={formEditLocacion.segundoTelefono || ""}
-                onChange={handleChangeEditLocacion}
+                value={formEditPosicion.segundoTelefono || ""}
+                onChange={handleChangeEditPosicion}
                 required={false}
               />
             </FormSection>
@@ -617,12 +566,12 @@ export function RouteComponent() {
 
       <ConfirmarDelete
         isOpenDelete={isOpenDelete}
-        text="¿Estás seguro de querer eliminar esta locación?"
+        text="¿Estás seguro de querer eliminar esta posición?"
         onDelete={() => {
-          deleteLocacion(idLocationSelected as number, {
+          deletePosicion(idPosicionSelected as number, {
             onSuccess: () => {
               setIsOpenDelete(false);
-              setIdLocationSelected(null);
+              setIdPosicionSelected(null);
             },
           });
         }}

@@ -1,13 +1,13 @@
-import type { EstadoOrden, Locacion, Usuario } from "../../types";
+import type { EstadoOrden, Posicion, Usuario } from "../../types";
 import type { Tarifa } from "./periodo";
-import type { ProgramacionPersonal } from "./personal";
+import type { PersonalAsignado } from "./programacion-personal";
 
 export interface OrdenServicio {
   idOrdenServicio: number;
   ordenServicioId: OrdenServicioId;
   idUsuarioCreacion: Usuario;
   idEstadoOrdenServicio: EstadoOrden;
-  idLocacion: Locacion;
+  idLocacion: Posicion;
   fechaInicio: string;
   fechaFin: string;
   fechaInicioOrden: string;
@@ -53,5 +53,5 @@ export interface OrdenServicioTarifa {
   horaInicio: string;
   horaFin: string;
   precio: number | null;
-  programaciones: ProgramacionPersonal[];
+  programaciones: PersonalAsignado[];
 }
