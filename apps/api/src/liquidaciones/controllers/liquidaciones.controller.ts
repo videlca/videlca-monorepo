@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
   HttpCode,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
@@ -20,18 +21,39 @@ import { LiquidacionesService } from '../services/liquidaciones.service';
 import { UpdateLiquidacioneDto } from '../dto/update-liquidacione.dto';
 import { CreateLiquidacioneDto } from '../dto/create-liquidacione.dto'
 import { OrdenBody } from '../dto/orden-body.dto';
+//import { GrupoLiquidacionesService } from '../services/grupoLiquidaciones.service';
+import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
 
 @ApiTags('liquidaciones')
 @Controller('liquidaciones')
 @AppAuth(DescriptionRoutes.LIQUIDACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class LiquidacionesController {
-  constructor(private readonly service: LiquidacionesService) { }
+  constructor(
+    private readonly service: LiquidacionesService,
+//    private readonly groupService: GrupoLiquidacionesService
+  ) { }
 
-  @Post()
-  @ApiResponse({ status: 201, description: 'Liquidación creada' })
-  create(@Body() dto: CreateLiquidacioneDto) {
-    return this.service.create(dto);
+  @Post('grupo/generar-mes')
+  async generarGrupoMensual(@Body() dto: CrearGrupoMensualDto) {
+    return this.service.generarGrupoMensual(dto);
   }
+
+  
+  @Get('ordenes-por-mes')
+  async findByMes(
+    @Query('anio') anio: string,
+    @Query('mes') mes: string,
+  ) {
+    const anioNum = parseInt(anio, 10);
+    const mesNum = parseInt(mes, 10);
+
+    if (isNaN(anioNum) || isNaN(mesNum)) {
+      throw new BadRequestException('anio y mes deben ser numéricos');
+    }
+
+    return this.service.findByCreacionMes(anioNum, mesNum);
+  }
+
 
   @Get()
   @ApiQuery({ name: 'page', required: false, example: 1 })
@@ -62,11 +84,5 @@ export class LiquidacionesController {
     await this.service.remove(id);
   }
 
-  @Post(':ordenId/liquidaciones/mes')
-  createLiqMes(
-    @Param('ordenId', ParseIntPipe) ordenId: number,
-    @Body() body: OrdenBody,
-  ) {
-    return this.service.crearLiquidacionParaMes(ordenId, body.anio, body.mes);
-  }
+    
 }

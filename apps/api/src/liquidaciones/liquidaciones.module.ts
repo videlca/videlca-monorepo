@@ -13,10 +13,11 @@ import {
   AprobacionLiquidacionOrdenServicioController, 
   ExportacionController 
 } from './controllers';
+import { GrupoLiquidacion } from './entities/grupo_liquidaciones.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Liquidacione]),
+    TypeOrmModule.forFeature([Liquidacione, Liquidacione, GrupoLiquidacion]),
     forwardRef(() => OrdenServicioModule), // usa forwardRef si hay circularidad
     CommonModule,
     AuthModule,
@@ -28,7 +29,7 @@ import {
     ExportacionController
   ],
   providers: [
-    LiquidacionesService
+    LiquidacionesService,
   ],
   exports: [
     LiquidacionesService
