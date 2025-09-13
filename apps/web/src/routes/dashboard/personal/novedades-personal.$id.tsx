@@ -25,7 +25,6 @@ import { useGetPersonalNovedad } from "../../../api/queryFunctions/personal";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputForm } from "../../../components/common/InputForm";
 import { timeFormat } from "../../../utils/TimeFormat";
-import { InputTime } from "../../../components/common/InputTime";
 import { InputTime24H } from "../../../components/common/InputTime24H";
 
 export const Route = createFileRoute(

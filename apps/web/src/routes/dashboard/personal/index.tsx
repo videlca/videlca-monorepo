@@ -44,7 +44,6 @@ import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
 import { timeFormat } from "../../../utils/TimeFormat";
-import { InputTime } from "../../../components/common/InputTime";
 import { InputTime24H } from "../../../components/common/InputTime24H";
 
 export const Route = createFileRoute("/dashboard/personal/")({
