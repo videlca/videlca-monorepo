@@ -22,6 +22,7 @@ import {
 import { useTipoPersonal } from "../../../api/queryFunctions/configuracion";
 import type { Event, PersonalAsignado } from "../../../api/types";
 import { safeParseDate } from "../../../utils/DateUtils";
+import { SimpleModal } from "../../../components/common/SimpleModal";
 
 export const Route = createFileRoute("/dashboard/programaciones/")({
   component: RouteComponent,
@@ -64,6 +65,7 @@ function RouteComponent() {
   const [selectedTipoPersonal, setSelectedTipoPersonal] = useState<number>(0);
   const [selectedEventDetails, setSelectedEventDetails] =
     useState<Event | null>(null);
+  const [isOpenModal, setIsOpenModal] = useState(false);
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 });
@@ -132,6 +134,7 @@ function RouteComponent() {
 
   const handleEventClick = (event: Event, e: React.MouseEvent) => {
     e.stopPropagation();
+    setIsOpenModal(true);
     setSelectedEventDetails(event);
   };
 
@@ -373,105 +376,82 @@ function RouteComponent() {
         </div>
       </div>
 
-      {/* Modal para detalles del evento */}
-      {selectedEventDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="bg-opacity-50 fixed inset-0 bg-black"
-            onClick={() => setSelectedEventDetails(null)}
-          ></div>
-          <div className="relative mx-4 max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white shadow-lg">
-            <div className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="flex items-center gap-2 text-lg font-semibold">
-                  <Calendar className="h-5 w-5" />
-                  Detalles del Evento
-                </h2>
-                <button
-                  onClick={() => setSelectedEventDetails(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+      <SimpleModal
+        isOpen={isOpenModal}
+        onClose={() => {
+          setIsOpenModal(false);
+          setSelectedEventDetails(null);
+        }}
+        title="Detalles del Evento"
+      >
+        <div className="space-y-4">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div
+                className={`h-4 w-4 rounded ${(eventTypes[selectedEventDetails?.tipoEvento as keyof typeof eventTypes] || eventTypes.default).color}`}
+              ></div>
+              <span className="text-lg font-semibold">
+                {selectedEventDetails?.tituloEvento}
+              </span>
+              <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                {
+                  (
+                    eventTypes[
+                      selectedEventDetails?.tipoEvento as keyof typeof eventTypes
+                    ] || eventTypes.default
+                  ).label
+                }
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="flex items-center gap-1 text-sm font-medium">
+                  <Clock className="h-4 w-4" />
+                  Fecha de Inicio
+                </label>
+                <div className="rounded bg-gray-50 p-2 text-sm">
+                  {format(
+                    safeParseDate(selectedEventDetails?.fechaInicioEvento),
+                    "EEEE, dd 'de' MMMM 'de' yyyy",
+                    { locale: es },
+                  )}
+                  <div className="mt-1 text-xs text-gray-500">
+                    Hora: {selectedEventDetails?.horaInicioEvento}
+                  </div>
+                </div>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`h-4 w-4 rounded ${(eventTypes[selectedEventDetails.tipoEvento as keyof typeof eventTypes] || eventTypes.default).color}`}
-                  ></div>
-                  <span className="text-lg font-semibold">
-                    {selectedEventDetails.tituloEvento}
-                  </span>
-                  <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                    {
-                      (
-                        eventTypes[
-                          selectedEventDetails.tipoEvento as keyof typeof eventTypes
-                        ] || eventTypes.default
-                      ).label
-                    }
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-1 text-sm font-medium">
-                      <Clock className="h-4 w-4" />
-                      Fecha de Inicio
-                    </label>
-                    <div className="rounded bg-gray-50 p-2 text-sm">
-                      {format(
-                        safeParseDate(selectedEventDetails.fechaInicioEvento),
-                        "EEEE, dd 'de' MMMM 'de' yyyy",
-                        { locale: es },
-                      )}
-                      <div className="mt-1 text-xs text-gray-500">
-                        Hora: {selectedEventDetails.horaInicioEvento}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-1 text-sm font-medium">
-                      <Clock className="h-4 w-4" />
-                      Fecha de Fin
-                    </label>
-                    <div className="rounded bg-gray-50 p-2 text-sm">
-                      {format(
-                        safeParseDate(selectedEventDetails.fechaFinEvento),
-                        "EEEE, dd 'de' MMMM 'de' yyyy",
-                        { locale: es },
-                      )}
-                      <div className="mt-1 text-xs text-gray-500">
-                        Hora: {selectedEventDetails.horaFinEvento}
-                      </div>
-                    </div>
+              <div className="space-y-2">
+                <label className="flex items-center gap-1 text-sm font-medium">
+                  <Clock className="h-4 w-4" />
+                  Fecha de Fin
+                </label>
+                <div className="rounded bg-gray-50 p-2 text-sm">
+                  {format(
+                    safeParseDate(selectedEventDetails?.fechaFinEvento),
+                    "EEEE, dd 'de' MMMM 'de' yyyy",
+                    { locale: es },
+                  )}
+                  <div className="mt-1 text-xs text-gray-500">
+                    Hora: {selectedEventDetails?.horaFinEvento}
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Duración</label>
-                  <div className="rounded bg-gray-50 p-2 text-sm">
-                    {differenceInDays(
-                      safeParseDate(selectedEventDetails.fechaFinEvento),
-                      safeParseDate(selectedEventDetails.fechaInicioEvento),
-                    ) + 1}{" "}
-                    día(s)
-                  </div>
-                </div>
-
-                {/* {selectedEventDetails.descripcionEvento && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Descripción</label>
-                    <div className="rounded bg-gray-50 p-2 text-sm">
-                      {selectedEventDetails.descripcionEvento}
-                    </div>
-                  </div>
-                )} */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Duración</label>
+              <div className="rounded bg-gray-50 p-2 text-sm">
+                {differenceInDays(
+                  safeParseDate(selectedEventDetails?.fechaFinEvento),
+                  safeParseDate(selectedEventDetails?.fechaInicioEvento),
+                )}{" "}
+                día(s)
               </div>
             </div>
           </div>
         </div>
-      )}
+      </SimpleModal>
     </div>
   );
 }
