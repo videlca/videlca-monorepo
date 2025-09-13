@@ -5,7 +5,12 @@ import { parseISO, parse } from "date-fns";
  * @param dateString - The date string from the API (e.g., "2025-09-05")
  * @returns Date object in local timezone
  */
-export const safeParseDate = (dateString: string): Date => {
+export const safeParseDate = (dateString: string | null | undefined): Date => {
+  // Handle null, undefined, or empty string
+  if (!dateString) {
+    return new Date(); // Return current date as fallback
+  }
+  
   // If the string contains only date (YYYY-MM-DD), parse it as local date
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
     return parse(dateString, 'yyyy-MM-dd', new Date());

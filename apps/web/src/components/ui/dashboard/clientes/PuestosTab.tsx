@@ -11,19 +11,19 @@ import {
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
-import type { Posicion } from "../../../../types";
+import type { Puesto } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { useState } from "react";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 import {
   useClientesActivo,
-  useDeletePosicion,
-  usePosicionById,
-  usePosiciones,
-  useUpdatePosicion,
+  useDeletePuesto,
+  usePuestoById,
+  usePuestos,
+  useUpdatePuesto,
 } from "../../../../api/queryFunctions/clientes";
 import { useForm } from "../../../../hooks/useForm";
-import type { CreateCorreoDto, UpdatePosicionDto } from "../../../../api/dtos";
+import type { CreateCorreoDto, UpdatePuestoDto } from "../../../../api/dtos";
 import {
   useCiudad,
   useEstadoOrden,
@@ -34,7 +34,7 @@ import { toast } from "sonner";
 import { FormsModal } from "../../modals/FormsModal";
 import { FormSection } from "../../../common/FormSection";
 
-export function PosicionesTab() {
+export function PuestosTab() {
   // Estados
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -49,32 +49,30 @@ export function PosicionesTab() {
     correo: "",
   });
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
-  const [idPosicionSelected, setIdPosicionSelected] = useState<number | null>(
-    null,
-  );
+  const [idPuestoSelected, setIdPuestoSelected] = useState<number | null>(null);
 
   // Mutaciones y Queries
-  const { data: posiciones } = usePosiciones();
+  const { data: puestos } = usePuestos();
   const { data: ciudades } = useCiudad();
   const { data: clientes } = useClientesActivo();
   const { data: estadosOrdenServicio } = useEstadoOrden();
 
-  const { mutate: updatePosicion, isPending: isUpdatingPosicion } =
-    useUpdatePosicion();
-  const { mutate: getPosicionById } = usePosicionById();
-  const { mutate: deletePosicion } = useDeletePosicion();
+  const { mutate: updatePuesto, isPending: isUpdatingPuesto } =
+    useUpdatePuesto();
+  const { mutate: getPuestoById } = usePuestoById();
+  const { mutate: deletePuesto } = useDeletePuesto();
 
   // Formularios
 
   // TODO: Agregar correos
 
   const {
-    form: formEditPosicion,
-    handleChange: handleChangeEditPosicion,
-    handleNumericChange: handleNumericChangeEditPosicion,
-    setForm: setFormEditPosicion,
-    resetForm: resetFormEditPosicion,
-  } = useForm<UpdatePosicionDto>({
+    form: formEditPuesto,
+    handleChange: handleChangeEditPuesto,
+    handleNumericChange: handleNumericChangeEditPuesto,
+    setForm: setFormEditPuesto,
+    resetForm: resetFormEditPuesto,
+  } = useForm<UpdatePuestoDto>({
     idCliente: 0,
     nombre: "",
     idCiudad: 0,
@@ -91,11 +89,11 @@ export function PosicionesTab() {
 
   // Handlers
 
-  const handleShowEditPosicionModal = (row: Row<Posicion>) => {
-    getPosicionById(row.original.idLocacion, {
+  const handleShowEditPuestoModal = (row: Row<Puesto>) => {
+    getPuestoById(row.original.idLocacion, {
       onSuccess: (data) => {
         if (data.data) {
-          setFormEditPosicion({
+          setFormEditPuesto({
             idCliente: data.data.idCliente.idCliente,
             nombre: data.data.nombre,
             idCiudad: data.data.idCiudad.idCiudad,
@@ -117,7 +115,7 @@ export function PosicionesTab() {
     setIsEditModalOpen(true);
   };
 
-  const columnsPosiciones: ColumnDef<Posicion>[] = [
+  const columnsPuestos: ColumnDef<Puesto>[] = [
     {
       accessorKey: "idLocacion",
       header: "ID",
@@ -176,15 +174,15 @@ export function PosicionesTab() {
             Icon={PencilIcon}
             label="Editar"
             onClick={() => {
-              handleShowEditPosicionModal(row);
-              setIdPosicionSelected(row.original.idLocacion);
+              handleShowEditPuestoModal(row);
+              setIdPuestoSelected(row.original.idLocacion);
             }}
           />
           <ButtonAction
             Icon={TrashIcon}
             label="Eliminar"
             onClick={() => {
-              setIdPosicionSelected(row.original.idLocacion);
+              setIdPuestoSelected(row.original.idLocacion);
               setIsOpenDelete(true);
             }}
             color="red"
@@ -194,9 +192,9 @@ export function PosicionesTab() {
     },
   ];
 
-  const handleCloseEditPosicion = () => {
+  const handleCloseEditPuesto = () => {
     setIsEditModalOpen(false);
-    resetFormEditPosicion();
+    resetFormEditPuesto();
     setCorreos([]);
     setCorreoInput({
       nombre: "",
@@ -210,45 +208,45 @@ export function PosicionesTab() {
       {/* <div className="flex justify-end">
         <ButtonAction
           Icon={PlusIcon}
-          label="Agregar posición"
+          label="Agregar puesto"
           onClick={() => setIsAddModalOpen(true)}
         />
       </div> */}
       <Table
-        data={posiciones?.data || []}
-        columns={columnsPosiciones}
+        data={puestos?.data || []}
+        columns={columnsPuestos}
         enablePagination={true}
         pageSize={10}
         enableSorting={true}
         enableFiltering={true}
       />
 
-      {/* Modal para editar posición */}
+      {/* Modal para editar puesto */}
       <SimpleModal
         isOpen={isEditModalOpen}
-        onClose={() => handleCloseEditPosicion()}
-        title="Editar posición"
+        onClose={() => handleCloseEditPuesto()}
+        title="Editar puesto"
         size="4xl"
       >
         <FormsModal
-          isLoading={isUpdatingPosicion}
+          isLoading={isUpdatingPuesto}
           onCancel={() => {
-            handleCloseEditPosicion();
+            handleCloseEditPuesto();
           }}
           updating={true}
           onSubmit={(e) => {
             e.preventDefault();
-            updatePosicion(
+            updatePuesto(
               {
-                id: idPosicionSelected as number,
+                id: idPuestoSelected as number,
                 data: {
-                  ...formEditPosicion,
+                  ...formEditPuesto,
                   correos: correos,
                 },
               },
               {
                 onSuccess: () => {
-                  handleCloseEditPosicion();
+                  handleCloseEditPuesto();
                 },
               },
             );
@@ -256,8 +254,8 @@ export function PosicionesTab() {
         >
           <div className="flex flex-col gap-4">
             <FormSection
-              title="Información de la posición"
-              description="Información de la posición"
+              title="Información del puesto"
+              description="Información del puesto"
               Icon={Building2}
             >
               <InputForm
@@ -265,16 +263,16 @@ export function PosicionesTab() {
                 placeholder="Nombre"
                 type="text"
                 id="nombre"
-                value={formEditPosicion.nombre || ""}
-                onChange={handleChangeEditPosicion}
+                value={formEditPuesto.nombre || ""}
+                onChange={handleChangeEditPuesto}
                 required
               />
               <InputSelect
                 label="Cliente*"
                 placeholder="Cliente"
                 id="idCliente"
-                value={formEditPosicion.idCliente || 0}
-                onChange={handleNumericChangeEditPosicion}
+                value={formEditPuesto.idCliente || 0}
+                onChange={handleNumericChangeEditPuesto}
                 options={
                   clientes?.data?.map((cliente) => ({
                     id: cliente.idCliente,
@@ -287,8 +285,8 @@ export function PosicionesTab() {
                 label="Ciudad*"
                 placeholder="Ciudad"
                 id="idCiudad"
-                value={formEditPosicion.idCiudad || 0}
-                onChange={handleNumericChangeEditPosicion}
+                value={formEditPuesto.idCiudad || 0}
+                onChange={handleNumericChangeEditPuesto}
                 options={
                   ciudades?.data?.map((ciudad) => ({
                     id: ciudad.idCiudad,
@@ -302,8 +300,8 @@ export function PosicionesTab() {
                 placeholder="Dirección"
                 type="text"
                 id="direccion"
-                value={formEditPosicion.direccion || ""}
-                onChange={handleChangeEditPosicion}
+                value={formEditPuesto.direccion || ""}
+                onChange={handleChangeEditPuesto}
                 required
               />
               <InputForm
@@ -312,10 +310,10 @@ export function PosicionesTab() {
                 type="number"
                 id="diasAnticipaticionNotificacion"
                 value={
-                  formEditPosicion.diasAnticipaticionNotificacion?.toString() ||
+                  formEditPuesto.diasAnticipaticionNotificacion?.toString() ||
                   "0"
                 }
-                onChange={handleChangeEditPosicion}
+                onChange={handleChangeEditPuesto}
                 required
               />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -324,8 +322,8 @@ export function PosicionesTab() {
                   placeholder="Latitud"
                   type="number"
                   id="latitud"
-                  value={formEditPosicion.latitud?.toString() || ""}
-                  onChange={handleChangeEditPosicion}
+                  value={formEditPuesto.latitud?.toString() || ""}
+                  onChange={handleChangeEditPuesto}
                   required
                 />
                 <InputForm
@@ -333,8 +331,8 @@ export function PosicionesTab() {
                   placeholder="Longitud"
                   type="number"
                   id="longitud"
-                  value={formEditPosicion.longitud?.toString() || ""}
-                  onChange={handleChangeEditPosicion}
+                  value={formEditPuesto.longitud?.toString() || ""}
+                  onChange={handleChangeEditPuesto}
                   required
                 />
               </div>
@@ -350,8 +348,8 @@ export function PosicionesTab() {
                 placeholder="Primer nombre responsable"
                 type="text"
                 id="primerNombreResponsable"
-                value={formEditPosicion.primerNombreResponsable || ""}
-                onChange={handleChangeEditPosicion}
+                value={formEditPuesto.primerNombreResponsable || ""}
+                onChange={handleChangeEditPuesto}
                 required
               />
               <InputForm
@@ -359,8 +357,8 @@ export function PosicionesTab() {
                 placeholder="Primer apellido responsable"
                 type="text"
                 id="primerApellidoResponsable"
-                value={formEditPosicion.primerApellidoResponsable || ""}
-                onChange={handleChangeEditPosicion}
+                value={formEditPuesto.primerApellidoResponsable || ""}
+                onChange={handleChangeEditPuesto}
                 required
               />
               <InputForm
@@ -368,8 +366,8 @@ export function PosicionesTab() {
                 placeholder="Teléfono"
                 type="number"
                 id="telefono"
-                value={formEditPosicion.telefono || ""}
-                onChange={handleChangeEditPosicion}
+                value={formEditPuesto.telefono || ""}
+                onChange={handleChangeEditPuesto}
                 required
               />
               <InputForm
@@ -377,8 +375,8 @@ export function PosicionesTab() {
                 placeholder="Teléfono 2"
                 type="number"
                 id="segundoTelefono"
-                value={formEditPosicion.segundoTelefono || ""}
-                onChange={handleChangeEditPosicion}
+                value={formEditPuesto.segundoTelefono || ""}
+                onChange={handleChangeEditPuesto}
                 required={false}
               />
             </FormSection>
@@ -566,12 +564,12 @@ export function PosicionesTab() {
 
       <ConfirmarDelete
         isOpenDelete={isOpenDelete}
-        text="¿Estás seguro de querer eliminar esta posición?"
+        text="¿Estás seguro de querer eliminar este puesto?"
         onDelete={() => {
-          deletePosicion(idPosicionSelected as number, {
+          deletePuesto(idPuestoSelected as number, {
             onSuccess: () => {
               setIsOpenDelete(false);
-              setIdPosicionSelected(null);
+              setIdPuestoSelected(null);
             },
           });
         }}

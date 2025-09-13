@@ -21,8 +21,8 @@ export interface UpdateSubSegmentacionDto {
   estado?: boolean;
 }
 
-// Posiciones
-export interface CreatePosicionDto {
+// Puestos
+export interface CreatePuestoDto {
   nombre: string;
   idCiudad: number;
   direccion: string;
@@ -37,7 +37,7 @@ export interface CreatePosicionDto {
   correos: CreateCorreoDto[];
 }
 
-export interface UpdatePosicionDto extends Partial<CreatePosicionDto> {
+export interface UpdatePuestoDto extends Partial<CreatePuestoDto> {
   estado?: boolean;
 }
 

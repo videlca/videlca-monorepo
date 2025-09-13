@@ -88,7 +88,7 @@ function RouteComponent() {
     );
   };
 
-  const getEventPosition = (event: Event, dayIndex: number) => {
+  const getEventPuesto = (event: Event, dayIndex: number) => {
     const eventStartDate = safeParseDate(event.fechaInicioEvento);
     const eventEndDate = safeParseDate(event.fechaFinEvento);
 
@@ -282,9 +282,9 @@ function RouteComponent() {
                             eventTypes[
                               event.tipoEvento as keyof typeof eventTypes
                             ] || eventTypes.default;
-                          const position = getEventPosition(event, dayIndex);
+                          const puesto = getEventPuesto(event, dayIndex);
 
-                          if (!position.shouldShow) return null;
+                          if (!puesto.shouldShow) return null;
 
                           const eventStartDate = safeParseDate(
                             event.fechaInicioEvento,
@@ -309,14 +309,14 @@ function RouteComponent() {
                             <div
                               key={event.idEvento}
                               className={`${eventType.color} ${eventType.textColor} relative mb-1 cursor-pointer transition-all ${
-                                position.isMultiDay ? "font-medium" : ""
+                                puesto.isMultiDay ? "font-medium" : ""
                               }`}
                               style={{
-                                width: position.isMultiDay
-                                  ? `calc(${position.width * 100}% + ${(position.width - 1) * 11}px)`
+                                width: puesto.isMultiDay
+                                  ? `calc(${puesto.width * 100}% + ${(puesto.width - 1) * 11}px)`
                                   : "100%",
                                 zIndex: 10,
-                                borderRadius: position.isMultiDay
+                                borderRadius: puesto.isMultiDay
                                   ? isFirstDay && isLastDay
                                     ? "6px"
                                     : isFirstDay
@@ -340,13 +340,13 @@ function RouteComponent() {
                               }}
                             >
                               <div className="flex w-full items-center gap-1 truncate">
-                                {isFirstDay && position.isMultiDay && (
+                                {isFirstDay && puesto.isMultiDay && (
                                   <Calendar className="h-3 w-3 flex-shrink-0" />
                                 )}
                                 <span className="truncate text-xs font-semibold">
                                   {event.tituloEvento}
                                 </span>
-                                {position.isMultiDay && isFirstDay && (
+                                {puesto.isMultiDay && isFirstDay && (
                                   <span className="ml-auto flex-shrink-0 text-xs opacity-75">
                                     (
                                     {eventEndDate.getDate() -
@@ -355,7 +355,7 @@ function RouteComponent() {
                                   </span>
                                 )}
                               </div>
-                              {!position.isMultiDay && (
+                              {!puesto.isMultiDay && (
                                 <div className="absolute right-1 -bottom-1 left-1 truncate text-[10px] opacity-75">
                                   {event.horaInicioEvento}-{event.horaFinEvento}
                                 </div>

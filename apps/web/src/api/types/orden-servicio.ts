@@ -1,4 +1,4 @@
-import type { EstadoOrden, Posicion, Usuario } from "../../types";
+import type { EstadoOrden, Puesto, Usuario } from "../../types";
 import type { Tarifa } from "./periodo";
 import type { PersonalAsignado } from "./programacion-personal";
 
@@ -7,7 +7,7 @@ export interface OrdenServicio {
   ordenServicioId: OrdenServicioId;
   idUsuarioCreacion: Usuario;
   idEstadoOrdenServicio: EstadoOrden;
-  idLocacion: Posicion;
+  idLocacion: Puesto;
   fechaInicio: string;
   fechaFin: string;
   fechaInicioOrden: string;

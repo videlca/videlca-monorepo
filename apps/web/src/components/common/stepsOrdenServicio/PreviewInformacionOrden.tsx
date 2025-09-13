@@ -8,7 +8,7 @@ import {
   Users,
 } from "lucide-react";
 import { priceFormat } from "../../../utils/PriceFormat";
-import type { Posicion } from "../../../types";
+import type { Puesto } from "../../../types";
 import type { Tarifa } from "../../../api/types/periodo";
 import type {
   CreateOrdenServicioDto,
@@ -19,7 +19,7 @@ import type { CreateOrdenServicioTarifaDto } from "../../../api/dtos";
 
 export const PreviewInformacionOrden = ({
   isEditing = false,
-  selectedPosicion,
+  selectedPuesto,
   selectedTarifa,
   formOrdenServicio,
   configuracionServicioTarifa,
@@ -27,7 +27,7 @@ export const PreviewInformacionOrden = ({
   isIndefinite,
 }: {
   isEditing?: boolean;
-  selectedPosicion: Posicion | null;
+  selectedPuesto: Puesto | null;
   selectedTarifa: Tarifa | null;
   formOrdenServicio: CreateOrdenServicioDto | UpdateOrdenServicioDto;
   configuracionServicioTarifa:
@@ -59,19 +59,17 @@ export const PreviewInformacionOrden = ({
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Cliente:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedPosicion?.idCliente.nombre}
+                  {selectedPuesto?.idCliente.nombre}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Ubicación:</span>{" "}
-                <span className="text-gray-600">
-                  {selectedPosicion?.nombre}
-                </span>
+                <span className="text-gray-600">{selectedPuesto?.nombre}</span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Dirección:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedPosicion?.direccion}
+                  {selectedPuesto?.direccion}
                 </span>
               </p>
             </div>
@@ -79,20 +77,20 @@ export const PreviewInformacionOrden = ({
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Ciudad:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedPosicion?.idCiudad.descripcion}
+                  {selectedPuesto?.idCiudad.descripcion}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Responsable:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedPosicion?.primerNombreResponsable}{" "}
-                  {selectedPosicion?.primerApellidoResponsable}
+                  {selectedPuesto?.primerNombreResponsable}{" "}
+                  {selectedPuesto?.primerApellidoResponsable}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Teléfono:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedPosicion?.telefono}
+                  {selectedPuesto?.telefono}
                 </span>
               </p>
             </div>

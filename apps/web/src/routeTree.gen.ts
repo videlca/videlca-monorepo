@@ -60,7 +60,7 @@ import { Route as DashboardConfiguracionEstadoOrdenServicioRouteImport } from '.
 import { Route as DashboardTarifasVerTarifasIdPeriodoRouteImport } from './routes/dashboard/tarifas/ver-tarifas.$id-periodo'
 import { Route as DashboardTarifasConfigurarServiciosIdPeriodoRouteImport } from './routes/dashboard/tarifas/configurar-servicios.$id-periodo'
 import { Route as DashboardPersonalNovedadesPersonalIdRouteImport } from './routes/dashboard/personal/novedades-personal.$id'
-import { Route as DashboardClientesIdClientePosicionesRouteImport } from './routes/dashboard/clientes/$idCliente.posiciones'
+import { Route as DashboardClientesIdClientePuestosRouteImport } from './routes/dashboard/clientes/$idCliente.puestos'
 
 const RecuperarRoute = RecuperarRouteImport.update({
   id: '/recuperar',
@@ -343,10 +343,10 @@ const DashboardPersonalNovedadesPersonalIdRoute =
     path: '/novedades-personal/$id',
     getParentRoute: () => DashboardPersonalRoute,
   } as any)
-const DashboardClientesIdClientePosicionesRoute =
-  DashboardClientesIdClientePosicionesRouteImport.update({
-    id: '/$idCliente/posiciones',
-    path: '/$idCliente/posiciones',
+const DashboardClientesIdClientePuestosRoute =
+  DashboardClientesIdClientePuestosRouteImport.update({
+    id: '/$idCliente/puestos',
+    path: '/$idCliente/puestos',
     getParentRoute: () => DashboardClientesRoute,
   } as any)
 
@@ -399,7 +399,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/servicios/': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
-  '/dashboard/clientes/$idCliente/posiciones': typeof DashboardClientesIdClientePosicionesRoute
+  '/dashboard/clientes/$idCliente/puestos': typeof DashboardClientesIdClientePuestosRoute
   '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
   '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
@@ -441,7 +441,7 @@ export interface FileRoutesByTo {
   '/dashboard/servicios': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
-  '/dashboard/clientes/$idCliente/posiciones': typeof DashboardClientesIdClientePosicionesRoute
+  '/dashboard/clientes/$idCliente/puestos': typeof DashboardClientesIdClientePuestosRoute
   '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
   '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
@@ -496,7 +496,7 @@ export interface FileRoutesById {
   '/dashboard/servicios/': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
-  '/dashboard/clientes/$idCliente/posiciones': typeof DashboardClientesIdClientePosicionesRoute
+  '/dashboard/clientes/$idCliente/puestos': typeof DashboardClientesIdClientePuestosRoute
   '/dashboard/personal/novedades-personal/$id': typeof DashboardPersonalNovedadesPersonalIdRoute
   '/dashboard/tarifas/configurar-servicios/$id-periodo': typeof DashboardTarifasConfigurarServiciosIdPeriodoRoute
   '/dashboard/tarifas/ver-tarifas/$id-periodo': typeof DashboardTarifasVerTarifasIdPeriodoRoute
@@ -552,7 +552,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios/'
     | '/dashboard/tarifas/'
     | '/dashboard/usuarios/'
-    | '/dashboard/clientes/$idCliente/posiciones'
+    | '/dashboard/clientes/$idCliente/puestos'
     | '/dashboard/personal/novedades-personal/$id'
     | '/dashboard/tarifas/configurar-servicios/$id-periodo'
     | '/dashboard/tarifas/ver-tarifas/$id-periodo'
@@ -594,7 +594,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios'
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
-    | '/dashboard/clientes/$idCliente/posiciones'
+    | '/dashboard/clientes/$idCliente/puestos'
     | '/dashboard/personal/novedades-personal/$id'
     | '/dashboard/tarifas/configurar-servicios/$id-periodo'
     | '/dashboard/tarifas/ver-tarifas/$id-periodo'
@@ -648,7 +648,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios/'
     | '/dashboard/tarifas/'
     | '/dashboard/usuarios/'
-    | '/dashboard/clientes/$idCliente/posiciones'
+    | '/dashboard/clientes/$idCliente/puestos'
     | '/dashboard/personal/novedades-personal/$id'
     | '/dashboard/tarifas/configurar-servicios/$id-periodo'
     | '/dashboard/tarifas/ver-tarifas/$id-periodo'
@@ -1021,11 +1021,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPersonalNovedadesPersonalIdRouteImport
       parentRoute: typeof DashboardPersonalRoute
     }
-    '/dashboard/clientes/$idCliente/posiciones': {
-      id: '/dashboard/clientes/$idCliente/posiciones'
-      path: '/$idCliente/posiciones'
-      fullPath: '/dashboard/clientes/$idCliente/posiciones'
-      preLoaderRoute: typeof DashboardClientesIdClientePosicionesRouteImport
+    '/dashboard/clientes/$idCliente/puestos': {
+      id: '/dashboard/clientes/$idCliente/puestos'
+      path: '/$idCliente/puestos'
+      fullPath: '/dashboard/clientes/$idCliente/puestos'
+      preLoaderRoute: typeof DashboardClientesIdClientePuestosRouteImport
       parentRoute: typeof DashboardClientesRoute
     }
   }
@@ -1048,13 +1048,13 @@ const DashboardAprobacionLiquidacionesOrdenesRouteWithChildren =
 
 interface DashboardClientesRouteChildren {
   DashboardClientesIndexRoute: typeof DashboardClientesIndexRoute
-  DashboardClientesIdClientePosicionesRoute: typeof DashboardClientesIdClientePosicionesRoute
+  DashboardClientesIdClientePuestosRoute: typeof DashboardClientesIdClientePuestosRoute
 }
 
 const DashboardClientesRouteChildren: DashboardClientesRouteChildren = {
   DashboardClientesIndexRoute: DashboardClientesIndexRoute,
-  DashboardClientesIdClientePosicionesRoute:
-    DashboardClientesIdClientePosicionesRoute,
+  DashboardClientesIdClientePuestosRoute:
+    DashboardClientesIdClientePuestosRoute,
 }
 
 const DashboardClientesRouteWithChildren =
