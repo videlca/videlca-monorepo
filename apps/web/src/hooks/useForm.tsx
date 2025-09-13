@@ -41,7 +41,9 @@ export const useForm = <T,>(initialState: T) => {
     }));
   };
 
-  const handleChangeTime = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeTime = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { id, value } = e.target;
     const fieldName = id;
     const [hours] = value.split(":");

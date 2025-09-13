@@ -3,5 +3,5 @@ export const timeFormat = (time: string) => {
     const [hours, minutes] = time.split(":");
     return `${hours}:${minutes}:00`;
   }
-  return `${time}:00`;
+  return `${time}:00:00`;
 };

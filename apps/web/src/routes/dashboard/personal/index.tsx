@@ -45,6 +45,7 @@ import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { InputTime } from "../../../components/common/InputTime";
+import { InputTime24H } from "../../../components/common/InputTime24H";
 
 export const Route = createFileRoute("/dashboard/personal/")({
   component: RouteComponent,
@@ -823,12 +824,14 @@ function RouteComponent() {
               onChange={handleChangeAddNovedad}
               type="date"
             />
-            <InputTime
+            <InputTime24H
               label="Hora de inicio"
-              placeholder="Hora de inicio"
+              placeholder="Selecciona una hora de inicio"
               id="horaInicio"
+              name="horaInicio"
               value={formAddNovedad.horaInicio || ""}
               onChange={handleChangeTimeAddNovedad}
+              required={true}
             />
             <InputForm
               label="Fecha de fin"
@@ -838,12 +841,14 @@ function RouteComponent() {
               onChange={handleChangeAddNovedad}
               type="date"
             />
-            <InputTime
+            <InputTime24H
               label="Hora de fin"
-              placeholder="Hora de fin"
+              placeholder="Selecciona una hora de fin"
               id="horaFin"
+              name="horaFin"
               value={formAddNovedad.horaFin || ""}
               onChange={handleChangeTimeAddNovedad}
+              required={true}
             />
           </div>
         </FormsModal>

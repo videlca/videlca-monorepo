@@ -27,6 +27,7 @@ import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { toast } from "sonner";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { InputTime } from "../../../components/common/InputTime";
+import { InputTime24H } from "../../../components/common/InputTime24H";
 
 export const Route = createFileRoute(
   "/dashboard/servicios/configurar-horarios",
@@ -242,19 +243,21 @@ function RouteComponent() {
               onChange={handleChangeAddTipoHorario}
               required={true}
             />
-            <InputTime
+            <InputTime24H
               label="Hora de inicio"
               placeholder="Selecciona una hora de inicio"
               id="horaInicio"
-              value={formAddTipoHorario.horaInicio}
+              name="horaInicio"
+              value={formAddTipoHorario.horaInicio || ""}
               onChange={handleChangeTimeAddTipoHorario}
               required={true}
             />
-            <InputTime
+            <InputTime24H
               label="Hora de fin"
               placeholder="Selecciona una hora de fin"
               id="horaFin"
-              value={formAddTipoHorario.horaFin}
+              name="horaFin"
+              value={formAddTipoHorario.horaFin || ""}
               onChange={handleChangeTimeAddTipoHorario}
               required={true}
             />
@@ -365,18 +368,20 @@ function RouteComponent() {
               onChange={handleChangeEditTipoHorario}
               required={true}
             />
-            <InputTime
+            <InputTime24H
               label="Hora de inicio"
               placeholder="Selecciona una hora de inicio"
               id="horaInicio"
+              name="horaInicio"
               value={formEditTipoHorario.horaInicio || ""}
               onChange={handleChangeTimeEditTipoHorario}
               required={true}
             />
-            <InputTime
+            <InputTime24H
               label="Hora de fin"
               placeholder="Selecciona una hora de fin"
               id="horaFin"
+              name="horaFin"
               value={formEditTipoHorario.horaFin || ""}
               onChange={handleChangeTimeEditTipoHorario}
               required={true}

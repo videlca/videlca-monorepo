@@ -1,7 +1,7 @@
 import type { CreateOrdenServicioTarifaDto } from "../../../api/dtos";
 import type { Servicio } from "../../../api/types/servicio";
 import { timeFormat } from "../../../utils/TimeFormat";
-import { InputTime } from "../InputTime";
+import { InputTime24H } from "../InputTime24H";
 
 export const ConfigurarHorariosServicios = ({
   selectedServices,
@@ -48,10 +48,11 @@ export const ConfigurarHorariosServicios = ({
                     Horario Fijo (Servicio de 24 horas) configurar la hora de
                     inicio de la orden.
                   </p>
-                  <InputTime
+                  <InputTime24H
                     label="Hora de Inicio"
-                    placeholder="00:00"
+                    placeholder="Selecciona una hora de inicio"
                     id="horaInicio"
+                    name="horaInicio"
                     value={
                       configuracionServicioTarifa.find(
                         (s) => s.idServicio === service.idServicio,
@@ -85,10 +86,11 @@ export const ConfigurarHorariosServicios = ({
                       </label>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <InputTime
+                      <InputTime24H
                         label="Hora de Inicio"
                         placeholder="00:00"
                         id="horaInicio"
+                        name="horaInicio"
                         value={
                           configuracionServicioTarifa.find(
                             (s) => s.idServicio === service.idServicio,
@@ -110,10 +112,11 @@ export const ConfigurarHorariosServicios = ({
                           )
                         }
                       />
-                      <InputTime
+                      <InputTime24H
                         label="Hora de Fin"
                         placeholder="00:00"
                         id="horaFin"
+                        name="horaFin"
                         value={
                           configuracionServicioTarifa.find(
                             (s) => s.idServicio === service.idServicio,

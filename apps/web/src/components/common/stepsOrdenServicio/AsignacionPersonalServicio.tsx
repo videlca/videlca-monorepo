@@ -14,6 +14,7 @@ type ConfiguracionServicioTarifa =
 import type { Servicio } from "../../../api/types/servicio";
 import { timeFormat } from "../../../utils/TimeFormat";
 import type { Personal } from "../../../api/types/personal";
+import { InputTime24H } from "../InputTime24H";
 
 export const AsignacionPersonalServicio = ({
   selectedServices,
@@ -166,10 +167,11 @@ export const AsignacionPersonalServicio = ({
                           <div className="space-y-4">
                             <div className="flex items-center gap-4">
                               <div className="flex-1">
-                                <InputTime
+                                <InputTime24H
                                   label="Hora de Inicio"
                                   placeholder="00:00"
                                   id={`horaInicio-${index}`}
+                                  name={`horaInicio-${index}`}
                                   value={
                                     getPersonalData(service.idServicio, index)
                                       .horaInicio
@@ -226,10 +228,11 @@ export const AsignacionPersonalServicio = ({
                                 />
                               </div>
                               <div className="flex-1">
-                                <InputTime
+                                <InputTime24H
                                   label="Hora de Fin"
                                   placeholder="00:00"
                                   id={`horaFin-${index}`}
+                                  name={`horaFin-${index}`}
                                   value={
                                     getPersonalData(service.idServicio, index)
                                       .horaFin
