@@ -107,3 +107,13 @@ export interface UpdateOrdenServicioIdDto {
 export interface AnularIdOrdenServicioDto {
   descripcionId: string;
 }
+
+// observaciones orden servicio
+export interface CreateObservacionOrdenServicioDto {
+  descripcion: string;
+  idOrdenServicio: number;
+}
+
+export interface UpdateObservacionOrdenServicioDto {
+  descripcion: string;
+}

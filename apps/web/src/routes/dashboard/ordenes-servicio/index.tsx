@@ -58,6 +58,8 @@ import { ConfigurarHorariosServicios } from "../../../components/common/stepsOrd
 import { AsignacionPersonalServicio } from "../../../components/common/stepsOrdenServicio/AsignacionPersonalServicio";
 import { PreviewInformacionOrden } from "../../../components/common/stepsOrdenServicio/PreviewInformacionOrden";
 import { SeleccionarPuestoCliente } from "../../../components/common/stepsOrdenServicio/SeleccionarPuestoCliente";
+import { ObservacionesOrdenServicio } from "../../../components/ui/modals/ObservacionesOrdenServicio";
+import { useGetObservacionesOrdenServicio } from "../../../api/queryFunctions/orden-servicio/observaciones";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
@@ -74,6 +76,7 @@ function RouteComponent() {
   const [isEditing, setIsEditing] = useState(false);
   const [isOpenDetails, setIsOpenDetails] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
+  const [isOpenObservaciones, setIsOpenObservaciones] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [identificador, setIdentificador] = useState<{
     prefijo: string;
@@ -127,6 +130,7 @@ function RouteComponent() {
 
   const { mutate: deleteOrdenServicio } = useDeleteOrdenServicio();
 
+  // Validaciones
   const {
     mutate: validarIdOrdenServicio,
     isPending: isValidarIdOrdenServicioPending,
@@ -147,6 +151,15 @@ function RouteComponent() {
     isPending: isValidarHorarioServicioOrdenServicioPending,
   } = useValidarHorarioServicioOrdenServicio();
 
+  // Observaciones
+  // Estado para controlar qué observaciones cargar
+  const [selectedOrderIdForObservaciones, setSelectedOrderIdForObservaciones] =
+    useState<number | null>(null);
+
+  // Query para obtener observaciones
+  const { data: observacionesQueryData } = useGetObservacionesOrdenServicio(
+    selectedOrderIdForObservaciones || 0,
+  );
   // Formulario crear orden de servicio
   const {
     form: formOrdenServicio,
@@ -673,11 +686,13 @@ function RouteComponent() {
             />
             <ButtonAction
               Icon={MessageCircle}
-              label="Comentarios"
+              label="Observaciones"
               onClick={() => {
-                // setIsEditing(true);
-                // setSelectedOrderDetail(row.original);
-                // handleEditOrder(row.original.idOrdenServicio);
+                setIsOpenObservaciones(true);
+                setSelectedOrderDetail(row.original);
+                setSelectedOrderIdForObservaciones(
+                  row.original.idOrdenServicio,
+                );
               }}
             />
             <ButtonAction
@@ -1191,6 +1206,19 @@ function RouteComponent() {
           </button>
         </div>
       </SimpleModal>
+
+      <ObservacionesOrdenServicio
+        isOpenObservaciones={isOpenObservaciones}
+        setIsOpenObservaciones={(isOpen) => {
+          setIsOpenObservaciones(isOpen);
+          if (!isOpen) {
+            setSelectedOrderIdForObservaciones(null);
+          }
+        }}
+        selectedOrderDetail={selectedOrderDetail || ({} as OrdenServicio)}
+        setSelectedOrderDetail={setSelectedOrderDetail}
+        observacionesQueryData={observacionesQueryData?.data || []}
+      />
 
       <ConfirmarDelete
         isOpenDelete={isOpenDelete}

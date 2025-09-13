@@ -55,3 +55,11 @@ export interface OrdenServicioTarifa {
   precio: number | null;
   programaciones: PersonalAsignado[];
 }
+
+// observaciones orden servicio
+export interface ObservacionOrdenServicio {
+  idObservacionOrdenServicio: number;
+  descripcion: string;
+  idUsuario: Usuario;
+  idOrdenServicio: OrdenServicio;
+}
