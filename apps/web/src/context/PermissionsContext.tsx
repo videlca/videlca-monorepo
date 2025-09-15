@@ -70,6 +70,7 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
     if (userResponse?.status === 200 && userResponse.data) {
       const user = userResponse.data as Usuario;
       setCurrentUser(user);
+      console.log("user context: ", user);
 
       // Load permissions based on user role
       if (user.idRol?.id) {

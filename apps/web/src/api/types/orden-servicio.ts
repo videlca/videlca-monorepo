@@ -62,4 +62,5 @@ export interface ObservacionOrdenServicio {
   descripcion: string;
   idUsuario: Usuario;
   idOrdenServicio: OrdenServicio;
+  fechaCreacion: string;
 }

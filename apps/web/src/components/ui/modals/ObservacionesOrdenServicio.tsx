@@ -8,6 +8,8 @@ import {
   useCreateObservacionOrdenServicio,
   useDeleteObservacionOrdenServicio,
 } from "../../../api/queryFunctions/orden-servicio/observaciones";
+import { format } from "date-fns";
+import { usePermissions } from "../../../context/PermissionsContext";
 
 export const ObservacionesOrdenServicio = ({
   isOpenObservaciones,
@@ -24,7 +26,7 @@ export const ObservacionesOrdenServicio = ({
 }) => {
   // Estados
   const [newObservacion, setNewObservacion] = useState<string>("");
-  const [currentUser] = useState("Usuario Actual"); // En una app real, esto vendría del contexto de autenticación
+  const { currentUser } = usePermissions();
 
   // Mutaciones y queries
   const { mutate: createObservacionMutation } =
@@ -78,44 +80,44 @@ export const ObservacionesOrdenServicio = ({
                 <div className="flex items-center space-x-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500">
                     <span className="text-sm font-medium text-white">
-                      {/* {observacion.idUsuario.nombre.charAt(0).toUpperCase()} */}
+                      {`${observacion.idUsuario.primerNombre.charAt(0).toUpperCase()}${observacion.idUsuario.primerApellido.charAt(0).toUpperCase()}`}
                     </span>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {/* {observacion.idUsuario.nombre} */}
+                      {`${observacion.idUsuario.primerNombre} ${observacion.idUsuario.primerApellido}`}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {/* {formatDate(observacion.fechaCreacion)} */}
+                      {format(observacion.fechaCreacion, "dd/MM/yyyy")}
                     </p>
                   </div>
                 </div>
-                {/* {observacion.idUsuario. === currentUser && ( */}
-                <button
-                  onClick={() =>
-                    deleteObservacionMutation({
-                      id: observacion.idObservacionOrdenServicio,
-                      idOrdenServicio: selectedOrderDetail.idOrdenServicio,
-                    })
-                  }
-                  className="p-1 text-red-400 transition-colors hover:text-red-600"
-                  title="Eliminar observación"
-                >
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                {observacion.idUsuario.idUser === currentUser?.idUser && (
+                  <button
+                    onClick={() =>
+                      deleteObservacionMutation({
+                        id: observacion.idObservacionOrdenServicio,
+                        idOrdenServicio: selectedOrderDetail.idOrdenServicio,
+                      })
+                    }
+                    className="cursor-pointer p-1 text-red-400 transition-colors hover:text-red-600"
+                    title="Eliminar observación"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-                {/* )} */}
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </button>
+                )}
               </div>
               <p className="text-sm leading-relaxed text-gray-700">
                 {observacion.descripcion}
@@ -130,7 +132,8 @@ export const ObservacionesOrdenServicio = ({
         <div className="flex space-x-3">
           <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-green-500">
             <span className="text-sm font-medium text-white">
-              {currentUser.charAt(0).toUpperCase()}
+              {currentUser?.primerNombre.charAt(0).toUpperCase()}
+              {currentUser?.primerApellido.charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="flex-1">
