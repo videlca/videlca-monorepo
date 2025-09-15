@@ -8,8 +8,6 @@ export class CrearGrupoMensualDto {
   @Type(() => Number) @IsInt() @Min(1) @Max(12)
   mes: number; // 1-12
 
-  @IsString()
-  descripcion: string;
 
   @IsArray() @ArrayNotEmpty()
   @Type(() => Number) @IsInt({ each: true })

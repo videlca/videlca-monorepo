@@ -300,7 +300,9 @@ export class LiquidacionesService {
     @InjectRepository(Liquidacione)
     private readonly repo: Repository<Liquidacione>,
     @InjectRepository(OrdenServicio) private readonly ordenRepo: Repository<OrdenServicio>,
-  ) {}
+    @InjectRepository(GrupoLiquidacion)
+    private readonly grupoLiquidacionrepo: Repository<GrupoLiquidacion>
+  ) { }
 
   async findAll(params?: { page?: number; limit?: number; ordenId?: number }) {
     const page = Math.max(1, Number(params?.page ?? 1));
@@ -383,17 +385,17 @@ export class LiquidacionesService {
   }
 
   // === pública: genera grupo y liquidaciones ===
-  async generarGrupoMensual(dto: { anio: number; mes: number; descripcion: string; ordenIds: number[] }) {
-    const { anio, mes, descripcion, ordenIds } = dto;
+  async generarGrupoMensual(dto: { anio: number; mes: number; ordenIds: number[] }) {
+    const { anio, mes, ordenIds } = dto;
     if (!anio || !mes || mes < 1 || mes > 12 || !ordenIds?.length) {
       throw new BadRequestException('Parámetros inválidos');
     }
 
-     const today = new Date();
-    if(today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth()+1 < mes)) 
+    const today = new Date();
+    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
       throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    if(today.getMonth()+1 === mes && today.getDate() < 20)
+    if (today.getMonth() + 1 === mes && today.getDate() < 20)
       throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
 
     return this.withRetry(() =>
@@ -402,7 +404,7 @@ export class LiquidacionesService {
         const lRepo = tm.getRepository(Liquidacione);
 
         // 1) Crear grupo
-        const grupo = await gRepo.save(gRepo.create({ descripcion, estado: true, total: 0 }));
+        const grupo = await gRepo.save(gRepo.create({  estado: true, total: 0 }));
 
         // 2) Bloquear el grupo para este batch (evita que otro hilo lo toque)
         await tm
@@ -458,9 +460,16 @@ export class LiquidacionesService {
   ): Promise<Liquidacione> {
     // 1) trae orden con manager
     const ordenRepo = manager.getRepository(OrdenServicio);
-    const liqRepo   = manager.getRepository(Liquidacione);
+    const liqRepo = manager.getRepository(Liquidacione);
 
-    const orden = await ordenRepo.findOne({ where: { idOrdenServicio: ordenId } });
+  const orden = await ordenRepo
+  .createQueryBuilder('os')
+  .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
+  .where('os.idOrdenServicio = :id', { id: ordenId })
+  .andWhere('estado.nombre <> :estado', { estado: 'ANULADA' })
+  .getOne();
+
+  
     if (!orden) throw new BadRequestException('Orden no encontrada');
 
     const total = Number(orden.precioTotal ?? 0);
@@ -468,19 +477,19 @@ export class LiquidacionesService {
 
     // 2) calcula monto (usa tus helpers reales)
     const start = toUTCDateOnly(orden.fechaInicio);
-    const end   = orden.fechaFin ? toUTCDateOnly(orden.fechaFin) : null;
+    const end = orden.fechaFin ? toUTCDateOnly(orden.fechaFin) : null;
 
     const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
     const mesFin = endOfMonth(mesIni);
-    const desde  = maxDate(start, mesIni);
-    const hasta  = end ? minDate(end, mesFin) : mesFin;
+    const desde = maxDate(start, mesIni);
+    const hasta = end ? minDate(end, mesFin) : mesFin;
     if (hasta < desde) throw new BadRequestException('La orden no tiene días en el mes solicitado');
 
     const totalDiasOrden = end ? diffDaysInclusive(start, end) : diffDaysInclusive(start, hasta);
-    const diasEnEsteMes  = diffDaysInclusive(desde, hasta);
+    const diasEnEsteMes = diffDaysInclusive(desde, hasta);
 
     const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
-    const endSameMonth   = end ? (end.getUTCFullYear() === anio && end.getUTCMonth() === (mes1a12 - 1)) : false;
+    const endSameMonth = end ? (end.getUTCFullYear() === anio && end.getUTCMonth() === (mes1a12 - 1)) : false;
     const ordenCompletaDentroDelMes = startSameMonth && endSameMonth;
 
     const monto = ordenCompletaDentroDelMes
@@ -497,39 +506,53 @@ export class LiquidacionesService {
   }
 
   async findByCreacionMes(anio: number, mes1a12: number) {
-  if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
-    throw new BadRequestException('Parámetros inválidos (anio, mes)');
+    if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
+      throw new BadRequestException('Parámetros inválidos (anio, mes)');
+    }
+
+    // Rango del mes objetivo: [inicioMes, finMes)
+    const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
+    const finMes = new Date(Date.UTC(anio, mes1a12, 1, 0, 0, 0)); // inicio del mes siguiente
+
+    const qb = this.ordenRepo
+      .createQueryBuilder('os')
+      // 👇 Solape con el mes objetivo (maneja fechaFin NULL)
+      .where('os.fechaInicio < :fin AND (os.fechaFin IS NULL OR os.fechaFin >= :ini)', {
+        ini: inicioMes,
+        fin: finMes,
+      })
+
+      // Joins (filtros en JOIN para preservar LEFT)
+      .leftJoinAndSelect('os.tarifas', 'ost')
+      .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
+      .leftJoinAndSelect(
+        't.idPeriodo',
+        'p',
+        'p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin)',
+      )
+      .leftJoinAndSelect('t.idTipoTarifa', 'tt')
+      .leftJoinAndSelect('t.idServicio', 's')
+      .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
+
+      .orderBy('os.idOrdenServicio', 'ASC')
+      .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
+      .distinct(true);
+
+    return qb.getMany(); // <- NO usar getOne()
   }
 
-  // Rango del mes objetivo: [inicioMes, finMes)
-  const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
-  const finMes    = new Date(Date.UTC(anio, mes1a12,     1, 0, 0, 0)); // inicio del mes siguiente
 
-  const qb = this.ordenRepo
-    .createQueryBuilder('os')
-    // 👇 Solape con el mes objetivo (maneja fechaFin NULL)
-    .where('os.fechaInicio < :fin AND (os.fechaFin IS NULL OR os.fechaFin >= :ini)', {
-      ini: inicioMes,
-      fin: finMes,
-    })
-
-    // Joins (filtros en JOIN para preservar LEFT)
-    .leftJoinAndSelect('os.tarifas', 'ost')
-    .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
-    .leftJoinAndSelect(
-      't.idPeriodo',
-      'p',
-      'p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin)',
-    )
-    .leftJoinAndSelect('t.idTipoTarifa', 'tt')
-    .leftJoinAndSelect('t.idServicio', 's')
-    .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
-
-    .orderBy('os.idOrdenServicio', 'ASC')
-    .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
-    .distinct(true);
-
-  return qb.getMany(); // <- NO usar getOne()
+  async findByEstado(estado: boolean) {
+    return this.grupoLiquidacionrepo.find({
+      where: { estado },
+      order: { idGrupoLiquidacion: 'DESC' },
+    });
+    // Si prefieres QB:
+    // return this.repo
+    //   .createQueryBuilder('g')
+    //   .where('g.estado = :estado', { estado })
+    //   .orderBy('g.idGrupoLiquidacion', 'DESC')
+    //   .getMany();
   }
 
 }

@@ -11,6 +11,7 @@ import {
   DefaultValuePipe,
   HttpCode,
   BadRequestException,
+  ParseBoolPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
@@ -54,6 +55,13 @@ export class LiquidacionesController {
     return this.service.findByCreacionMes(anioNum, mesNum);
   }
 
+    @Get('/by-estado')
+  async listByEstado(
+    @Query('estado') estado: boolean,
+  ) {
+    return this.service.findByEstado(estado);
+  }
+
 
   @Get()
   @ApiQuery({ name: 'page', required: false, example: 1 })
@@ -83,6 +91,8 @@ export class LiquidacionesController {
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.service.remove(id);
   }
+
+
 
     
 }

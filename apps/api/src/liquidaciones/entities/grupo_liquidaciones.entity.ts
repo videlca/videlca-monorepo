@@ -7,8 +7,6 @@ export class GrupoLiquidacion {
   @PrimaryGeneratedColumn({ name: 'idGrupoLiquidacion', type: 'int' })
   idGrupoLiquidacion: number;
 
-  @Column({ type: 'varchar', length: 255 })
-  descripcion: string;
 
   @Column({ type: 'boolean', default: true })
   estado: boolean;
