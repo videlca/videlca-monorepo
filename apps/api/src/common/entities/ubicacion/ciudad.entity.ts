@@ -24,7 +24,7 @@ export class Ciudad {
         type: 'varchar',
         length: 5,
         name: 'codigoCiudad',
-        unique: true
+        unique: false
     })
     codigoCiudad: string;
 

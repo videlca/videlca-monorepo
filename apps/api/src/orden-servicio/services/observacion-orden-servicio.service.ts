@@ -63,7 +63,8 @@ export class ObservacionesOrdenServicioService {
     
         const queryBuilder = this.observacionOrdenServicioRepository.createQueryBuilder('obs')
             .where('obs.idOrdenServicio = :idOrdenServicio', { idOrdenServicio })
-            .orderBy('obs.idObservacionOrdenServicio', 'DESC') // Opcional: ordenar por más reciente
+            .orderBy('obs.fechaCreacion', 'ASC') // Opcional: ordenar por más reciente
+            .leftJoinAndSelect('obs.idUsuario', 'u')
 
         if (pagination) {
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
