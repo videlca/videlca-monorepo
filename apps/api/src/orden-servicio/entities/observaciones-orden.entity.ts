@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "../../users/entities/user.entity";
 import { OrdenServicio } from "./orden-servicio.entity";
 
@@ -28,6 +28,14 @@ export class ObservacionOrdenServicio {
     )
     @JoinColumn({name: 'idUsuario'})
     idUsuario: User;
+
+    // FECHA CREACION
+    @CreateDateColumn({
+        type: 'datetime',
+        name: 'fechaCreacion',
+        nullable: false
+    }) 
+    fechaCreacion: Date;
     
     @ManyToOne(
         () => OrdenServicio,
