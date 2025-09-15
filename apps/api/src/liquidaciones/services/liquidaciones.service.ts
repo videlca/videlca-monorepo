@@ -514,6 +514,7 @@ export class LiquidacionesService {
     })
 
     // Joins (filtros en JOIN para preservar LEFT)
+    .leftJoinAndSelect('os.ordenServicioId', 'osid')
     .leftJoinAndSelect('os.tarifas', 'ost')
     .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
     .leftJoinAndSelect(
@@ -524,6 +525,7 @@ export class LiquidacionesService {
     .leftJoinAndSelect('t.idTipoTarifa', 'tt')
     .leftJoinAndSelect('t.idServicio', 's')
     .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
+
 
     .orderBy('os.idOrdenServicio', 'ASC')
     .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
