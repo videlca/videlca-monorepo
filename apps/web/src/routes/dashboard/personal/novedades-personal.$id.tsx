@@ -7,7 +7,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { ArrowLeftIcon, PencilIcon, TrashIcon } from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import type { Novedad } from "../../../api/types";
 import {
@@ -26,6 +26,7 @@ import { InputSelect } from "../../../components/common/InputSelect";
 import { InputForm } from "../../../components/common/InputForm";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { InputTime24H } from "../../../components/common/InputTime24H";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute(
   "/dashboard/personal/novedades-personal/$id",
@@ -116,33 +117,34 @@ function RouteComponent() {
       accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        <div className="flex gap-2">
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              setIsOpenEditModal(true);
-              setNovedad(row.original);
-              setFormEditNovedad({
-                descripcion: row.original.descripcion,
-                fechaInicio: row.original.fechaInicio,
-                horaInicio: row.original.horaInicio,
-                fechaFin: row.original.fechaFin,
-                horaFin: row.original.horaFin,
-                idTipoNovedad: row.original.idTipoNovedad?.idTipoNovedad,
-              });
-            }}
-          />
-          <ButtonAction
-            Icon={TrashIcon}
-            label="Eliminar"
-            onClick={() => {
-              setIsOpenDeleteModal(true);
-              setNovedad(row.original);
-            }}
-            color="red"
-          />
-        </div>
+        <MoreActionsButton
+          menuId={`actions-${row.original.idNovedad}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
+                setIsOpenEditModal(true);
+                setNovedad(row.original);
+                setFormEditNovedad({
+                  descripcion: row.original.descripcion,
+                  fechaInicio: row.original.fechaInicio,
+                  horaInicio: row.original.horaInicio,
+                  fechaFin: row.original.fechaFin,
+                  horaFin: row.original.horaFin,
+                  idTipoNovedad: row.original.idTipoNovedad?.idTipoNovedad,
+                });
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
+                setIsOpenDeleteModal(true);
+                setNovedad(row.original);
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
       ),
     },
   ];

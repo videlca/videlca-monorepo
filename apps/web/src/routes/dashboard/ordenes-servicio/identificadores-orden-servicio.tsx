@@ -16,6 +16,7 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { InputForm } from "../../../components/common/InputForm";
 import { useAnularIdOrdenServicio } from "../../../api/queryFunctions/orden-servicio/orden-servicio-id";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute(
   "/dashboard/ordenes-servicio/identificadores-orden-servicio",
@@ -83,30 +84,29 @@ function RouteComponent() {
     {
       header: "Acciones",
       accessorKey: "acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex gap-2">
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idOrdenServicioId}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
                 setIsOpenEdit(true);
                 setIdOrdenServicioId(row.original.idOrdenServicioId);
                 setDescripcionId(row.original.descripcionId);
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setIsOpenDelete(true);
                 setIdOrdenServicioId(row.original.idOrdenServicioId);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
 

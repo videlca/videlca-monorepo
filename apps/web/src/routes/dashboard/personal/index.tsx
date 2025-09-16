@@ -45,6 +45,7 @@ import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { InputTime24H } from "../../../components/common/InputTime24H";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/personal/")({
   component: RouteComponent,
@@ -240,70 +241,70 @@ function RouteComponent() {
       accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <ButtonAction
-            Icon={PlusIcon}
-            label="Agregar novedad"
-            onClick={() => {
-              setSelectedPersonal(row.original);
-              setIsOpenAddNovedadModal(true);
-            }}
-          />
-          <ButtonAction
-            Icon={EyeIcon}
-            label="Ver novedades"
-            onClick={() => {
-              navigate({
-                to: "/dashboard/personal/novedades-personal/$id",
-                params: { id: row.original.idPersonal.toString() },
-              });
-            }}
-          />
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              setSelectedPersonal(row.original);
-              setIsOpenEditModal(true);
-              getPersonalById(row.original.idPersonal, {
-                onSuccess: (data) => {
-                  setFormEditPersonal({
-                    primerNombre: data.data?.primerNombre || "",
-                    segundoNombre: data.data?.segundoNombre || "",
-                    primerApellido: data.data?.primerApellido || "",
-                    segundoApellido: data.data?.segundoApellido || "",
-                    numeroIdentificacion: data.data?.numeroIdentificacion || "",
-                    fechaInicioContrato: data.data?.fechaInicioContrato || "",
-                    fechaFinContrato: data.data?.fechaFinContrato || null,
-                    fechaNacimiento: data.data?.fechaNacimiento || "",
-                    direccionResidencia: data.data?.direccionResidencia || "",
-                    telefono: data.data?.telefono || "",
-                    arma: data.data?.arma || false,
-                    idTipoIdentificacion:
-                      data.data?.idTipoIdentificacion?.idTipoIdentificacion ||
-                      0,
-                    idCiudad: data.data?.idCiudad?.idCiudad || 0,
-                    idTipoGenero: data.data?.idTipoGenero?.idTipoGenero || 0,
-                    idTipoPersonal:
-                      data.data?.idTipoPersonal?.idTipoPersonal || 0,
-                    laborando: data.data?.laborando || false,
-                    idTipoContrato:
-                      data.data?.idTipoContrato?.idTipoContrato || 0,
-                  });
-                },
-              });
-            }}
-          />
-          <ButtonAction
-            Icon={TrashIcon}
-            label="Eliminar"
-            onClick={() => {
-              setSelectedPersonal(row.original);
-              setIsOpenDeleteModal(true);
-            }}
-            color="red"
-          />
-        </div>
+        <MoreActionsButton
+          menuId={`actions-${row.original.idPersonal}`}
+          actions={[
+            {
+              label: "Agregar novedad",
+              onClick: () => {
+                setSelectedPersonal(row.original);
+                setIsOpenAddNovedadModal(true);
+              },
+            },
+            {
+              label: "Ver novedades",
+              onClick: () => {
+                navigate({
+                  to: "/dashboard/personal/novedades-personal/$id",
+                  params: { id: row.original.idPersonal.toString() },
+                });
+              },
+            },
+            {
+              label: "Editar",
+              onClick: () => {
+                setSelectedPersonal(row.original);
+                setIsOpenEditModal(true);
+                getPersonalById(row.original.idPersonal, {
+                  onSuccess: (data) => {
+                    setFormEditPersonal({
+                      primerNombre: data.data?.primerNombre || "",
+                      segundoNombre: data.data?.segundoNombre || "",
+                      primerApellido: data.data?.primerApellido || "",
+                      segundoApellido: data.data?.segundoApellido || "",
+                      numeroIdentificacion:
+                        data.data?.numeroIdentificacion || "",
+                      fechaInicioContrato: data.data?.fechaInicioContrato || "",
+                      fechaFinContrato: data.data?.fechaFinContrato || null,
+                      fechaNacimiento: data.data?.fechaNacimiento || "",
+                      direccionResidencia: data.data?.direccionResidencia || "",
+                      telefono: data.data?.telefono || "",
+                      arma: data.data?.arma || false,
+                      idTipoIdentificacion:
+                        data.data?.idTipoIdentificacion?.idTipoIdentificacion ||
+                        0,
+                      idCiudad: data.data?.idCiudad?.idCiudad || 0,
+                      idTipoGenero: data.data?.idTipoGenero?.idTipoGenero || 0,
+                      idTipoPersonal:
+                        data.data?.idTipoPersonal?.idTipoPersonal || 0,
+                      laborando: data.data?.laborando || false,
+                      idTipoContrato:
+                        data.data?.idTipoContrato?.idTipoContrato || 0,
+                    });
+                  },
+                });
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
+                setSelectedPersonal(row.original);
+                setIsOpenDeleteModal(true);
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
       ),
     },
   ];

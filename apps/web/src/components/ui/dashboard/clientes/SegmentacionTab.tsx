@@ -33,6 +33,7 @@ import { InputSelectStateBoolean } from "../../../common/InputSelectState";
 import { toast } from "sonner";
 import { FormsModal } from "../../modals/FormsModal";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
+import { MoreActionsButton } from "../../common/MoreActionsButton";
 
 export function SegmentacionTab() {
   // Estados
@@ -275,36 +276,36 @@ export function SegmentacionTab() {
       accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        <div className="flex gap-2">
-          <ButtonAction
-            Icon={PlusIcon}
-            label="Agregar Sub-segmentación"
-            onClick={() => {
-              setShowAddSubSegmentationModal(true);
-              setIdSegmentacion(row.original.idSegmentacion);
-            }}
-          />
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              handleShowEditSegmentacionModal(row.original.idSegmentacion);
-              setSubSegmentaciones({
-                idSubSegmentacion: 0,
-                descripcion: "",
-                estado: undefined,
-              });
-            }}
-          />
-          <ButtonAction
-            Icon={TrashIcon}
-            label="Eliminar"
-            onClick={() =>
-              handleDeleteSegmentacion(row.original.idSegmentacion)
-            }
-            color="red"
-          />
-        </div>
+        <MoreActionsButton
+          menuId={`actions-${row.original.idSegmentacion}`}
+          actions={[
+            {
+              label: "Agregar Sub-segmentación",
+              onClick: () => {
+                setShowAddSubSegmentationModal(true);
+                setIdSegmentacion(row.original.idSegmentacion);
+              },
+            },
+            {
+              label: "Editar",
+              onClick: () => {
+                handleShowEditSegmentacionModal(row.original.idSegmentacion);
+                setSubSegmentaciones({
+                  idSubSegmentacion: 0,
+                  descripcion: "",
+                  estado: undefined,
+                });
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
+                handleDeleteSegmentacion(row.original.idSegmentacion);
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
       ),
     },
   ];

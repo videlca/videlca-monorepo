@@ -33,6 +33,7 @@ import { InputSelect } from "../../../common/InputSelect";
 import { toast } from "sonner";
 import { FormsModal } from "../../modals/FormsModal";
 import { FormSection } from "../../../common/FormSection";
+import { MoreActionsButton } from "../../common/MoreActionsButton";
 
 export function PuestosTab() {
   // Estados
@@ -169,25 +170,45 @@ export function PuestosTab() {
       accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        <div className="flex gap-2">
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              handleShowEditPuestoModal(row);
-              setIdPuestoSelected(row.original.idLocacion);
-            }}
-          />
-          <ButtonAction
-            Icon={TrashIcon}
-            label="Eliminar"
-            onClick={() => {
-              setIdPuestoSelected(row.original.idLocacion);
-              setIsOpenDelete(true);
-            }}
-            color="red"
-          />
-        </div>
+        // <div className="flex gap-2">
+        //   <ButtonAction
+        //     Icon={PencilIcon}
+        //     label="Editar"
+        //     onClick={() => {
+        //       handleShowEditPuestoModal(row);
+        //       setIdPuestoSelected(row.original.idLocacion);
+        //     }}
+        //   />
+        //   <ButtonAction
+        //     Icon={TrashIcon}
+        //     label="Eliminar"
+        //     onClick={() => {
+        //       setIdPuestoSelected(row.original.idLocacion);
+        //       setIsOpenDelete(true);
+        //     }}
+        //     color="red"
+        //   />
+        // </div>
+        <MoreActionsButton
+          menuId={`actions-${row.original.idLocacion}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
+                handleShowEditPuestoModal(row);
+                setIdPuestoSelected(row.original.idLocacion);
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
+                setIdPuestoSelected(row.original.idLocacion);
+                setIsOpenDelete(true);
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
       ),
     },
   ];

@@ -26,6 +26,7 @@ import { useForm } from "../../../hooks/useForm";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../../api/dtos";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/tarifas/periodo")({
   component: RouteComponent,
@@ -108,55 +109,53 @@ function RouteComponent() {
       header: "Acciones",
       cell: ({ row }) => {
         return (
-          <div className="flex gap-2">
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
-                setIsOpenEditTarifa(true);
-                setSelectedPeriodo(row.original);
-                setFormEditPeriodo({
-                  fechaFin: row.original.fechaFin,
-                  fechaInicio: row.original.fechaInicio,
-                  periodoActivoFacturacion:
-                    row.original.periodoActivoFacturacion,
-                });
-              }}
-            />
-            <ButtonAction
-              Icon={EyeIcon}
-              label="Ver tarifas"
-              onClick={() => {
-                navigate({
-                  to: "/dashboard/tarifas/ver-tarifas/$id-periodo",
-                  params: {
-                    "id-periodo": row.original.idPeriodo.toString(),
-                  },
-                });
-              }}
-            />
-            <ButtonAction
-              Icon={SettingsIcon}
-              label="Configurar servicios"
-              onClick={() => {
-                navigate({
-                  to: "/dashboard/tarifas/configurar-servicios/$id-periodo",
-                  params: {
-                    "id-periodo": row.original.idPeriodo.toString(),
-                  },
-                });
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
-                setIsOpenDeleteTarifa(true);
-                setSelectedPeriodo(row.original);
-              }}
-              color="red"
-            />
-          </div>
+          <MoreActionsButton
+            menuId={`actions-${row.original.idPeriodo}`}
+            actions={[
+              {
+                label: "Editar",
+                onClick: () => {
+                  setIsOpenEditTarifa(true);
+                  setSelectedPeriodo(row.original);
+                  setFormEditPeriodo({
+                    fechaFin: row.original.fechaFin,
+                    fechaInicio: row.original.fechaInicio,
+                    periodoActivoFacturacion:
+                      row.original.periodoActivoFacturacion,
+                  });
+                },
+              },
+              {
+                label: "Ver tarifas",
+                onClick: () => {
+                  navigate({
+                    to: "/dashboard/tarifas/ver-tarifas/$id-periodo",
+                    params: {
+                      "id-periodo": row.original.idPeriodo.toString(),
+                    },
+                  });
+                },
+              },
+              {
+                label: "Configurar servicios",
+                onClick: () => {
+                  navigate({
+                    to: "/dashboard/tarifas/configurar-servicios/$id-periodo",
+                    params: {
+                      "id-periodo": row.original.idPeriodo.toString(),
+                    },
+                  });
+                },
+              },
+              {
+                label: "Eliminar",
+                onClick: () => {
+                  setIsOpenDeleteTarifa(true);
+                  setSelectedPeriodo(row.original);
+                },
+              },
+            ]}
+          />
         );
       },
     },

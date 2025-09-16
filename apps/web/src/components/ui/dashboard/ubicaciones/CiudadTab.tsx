@@ -23,6 +23,7 @@ import { InputSelectStateBoolean } from "../../../common/InputSelectState";
 import { StateLabel } from "../../../common/StateLabel";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 import { FormsModal } from "../../modals/FormsModal";
+import { MoreActionsButton } from "../../common/MoreActionsButton";
 
 export const CiudadTab = () => {
   // Estados
@@ -119,26 +120,25 @@ export const CiudadTab = () => {
     },
     {
       header: "Acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex justify-center gap-2">
-            <ButtonAction
-              Icon={EditIcon}
-              label="Editar"
-              onClick={() => handleShowModalEditar(row.original)}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idCiudad}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => handleShowModalEditar(row.original),
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setIsModalOpenEliminar(true);
                 setSelectIdRow(row.original.idCiudad);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
 

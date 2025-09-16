@@ -3,7 +3,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { TipoHorario } from "../../../api/types/servicio";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import { useState } from "react";
 import {
@@ -26,8 +26,8 @@ import { CheckboxForm } from "../../../components/common/CheckboxForm";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { toast } from "sonner";
 import { timeFormat } from "../../../utils/TimeFormat";
-import { InputTime } from "../../../components/common/InputTime";
 import { InputTime24H } from "../../../components/common/InputTime24H";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute(
   "/dashboard/servicios/configurar-horarios",
@@ -116,13 +116,13 @@ function RouteComponent() {
     // },
     {
       header: "Acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex gap-2">
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idTipoHorario}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
                 setIsOpenEditTipoHorario(true);
                 setIsIndefinido(row.original.fechaVigenciaFin === null);
                 setIdTipoHorario(row.original.idTipoHorario);
@@ -134,20 +134,19 @@ function RouteComponent() {
                   row.original.fechaVigenciaInicio;
                 formEditTipoHorario.fechaVigenciaFin =
                   row.original.fechaVigenciaFin || null;
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setIdTipoHorario(row.original.idTipoHorario);
                 setIsOpenDeleteTipoHorario(true);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
   return (

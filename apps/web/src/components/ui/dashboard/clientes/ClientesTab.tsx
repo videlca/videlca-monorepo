@@ -47,6 +47,7 @@ import { FormsModal } from "../../modals/FormsModal";
 import { FormSection } from "../../../common/FormSection";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { MoreActionsButton } from "../../common/MoreActionsButton";
 
 export function ClientesTab() {
   const navigate = useNavigate({ from: "/dashboard/clientes" });
@@ -213,38 +214,41 @@ export function ClientesTab() {
       accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        <div className="flex gap-2">
-          <ButtonAction
-            Icon={PlusIcon}
-            label="Agregar puesto"
-            onClick={() => {
-              setIsAddPuestoModalOpen(true);
-              setFormAddPuesto({
-                ...formAddPuesto,
-                idCliente: row.original.idCliente || 0,
-              });
-            }}
-          />
-          <ButtonAction
-            Icon={EyeIcon}
-            label="Ver puestos"
-            onClick={() => handleShowViewPuestoModal(row)}
-          />
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => handleShowEditClienteModal(row)}
-          />
-          <ButtonAction
-            Icon={TrashIcon}
-            label="Eliminar"
-            onClick={() => {
-              setEditingCliente(row.original);
-              setIsOpenDelete(true);
-            }}
-            color="red"
-          />
-        </div>
+        <MoreActionsButton
+          menuId={`actions-${row.original.idCliente}`}
+          actions={[
+            {
+              label: "Agregar puesto",
+              onClick: () => {
+                setIsAddPuestoModalOpen(true);
+                setFormAddPuesto({
+                  ...formAddPuesto,
+                  idCliente: row.original.idCliente || 0,
+                });
+              },
+            },
+            {
+              label: "Ver puestos",
+              onClick: () => {
+                handleShowViewPuestoModal(row);
+              },
+            },
+            {
+              label: "Editar",
+              onClick: () => {
+                handleShowEditClienteModal(row);
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
+                setEditingCliente(row.original);
+                setIsOpenDelete(true);
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
       ),
     },
   ];

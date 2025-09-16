@@ -37,6 +37,7 @@ import { InputPrice } from "../../../components/common/InputPrice";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { priceCalculate, priceFormat } from "../../../utils/PriceFormat";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute(
   "/dashboard/tarifas/ver-tarifas/$id-periodo",
@@ -239,47 +240,46 @@ function RouteComponent() {
       header: "Acciones",
       cell: ({ row }) => {
         return (
-          <div className="flex gap-2">
-            <ButtonAction
-              Icon={EyeIcon}
-              label="Ver"
-              onClick={() => {
-                setIsOpenSeeTarifa(true);
-                setTarifaSelected(row.original);
-              }}
-            />
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
-                setIsOpenEditTarifa(true);
-                setTarifaSelected(row.original);
-                setUpdateTarifaForm({
-                  idPeriodo: row.original.idPeriodo.idPeriodo,
-                  idServicio: row.original.idServicio.idServicio,
-                  idTipoTarifa: row.original.idTipoTarifa.idTipoTarifa,
-                  precioAntesIva: row.original.precioAntesIva,
-                  iva: row.original.iva,
-                  precioTotal: row.original.precioTotal,
-                  costosDirectos: row.original.costosDirectos,
-                  seguroVida: row.original.seguroVida || 0,
-                  costosDirectosSeguroVida:
-                    row.original.costosDirectosSeguroVida || 0,
-                  aui: row.original.aui,
-                  estado: row.original.estado,
-                });
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
-                setIsOpenDeleteTarifa(true);
-                setTarifaSelected(row.original);
-              }}
-              color="red"
-            />
-          </div>
+          <MoreActionsButton
+            menuId={`actions-${row.original.idPeriodo}`}
+            actions={[
+              {
+                label: "Ver",
+                onClick: () => {
+                  setIsOpenSeeTarifa(true);
+                  setTarifaSelected(row.original);
+                },
+              },
+              {
+                label: "Editar",
+                onClick: () => {
+                  setIsOpenEditTarifa(true);
+                  setTarifaSelected(row.original);
+                  setUpdateTarifaForm({
+                    idPeriodo: row.original.idPeriodo.idPeriodo,
+                    idServicio: row.original.idServicio.idServicio,
+                    idTipoTarifa: row.original.idTipoTarifa.idTipoTarifa,
+                    precioAntesIva: row.original.precioAntesIva,
+                    iva: row.original.iva,
+                    precioTotal: row.original.precioTotal,
+                    costosDirectos: row.original.costosDirectos,
+                    seguroVida: row.original.seguroVida || 0,
+                    costosDirectosSeguroVida:
+                      row.original.costosDirectosSeguroVida || 0,
+                    aui: row.original.aui,
+                    estado: row.original.estado,
+                  });
+                },
+              },
+              {
+                label: "Eliminar",
+                onClick: () => {
+                  setIsOpenDeleteTarifa(true);
+                  setTarifaSelected(row.original);
+                },
+              },
+            ]}
+          />
         );
       },
     },

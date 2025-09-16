@@ -21,6 +21,7 @@ import { InputForm } from "../../../common/InputForm";
 import { InputSelect } from "../../../common/InputSelect";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 import { FormsModal } from "../../modals/FormsModal";
+import { MoreActionsButton } from "../../common/MoreActionsButton";
 
 export const DepartamentoTab = () => {
   // Estados
@@ -110,26 +111,25 @@ export const DepartamentoTab = () => {
     },
     {
       header: "Acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex justify-center gap-2">
-            <ButtonAction
-              Icon={EditIcon}
-              label="Editar"
-              onClick={() => handleShowModalEditar(row.original)}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idDepartamento}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => handleShowModalEditar(row.original),
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setIsModalOpenEliminar(true);
                 setSelectIdRow(row.original.idDepartamento);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
 

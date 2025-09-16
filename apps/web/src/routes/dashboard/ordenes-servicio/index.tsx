@@ -6,14 +6,9 @@ import {
   Calendar,
   Check,
   CheckCircle2,
-  CircleDollarSignIcon,
-  EyeIcon,
   FileText,
   MapPin,
-  MessageCircle,
-  PencilIcon,
   PlusIcon,
-  TrashIcon,
 } from "lucide-react";
 import Table from "../../../components/common/Table";
 import { SimpleModal } from "../../../components/common/SimpleModal";
@@ -60,6 +55,7 @@ import { PreviewInformacionOrden } from "../../../components/common/stepsOrdenSe
 import { SeleccionarPuestoCliente } from "../../../components/common/stepsOrdenServicio/SeleccionarPuestoCliente";
 import { ObservacionesOrdenServicio } from "../../../components/ui/modals/ObservacionesOrdenServicio";
 import { useGetObservacionesOrdenServicio } from "../../../api/queryFunctions/orden-servicio/observaciones";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
@@ -111,10 +107,8 @@ function RouteComponent() {
     isPending: isValidateFechasOrdenServicioPending,
   } = useValidateFechasOrdenServicio();
 
-  const {
-    mutate: updateValidateFechasOrdenServicio,
-    isPending: isUpdateValidateFechasOrdenServicioPending,
-  } = useUpdateValidateFechasOrdenServicio();
+  const { mutate: updateValidateFechasOrdenServicio } =
+    useUpdateValidateFechasOrdenServicio();
 
   // Precio orden servicio
   const {
@@ -664,56 +658,52 @@ function RouteComponent() {
     {
       accessorKey: "actions",
       header: "Acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex items-center gap-2">
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idOrdenServicio}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
                 setIsEditing(true);
                 setSelectedOrderDetail(row.original);
                 handleEditOrder(row.original.idOrdenServicio);
-              }}
-            />
-            <ButtonAction
-              Icon={EyeIcon}
-              label="Ver"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Ver",
+              onClick: () => {
                 setIsOpenDetails(true);
                 setSelectedOrderDetail(row.original);
-              }}
-            />
-            <ButtonAction
-              Icon={MessageCircle}
-              label="Observaciones"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Observaciones",
+              onClick: () => {
                 setIsOpenObservaciones(true);
                 setSelectedOrderDetail(row.original);
                 setSelectedOrderIdForObservaciones(
                   row.original.idOrdenServicio,
                 );
-              }}
-            />
-            <ButtonAction
-              Icon={CircleDollarSignIcon}
-              label="Liquidar"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Liquidar",
+              onClick: () => {
                 handleLiquidarOrdenServicio(row.original.idOrdenServicio);
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setIsOpenDelete(true);
                 setSelectedOrderDetail(row.original);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
 

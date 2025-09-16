@@ -21,6 +21,7 @@ import type {
 } from "../../../api/types";
 import { useState } from "react";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipos-novedad")({
   component: RouteComponent,
@@ -97,17 +98,17 @@ function RouteComponent() {
     {
       header: "Acciones",
       accessorKey: "acciones",
-      cell: ({ row }) => {
-        return (
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              handleShowModalEditar(row.original);
-            }}
-          />
-        );
-      },
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idTipoNovedad}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => handleShowModalEditar(row.original),
+            },
+          ]}
+        />
+      ),
     },
   ];
 

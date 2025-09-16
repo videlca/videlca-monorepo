@@ -24,6 +24,7 @@ import { InputForm } from "../../../components/common/InputForm";
 import { CheckboxForm } from "../../../components/common/CheckboxForm";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/servicios/tipo-servicio")({
   component: RouteComponent,
@@ -105,13 +106,38 @@ function RouteComponent() {
     },
     {
       header: "Acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex gap-2">
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
+      cell: ({ row }) => (
+        // <div className="flex gap-2">
+        //   <ButtonAction
+        //     Icon={PencilIcon}
+        //     label="Editar"
+        //     onClick={() => {
+        //       setIsOpenEditTipoServicio(true);
+        //       setIdTipoServicio(row.original.idTipoServicio);
+        //       formEditTipoServicio.nombre = row.original.nombre;
+        //       formEditTipoServicio.descripcion = row.original.descripcion;
+        //       formEditTipoServicio.prefijo = row.original.prefijo;
+        //       formEditTipoServicio.requierePersonal =
+        //         row.original.requierePersonal;
+        //       formEditTipoServicio.estado = row.original.estado;
+        //     }}
+        //   />
+        //   <ButtonAction
+        //     Icon={TrashIcon}
+        //     label="Eliminar"
+        //     onClick={() => {
+        //       setIdTipoServicio(row.original.idTipoServicio);
+        //       setIsOpenDeleteTipoServicio(true);
+        //     }}
+        //     color="red"
+        //   />
+        // </div>
+        <MoreActionsButton
+          menuId={`actions-${row.original.idTipoServicio}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
                 setIsOpenEditTipoServicio(true);
                 setIdTipoServicio(row.original.idTipoServicio);
                 formEditTipoServicio.nombre = row.original.nombre;
@@ -120,20 +146,19 @@ function RouteComponent() {
                 formEditTipoServicio.requierePersonal =
                   row.original.requierePersonal;
                 formEditTipoServicio.estado = row.original.estado;
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setIdTipoServicio(row.original.idTipoServicio);
                 setIsOpenDeleteTipoServicio(true);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
   return (

@@ -39,6 +39,7 @@ import { InputSelect } from "../../../components/common/InputSelect";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/servicios/")({
   component: RouteComponent,
@@ -151,13 +152,13 @@ function RouteComponent() {
     },
     {
       header: "Acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex gap-2">
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idServicio}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
                 setServicioId(row.original.idServicio);
                 setFormEditarServicio({
                   codigo: row.original.codigo,
@@ -179,31 +180,29 @@ function RouteComponent() {
                     "dia completo",
                   ),
                 );
-              }}
-            />
-            <ButtonAction
-              Icon={EyeIcon}
-              label="Ver"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Ver",
+              onClick: () => {
                 obtenerServicioById(row.original.idServicio, {
                   onSuccess: () => {
                     setIsOpenViewModal(true);
                   },
                 });
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setServicioId(row.original.idServicio);
                 setIsOpenDeleteModal(true);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
 

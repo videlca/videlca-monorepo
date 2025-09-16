@@ -32,7 +32,6 @@ interface TableProps<TData, TValues> {
   showHeader?: boolean;
   loading?: boolean;
   emptyMessage?: string;
-  hasActions?: boolean;
 }
 
 const Table = <TData, TValues>({
@@ -46,11 +45,9 @@ const Table = <TData, TValues>({
   showHeader = true,
   loading = false,
   emptyMessage = "No data available",
-  hasActions = false,
 }: TableProps<TData, TValues>) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
-  const [showColumnMenu, setShowColumnMenu] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [selectedFilterColumn, setSelectedFilterColumn] = useState<string>("");
@@ -126,7 +123,7 @@ const Table = <TData, TValues>({
   }
 
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`w-full ${className} relative`}>
       {enableFiltering && filterableColumns.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2">
@@ -189,7 +186,7 @@ const Table = <TData, TValues>({
       )}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="mr-10 w-full">
+        <table className="relative w-full">
           {showHeader && (
             <thead className="bg-gray-50">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -235,7 +232,11 @@ const Table = <TData, TValues>({
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className={`w-fit px-6 py-4 text-center text-sm break-words`}
+                      className={`w-fit px-6 py-4 text-center text-sm break-words ${
+                        cell.column.id === "actions"
+                          ? "relative overflow-visible"
+                          : ""
+                      }`}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

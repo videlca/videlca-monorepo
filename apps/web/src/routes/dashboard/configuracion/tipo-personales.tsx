@@ -24,8 +24,11 @@ import { InputSelectStateBoolean } from "../../../components/common/InputSelectS
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import type { UpdateTipoPersonalDto } from "../../../api/dtos";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
-export const Route = createFileRoute("/dashboard/configuracion/tipo-personales")({
+export const Route = createFileRoute(
+  "/dashboard/configuracion/tipo-personales",
+)({
   component: RouteComponent,
 });
 
@@ -119,28 +122,25 @@ function RouteComponent() {
     {
       header: "Acciones",
       accessorKey: "acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex justify-center gap-2">
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
-                handleShowModalEditar(row.original);
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idTipoPersonal}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => handleShowModalEditar(row.original),
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setIsModalOpenEliminar(true);
                 setSelectedRow(row.original.idTipoPersonal);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
 

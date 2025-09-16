@@ -21,6 +21,7 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { InputForm } from "../../../components/common/InputForm";
 import Button from "../../../components/common/Button";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipo-genero")({
   component: RouteComponent,
@@ -92,17 +93,17 @@ function RouteComponent() {
     {
       header: "Acciones",
       accessorKey: "acciones",
-      cell: ({ row }) => {
-        return (
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              handleShowModalEditar(row.original);
-            }}
-          />
-        );
-      },
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idTipoGenero}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => handleShowModalEditar(row.original),
+            },
+          ]}
+        />
+      ),
     },
   ];
 

@@ -23,6 +23,7 @@ import { InputForm } from "../../../components/common/InputForm";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/configuracion/tipo-cliente")({
   component: RouteComponent,
@@ -112,28 +113,25 @@ function RouteComponent() {
     {
       header: "Acciones",
       accessorKey: "acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex justify-center gap-2">
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
-                handleShowModalEditar(row.original);
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.idTipoCliente}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => handleShowModalEditar(row.original),
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setIsModalOpenEliminar(true);
                 setSelectIdRow(row.original.idTipoCliente);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
   return (

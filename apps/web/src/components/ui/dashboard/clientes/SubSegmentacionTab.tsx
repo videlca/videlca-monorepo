@@ -6,6 +6,7 @@ import { StateLabel } from "../../../common/StateLabel";
 import type { SubSegmentacion } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { useState } from "react";
+import { MoreActionsButton } from "../../common/MoreActionsButton";
 
 export function SubSegmentacionTab() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -25,16 +26,20 @@ export function SubSegmentacionTab() {
     {
       accessorKey: "estado",
       header: "Estado",
-      cell: ({ row }) => <StateLabel state={row.original.estado} />,
+      cell: ({ row }) => <StateLabel state={row.original.estado as boolean} />,
     },
     {
       accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        <ButtonAction
-          Icon={PencilIcon}
-          label="Editar"
-          onClick={() => handleShowEditSubSegmentacionModal(row)}
+        <MoreActionsButton
+          menuId={`actions-${row.original.idSubSegmentacion}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => handleShowEditSubSegmentacionModal(row),
+            },
+          ]}
         />
       ),
     },

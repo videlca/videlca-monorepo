@@ -21,6 +21,7 @@ import type { CreateRoleDto, UpdateRoleDto } from "../../../api/dtos";
 import { useGetModulos } from "../../../api/queryFunctions/permisos/modulos";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/permisos/roles")({
   component: RouteComponent,
@@ -77,33 +78,32 @@ function RouteComponent() {
     {
       accessorKey: "acciones",
       header: "Acciones",
-      cell: ({ row }) => {
-        return (
-          <div className="flex justify-center gap-2">
-            <ButtonAction
-              Icon={PencilIcon}
-              label="Editar"
-              onClick={() => {
+      cell: ({ row }) => (
+        <MoreActionsButton
+          menuId={`actions-${row.original.id}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
                 setIsModalUpdateOpen(true);
                 setIdSelectedRole(row.original.id);
                 setFormUpdateRole({
                   descripcion: row.original.descripcion,
                   estado: row.original.estado,
                 });
-              }}
-            />
-            <ButtonAction
-              Icon={TrashIcon}
-              label="Eliminar"
-              onClick={() => {
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
                 setIdSelectedRole(row.original.id);
                 setIsConfirmarDeleteOpen(true);
-              }}
-              color="red"
-            />
-          </div>
-        );
-      },
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
+      ),
     },
   ];
 

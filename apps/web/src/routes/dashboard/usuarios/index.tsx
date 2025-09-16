@@ -23,6 +23,7 @@ import { InputSelect } from "../../../components/common/InputSelect";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/usuarios/")({
   component: RouteComponent,
@@ -149,30 +150,30 @@ function RouteComponent() {
       accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        <div className="flex gap-2">
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              setIdSelectedUsuario(row.original.idUser);
-              setIsModalEditUsuario(true);
-              setFormUsuarioEdit({
-                idRol: row.original.idRol?.id || 0,
-                estado: row.original.estado || false,
-              });
-            }}
-          />
-          {/* TODO: REvisar eliminar usuario */}
-          {/* <ButtonAction
-            Icon={TrashIcon}
-            label="Eliminar"
-            onClick={() => {
-              setIsModalOpenEliminar(true);
-              setIdSelectedUsuario(row.original.idUser);
-            }}
-            color="red"
-          /> */}
-        </div>
+        <MoreActionsButton
+          menuId={`actions-${row.original.idUser}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
+                setIdSelectedUsuario(row.original.idUser);
+                setIsModalEditUsuario(true);
+                setFormUsuarioEdit({
+                  idRol: row.original.idRol?.id || 0,
+                  estado: row.original.estado || false,
+                });
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
+                setIsModalOpenEliminar(true);
+                setIdSelectedUsuario(row.original.idUser);
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
       ),
     },
   ];

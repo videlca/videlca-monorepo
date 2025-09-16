@@ -39,6 +39,7 @@ import { InputForm } from "../../../components/common/InputForm";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { toast } from "sonner";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
+import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
 export const Route = createFileRoute("/dashboard/clientes/$idCliente/puestos")({
   component: RouteComponent,
@@ -213,25 +214,26 @@ export function RouteComponent() {
       accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        <div className="flex gap-2">
-          <ButtonAction
-            Icon={PencilIcon}
-            label="Editar"
-            onClick={() => {
-              handleShowEditPuestoModal(row);
-              setIdPuestoSelected(row.original.idLocacion);
-            }}
-          />
-          <ButtonAction
-            Icon={TrashIcon}
-            label="Eliminar"
-            onClick={() => {
-              setIdPuestoSelected(row.original.idLocacion);
-              setIsOpenDelete(true);
-            }}
-            color="red"
-          />
-        </div>
+        <MoreActionsButton
+          menuId={`actions-${row.original.idLocacion}`}
+          actions={[
+            {
+              label: "Editar",
+              onClick: () => {
+                handleShowEditPuestoModal(row);
+                setIdPuestoSelected(row.original.idLocacion);
+              },
+            },
+            {
+              label: "Eliminar",
+              onClick: () => {
+                setIdPuestoSelected(row.original.idLocacion);
+                setIsOpenDelete(true);
+              },
+              color: "red" as const,
+            },
+          ]}
+        />
       ),
     },
   ];
