@@ -1,7 +1,20 @@
-import { Building2, Check, MapPin, Phone, Search, User } from "lucide-react";
+import {
+  Building2,
+  Check,
+  MapPin,
+  Phone,
+  PlusIcon,
+  Search,
+  User,
+  XIcon,
+} from "lucide-react";
 import type { Puesto } from "../../../types";
 import { usePuestosActivo } from "../../../api/queryFunctions/clientes";
 import type { CreateOrdenServicioDto } from "../../../api/dtos/orden-servicio";
+import { useState } from "react";
+import { SimpleModal } from "../SimpleModal";
+import { ButtonAction } from "../ButtonAction";
+import { useNavigate } from "@tanstack/react-router";
 
 export const SeleccionarPuestoCliente = ({
   formOrdenServicio,
@@ -12,7 +25,9 @@ export const SeleccionarPuestoCliente = ({
   setFormOrdenServicio: (formOrdenServicio: CreateOrdenServicioDto) => void;
   setSelectedPuesto: (puesto: Puesto) => void;
 }) => {
+  const [isOpenCreatePuesto, setIsOpenCreatePuesto] = useState(false);
   const { data: puestosQuery } = usePuestosActivo();
+  const navigate = useNavigate();
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center">
@@ -25,13 +40,45 @@ export const SeleccionarPuestoCliente = ({
         </p>
       </div>
 
-      <div className="relative">
-        <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Buscar por nombre del cliente, puesto o dirección..."
-          className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
+      {/* Buscador de puestos */}
+      <div className="flex flex-row justify-between gap-2">
+        <div className="flex-1">
+          <select
+            id="search"
+            value={""}
+            onChange={() => {}}
+            className="w-full rounded-md border border-gray-300 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            required={false}
+            disabled={false}
+          >
+            <option value="" disabled defaultValue={""}>
+              Seleccionar filtro
+            </option>
+          </select>
+        </div>
+        <div className="relative flex-2">
+          <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre del cliente, puesto o dirección..."
+            className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-700">
+          Puestos encontrados ({puestosQuery?.data?.length})
+        </p>
+        <div className="justify-end">
+          <button
+            className="flex cursor-pointer items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            onClick={() => setIsOpenCreatePuesto(true)}
+          >
+            <PlusIcon className="h-4 w-4" />
+            Crear Puesto
+          </button>
+        </div>
       </div>
 
       <div className="max-h-80 space-y-3 overflow-y-auto">
@@ -90,6 +137,36 @@ export const SeleccionarPuestoCliente = ({
           </div>
         ))}
       </div>
+
+      <SimpleModal
+        isOpen={isOpenCreatePuesto}
+        onClose={() => setIsOpenCreatePuesto(false)}
+        size="md"
+      >
+        <h3 className="text-center text-lg font-medium">Crear Puesto</h3>
+        <p className="text-center text-sm text-gray-600">
+          Será dirigido a la vista de creación de puesto. En caso de querer
+          crear un puesto, por favor, haga clic en el botón "Crear Puesto".
+        </p>
+        <div className="flex justify-center gap-2 pt-4">
+          <ButtonAction
+            Icon={XIcon}
+            label="Cancelar"
+            onClick={() => setIsOpenCreatePuesto(false)}
+          />
+          <ButtonAction
+            Icon={Check}
+            label="Crear Puesto"
+            onClick={() => {
+              setIsOpenCreatePuesto(false);
+              navigate({
+                to: "/dashboard/clientes",
+              });
+            }}
+            color="blue"
+          />
+        </div>
+      </SimpleModal>
     </div>
   );
 };
