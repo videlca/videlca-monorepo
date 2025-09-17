@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PlusIcon, Search } from "lucide-react";
+import { CheckIcon, PlusIcon, Search } from "lucide-react";
 import { getYear, subYears } from "date-fns";
 import { InputSelect } from "../../../components/common/InputSelect";
 import {
@@ -39,7 +39,7 @@ const yearsOptions = Array.from({ length: 10 }, (_, i) => {
 function RouteComponent() {
   const [searchMonth, setSearchMonth] = useState<string>("");
   const [searchYear, setSearchYear] = useState<string>("");
-  const [groupName, setGroupName] = useState<string>("");
+  // const [groupName, setGroupName] = useState<string>("");
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
 
@@ -64,21 +64,14 @@ function RouteComponent() {
       return;
     }
 
-    if (!groupName.trim()) {
-      toast.error("El nombre del grupo es requerido");
-      return;
-    }
-
     await crearLiquidacionMensual(
       {
         anio: Number(searchYear),
         mes: Number(searchMonth),
-        descripcion: groupName,
         ordenIds: selectedOrders,
       },
       {
         onSuccess: () => {
-          setGroupName("");
           setSelectedOrders([]);
           setIsSearching(false);
         },
@@ -153,46 +146,47 @@ function RouteComponent() {
 
       {liquidaciones?.data?.length && liquidaciones?.data?.length > 0 ? (
         <div className="space-y-4 rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
-          <div className="border-b border-gray-300 pb-4">
-            <h3 className="mb-3 text-lg font-semibold">Crear Grupo</h3>
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={groupName}
-                onChange={(e) => setGroupName(e.target.value)}
-                placeholder="Nombre del grupo"
-                className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-                disabled={selectedOrders?.length === 0}
+          <div className="mb-8 flex justify-between">
+            <div className="mb-2 flex-col items-start justify-between gap-2">
+              <h2 className="text-xl font-semibold">
+                Resultados ({liquidaciones?.data?.length} órdenes encontradas)
+              </h2>
+              <p className="text-sm text-gray-500">
+                {selectedOrders?.length > 0
+                  ? `${selectedOrders?.length > 1 ? "órdenes seleccionadas" : "órden seleccionada"}`
+                  : "No hay órdenes seleccionadas"}
+              </p>
+            </div>
+            <div className="mb-2 flex items-center justify-end gap-2">
+              <ButtonAction
+                onClick={() => {
+                  setSelectedOrders(
+                    liquidaciones?.data?.map(
+                      (order) => order.idOrdenServicio || 0,
+                    ) || [],
+                  );
+                }}
+                disabled={
+                  selectedOrders?.length === liquidaciones?.data?.length
+                }
+                Icon={CheckIcon}
+                label="Seleccionar Todos"
               />
               <ButtonAction
                 onClick={() => {
                   handleCreateLiquidacionMensual();
                 }}
                 disabled={
-                  !groupName.trim() || isCreatingLiquidacionMensualPending
+                  selectedOrders?.length === 0 ||
+                  isCreatingLiquidacionMensualPending
                 }
                 Icon={PlusIcon}
-                label="Crear Grupo"
+                label="Crear Liquidación"
               />
             </div>
-            <p className="mt-2 text-sm text-gray-500">
-              Los grupos creados se pueden visualizar en la pestaña "Grupos de
-              Órdenes"
-            </p>
           </div>
 
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">
-              Resultados ({liquidaciones?.data?.length} órdenes encontradas)
-            </h2>
-            {selectedOrders?.length > 0 && (
-              <span className="text-sm text-gray-500">
-                {selectedOrders?.length} seleccionadas
-              </span>
-            )}
-          </div>
-
-          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="mb-6 grid grid-cols-1">
             {liquidaciones?.data?.map((order, index) => (
               <div
                 key={index}
@@ -227,20 +221,24 @@ function RouteComponent() {
                   </span>
                 </div>
 
-                <div className="space-y-2 text-sm">
-                  <div>
+                <div className="grid grid-cols-2 gap-2 space-y-2 text-sm md:grid-cols-3 lg:grid-cols-5">
+                  <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">Cliente:</span>
                     <p className="text-gray-900">
-                      {order.ordenServicioId.descripcionId}
+                      {/* {order.ordenServicioId.descripcionId} */}
+                      Cliente de ejemplo
                     </p>
                   </div>
 
-                  <div>
+                  <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">Puesto:</span>
-                    <p className="text-gray-900">{order.idLocacion?.nombre}</p>
+                    <p className="text-gray-900">
+                      {/* {order.idLocacion?.nombre} */}
+                      Puesto de ejemplo
+                    </p>
                   </div>
 
-                  <div>
+                  <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">
                       Precio Total:
                     </span>
@@ -249,19 +247,17 @@ function RouteComponent() {
                     </p>
                   </div>
 
-                  <div className="border-border mt-2 grid grid-cols-2 gap-2 border-t pt-2">
-                    <div>
-                      <span className="font-medium text-gray-500">Inicio:</span>
-                      <p className="text-gray-900">
-                        {order?.fechaInicioOrden || ""}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-500">Fin:</span>
-                      <p className="text-gray-900">
-                        {order?.fechaFinOrden || ""}
-                      </p>
-                    </div>
+                  <div className="col-span-2 md:col-span-1 lg:col-span-1">
+                    <span className="font-medium text-gray-500">Inicio:</span>
+                    <p className="text-gray-900">
+                      {order?.fechaInicioOrden || ""}
+                    </p>
+                  </div>
+                  <div className="col-span-2 md:col-span-1 lg:col-span-1">
+                    <span className="font-medium text-gray-500">Fin:</span>
+                    <p className="text-gray-900">
+                      {order?.fechaFinOrden || ""}
+                    </p>
                   </div>
                 </div>
               </div>

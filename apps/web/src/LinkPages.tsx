@@ -78,17 +78,6 @@ export const linksSideBar: LinksSideBar = {
       description: "tipo-id",
       icon: <IdCardIcon className="h-6 w-6" />,
     },
-    // {
-    //   to: "/dashboard/configuracion/tipo-genero",
-    //   label: "Tipo de Género",
-    //   description: "tipo-genero",
-    // },
-    // {
-    //   to: "/dashboard/configuracion/tipos-novedad",
-    //   label: "Tipos de Novedad",
-    //   description: "tipos-novedad",
-    //   icon: <FileTextIcon className="h-6 w-6" />,
-    // },
     {
       to: "/dashboard/configuracion/ubicacion",
       label: "Ubicación",
@@ -131,12 +120,6 @@ export const linksSideBar: LinksSideBar = {
       description: "personal",
       icon: <UserPenIcon className="h-6 w-6" />,
     },
-    // {
-    //   to: "/dashboard/personal/novedades",
-    //   label: "Novedades",
-    //   description: "novedades",
-    //   icon: <FileTextIcon className="h-6 w-6" />,
-    // },
   ],
   usuarios: [
     {
@@ -155,12 +138,6 @@ export const linksSideBar: LinksSideBar = {
     },
   ],
   tarifas: [
-    // {
-    //   to: "/dashboard/tarifas",
-    //   label: "Tarifas",
-    //   description: "tarifas",
-    //   icon: <DollarSignIcon className="h-6 w-6" />,
-    // },
     {
       to: "/dashboard/tarifas/periodo",
       label: "Tarifa",
@@ -246,9 +223,21 @@ export const linksSideBar: LinksSideBar = {
   ],
   "exportaciones-base-facturacion": [
     {
-      to: "/dashboard/exportaciones-base-facturacion",
-      label: "Exportaciones Base de Facturación",
-      description: "exportaciones-base-facturacion",
+      to: "/dashboard/exportaciones-base-facturacion/consolidacion",
+      label: "Consolidación",
+      description: "consolidacion",
+      icon: <FileTextIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/exportaciones-base-facturacion/archivos-interfaz",
+      label: "Archivos de Interfaz",
+      description: "archivos-interfaz",
+      icon: <FileTextIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/exportaciones-base-facturacion/anexo-facturacion",
+      label: "Anexo de Facturación",
+      description: "anexo-facturacion",
       icon: <FileTextIcon className="h-6 w-6" />,
     },
   ],

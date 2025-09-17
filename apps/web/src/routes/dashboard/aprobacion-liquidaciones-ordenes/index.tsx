@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { EyeOff, FileTextIcon, TrashIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CheckIcon, EyeOff, FileTextIcon, TrashIcon } from "lucide-react";
+import { useState } from "react";
 import { Section } from "../../../components/ui/dashboard/Section";
 
 export const Route = createFileRoute(
@@ -29,39 +29,108 @@ interface OrderGroup {
 }
 
 function RouteComponent() {
-  const [groups, setGroups] = useState<OrderGroup[]>([]);
+  const [groups, setGroups] = useState<OrderGroup[]>([
+    {
+      id: "1",
+      nombre: "Grupo 1",
+      ordenes: [
+        {
+          id: "VR-1032",
+          cliente: "Cliente 1",
+          posicion: "Posicion 1",
+          fechaInicio: "2021-01-01",
+          fechaFin: "2021-01-01",
+          fechaCreacion: "2021-01-01",
+          descripcion: "Descripcion 1",
+          estado: "pendiente",
+          tecnico: "Tecnico 1",
+        },
+        {
+          id: "VR-1031",
+          cliente: "Cliente 2",
+          posicion: "Posicion 2",
+          fechaInicio: "2021-01-02",
+          fechaFin: "2021-01-02",
+          fechaCreacion: "2021-01-02",
+          descripcion: "Descripcion 2",
+          estado: "en_progreso",
+          tecnico: "Tecnico 2",
+        },
+      ],
+      fechaCreacion: "2021-01-01",
+    },
+    {
+      id: "2",
+      nombre: "Grupo 2",
+      ordenes: [
+        {
+          id: "VF-1037",
+          cliente: "Cliente 3",
+          posicion: "Posicion 3",
+          fechaInicio: "2021-01-03",
+          fechaFin: "2021-01-03",
+          fechaCreacion: "2021-01-03",
+          descripcion: "Descripcion 3",
+          estado: "pendiente",
+          tecnico: "Tecnico 3",
+        },
+        {
+          id: "VF-1037",
+          cliente: "Cliente 3",
+          posicion: "Posicion 3",
+          fechaInicio: "2021-01-03",
+          fechaFin: "2021-01-03",
+          fechaCreacion: "2021-01-03",
+          descripcion: "Descripcion 3",
+          estado: "pendiente",
+          tecnico: "Tecnico 3",
+        },
+        {
+          id: "VF-1036",
+          cliente: "Cliente 4",
+          posicion: "Posicion 4",
+          fechaInicio: "2021-01-04",
+          fechaFin: "2021-01-04",
+          fechaCreacion: "2021-01-04",
+          descripcion: "Descripcion 4",
+          estado: "pendiente",
+          tecnico: "Tecnico 4",
+        },
+        {
+          id: "VF-1035",
+          cliente: "Cliente 5",
+          posicion: "Posicion 5",
+          fechaInicio: "2021-01-05",
+          fechaFin: "2021-01-05",
+          fechaCreacion: "2021-01-05",
+          descripcion: "Descripcion 5",
+          estado: "en_progreso",
+          tecnico: "Tecnico 5",
+        },
+      ],
+      fechaCreacion: "2021-01-02",
+    },
+    {
+      id: "3",
+      nombre: "Grupo 3",
+      ordenes: [
+        {
+          id: "MN-1033",
+          cliente: "Cliente 6",
+          posicion: "Posicion 6",
+          fechaInicio: "2021-01-06",
+          fechaFin: "2021-01-06",
+          fechaCreacion: "2021-01-06",
+          descripcion: "Descripcion 6",
+          estado: "completado",
+          tecnico: "Tecnico 6",
+        },
+      ],
+      fechaCreacion: "2021-01-03",
+    },
+  ]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [hiddenGroups, setHiddenGroups] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    const savedGroups = localStorage.getItem("orderGroups");
-    if (savedGroups) {
-      try {
-        const parsedGroups = JSON.parse(savedGroups);
-        setGroups(parsedGroups);
-      } catch (error) {
-        console.error("Error parsing groups from localStorage:", error);
-        setGroups([]);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const savedGroups = localStorage.getItem("orderGroups");
-      if (savedGroups) {
-        try {
-          const parsedGroups = JSON.parse(savedGroups);
-          setGroups(parsedGroups);
-        } catch (error) {
-          console.error("Error parsing groups from localStorage:", error);
-        }
-      }
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
 
   const toggleGroup = (groupId: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -81,12 +150,6 @@ function RouteComponent() {
       newHidden.add(groupId);
     }
     setHiddenGroups(newHidden);
-  };
-
-  const deleteGroup = (groupId: string) => {
-    const updatedGroups = groups.filter((group) => group.id !== groupId);
-    setGroups(updatedGroups);
-    localStorage.setItem("orderGroups", JSON.stringify(updatedGroups));
   };
 
   const getStatusColor = (status: string) => {
@@ -129,12 +192,7 @@ function RouteComponent() {
               >
                 <div className="border-b border-gray-200 bg-gray-50 p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <h2 className="text-lg font-semibold text-gray-900">
-                        {group.nombre}
-                      </h2>
-                    </div>
-                    <div className="flex items-center space-x-4">
+                    <div className="flex w-full items-center justify-between space-x-4">
                       <div className="text-sm text-gray-600">
                         <span className="font-medium">ID:</span> {group.id} |
                         <span className="ml-1 font-medium">
@@ -148,7 +206,7 @@ function RouteComponent() {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => toggleHideOrders(group.id)}
-                          className="flex items-center rounded-md px-3 py-1 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
+                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
                           title={
                             hiddenGroups.has(group.id)
                               ? "Mostrar órdenes"
@@ -159,11 +217,18 @@ function RouteComponent() {
                           {hiddenGroups.has(group.id) ? "Mostrar" : "Ocultar"}
                         </button>
                         <button
-                          onClick={() => deleteGroup(group.id)}
-                          className="flex items-center rounded-md px-3 py-1 text-sm text-red-600 transition-colors hover:bg-red-50 hover:text-red-800"
+                          onClick={() => {}}
+                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm text-green-600 transition-colors hover:bg-green-50 hover:text-green-800"
+                        >
+                          <CheckIcon className="mr-1 h-4 w-4" />
+                          Aprobar
+                        </button>
+                        <button
+                          onClick={() => {}}
+                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm text-red-600 transition-colors hover:bg-red-50 hover:text-red-800"
                         >
                           <TrashIcon className="mr-1 h-4 w-4" />
-                          Eliminar
+                          Desintegrar
                         </button>
                       </div>
                     </div>

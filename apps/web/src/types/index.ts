@@ -2,6 +2,8 @@
 
 export type TableType = "ciudades" | "departamentos" | "paises";
 export type ClientesTableType = "clientes" | "puestos" | "segmentacion" | "sub-segmentacion";
+export type ExportacionesBaseFacturacionTableType = "Consolidación" | "Archivo de interfaz" | "Anexo de facturación";
+export type TabsExportaciones = "Generar" | "Archivos generados";
 
 export interface TipoNovedad {
   idTipoNovedad: number;
