@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, MaxLength, Min, IsDateString, IsDate } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, MaxLength, Min, IsDateString, IsDate, MinLength } from "class-validator";
 
 export class CreatePersonalDto {
     
@@ -56,6 +56,11 @@ export class CreatePersonalDto {
     @IsDate()
     fechaNacimiento: Date;
     
+    @ApiProperty({ description: 'Fecha actual', example: '15/01/1995', required:true})
+    @Transform(({ value }) => new Date(value))
+    @IsDate()
+    fechaActual: Date;
+    
     @ApiProperty({ description: 'Dirección de residencia del personal', example: 'Calle 1 # 2 - 3', required:true})
     @IsString({ message: 'El campo direccion residencia debe ser un string'})
     @IsNotEmpty({ message: 'El campo direccion residencia no puede estar vacío' })
@@ -65,7 +70,8 @@ export class CreatePersonalDto {
     @ApiProperty({ description: 'Telefono del personal', example: '3014445566', required:true})
     @IsString({ message: 'El campo telefono debe ser un string'})
     @IsNotEmpty({ message: 'El campo telefono no puede estar vacío' })
-    @MaxLength(50, { message: 'El campo telefono no puede exceder los 50 caracteres' })
+    @MaxLength(10, { message: 'El campo telefono no puede exceder los 10 caracteres' })
+    @MinLength(10, { message: 'El campo telefono debe tener 10 caracteres' })
     telefono: string;
     
     @ApiProperty({ description: 'El personal posee Arma?', example: false, required:true})
@@ -89,5 +95,11 @@ export class CreatePersonalDto {
     @IsPositive({message: 'El valor del tipo personal debe ser un numero positivo'})
     @Min(1, {message: 'El valor del tipo personal debe ser minimo 1'})
     idTipoPersonal: number;   
+    
+    @ApiProperty({ description: 'Id del tipo de contrato', example: 1, required:true})
+    @IsNumber({}, {message: 'El valor del campo tipo contrato debe ser un número'})
+    @IsPositive({message: 'El valor del tipo contrato debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del tipo contrato debe ser minimo 1'})
+    idTipoContrato: number;   
     
 }

@@ -21,7 +21,7 @@ export class Departamento {
 
     @Column({
         type: 'varchar',
-        length: 45,
+        length: 2,
         name: 'codigoDepartamento',
         unique: false
     })

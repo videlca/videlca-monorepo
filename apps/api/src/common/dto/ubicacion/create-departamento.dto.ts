@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNumber, IsNotEmpty, IsPositive, IsString, Min } from "class-validator";
+import { IsNumber, IsNotEmpty, IsPositive, IsString, Min, MaxLength, MinLength, Matches } from "class-validator";
 
 export class CreateDepartamentoDto {
     
@@ -14,9 +14,14 @@ export class CreateDepartamentoDto {
     @Min(1, {message: 'El valor del campo pais debe ser minimo 1'})
     pais: number;
     
-    @ApiProperty({ description: 'Código del departamento', example: 'A321', required:true})
+    @ApiProperty({ description: 'Código del departamento', example: '05', required:true})
     @IsString({message: 'El campo codigo departamento debe ser un string'})
+    @Matches(/^[0-9]+$/, {
+        message: 'El código departamento debe contener solo números',
+    })
     @IsNotEmpty({ message: 'El campo codigo departamento no puede estar vacío'})
+    @MaxLength(2, {message: 'El campo codigo departamento solo puede tener 2 caracteres'})
+    @MinLength(2, {message: 'El campo codigo departamento solo puede tener 2 caracteres'})
     codigoDepartamento: string;
 
 }

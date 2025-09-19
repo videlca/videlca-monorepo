@@ -123,6 +123,7 @@ export const initialData: SeedData = {
         {descripcion: 'tarifas', nombre: 'Tarifas'},
         {descripcion: 'servicios', nombre: 'Servicios'},
         {descripcion: 'ordenes-servicio', nombre: 'Ordenes Servicio'},
+        {descripcion: 'programaciones', nombre: 'Programacion Personal'},
         {descripcion: 'liquidaciones', nombre: 'Liquidaciones'},
         {descripcion: 'aprobacion-liquidaciones-ordenes', nombre: 'Aprobacion Liquidacion Ordenes Servicio'},
         {descripcion: 'reportes', nombre: 'Reportes'},

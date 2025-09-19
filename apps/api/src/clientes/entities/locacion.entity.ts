@@ -72,7 +72,7 @@ export class Locacion {
     @Column({
         type: 'varchar',
         name: 'telefono',
-        length: 50,
+        length: 10,
     })
     telefono: string;
 
@@ -80,7 +80,7 @@ export class Locacion {
     @Column({
         type: 'varchar',
         name: 'segundoTelefono',
-        length: 50,
+        length: 10,
         nullable: true
     })
     segundoTelefono: string;

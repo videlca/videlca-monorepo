@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsPositive, IsString, IsBoolean, IsOptional, Min, MaxLength } from "class-validator";
+import { IsNotEmpty, IsNumber, IsPositive, IsString, Min, MaxLength, MinLength, Matches } from "class-validator";
 
 export class CreateCiudadDto {
     
@@ -16,7 +16,12 @@ export class CreateCiudadDto {
 
     @ApiProperty({ description: 'Identificador de la ciudad', example: 'A123', required:true})
     @IsString({message: 'El campo codigo ciudad debe ser un string'})
+    @Matches(/^[0-9]+$/, {
+        message: 'El código de ciudad debe contener solo números',
+    })
     @IsNotEmpty({ message: 'El campo codigo ciudad no puede estar vacío'})
+    @MaxLength(5, {message: 'El campo codigo ciudad solo puede tener 5 caracteres'})
+    @MinLength(5, {message: 'El campo codigo ciudad solo puede tener 5 caracteres'})
     codigoCiudad: string;
 
 }

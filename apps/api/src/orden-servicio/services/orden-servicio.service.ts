@@ -881,11 +881,11 @@ export class OrdenServicioService {
       const horaFinEmpleado = this.parseHour(emp.horaFin);
       const duracionEmp = this.getDuration(horaInicioEmpleado, horaFinEmpleado);
 
-      if (horaInicioEmpleado == horaFinEmpleado){
-        throw new BadRequestException(`Hora inicio y fin de un empleado no puede ser la misma`);
-      }
-
       if (duracionServicio < 24){
+
+        if (horaInicioEmpleado == horaFinEmpleado){
+          throw new BadRequestException(`Hora inicio y fin de un empleado no puede ser la misma`);
+        }
 
         // Validar que horario sea durante las horas del dia: hora inicio mayor a hora fin
         if(horaInicio < horaFin){
@@ -987,7 +987,11 @@ export class OrdenServicioService {
       ])
       .from(ProgramacionPersonal, "pp")
       .innerJoin(OrdenServicioTarifa, "ost", "pp.idOrdenServicioTarifa = ost.idOrdenServicioTarifa")
-      .innerJoin(OrdenServicio, "os", "ost.idOrdenServicio = os.idOrdenServicio");
+      .innerJoin(OrdenServicio, "os", "ost.idOrdenServicio = os.idOrdenServicio")
+      .innerJoin(EstadoOrdenEntity, "eos", "os.idEstadoOrdenServicio = eos.idEstadoOrdenServicio")
+      .where("eos.nombre NOT IN (:...estadosIgnorados)", { 
+        estadosIgnorados: [EstadoOrdenServicio.CANCELADA, EstadoOrdenServicio.ANULADA, EstadoOrdenServicio.TERMINADO] 
+      });
 
     if (fechaFin) {
       // Overlap entre [fechaInicio, fechaFin] y [os.fechaInicio, os.fechaFin (o +∞)]
@@ -1385,25 +1389,46 @@ export class OrdenServicioService {
 
   // ELIMINAR ORDEN DE LA BD
   async removeOrdenServicio(id: number) {
-    
-    const ordenServicio = await this.findOne(id);
-    
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+  
     try {
-
-      await this.ordenServicioRepository.remove(ordenServicio);
-      
-    } catch (error) {
-      
-      this.logger.error(error);
-
-      if(error.errno == 1451){
-        throw new BadRequestException(`La orden de servicio ${ordenServicio.ordenServicioId.descripcionId} no se puede eliminar debido a que se esta usando en el sistema`); 
+      // 🔥 Traer orden con su OrdenServicioId
+      const ordenServicio = await this.ordenServicioRepository.findOne({
+        where: { idOrdenServicio: id },
+        relations: ['ordenServicioId'],
+      });
+  
+      if (!ordenServicio) {
+        throw new NotFoundException(`Orden de servicio ${id} no encontrada`);
       }
-        
-      throw new InternalServerErrorException(`Unexpected error, check server logs`);
-
+  
+      // 🔥 Primero eliminamos la OrdenServicio
+      await queryRunner.manager.remove(ordenServicio);
+  
+      // 🔥 Luego eliminamos el ID asociado
+      if (ordenServicio.ordenServicioId) {
+        await queryRunner.manager.remove(ordenServicio.ordenServicioId);
+      }
+  
+      await queryRunner.commitTransaction();
+      return { message: `Orden de servicio ${id} eliminada correctamente` };
+  
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error(error);
+  
+      if (error.errno == 1451) {
+        throw new BadRequestException(
+          `La orden de servicio no se puede eliminar porque está siendo usada en el sistema`,
+        );
+      }
+  
+      throw new InternalServerErrorException(`Error eliminando la orden`);
+    } finally {
+      await queryRunner.release();
     }
-
   }
 
   // async anularId(anularIdDto: AnularIdOrdenServicioDto){

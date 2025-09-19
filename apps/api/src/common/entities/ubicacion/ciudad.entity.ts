@@ -22,7 +22,7 @@ export class Ciudad {
     
     @Column({
         type: 'varchar',
-        length: 45,
+        length: 5,
         name: 'codigoCiudad',
         unique: false
     })

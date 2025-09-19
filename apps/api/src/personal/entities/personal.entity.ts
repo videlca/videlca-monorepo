@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMan
 import { TipoIdentificacion, Ciudad } from "../../common/entities";
 import { Novedad } from "../../novedad/entities";
 import { ProgramacionPersonal } from "../../orden-servicio/entities/programacion-personal.entity";
-import { TipoPersonal, TipoGenero } from "../entities";
+import { TipoPersonal, TipoGenero, TipoContrato } from "../entities";
 
 @Entity({name: 'personal'})
 export class Personal {
@@ -94,7 +94,7 @@ export class Personal {
     @Column({
         type: 'varchar',
         name: 'telefono',
-        length: 50,
+        length: 10,
     })
     telefono: string;
     
@@ -132,6 +132,15 @@ export class Personal {
     )
     @JoinColumn({name: 'idTipoPersonal'})
     idTipoPersonal: TipoPersonal;
+    
+    // Tipo contrato -> relacion tabla menor (listo)
+    @ManyToOne(
+        () => TipoContrato,
+        (tipoContrato) => tipoContrato.personal,
+        {eager: true}
+    )
+    @JoinColumn({name: 'idTipoContrato'})
+    idTipoContrato: TipoContrato;
 
     // estado -> para ver si el user esta activo o no
     @Column({
