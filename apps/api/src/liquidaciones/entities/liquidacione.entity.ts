@@ -47,6 +47,9 @@ export class Liquidacione {
   @Column({ name: 'idGrupoLiquidacion', type: 'int' })
   idGrupoLiquidacion: number;
 
+  @Column({ type: 'boolean', default: false })
+  estado: boolean;
+
   @ManyToOne(
     () => GrupoLiquidacion,
     (grupo) => grupo.liquidaciones,

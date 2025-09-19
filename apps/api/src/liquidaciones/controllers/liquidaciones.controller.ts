@@ -2,16 +2,12 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
-  Delete,
   Body,
   Param,
   Query,
   ParseIntPipe,
   DefaultValuePipe,
-  HttpCode,
   BadRequestException,
-  ParseBoolPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
@@ -19,9 +15,6 @@ import { AppAuth } from '../../auth/decorators';
 import { DescriptionRoutes } from '../../auth/interfaces';
 
 import { LiquidacionesService } from '../services/liquidaciones.service';
-import { UpdateLiquidacioneDto } from '../dto/update-liquidacione.dto';
-import { CreateLiquidacioneDto } from '../dto/create-liquidacione.dto'
-import { OrdenBody } from '../dto/orden-body.dto';
 //import { GrupoLiquidacionesService } from '../services/grupoLiquidaciones.service';
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
 
@@ -63,6 +56,12 @@ export class LiquidacionesController {
   }
 
 
+  @Post(':id/liquidarGrupo')
+async confirmar(@Param('id', ParseIntPipe) id: number) {
+  return this.service.liquidarGrupo(id);
+}
+
+
   @Get()
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
@@ -74,22 +73,6 @@ export class LiquidacionesController {
   ) {
     const oid = ordenId ? Number(ordenId) : undefined;
     return this.service.findAll({ page, limit, ordenId: oid });
-  }
-
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateLiquidacioneDto) {
-    return this.service.update(id, dto);
-  }
-
-  @Delete(':id')
-  @HttpCode(204)
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    await this.service.remove(id);
   }
 
 
