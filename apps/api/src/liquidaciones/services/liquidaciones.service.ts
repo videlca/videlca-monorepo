@@ -1,4 +1,3 @@
-
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, EntityManager, } from 'typeorm';
@@ -11,9 +10,12 @@ import {
   maxDate,
   diffDaysInclusive,
   round2,
+  fmtYMD,
 } from '../../common/utils/date-helpers';
 import { GrupoLiquidacion } from '../entities/grupo_liquidaciones.entity';
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
+import { PrecioOrdenDto } from 'src/orden-servicio/dto';
+import { OrdenServicioService } from 'src/orden-servicio/services';
 
 @Injectable()
 export class LiquidacionesService {
@@ -23,7 +25,9 @@ export class LiquidacionesService {
     private readonly repo: Repository<Liquidacione>,
     @InjectRepository(OrdenServicio) private readonly ordenRepo: Repository<OrdenServicio>,
     @InjectRepository(GrupoLiquidacion)
-    private readonly grupoLiquidacionrepo: Repository<GrupoLiquidacion>
+    private readonly grupoLiquidacionrepo: Repository<GrupoLiquidacion>,
+
+    private ordenServicioService: OrdenServicioService,
   ) { }
 
   async findAll(params?: { page?: number; limit?: number; ordenId?: number }) {
@@ -129,6 +133,7 @@ export class LiquidacionesService {
           .select('COALESCE(SUM(l.valor_liquidacion),0)', 'sum')
           .where('l.idGrupoLiquidacion = :id', { id: grupo.idGrupoLiquidacion })
           .getRawOne<{ sum: string }>();
+        console.log("sum: ", sum);
 
         grupo.total = Number(sum ?? 0);
         grupo.descripcion = `liquidacion_${mes}_${anio}_${grupo.idGrupoLiquidacion}`
@@ -152,53 +157,121 @@ export class LiquidacionesService {
     anio: number,
     mes1a12: number,
     idGrupoLiquidacion: number,
-  ): Promise<Liquidacione> {
+  ) {
     // 1) trae orden con manager
     const ordenRepo = manager.getRepository(OrdenServicio);
     const liqRepo = manager.getRepository(Liquidacione);
 
-    const orden = await ordenRepo
-      .createQueryBuilder('os')
-      .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
+    const orden = await this.ordenRepo
+    .createQueryBuilder('os')
+    .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
       .where('os.idOrdenServicio = :id', { id: ordenId })
       .andWhere('estado.nombre <> :estado', { estado: 'ANULADA' })
-      .getOne();
+    .leftJoinAndSelect('os.tarifas', 'ost')
+    .leftJoinAndSelect('ost.idTarifa', 't') 
+    .leftJoinAndSelect('t.idTipoTarifa', 'tt')
+    .leftJoinAndSelect('t.idServicio', 's')
+    .leftJoinAndSelect('t.idPeriodo', 'p')
+    .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
+    .andWhere('t.estado = 1')
+    .andWhere('(p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin))')
+    .orderBy('ost.idOrdenServicioTarifa', 'ASC')
+    .distinct(true)
+    .getOne()
+
 
 
     if (!orden) throw new BadRequestException('Orden no encontrada');
 
-    const total = Number(orden.precioTotal ?? 0);
-    if (!isFinite(total) || total <= 0) throw new BadRequestException('PrecioTotal inválido');
+    
+    if (orden.fechaFin !== null) {
+      const total = Number(orden.precioTotal ?? 0);
+      const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
+      const start = toUTCDateOnly(orden.fechaInicio);
+      const end = orden.fechaFin ? toUTCDateOnly(orden.fechaFin) : null;
+      const mesFin = endOfMonth(mesIni);
+      const desde = maxDate(start, mesIni);
+      const hasta = end ? minDate(end, mesFin) : mesFin;
+      if (!isFinite(total) || total <= 0) throw new BadRequestException('PrecioTotal inválido');
 
-    // 2) calcula monto (usa tus helpers reales)
-    const start = toUTCDateOnly(orden.fechaInicio);
-    const end = orden.fechaFin ? toUTCDateOnly(orden.fechaFin) : null;
+      // 2) calcula monto (usa tus helpers reales)
 
-    const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
-    const mesFin = endOfMonth(mesIni);
-    const desde = maxDate(start, mesIni);
-    const hasta = end ? minDate(end, mesFin) : mesFin;
-    if (hasta < desde) throw new BadRequestException('La orden no tiene días en el mes solicitado');
+      if (hasta < desde) throw new BadRequestException('La orden no tiene días en el mes solicitado');
 
-    const totalDiasOrden = end ? diffDaysInclusive(start, end) : diffDaysInclusive(start, hasta);
-    const diasEnEsteMes = diffDaysInclusive(desde, hasta);
+      const totalDiasOrden = end ? diffDaysInclusive(start, end) : diffDaysInclusive(start, hasta);
+      const diasEnEsteMes = diffDaysInclusive(desde, hasta);
 
-    const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
-    const endSameMonth = end ? (end.getUTCFullYear() === anio && end.getUTCMonth() === (mes1a12 - 1)) : false;
-    const ordenCompletaDentroDelMes = startSameMonth && endSameMonth;
+      const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
+      const endSameMonth = end ? (end.getUTCFullYear() === anio && end.getUTCMonth() === (mes1a12 - 1)) : false;
+      const ordenCompletaDentroDelMes = startSameMonth && endSameMonth;
 
-    const monto = ordenCompletaDentroDelMes
-      ? round2(total)
-      : round2((total * diasEnEsteMes) / totalDiasOrden);
+      const monto = ordenCompletaDentroDelMes
+        ? round2(total)
+        : round2((total * diasEnEsteMes) / totalDiasOrden);
 
-    // 3) inserta liquidación con FK del grupo
-    const entity = liqRepo.create({
-      idOrdenServicio: orden.idOrdenServicio,
-      idGrupoLiquidacion,
-      valor_liquidacion: monto,
-    });
-    return liqRepo.save(entity);
+      // 3) inserta liquidación con FK del grupo
+      const entity = liqRepo.create({
+        idOrdenServicio: orden.idOrdenServicio,
+        idGrupoLiquidacion,
+        valor_liquidacion: monto,
+      });
+      return liqRepo.save(entity);
+    } else if (orden.fechaFin === null) {
+      const start = toUTCDateOnly(orden.fechaInicio);
+      const end = null; // indefinida
+
+      const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
+      const mesFin = endOfMonth(mesIni);
+
+      // Validación de solapamiento con el mes
+      if (mesFin < start) throw new BadRequestException('La orden no tiene días en el mes solicitado');
+
+      const desde = maxDate(start, mesIni);
+      const hasta = mesFin;
+
+      const totalDiasOrden = diffDaysInclusive(start, hasta);
+      const diasEnEsteMes = diffDaysInclusive(desde, hasta);
+
+      const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
+      const ordenCompletaDentroDelMes = startSameMonth;
+      //lógica de orden indefinida.
+      let totalTarifas = 0;
+      console.log("orden.tarifas: ", orden.tarifas);
+      for (const tarifa of orden.tarifas ?? []) {
+        console.log("tarifa:", tarifa.precio);
+        const precioOrden: PrecioOrdenDto = {
+          idTarifa: tarifa.idTarifa.idTarifa,
+          horaInicio: tarifa.horaInicio,
+          horaFin: tarifa.horaFin,
+          fechaInicio: desde,
+          fechaFin: hasta,
+        };
+
+        const precioTarifa = (await this.ordenServicioService.obtenerPrecio(precioOrden)).precio;
+        console.log("precioTarifa: ", precioTarifa);
+        totalTarifas += +precioTarifa;
+      }
+      console.log("totalTarifas: ", totalTarifas);
+
+      // if (!totalTarifas || totalTarifas <= 0) throw new Error('Precio de tarifas inválido');
+
+
+      const monto = ordenCompletaDentroDelMes
+        ? round2(totalTarifas)
+        : round2((totalTarifas * diasEnEsteMes) / totalDiasOrden);
+
+      const entity = this.repo.create({
+        valor_liquidacion: monto,
+        ordenServicio: { idOrdenServicio: orden.idOrdenServicio } as any,
+        idGrupoLiquidacion,
+      });
+
+      return this.repo.save(entity);
+
+    }
+
   }
+
 
   async findByCreacionMes(anio: number, mes1a12: number) {
     if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
@@ -224,6 +297,8 @@ export class LiquidacionesService {
         'p',
         'p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin)',
       )
+      .leftJoinAndSelect('os.idLocacion', 'l')
+      .leftJoinAndSelect('l.idCliente', 'c')
       .leftJoinAndSelect('t.idTipoTarifa', 'tt')
       .leftJoinAndSelect('t.idServicio', 's')
       .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
@@ -314,11 +389,11 @@ export class LiquidacionesService {
   }
 
   async findGruposPorCampoEstado(campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo', valor: boolean) {
-  return this.grupoLiquidacionrepo
-    .createQueryBuilder('grupo')
-    .where(`grupo.${campo} = :valor`, { valor })
-    .orderBy('grupo.idGrupoLiquidacion', 'DESC')
-    .getMany();
-}
+    return this.grupoLiquidacionrepo
+      .createQueryBuilder('grupo')
+      .where(`grupo.${campo} = :valor`, { valor })
+      .orderBy('grupo.idGrupoLiquidacion', 'DESC')
+      .getMany();
+  }
 
 }
