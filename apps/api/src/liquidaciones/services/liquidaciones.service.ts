@@ -313,4 +313,12 @@ export class LiquidacionesService {
     };
   }
 
+  async findGruposPorCampoEstado(campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo', valor: boolean) {
+  return this.grupoLiquidacionrepo
+    .createQueryBuilder('grupo')
+    .where(`grupo.${campo} = :valor`, { valor })
+    .orderBy('grupo.idGrupoLiquidacion', 'DESC')
+    .getMany();
+}
+
 }
