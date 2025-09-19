@@ -97,7 +97,7 @@ export class LiquidacionesService {
         const lRepo = tm.getRepository(Liquidacione);
 
         // 1) Crear grupo
-        const grupo = await gRepo.save(gRepo.create({ estado: true, total: 0 }));
+        const grupo = await gRepo.save(gRepo.create({ estado: false, total: 0 }));
 
         // 2) Bloquear el grupo para este batch (evita que otro hilo lo toque)
         await tm
@@ -130,6 +130,7 @@ export class LiquidacionesService {
           .getRawOne<{ sum: string }>();
 
         grupo.total = Number(sum ?? 0);
+        grupo.descripcion = `liquidacion_${mes}_${anio}_${grupo.idGrupoLiquidacion}`
         await gRepo.save(grupo);
 
         return {
