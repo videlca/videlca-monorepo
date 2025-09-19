@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Query,
@@ -17,6 +18,7 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { LiquidacionesService } from '../services/liquidaciones.service';
 //import { GrupoLiquidacionesService } from '../services/grupoLiquidaciones.service';
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
+import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 
 @ApiTags('liquidaciones')
 @Controller('liquidaciones')
@@ -60,6 +62,14 @@ export class LiquidacionesController {
 async confirmar(@Param('id', ParseIntPipe) id: number) {
   return this.service.liquidarGrupo(id);
 }
+
+@Patch(':id/cambiar-estado')
+  async actualizarCampoEstado(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateGrupoLiquidacionEstadoDto,
+  ) {
+    return this.service.actualizarCampoGrupoEstado(id, dto);
+  }
 
 
   @Get()

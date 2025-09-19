@@ -13,6 +13,7 @@ import {
   round2,
 } from '../../common/utils/date-helpers';
 import { GrupoLiquidacion } from '../entities/grupo_liquidaciones.entity';
+import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 
 @Injectable()
 export class LiquidacionesService {
@@ -292,6 +293,24 @@ export class LiquidacionesService {
         };
       })
     );
+  }
+
+  async actualizarCampoGrupoEstado(id: number, dto: UpdateGrupoLiquidacionEstadoDto) {
+    const grupo = await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: id },
+    });
+
+    if (!grupo) throw new NotFoundException('Grupo de liquidación no encontrado');
+
+    grupo[dto.campo] = dto.valor;
+    await this.grupoLiquidacionrepo.save(grupo);
+
+    return {
+      ok: true,
+      grupoId: id,
+      campoActualizado: dto.campo,
+      nuevoValor: dto.valor,
+    };
   }
 
 }
