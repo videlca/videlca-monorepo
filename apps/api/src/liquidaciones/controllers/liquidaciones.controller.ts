@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Query,
@@ -17,6 +18,8 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { LiquidacionesService } from '../services/liquidaciones.service';
 //import { GrupoLiquidacionesService } from '../services/grupoLiquidaciones.service';
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
+import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
+import { FiltroGrupoLiquidacionDto } from '../dto/filtroGrupoLiquidacion.dto';
 
 @ApiTags('liquidaciones')
 @Controller('liquidaciones')
@@ -24,7 +27,7 @@ import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
 export class LiquidacionesController {
   constructor(
     private readonly service: LiquidacionesService,
-//    private readonly groupService: GrupoLiquidacionesService
+    //    private readonly groupService: GrupoLiquidacionesService
   ) { }
 
   @Post('grupo/generar-mes')
@@ -32,7 +35,7 @@ export class LiquidacionesController {
     return this.service.generarGrupoMensual(dto);
   }
 
-  
+
   @Get('ordenes-por-mes')
   async findByMes(
     @Query('anio') anio: string,
@@ -48,7 +51,7 @@ export class LiquidacionesController {
     return this.service.findByCreacionMes(anioNum, mesNum);
   }
 
-    @Get('/by-estado')
+  @Get('/by-estado')
   async listByEstado(
     @Query('estado') estado: boolean,
   ) {
@@ -56,10 +59,23 @@ export class LiquidacionesController {
   }
 
 
-  @Post(':id/liquidarGrupo')
-async confirmar(@Param('id', ParseIntPipe) id: number) {
-  return this.service.liquidarGrupo(id);
-}
+  @Post(':id/liquidar-grupo')
+  async confirmar(@Param('id', ParseIntPipe) id: number) {
+    return this.service.liquidarGrupo(id);
+  }
+
+  @Patch(':id/cambiar-estado')
+  async actualizarCampoEstado(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateGrupoLiquidacionEstadoDto,
+  ) {
+    return this.service.actualizarCampoGrupoEstado(id, dto);
+  }
+
+  @Get('buscar-por-campo')
+  async buscarPorCampoEstado(@Query() filtro: FiltroGrupoLiquidacionDto) {
+    return this.service.findGruposPorCampoEstado(filtro.campo, filtro.valor);
+  }
 
 
   @Get()
@@ -77,5 +93,5 @@ async confirmar(@Param('id', ParseIntPipe) id: number) {
 
 
 
-    
+
 }
