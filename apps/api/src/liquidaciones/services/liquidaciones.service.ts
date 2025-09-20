@@ -90,11 +90,11 @@ export class LiquidacionesService {
     }
 
     const today = new Date();
-    //if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
-      //throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
+      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    //if (today.getMonth() + 1 === mes && today.getDate() < 20)
-      //throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
+    if (today.getMonth() + 1 === mes && today.getDate() < 20)
+      throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
 
     return this.withRetry(() =>
       this.ds.transaction('READ COMMITTED', async (tm) => {
@@ -262,14 +262,6 @@ export class LiquidacionesService {
         idGrupoLiquidacion,
         aniomes_liquidacion: `${anio}${mes1a12}`,
       });
-
-      console.log('✅ Liquidación creada para orden indefinida:', {
-        ordenId: orden.idOrdenServicio,
-        monto,
-        diasEnEsteMes,
-        totalTarifas
-      });
-
       return this.withRetry(() => liqRepo.save(entity));
 
     }
