@@ -59,9 +59,9 @@ export class Liquidacione {
   grupo: GrupoLiquidacion;
 
     @Column({
-    name: 'mes_liquidacion',
-    type: 'int',
+    name: 'aniomes_liquidacion',
+    type: 'varchar',
     nullable: false
   })
-  mes_liquidacion: number;
+  aniomes_liquidacion: string;
 }

@@ -62,6 +62,7 @@ export class LiquidacionesService {
     return { items, total, page, limit: take };
   }
 
+  // --- RETRY helper para 1205/1213 ---
   private async withRetry<T>(fn: () => Promise<T>, max = 2): Promise<T> {
     let last: any;
     for (let i = 0; i <= max; i++) {
@@ -89,11 +90,11 @@ export class LiquidacionesService {
     }
 
     const today = new Date();
-    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
-      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+    //if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
+      //throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    if (today.getMonth() + 1 === mes && today.getDate() < 20)
-      throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
+    //if (today.getMonth() + 1 === mes && today.getDate() < 20)
+      //throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
 
     return this.withRetry(() =>
       this.ds.transaction('READ COMMITTED', async (tm) => {
@@ -212,7 +213,7 @@ export class LiquidacionesService {
         idOrdenServicio: orden.idOrdenServicio,
         idGrupoLiquidacion,
         valor_liquidacion: monto,
-        mes_liquidacion: mes1a12,
+        aniomes_liquidacion: `${anio}${mes1a12}`,
       });
       return this.withRetry(() => liqRepo.save(entity));
     } else if (!orden.fechaFin) {
@@ -259,7 +260,14 @@ export class LiquidacionesService {
         valor_liquidacion: monto,
         ordenServicio: { idOrdenServicio: orden.idOrdenServicio } as any,
         idGrupoLiquidacion,
-        mes_liquidacion: mes1a12,
+        aniomes_liquidacion: `${anio}${mes1a12}`,
+      });
+
+      console.log('✅ Liquidación creada para orden indefinida:', {
+        ordenId: orden.idOrdenServicio,
+        monto,
+        diasEnEsteMes,
+        totalTarifas
       });
 
       return this.withRetry(() => liqRepo.save(entity));
@@ -301,9 +309,9 @@ async findByCreacionMes(anio: number, mes1a12: number) {
 
     .leftJoin('liquidaciones', 'liq', `
       liq.idOrdenServicio = os.idOrdenServicio AND
-      liq.mes_liquidacion = :mes
+      liq.aniomes_liquidacion = :aniomes
     `, {
-      mes: mes1a12,
+      aniomes: `${anio}${mes1a12}`,
     })
     .andWhere('liq.idLiquidacion IS NULL')
     .orderBy('os.idOrdenServicio', 'ASC')
