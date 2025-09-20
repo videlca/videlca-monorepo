@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { CheckIcon, PlusIcon, Search } from "lucide-react";
+import { CheckIcon, FileTextIcon, PlusIcon, Search } from "lucide-react";
 import { getYear, subYears } from "date-fns";
 import { InputSelect } from "../../../components/common/InputSelect";
 import {
@@ -11,6 +11,7 @@ import {
 } from "../../../api/queryFunctions/liquidaciones";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { toast } from "sonner";
+import { getStatusColor } from "../../../utils/StatusColor";
 
 export const Route = createFileRoute("/dashboard/liquidaciones/")({
   component: RouteComponent,
@@ -39,7 +40,6 @@ const yearsOptions = Array.from({ length: 10 }, (_, i) => {
 function RouteComponent() {
   const [searchMonth, setSearchMonth] = useState<string>("");
   const [searchYear, setSearchYear] = useState<string>("");
-  // const [groupName, setGroupName] = useState<string>("");
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
 
@@ -77,19 +77,6 @@ function RouteComponent() {
         },
       },
     );
-  };
-
-  const getStatusColor = (estado: string) => {
-    switch (estado) {
-      case "completado":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "en_progreso":
-        return "bg-blue-100 text-blue-800 border-blue-200";
-      case "pendiente":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
   };
 
   return (
@@ -144,6 +131,17 @@ function RouteComponent() {
         </div>
       </div>
 
+      {liquidaciones?.data?.length === 0 && (
+        <div className="py-12 text-center">
+          <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
+            <FileTextIcon className="h-12 w-12 text-gray-400" />
+          </div>
+          <h3 className="mb-2 text-lg font-medium text-gray-900">
+            No se encontraron órdenes de servicio
+          </h3>
+        </div>
+      )}
+
       {liquidaciones?.data?.length && liquidaciones?.data?.length > 0 ? (
         <div className="space-y-4 rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
           <div className="mb-8 flex justify-between">
@@ -186,7 +184,7 @@ function RouteComponent() {
             </div>
           </div>
 
-          <div className="mb-6 grid grid-cols-1">
+          <div className="mb-6 grid grid-cols-1 gap-2">
             {liquidaciones?.data?.map((order, index) => (
               <div
                 key={index}
@@ -204,7 +202,7 @@ function RouteComponent() {
                     ]);
                   }
                 }}
-                className={`cursor-pointer rounded-lg border p-4 transition-all hover:shadow-md ${
+                className={`cursor-pointer rounded-lg border px-4 py-2 transition-all hover:shadow-md ${
                   selectedOrders.includes(order.idOrdenServicio || 0)
                     ? "border-blue-400 bg-blue-100/40 shadow-sm"
                     : "border-gray-300 bg-white hover:border-gray-500"
@@ -215,29 +213,27 @@ function RouteComponent() {
                     {order.ordenServicioId.descripcionId}
                   </h3>
                   <span
-                    className={`rounded-full border px-2 py-1 text-xs ${getStatusColor(order.idEstadoOrdenServicio?.nombre || "")}`}
+                    className={`rounded-full border px-2 py-1 text-xs capitalize ${getStatusColor(order.idEstadoOrdenServicio?.nombre || "")}`}
                   >
                     {order.idEstadoOrdenServicio?.nombre}
                   </span>
                 </div>
-
-                <div className="grid grid-cols-2 gap-2 space-y-2 text-sm md:grid-cols-3 lg:grid-cols-5">
+                <div className="grid grid-cols-2 gap-2 space-y-2">
                   <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">Cliente:</span>
                     <p className="text-gray-900">
-                      {/* {order.ordenServicioId.descripcionId} */}
-                      Cliente de ejemplo
+                      {order.idLocacion?.idCliente.nombre}
                     </p>
                   </div>
 
                   <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">Puesto:</span>
-                    <p className="text-gray-900">
-                      {/* {order.idLocacion?.nombre} */}
-                      Puesto de ejemplo
+                    <p className="whitespace-nowrap text-gray-900">
+                      {`${order.idLocacion?.nombre} - ${order.idLocacion?.direccion}`}
                     </p>
                   </div>
-
+                </div>
+                <div className="grid grid-cols-2 gap-2 space-y-2 text-sm md:grid-cols-3">
                   <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">
                       Precio Total:
@@ -249,14 +245,12 @@ function RouteComponent() {
 
                   <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">Inicio:</span>
-                    <p className="text-gray-900">
-                      {order?.fechaInicioOrden || ""}
-                    </p>
+                    <p className="text-gray-900">{order?.fechaInicio || ""}</p>
                   </div>
                   <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">Fin:</span>
                     <p className="text-gray-900">
-                      {order?.fechaFinOrden || ""}
+                      {order?.fechaFin || "Indefinida"}
                     </p>
                   </div>
                 </div>

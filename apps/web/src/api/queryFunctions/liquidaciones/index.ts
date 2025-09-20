@@ -8,7 +8,7 @@ import type { OrdenServicio } from "../../types/orden-servicio";
 
 export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<OrdenServicio[]>, Error> => {
   return useQuery({
-    queryKey: ["liquidaciones-por-mes", anio, mes],
+    queryKey: ["liquidaciones-por-mes"],
     queryFn: () => getLiquidacionesPorMes(anio, mes),
     enabled: !!anio && !!mes && enabled,
   });
@@ -17,10 +17,10 @@ export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: bo
 export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<OrdenServicio>, Error, CrearGrupoMensualDto> => {
   return useMutation({
     mutationFn: (data: CrearGrupoMensualDto) => crearLiquidacionMensual(data),
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         toast.success("Liquidación mensual creada correctamente");
-        queryClient.invalidateQueries({ queryKey: ["liquidaciones-por-mes", variables.anio, variables.mes] });
+        queryClient.invalidateQueries({ queryKey: ["liquidaciones-por-mes"] });
       } else {
         throw new Error(data.message || "Error al crear la liquidación mensual");
       }
