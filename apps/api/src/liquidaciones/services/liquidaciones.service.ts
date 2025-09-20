@@ -62,7 +62,6 @@ export class LiquidacionesService {
     return { items, total, page, limit: take };
   }
 
-  // --- RETRY helper para 1205/1213 ---
   private async withRetry<T>(fn: () => Promise<T>, max = 2): Promise<T> {
     let last: any;
     for (let i = 0; i <= max; i++) {
@@ -133,7 +132,6 @@ export class LiquidacionesService {
           .select('COALESCE(SUM(l.valor_liquidacion),0)', 'sum')
           .where('l.idGrupoLiquidacion = :id', { id: grupo.idGrupoLiquidacion })
           .getRawOne<{ sum: string }>();
-        console.log("sum: ", sum);
 
         grupo.total = Number(sum ?? 0);
         grupo.descripcion = `liquidacion_${mes}_${anio}_${grupo.idGrupoLiquidacion}`
@@ -163,27 +161,27 @@ export class LiquidacionesService {
     const liqRepo = manager.getRepository(Liquidacione);
 
     const orden = await this.ordenRepo
-    .createQueryBuilder('os')
-    .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
+      .createQueryBuilder('os')
+      .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
       .where('os.idOrdenServicio = :id', { id: ordenId })
       .andWhere('estado.nombre <> :estado', { estado: 'ANULADA' })
-    .leftJoinAndSelect('os.tarifas', 'ost')
-    .leftJoinAndSelect('ost.idTarifa', 't') 
-    .leftJoinAndSelect('t.idTipoTarifa', 'tt')
-    .leftJoinAndSelect('t.idServicio', 's')
-    .leftJoinAndSelect('t.idPeriodo', 'p')
-    .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
-    .andWhere('t.estado = 1')
-    .andWhere('(p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin))')
-    .orderBy('ost.idOrdenServicioTarifa', 'ASC')
-    .distinct(true)
-    .getOne()
+      .leftJoinAndSelect('os.tarifas', 'ost')
+      .leftJoinAndSelect('ost.idTarifa', 't')
+      .leftJoinAndSelect('t.idTipoTarifa', 'tt')
+      .leftJoinAndSelect('t.idServicio', 's')
+      .leftJoinAndSelect('t.idPeriodo', 'p')
+      .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
+      .andWhere('t.estado = 1')
+      .andWhere('(p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin))')
+      .orderBy('ost.idOrdenServicioTarifa', 'ASC')
+      .distinct(true)
+      .getOne()
 
 
 
     if (!orden) throw new BadRequestException('Orden no encontrada');
 
-    
+
     if (orden.fechaFin !== null) {
       const total = Number(orden.precioTotal ?? 0);
       const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
@@ -214,9 +212,10 @@ export class LiquidacionesService {
         idOrdenServicio: orden.idOrdenServicio,
         idGrupoLiquidacion,
         valor_liquidacion: monto,
+        mes_liquidacion: mes1a12,
       });
-      return liqRepo.save(entity);
-    } else if (orden.fechaFin === null) {
+      return this.withRetry(() => liqRepo.save(entity));
+    } else if (!orden.fechaFin) {
       const start = toUTCDateOnly(orden.fechaInicio);
       const end = null; // indefinida
 
@@ -236,9 +235,7 @@ export class LiquidacionesService {
       const ordenCompletaDentroDelMes = startSameMonth;
       //lógica de orden indefinida.
       let totalTarifas = 0;
-      console.log("orden.tarifas: ", orden.tarifas);
       for (const tarifa of orden.tarifas ?? []) {
-        console.log("tarifa:", tarifa.precio);
         const precioOrden: PrecioOrdenDto = {
           idTarifa: tarifa.idTarifa.idTarifa,
           horaInicio: tarifa.horaInicio,
@@ -248,10 +245,8 @@ export class LiquidacionesService {
         };
 
         const precioTarifa = (await this.ordenServicioService.obtenerPrecio(precioOrden)).precio;
-        console.log("precioTarifa: ", precioTarifa);
         totalTarifas += +precioTarifa;
       }
-      console.log("totalTarifas: ", totalTarifas);
 
       // if (!totalTarifas || totalTarifas <= 0) throw new Error('Precio de tarifas inválido');
 
@@ -264,63 +259,59 @@ export class LiquidacionesService {
         valor_liquidacion: monto,
         ordenServicio: { idOrdenServicio: orden.idOrdenServicio } as any,
         idGrupoLiquidacion,
+        mes_liquidacion: mes1a12,
       });
 
-      return this.repo.save(entity);
+      return this.withRetry(() => liqRepo.save(entity));
 
     }
 
   }
 
 
-  async findByCreacionMes(anio: number, mes1a12: number) {
-    if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
-      throw new BadRequestException('Parámetros inválidos (anio, mes)');
-    }
-
-    // Rango del mes objetivo: [inicioMes, finMes)
-    const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
-    const finMes = new Date(Date.UTC(anio, mes1a12, 1, 0, 0, 0)); // inicio del mes siguiente
-
-    const qb = this.ordenRepo
-      .createQueryBuilder('os')
-      .where('os.fechaInicio < :fin AND (os.fechaFin IS NULL OR os.fechaFin >= :ini)', {
-        ini: inicioMes,
-        fin: finMes,
-      })
-      .andWhere('eos.nombre <> :estado', { estado: 'ANULADA' })
-      .leftJoinAndSelect('os.ordenServicioId', 'osid')
-      .leftJoinAndSelect('os.tarifas', 'ost')
-      .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
-      .leftJoinAndSelect(
-        't.idPeriodo',
-        'p',
-        'p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin)',
-      )
-      .leftJoinAndSelect('os.idLocacion', 'l')
-      .leftJoinAndSelect('l.idCliente', 'c')
-      .leftJoinAndSelect('t.idTipoTarifa', 'tt')
-      .leftJoinAndSelect('t.idServicio', 's')
-      .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
-
-      // ✅ JOIN con liquidaciones en rango de fechas
-      .leftJoin('liquidaciones', 'liq', `
-    liq.idOrdenServicio = os.idOrdenServicio AND
-    liq.fechaCreacion >= :ini AND liq.fechaCreacion < :fin
-  `, {
-        ini: inicioMes,
-        fin: finMes,
-      })
-
-      .andWhere('liq.idLiquidacion IS NULL')
-
-      .orderBy('os.idOrdenServicio', 'ASC')
-      .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
-      .distinct(true);
-
-
-    return qb.getMany(); // <- NO usar getOne()
+async findByCreacionMes(anio: number, mes1a12: number) {
+  if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
+    throw new BadRequestException('Parámetros inválidos (anio, mes)');
   }
+
+  // Rango del mes objetivo: [inicioMes, finMes)
+  const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
+  const finMes = new Date(Date.UTC(anio, mes1a12, 1, 0, 0, 0)); // inicio del mes siguiente
+
+  const qb = this.ordenRepo
+    .createQueryBuilder('os')
+    .where('os.fechaInicio < :fin AND (os.fechaFin IS NULL OR os.fechaFin >= :ini)', {
+      ini: inicioMes,
+      fin: finMes,
+    })
+    .andWhere('eos.nombre <> :estado', { estado: 'ANULADA' })
+    .leftJoinAndSelect('os.ordenServicioId', 'osid')
+    .leftJoinAndSelect('os.tarifas', 'ost')
+    .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
+    .leftJoinAndSelect(
+      't.idPeriodo',
+      'p',
+      'p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin)',
+    )
+    .leftJoinAndSelect('os.idLocacion', 'l')
+    .leftJoinAndSelect('l.idCliente', 'c')
+    .leftJoinAndSelect('t.idTipoTarifa', 'tt')
+    .leftJoinAndSelect('t.idServicio', 's')
+    .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
+
+    .leftJoin('liquidaciones', 'liq', `
+      liq.idOrdenServicio = os.idOrdenServicio AND
+      liq.mes_liquidacion = :mes
+    `, {
+      mes: mes1a12,
+    })
+    .andWhere('liq.idLiquidacion IS NULL')
+    .orderBy('os.idOrdenServicio', 'ASC')
+    .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
+    .distinct(true);
+
+  return qb.getMany();
+}
 
 
   async findByEstado(estado: boolean) {

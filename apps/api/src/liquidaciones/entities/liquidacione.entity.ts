@@ -57,4 +57,11 @@ export class Liquidacione {
   )
   @JoinColumn({ name: 'idGrupoLiquidacion' })
   grupo: GrupoLiquidacion;
+
+    @Column({
+    name: 'mes_liquidacion',
+    type: 'int',
+    nullable: false
+  })
+  mes_liquidacion: number;
 }
