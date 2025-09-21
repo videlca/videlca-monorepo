@@ -511,8 +511,7 @@ function RouteComponent() {
         horaInicio: servicio.horaInicio,
         horaFin: servicio.horaFin,
         precio: servicio.precio || 0,
-        personal: [], // Will be populated when user assigns staff
-        // Keep idServicio for internal component logic, but remove before sending to API
+        personal: [],
         idServicio: servicio.idTarifa.idServicio.idServicio,
       })) || [],
     );
@@ -543,7 +542,6 @@ function RouteComponent() {
       ? configuracionServicioTarifaEdit.find((s) => s.idServicio === idServicio)
       : configuracionServicioTarifa.find((s) => s.idServicio === idServicio);
 
-    // Ensure personal array exists and has the required index
     if (!servicio?.personal || !servicio.personal[indexEmpleado]) {
       console.warn("Personal data not found for validation");
       return;
@@ -580,7 +578,6 @@ function RouteComponent() {
     setSelectedServices([]);
   }, [selectedTipoServicio]);
 
-  // Initialize configuracionServicioTarifa when selectedServices changes
   useEffect(() => {
     const initialConfig = selectedServices.map((service) => ({
       idTarifa: selectedTarifa?.idTarifa || 0,
@@ -687,12 +684,12 @@ function RouteComponent() {
                 );
               },
             },
-            {
-              label: "Liquidar",
-              onClick: () => {
-                handleLiquidarOrdenServicio(row.original.idOrdenServicio);
-              },
-            },
+            // {
+            //   label: "Liquidar",
+            //   onClick: () => {
+            //     handleLiquidarOrdenServicio(row.original.idOrdenServicio);
+            //   },
+            // },
             {
               label: "Eliminar",
               onClick: () => {

@@ -92,7 +92,7 @@ export const ObservacionesOrdenServicio = ({
                     </p>
                   </div>
                 </div>
-                {observacion.idUsuario.idUser === currentUser?.idUser && (
+                {currentUser?.idRol.descripcion === "super-admin" && (
                   <button
                     onClick={() =>
                       deleteObservacionMutation({
