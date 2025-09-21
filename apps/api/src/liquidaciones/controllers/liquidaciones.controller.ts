@@ -64,6 +64,11 @@ export class LiquidacionesController {
     return this.service.liquidarGrupo(id);
   }
 
+  @Post(':id/desintegrar-grupo')
+  async desintegrarGrupo(@Param('id', ParseIntPipe) id: number) {
+    return this.service.desintegrarGrupo(id);
+  }
+
   @Patch(':id/cambiar-estado')
   async actualizarCampoEstado(
     @Param('id', ParseIntPipe) id: number,

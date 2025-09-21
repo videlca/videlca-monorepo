@@ -361,6 +361,17 @@ async findByCreacionMes(anio: number, mes1a12: number) {
     );
   }
 
+  async desintegrarGrupo(idGrupoLiquidacion: number) {
+    // TODO: Implementar la lógica para devolver el grupo, eliminar las liquidaciones y el grupo
+    // return this.withRetry(() =>
+    //   this.ds.transaction('READ COMMITTED', async (tm) => {
+    //     const grupoRepo = tm.getRepository(GrupoLiquidacion);
+    //     const liqRepo = tm.getRepository(Liquidacione);
+    //   })
+    // );
+    return 
+  }
+
   async actualizarCampoGrupoEstado(id: number, dto: UpdateGrupoLiquidacionEstadoDto) {
     const grupo = await this.grupoLiquidacionrepo.findOne({
       where: { idGrupoLiquidacion: id },
@@ -379,11 +390,17 @@ async findByCreacionMes(anio: number, mes1a12: number) {
     };
   }
 
-  async findGruposPorCampoEstado(campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo', valor: boolean) {
+  async findGruposPorCampoEstado(campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo', valor: string) {
     return this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
-      .where(`grupo.${campo} = :valor`, { valor })
+      .where(`grupo.${campo} = :valor`, { valor: valor === 'true' })
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
+      .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
+      .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
+      .leftJoinAndSelect('ordenServicio.ordenServicioId', 'ordenServicioId')
+      .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
+      .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .getMany();
   }
 

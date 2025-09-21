@@ -1,5 +1,4 @@
-import { IsBoolean, IsIn } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsBoolean, IsIn, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class FiltroGrupoLiquidacionDto {
@@ -11,11 +10,10 @@ export class FiltroGrupoLiquidacionDto {
   campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo';
 
   @ApiProperty({
-    description: 'Valor booleano',
-    type: Boolean,
-    example: true,
+    description: 'Valor booleano (acepta "true"/"false" como string)',
+    type: String,
+    example: 'true',
   })
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean()
-  valor: boolean;
+  @IsString()
+  valor: string;
 }
