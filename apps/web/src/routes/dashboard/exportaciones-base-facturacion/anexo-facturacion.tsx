@@ -3,10 +3,8 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { NavTabs } from "../../../components/ui/common/NavTabs";
 import { useState } from "react";
 import type { TabsExportaciones } from "../../../types";
-import {
-  OrdenesTab,
-  type OrderGroup,
-} from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
+import { OrdenesTab } from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
+import { useGetGruposLiquidacionesExportaciones } from "../../../api/queryFunctions/exportaciones/exportaciones";
 
 export const Route = createFileRoute(
   "/dashboard/exportaciones-base-facturacion/anexo-facturacion",
@@ -24,26 +22,13 @@ function RouteComponent() {
       label: "Archivos generados",
     },
   ];
-  const data: OrderGroup[] = [
-    {
-      id: "1",
-      nombre: "Grupo 1",
-      ordenes: [
-        {
-          id: "VR-1032",
-          cliente: "Cliente 1",
-          posicion: "Posicion 1",
-          fechaInicio: "2021-01-01",
-          fechaFin: "2021-01-01",
-          fechaCreacion: "2021-01-01",
-          descripcion: "Descripcion 1",
-          estado: "pendiente",
-          tecnico: "Tecnico 1",
-        },
-      ],
-      fechaCreacion: "2021-01-01",
-    },
-  ];
+
+  const value = activeTab === "Generar" ? "false" : "true";
+
+  const { data: groups } = useGetGruposLiquidacionesExportaciones(
+    "generacion_anexo",
+    value,
+  );
 
   return (
     <Section>
@@ -53,10 +38,14 @@ function RouteComponent() {
         setActiveTab={(id) => setActiveTab(id as TabsExportaciones)}
       />
       {activeTab === "Generar" && (
-        <OrdenesTab tipo="anexo-facturacion" data={data} />
+        <OrdenesTab tipo="generacion_anexo" data={groups?.data || []} />
       )}
       {activeTab === "Archivos generados" && (
-        <OrdenesTab tipo="restaurar" data={data} />
+        <OrdenesTab
+          tipo="generacion_anexo"
+          data={groups?.data || []}
+          restaurar={true}
+        />
       )}
     </Section>
   );

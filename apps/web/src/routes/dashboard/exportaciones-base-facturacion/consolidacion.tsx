@@ -3,10 +3,8 @@ import { NavTabs } from "../../../components/ui/common/NavTabs";
 import { Section } from "../../../components/ui/dashboard/Section";
 import type { TabsExportaciones } from "../../../types";
 import { useState } from "react";
-import {
-  OrdenesTab,
-  type OrderGroup,
-} from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
+import { OrdenesTab } from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
+import { useGetGruposLiquidacionesExportaciones } from "../../../api/queryFunctions/exportaciones/exportaciones";
 
 export const Route = createFileRoute(
   "/dashboard/exportaciones-base-facturacion/consolidacion",
@@ -25,37 +23,13 @@ function RouteComponent() {
     },
   ];
 
-  const data: OrderGroup[] = [
-    {
-      id: "1",
-      nombre: "Grupo 1",
-      ordenes: [
-        {
-          id: "VR-1032",
-          cliente: "Cliente 1",
-          posicion: "Posicion 1",
-          fechaInicio: "2021-01-01",
-          fechaFin: "2021-01-01",
-          fechaCreacion: "2021-01-01",
-          descripcion: "Descripcion 1",
-          estado: "pendiente",
-          tecnico: "Tecnico 1",
-        },
-        {
-          id: "VR-1031",
-          cliente: "Cliente 2",
-          posicion: "Posicion 2",
-          fechaInicio: "2021-01-02",
-          fechaFin: "2021-01-02",
-          fechaCreacion: "2021-01-02",
-          descripcion: "Descripcion 2",
-          estado: "pendiente",
-          tecnico: "Tecnico 2",
-        },
-      ],
-      fechaCreacion: "2021-01-01",
-    },
-  ];
+  const value = activeTab === "Generar" ? "false" : "true";
+
+  const { data: groups } = useGetGruposLiquidacionesExportaciones(
+    "consolidacion_orden",
+    value,
+  );
+
   return (
     <Section>
       <NavTabs
@@ -64,10 +38,14 @@ function RouteComponent() {
         setActiveTab={(id) => setActiveTab(id as TabsExportaciones)}
       />
       {activeTab === "Generar" && (
-        <OrdenesTab tipo="consolidacion" data={data} />
+        <OrdenesTab tipo="consolidacion_orden" data={groups?.data || []} />
       )}
       {activeTab === "Archivos generados" && (
-        <OrdenesTab tipo="restaurar" data={data} />
+        <OrdenesTab
+          tipo="consolidacion_orden"
+          data={groups?.data || []}
+          restaurar={true}
+        />
       )}
     </Section>
   );

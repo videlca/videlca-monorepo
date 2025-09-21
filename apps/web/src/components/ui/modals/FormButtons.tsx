@@ -9,19 +9,34 @@ export const FormButtons = ({
   updating: boolean;
   onCancel: () => void;
 }) => {
+  const getSubmitButtonText = () => {
+    if (isLoading) {
+      return updating ? "Actualizando..." : "Creando...";
+    }
+    return updating ? "Actualizar" : "Agregar";
+  };
+
+  const cancelButtonClasses = "w-auto";
+  const submitButtonClasses = "w-auto";
+
   return (
-    <div className="flex justify-end space-x-2">
+    <div className="flex justify-end gap-3">
       <Button
         onClick={onCancel}
-        className="w-auto cursor-pointer rounded-lg bg-gray-500 hover:bg-gray-600"
+        className={cancelButtonClasses}
+        disabled={isLoading}
+        variant="secondary"
       >
         Cancelar
       </Button>
-      <Button type="submit" disabled={isLoading} className="w-auto">
-        {isLoading && !updating && "Creando..."}
-        {isLoading && updating && "Actualizando..."}
-        {!isLoading && !updating && "Agregar"}
-        {!isLoading && updating && "Actualizar"}
+      <Button
+        type="submit"
+        disabled={isLoading}
+        className={submitButtonClasses}
+        loading={isLoading}
+        variant="primary"
+      >
+        {getSubmitButtonText()}
       </Button>
     </div>
   );

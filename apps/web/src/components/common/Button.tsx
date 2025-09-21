@@ -7,6 +7,7 @@ interface ButtonProps {
   loading?: boolean;
   onClick?: () => void;
   className?: string;
+  variant?: "primary" | "secondary" | "outlined";
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -16,9 +17,16 @@ const Button: React.FC<ButtonProps> = ({
   loading = false,
   onClick,
   className = "",
+  variant = "primary",
 }) => {
   const baseClasses =
-    "h-12 cursor-pointer rounded-lg bg-blue-600 font-medium text-white hover:bg-blue-700 transition-colors px-6 py-3 text-base";
+    "inline-flex items-center justify-center cursor-pointer rounded-md font-medium transition-colors duration-200 px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none";
+
+  const variantClasses = {
+    primary: "bg-blue-600 text-white hover:bg-blue-700",
+    secondary: "bg-gray-600 text-white hover:bg-gray-700",
+    outlined: "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
+  };
 
   const disabledClass =
     disabled || loading ? "opacity-50 cursor-not-allowed" : "";
@@ -28,7 +36,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       disabled={disabled || loading}
       onClick={onClick}
-      className={` ${baseClasses} ${disabledClass} ${className} `.trim()}
+      className={` ${baseClasses} ${variantClasses[variant]} ${disabledClass} ${className} `.trim()}
     >
       {loading ? (
         <div className="flex items-center justify-center">
