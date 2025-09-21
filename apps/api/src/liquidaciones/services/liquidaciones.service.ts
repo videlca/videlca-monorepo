@@ -387,4 +387,18 @@ async findByCreacionMes(anio: number, mes1a12: number) {
       .getMany();
   }
 
+  async buscarGrupoLiquidaciones() {
+    return this.grupoLiquidacionrepo
+      .createQueryBuilder('grupo')
+      .where(`grupo.estado = :estado`, { estado: false })
+      .orderBy('grupo.idGrupoLiquidacion', 'DESC')
+      .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
+      .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
+      .leftJoinAndSelect('ordenServicio.ordenServicioId', 'ordenServicioId')
+      .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
+      .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .getMany();
+  }
+
 }

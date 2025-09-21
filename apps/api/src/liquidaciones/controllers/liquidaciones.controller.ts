@@ -77,6 +77,11 @@ export class LiquidacionesController {
     return this.service.findGruposPorCampoEstado(filtro.campo, filtro.valor);
   }
 
+  @Get('buscar-grupos-liquidaciones')
+  async buscarGrupoLiquidaciones() {
+    return this.service.buscarGrupoLiquidaciones();
+  }
+
 
   @Get()
   @ApiQuery({ name: 'page', required: false, example: 1 })
