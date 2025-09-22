@@ -19,7 +19,6 @@ import { PeriodosModule } from './periodos/periodos.module';
 import { OrdenServicioModule } from './orden-servicio/orden-servicio.module';
 import { LiquidacionesModule } from './liquidaciones/liquidaciones.module';
 import { ReportesModule } from './reportes/reportes.module';
-import { InicioModule } from './inicio/inicio.module';
 
 @Module({
   imports: [
@@ -62,7 +61,11 @@ import { InicioModule } from './inicio/inicio.module';
     
     CommonModule, 
     
-    SeedModule, LiquidacionesModule, ReportesModule, InicioModule,
+    LiquidacionesModule, 
+    
+    ReportesModule,
+    
+    SeedModule, 
     
   ],
   controllers: [],
