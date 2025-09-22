@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "../../config";
+import { apiDelete, apiGet, apiPost } from "../../config";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
 import type { OrdenServicio } from "../../types/orden-servicio";
 import type { ApiResponse } from "../../types/common";
@@ -23,5 +23,5 @@ export const aprobarGrupoLiquidacion = async (idGrupoLiquidacion: number): Promi
 };
 
 export const desintegrarGrupoLiquidacion = async (idGrupoLiquidacion: number): Promise<ApiResponse<GruposLiquidaciones>> => {
-  return await apiPost<GruposLiquidaciones>(`/liquidaciones/${idGrupoLiquidacion}/desintegrar-grupo`);
+  return await apiDelete<GruposLiquidaciones>(`/liquidaciones/${idGrupoLiquidacion}/desintegrar-grupo`);
 };
