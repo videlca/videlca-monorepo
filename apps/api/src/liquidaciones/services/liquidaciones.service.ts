@@ -269,49 +269,49 @@ export class LiquidacionesService {
   }
 
 
-async findByCreacionMes(anio: number, mes1a12: number) {
-  if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
-    throw new BadRequestException('Parámetros inválidos (anio, mes)');
-  }
+  async findByCreacionMes(anio: number, mes1a12: number) {
+    if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
+      throw new BadRequestException('Parámetros inválidos (anio, mes)');
+    }
 
-  // Rango del mes objetivo: [inicioMes, finMes)
-  const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
-  const finMes = new Date(Date.UTC(anio, mes1a12, 1, 0, 0, 0)); // inicio del mes siguiente
+    // Rango del mes objetivo: [inicioMes, finMes)
+    const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
+    const finMes = new Date(Date.UTC(anio, mes1a12, 1, 0, 0, 0)); // inicio del mes siguiente
 
-  const qb = this.ordenRepo
-    .createQueryBuilder('os')
-    .where('os.fechaInicio < :fin AND (os.fechaFin IS NULL OR os.fechaFin >= :ini)', {
-      ini: inicioMes,
-      fin: finMes,
-    })
-    .andWhere('eos.nombre <> :estado', { estado: 'ANULADA' })
-    .leftJoinAndSelect('os.ordenServicioId', 'osid')
-    .leftJoinAndSelect('os.tarifas', 'ost')
-    .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
-    .leftJoinAndSelect(
-      't.idPeriodo',
-      'p',
-      'p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin)',
-    )
-    .leftJoinAndSelect('os.idLocacion', 'l')
-    .leftJoinAndSelect('l.idCliente', 'c')
-    .leftJoinAndSelect('t.idTipoTarifa', 'tt')
-    .leftJoinAndSelect('t.idServicio', 's')
-    .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
+    const qb = this.ordenRepo
+      .createQueryBuilder('os')
+      .where('os.fechaInicio < :fin AND (os.fechaFin IS NULL OR os.fechaFin >= :ini)', {
+        ini: inicioMes,
+        fin: finMes,
+      })
+      .andWhere('eos.nombre <> :estado', { estado: 'ANULADA' })
+      .leftJoinAndSelect('os.ordenServicioId', 'osid')
+      .leftJoinAndSelect('os.tarifas', 'ost')
+      .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
+      .leftJoinAndSelect(
+        't.idPeriodo',
+        'p',
+        'p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin)',
+      )
+      .leftJoinAndSelect('os.idLocacion', 'l')
+      .leftJoinAndSelect('l.idCliente', 'c')
+      .leftJoinAndSelect('t.idTipoTarifa', 'tt')
+      .leftJoinAndSelect('t.idServicio', 's')
+      .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
 
-    .leftJoin('liquidaciones', 'liq', `
+      .leftJoin('liquidaciones', 'liq', `
       liq.idOrdenServicio = os.idOrdenServicio AND
       liq.aniomes_liquidacion = :aniomes
     `, {
-      aniomes: `${anio}${mes1a12}`,
-    })
-    .andWhere('liq.idLiquidacion IS NULL')
-    .orderBy('os.idOrdenServicio', 'ASC')
-    .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
-    .distinct(true);
+        aniomes: `${anio}${mes1a12}`,
+      })
+      .andWhere('liq.idLiquidacion IS NULL')
+      .orderBy('os.idOrdenServicio', 'ASC')
+      .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
+      .distinct(true);
 
-  return qb.getMany();
-}
+    return qb.getMany();
+  }
 
 
   async findByEstado(estado: boolean) {
@@ -362,14 +362,33 @@ async findByCreacionMes(anio: number, mes1a12: number) {
   }
 
   async desintegrarGrupo(idGrupoLiquidacion: number) {
-    // TODO: Implementar la lógica para devolver el grupo, eliminar las liquidaciones y el grupo
-    // return this.withRetry(() =>
-    //   this.ds.transaction('READ COMMITTED', async (tm) => {
-    //     const grupoRepo = tm.getRepository(GrupoLiquidacion);
-    //     const liqRepo = tm.getRepository(Liquidacione);
-    //   })
-    // );
-    return 
+    return this.withRetry(() =>
+      this.ds.transaction('READ COMMITTED', async (tm) => {
+        const grupoRepo = tm.getRepository(GrupoLiquidacion);
+        const liqRepo = tm.getRepository(Liquidacione);
+
+        const grupo = await grupoRepo.findOne({ where: { idGrupoLiquidacion } });
+        if (!grupo) throw new NotFoundException('Grupo de liquidación no encontrado');
+
+        await liqRepo
+          .createQueryBuilder()
+          .delete()
+          .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
+          .execute();
+
+        await grupoRepo
+          .createQueryBuilder()
+          .delete()
+          .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
+          .execute();
+
+        return {
+          ok: true,
+          grupoId: idGrupoLiquidacion,
+          mensaje: 'Grupo de liquidación y sus liquidaciones eliminadas correctamente',
+        };
+      })
+    );
   }
 
   async actualizarCampoGrupoEstado(id: number, dto: UpdateGrupoLiquidacionEstadoDto) {

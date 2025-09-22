@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
   BadRequestException,
+  Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
@@ -64,7 +65,7 @@ export class LiquidacionesController {
     return this.service.liquidarGrupo(id);
   }
 
-  @Post(':id/desintegrar-grupo')
+  @Delete(':id/desintegrar-grupo')
   async desintegrarGrupo(@Param('id', ParseIntPipe) id: number) {
     return this.service.desintegrarGrupo(id);
   }
