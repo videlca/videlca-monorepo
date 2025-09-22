@@ -23,7 +23,7 @@ export class Departamento {
         type: 'varchar',
         length: 2,
         name: 'codigoDepartamento',
-        unique: true
+        unique: false
     })
     codigoDepartamento: string;
     

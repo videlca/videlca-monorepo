@@ -3,13 +3,13 @@ import {
   Get,
   Post,
   Patch,
-  Delete,
   Body,
   Param,
   Query,
   ParseIntPipe,
   DefaultValuePipe,
-  HttpCode,
+  BadRequestException,
+  Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
@@ -17,21 +17,77 @@ import { AppAuth } from '../../auth/decorators';
 import { DescriptionRoutes } from '../../auth/interfaces';
 
 import { LiquidacionesService } from '../services/liquidaciones.service';
-import { UpdateLiquidacioneDto } from '../dto/update-liquidacione.dto';
-import { CreateLiquidacioneDto } from '../dto/create-liquidacione.dto'
-import { OrdenBody } from '../dto/orden-body.dto';
+//import { GrupoLiquidacionesService } from '../services/grupoLiquidaciones.service';
+import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
+import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
+import { FiltroGrupoLiquidacionDto } from '../dto/filtroGrupoLiquidacion.dto';
 
 @ApiTags('liquidaciones')
 @Controller('liquidaciones')
 @AppAuth(DescriptionRoutes.LIQUIDACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class LiquidacionesController {
-  constructor(private readonly service: LiquidacionesService) { }
+  constructor(
+    private readonly service: LiquidacionesService,
+    //    private readonly groupService: GrupoLiquidacionesService
+  ) { }
 
-  @Post()
-  @ApiResponse({ status: 201, description: 'Liquidación creada' })
-  create(@Body() dto: CreateLiquidacioneDto) {
-    return this.service.create(dto);
+  @Post('grupo/generar-mes')
+  async generarGrupoMensual(@Body() dto: CrearGrupoMensualDto) {
+    return this.service.generarGrupoMensual(dto);
   }
+
+
+  @Get('ordenes-por-mes')
+  async findByMes(
+    @Query('anio') anio: string,
+    @Query('mes') mes: string,
+  ) {
+    const anioNum = parseInt(anio, 10);
+    const mesNum = parseInt(mes, 10);
+
+    if (isNaN(anioNum) || isNaN(mesNum)) {
+      throw new BadRequestException('anio y mes deben ser numéricos');
+    }
+
+    return this.service.findByCreacionMes(anioNum, mesNum);
+  }
+
+  @Get('/by-estado')
+  async listByEstado(
+    @Query('estado') estado: boolean,
+  ) {
+    return this.service.findByEstado(estado);
+  }
+
+
+  @Post(':id/liquidar-grupo')
+  async confirmar(@Param('id', ParseIntPipe) id: number) {
+    return this.service.liquidarGrupo(id);
+  }
+
+  @Delete(':id/desintegrar-grupo')
+  async desintegrarGrupo(@Param('id', ParseIntPipe) id: number) {
+    return this.service.desintegrarGrupo(id);
+  }
+
+  @Patch(':id/cambiar-estado')
+  async actualizarCampoEstado(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateGrupoLiquidacionEstadoDto,
+  ) {
+    return this.service.actualizarCampoGrupoEstado(id, dto);
+  }
+
+  @Get('buscar-por-campo')
+  async buscarPorCampoEstado(@Query() filtro: FiltroGrupoLiquidacionDto) {
+    return this.service.findGruposPorCampoEstado(filtro.campo, filtro.valor);
+  }
+
+  @Get('buscar-grupos-liquidaciones')
+  async buscarGrupoLiquidaciones() {
+    return this.service.buscarGrupoLiquidaciones();
+  }
+
 
   @Get()
   @ApiQuery({ name: 'page', required: false, example: 1 })
@@ -46,27 +102,7 @@ export class LiquidacionesController {
     return this.service.findAll({ page, limit, ordenId: oid });
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.service.findOne(id);
-  }
 
-  @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateLiquidacioneDto) {
-    return this.service.update(id, dto);
-  }
 
-  @Delete(':id')
-  @HttpCode(204)
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    await this.service.remove(id);
-  }
 
-  @Post(':ordenId/liquidaciones/mes')
-  createLiqMes(
-    @Param('ordenId', ParseIntPipe) ordenId: number,
-    @Body() body: OrdenBody,
-  ) {
-    return this.service.crearLiquidacionParaMes(ordenId, body.anio, body.mes);
-  }
 }
