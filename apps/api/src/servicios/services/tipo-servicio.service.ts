@@ -116,7 +116,7 @@ export class TipoServicioService {
   
       return tiposServicio.map(ts => {
         return {
-          prefijo: `${ts.prefijo} ${ts.nombre}`,
+          prefijo: `${ts.prefijo} - ${ts.nombre}`,
           idTipoServicio: ts.idTipoServicio
         }
       });
@@ -131,7 +131,7 @@ export class TipoServicioService {
 
     return tiposServicio.map(ts => {
       return {
-        prefijo: `${ts.prefijo} ${ts.nombre}`,
+        prefijo: `${ts.prefijo} - ${ts.nombre}`,
         idTipoServicio: ts.idTipoServicio
       }
     });
