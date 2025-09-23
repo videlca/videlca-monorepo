@@ -1,4 +1,4 @@
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { IsBoolean, IsNumber, IsOptional, IsPositive, Min } from "class-validator";
 
 export class PaginationDto {
@@ -17,6 +17,6 @@ export class PaginationDto {
     offset?: number;
     
     @IsBoolean()
-    pagination: boolean
+    pagination: boolean;
 
 }
