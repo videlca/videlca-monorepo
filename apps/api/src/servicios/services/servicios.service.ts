@@ -140,12 +140,45 @@ export class ServiciosService {
         take: limit,
         skip: offset,
       });
+
+      // Agrupar por tipo de servicio
+      const serviciosAgrupados = servicios.reduce((acc, servicio) => {
+        
+        const tipo = servicio.idTipoServicio.nombre
+    
+        if (!acc[tipo]) {
+          acc[tipo] = [];
+        }
+    
+        acc[tipo].push(servicio);
+    
+        return acc;
+
+      }, {} as Record<string, Servicio[]>);
+    
   
-      return servicios;
+      return serviciosAgrupados;
 
     }
 
-    return await this.servicioRepository.find({});
+    const servicios = await this.servicioRepository.find({});
+
+    // Agrupar por tipo de servicio
+    const serviciosAgrupados = servicios.reduce((acc, servicio) => {
+      
+      const tipo = servicio.idTipoServicio.nombre
+  
+      if (!acc[tipo]) {
+        acc[tipo] = [];
+      }
+  
+      acc[tipo].push(servicio);
+  
+      return acc;
+
+    }, {} as Record<string, Servicio[]>);
+
+    return serviciosAgrupados;
 
   }
   
