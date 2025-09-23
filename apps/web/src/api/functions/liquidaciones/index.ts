@@ -1,8 +1,9 @@
-import { apiDelete, apiGet, apiPost } from "../../config";
+import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
 import type { OrdenServicio } from "../../types/orden-servicio";
 import type { ApiResponse } from "../../types/common";
 import type { GruposLiquidaciones } from "../../types/liquidaciones";
+import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 
 export const getLiquidacionesPorMes = async (anio: number, mes: number): Promise<ApiResponse<OrdenServicio[]>> => {
   return await apiGet<OrdenServicio[]>(`/liquidaciones/ordenes-por-mes?anio=${anio}&mes=${mes}`);
@@ -24,4 +25,8 @@ export const aprobarGrupoLiquidacion = async (idGrupoLiquidacion: number): Promi
 
 export const desintegrarGrupoLiquidacion = async (idGrupoLiquidacion: number): Promise<ApiResponse<GruposLiquidaciones>> => {
   return await apiDelete<GruposLiquidaciones>(`/liquidaciones/${idGrupoLiquidacion}/desintegrar-grupo`);
+};
+
+export const cambiarEstadoExportacion = async (idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto): Promise<ApiResponse<GruposLiquidaciones>> => {
+  return await apiPatch<GruposLiquidaciones>(`/liquidaciones/${idGrupoLiquidacion}/cambiar-estado`, data);
 };

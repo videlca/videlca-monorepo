@@ -5,6 +5,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { NavTabs } from "../../../components/ui/common/NavTabs";
 import { OrdenesTab } from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
 import { useGetGruposLiquidacionesExportaciones } from "../../../api/queryFunctions/exportaciones/exportaciones";
+import { useCambiarEstadoExportacion } from "../../../api/queryFunctions/liquidaciones";
 
 export const Route = createFileRoute(
   "/dashboard/exportaciones-base-facturacion/archivos-interfaz",
@@ -25,10 +26,21 @@ function RouteComponent() {
 
   const value = activeTab === "Generar" ? "false" : "true";
 
-  const { data: groups } = useGetGruposLiquidacionesExportaciones(
-    "generacion_interfase",
-    value,
-  );
+  const { data: groups } = useGetGruposLiquidacionesExportaciones({
+    campo: "generacion_interfase",
+    valor: value,
+  });
+  const { mutate: cambiarEstadoExportacion } = useCambiarEstadoExportacion();
+
+  const handleCambiarEstadoExportacion = (idGrupoLiquidacion: number) => {
+    cambiarEstadoExportacion({
+      idGrupoLiquidacion,
+      data: {
+        campo: "generacion_interfase",
+        valor: value === "false" ? "true" : "false",
+      },
+    });
+  };
 
   return (
     <Section>
@@ -38,13 +50,18 @@ function RouteComponent() {
         setActiveTab={(id) => setActiveTab(id as TabsExportaciones)}
       />
       {activeTab === "Generar" && (
-        <OrdenesTab tipo="generacion_interfase" data={groups?.data || []} />
+        <OrdenesTab
+          tipo="generacion_interfase"
+          data={groups?.data || []}
+          handleCambiarEstadoExportacion={handleCambiarEstadoExportacion}
+        />
       )}
       {activeTab === "Archivos generados" && (
         <OrdenesTab
           tipo="generacion_interfase"
           data={groups?.data || []}
           restaurar={true}
+          handleCambiarEstadoExportacion={handleCambiarEstadoExportacion}
         />
       )}
     </Section>

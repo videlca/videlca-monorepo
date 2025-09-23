@@ -90,21 +90,6 @@ function RouteComponent() {
           <div className="flex flex-wrap items-end gap-4">
             <div className="min-w-48 flex-1">
               <InputSelect
-                label="Mes"
-                placeholder="Selecciona un mes"
-                id="searchMonth"
-                value={searchMonth}
-                onChange={(e) => {
-                  setSearchMonth(e.target.value);
-                  setIsSearching(false);
-                  setSelectedOrders([]);
-                }}
-                options={monthsOptions}
-              />
-            </div>
-
-            <div className="min-w-48 flex-1">
-              <InputSelect
                 label="Año"
                 placeholder="Selecciona un año"
                 id="searchYear"
@@ -115,6 +100,20 @@ function RouteComponent() {
                   setSelectedOrders([]);
                 }}
                 options={yearsOptions as { id: number; descripcion: string }[]}
+              />
+            </div>
+            <div className="min-w-48 flex-1">
+              <InputSelect
+                label="Mes"
+                placeholder="Selecciona un mes"
+                id="searchMonth"
+                value={searchMonth}
+                onChange={(e) => {
+                  setSearchMonth(e.target.value);
+                  setIsSearching(false);
+                  setSelectedOrders([]);
+                }}
+                options={monthsOptions}
               />
             </div>
             <ButtonAction

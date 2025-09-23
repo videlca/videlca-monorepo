@@ -1,4 +1,4 @@
-import { aprobarGrupoLiquidacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes } from "../../functions/liquidaciones"
+import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes } from "../../functions/liquidaciones"
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import type { ApiResponse } from "../../types/common";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { OrdenServicio } from "../../types/orden-servicio";
 import type { GruposLiquidaciones } from "../../types";
+import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 
 export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<OrdenServicio[]>, Error> => {
   return useQuery({
@@ -35,6 +36,7 @@ export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<Orde
 // Grupos de liquidaciones
 
 export const useGetGruposLiquidaciones = (): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
+  queryClient.invalidateQueries({ queryKey: ["grupos-liquidaciones"] });
   return useQuery({
     queryKey: ["grupos-liquidaciones"],
     queryFn: () => getGruposLiquidaciones(),
@@ -71,6 +73,23 @@ export const useDesintegrarGrupoLiquidacion = (): UseMutationResult<ApiResponse<
     },
     onError: (error) => {
       toast.error(error.message || "Error al desintegrar el grupo de liquidación");
+    },
+  });
+};
+
+export const useCambiarEstadoExportacion = (): UseMutationResult<ApiResponse<GruposLiquidaciones>, Error, { idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto }> => {
+  return useMutation({
+    mutationFn: ({ idGrupoLiquidacion, data }: { idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto }) => cambiarEstadoExportacion(idGrupoLiquidacion, data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Estado de exportación cambiado correctamente");
+        queryClient.invalidateQueries({ queryKey: ["grupos-liquidaciones-exportaciones"] });
+      } else {
+        throw new Error(data.message || "Error al cambiar el estado de exportación");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al cambiar el estado de exportación");
     },
   });
 };

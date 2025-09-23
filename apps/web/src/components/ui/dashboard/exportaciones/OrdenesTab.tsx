@@ -15,10 +15,12 @@ export function OrdenesTab({
   tipo,
   data,
   restaurar = false,
+  handleCambiarEstadoExportacion,
 }: {
   tipo: TipoDocumento;
   data: GruposLiquidaciones[];
   restaurar?: boolean;
+  handleCambiarEstadoExportacion: (idGrupoLiquidacion: number) => void;
 }) {
   const [hiddenGroups, setHiddenGroups] = useState<Set<number>>(new Set());
 
@@ -68,7 +70,7 @@ export function OrdenesTab({
     : acciones[tipo as keyof typeof acciones] || null;
 
   const handleAction = (groupId: number) => {
-    console.log(groupId);
+    handleCambiarEstadoExportacion(groupId);
   };
 
   const toggleHideOrders = (groupId: number) => {
