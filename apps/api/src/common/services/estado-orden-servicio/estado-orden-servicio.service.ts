@@ -162,7 +162,7 @@ export class EstadoOrdenServicioService {
       this.logger.error(error);
 
       if(error.errno == 1451){
-        throw new BadRequestException(`El tipo id ${estadoOrden.descripcion} no se puede eliminar debido a que se esta usando en el sistema`); 
+        throw new BadRequestException(`Estado orden de servicio ${estadoOrden.nombre} no se puede eliminar debido a que se esta usando en el sistema`); 
       }
         
       throw new InternalServerErrorException(`Unexpected error, check server logs`);

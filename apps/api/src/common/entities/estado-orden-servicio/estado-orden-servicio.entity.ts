@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Correo } from "../../../clientes/entities";
 import { OrdenServicio } from "../../../orden-servicio/entities/orden-servicio.entity";
+import { CorreoDefault } from "../correo-default/correo-default.entity";
 
 @Entity({name: "estado_orden_servicio"})
 export class EstadoOrdenServicio {
@@ -47,6 +48,12 @@ export class EstadoOrdenServicio {
         (correo) => correo.estados
     )
     correos: Correo[];
+    
+    @ManyToMany(
+        () => CorreoDefault, 
+        (correoDefault) => correoDefault.estados
+    )
+    correosDefault: CorreoDefault[];
 
     @OneToMany(
         () => OrdenServicio,

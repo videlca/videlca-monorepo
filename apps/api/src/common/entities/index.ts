@@ -11,3 +11,9 @@ export { TipoCliente } from "./tipo-cliente/tipo-cliente.entity";
 
 // Estado Orden Servicio
 export { EstadoOrdenServicio } from "./estado-orden-servicio/estado-orden-servicio.entity";
+
+// Estados App
+export { EstadoApp } from "./estado-app/estado-app.entity";
+
+// Correo Default
+export { CorreoDefault } from './correo-default/correo-default.entity';
