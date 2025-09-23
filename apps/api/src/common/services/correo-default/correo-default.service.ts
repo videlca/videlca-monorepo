@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
-import { EmailService } from '../../services';
+import { EmailService } from '../email/email.service';
 import { SendMailOptions } from '../../services/email/email.service';
 import { EstadoApp, CorreoDefault, EstadoOrdenServicio } from '../../entities';
 
