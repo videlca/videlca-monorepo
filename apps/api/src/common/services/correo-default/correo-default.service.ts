@@ -36,16 +36,32 @@ export class CorreoDefaultService {
 
         const { correos = [] } = createCorreoDefaultDto;
 
+        if (correos.length <= 0){
+            throw new BadRequestException(`Se debe añadir al menos un correo`);
+        }
+
+        const uniqueCorreos = this.removeDuplicatesByEmail(correos);
+
         // Validar que todos los estados de orden estén cubiertos
-        await this.validateEstadosOrdenCompletos(correos);
+        await this.validateEstadosOrdenCompletos(uniqueCorreos);
         
         // Validar que todos los estados de app estén cubiertos
-        await this.validateEstadosAppCompletos(correos);
+        await this.validateEstadosAppCompletos(uniqueCorreos);
     
         // Usar QueryRunner para transacción manual
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
+
+        // Obtener correos existentes con sus estados
+        const correosExistentes = await queryRunner.manager.find(CorreoDefault, {
+            relations: {
+                estados: true,
+                estadosApp: true
+            }
+        });
+
+        const crearCorreos = await this.analizarCambiosCorreos(correosExistentes, uniqueCorreos);
 
         // Eliminar correos existentes
         await queryRunner.manager.delete(CorreoDefault, {});
@@ -54,10 +70,14 @@ export class CorreoDefaultService {
 
             // Procesar cada correo
             const correosCreados: CorreoDefault[] = [];
-
-            const uniqueCorreos = this.removeDuplicatesByEmail(correos);
             
             for (const correoDto of uniqueCorreos) {
+
+                if (correoDto.estados.length <= 0){
+
+                    throw new BadRequestException(`Se debe enviar al menos un estado en cada correo`);
+
+                }
         
                 // Validar que los estados existen
                 // Busca los estados por sus IDs
@@ -112,9 +132,16 @@ export class CorreoDefaultService {
                 });
     
                 const savedCorreo = await queryRunner.manager.save(CorreoDefault, correo);
-
-                // ENVIAR EMAIL PARA SABER SI CORREO FUNCIONA
-                await this.notificationEmail(correoDto);
+                
+                // Validar si este correo está en la lista de envío
+                const debeEnviarCorreo = crearCorreos.some(emailEnvio => 
+                    emailEnvio.email === correo.email
+                );
+                
+                if (debeEnviarCorreo) {
+                    // ENVIAR EMAIL PARA SABER SI CORREO FUNCIONA
+                    await this.notificationEmail(correoDto);
+                }
             
                 correosCreados.push(savedCorreo);
 
@@ -272,6 +299,29 @@ export class CorreoDefaultService {
                 }`
             );
         }
+    }
+
+    private async analizarCambiosCorreos(correosExistentes: CorreoDefault[], correosNuevos: CreateCorreoDefaultDto[]){
+    
+        const correosACrear: CreateCorreoDefaultDto[] = [];
+    
+        // Crear mapas para comparación eficiente
+        const correosExistentesMap = new Map(
+            correosExistentes.map(correo => [correo.email, correo])
+        );
+    
+        // Encontrar correos a crear 
+        for (const correoNuevo of correosNuevos) {
+            
+            const correoExistente = correosExistentesMap.get(correoNuevo.email);
+    
+            if (!correoExistente) {
+                // Es un correo nuevo
+                correosACrear.push(correoNuevo);
+            } 
+        }
+    
+        return correosACrear;
     }
 
     // ENVIAR CORREO PARA INFORMAR REGISTRO DE NOTIFICACIONES EN GEVID Y SABER QUE SI ESTA FUNCIONANDO EL CORREO
