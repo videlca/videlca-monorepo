@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsInt, IsString, Max, Min } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CrearGrupoMensualDto {
@@ -8,6 +8,9 @@ export class CrearGrupoMensualDto {
   @Type(() => Number) @IsInt() @Min(1) @Max(12)
   mes: number; // 1-12
 
+  @IsOptional()
+  @IsString()
+  descripcion?: string;
 
   @IsArray() @ArrayNotEmpty()
   @Type(() => Number) @IsInt({ each: true })
