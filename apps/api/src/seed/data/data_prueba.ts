@@ -118,9 +118,11 @@ export const initialData: SeedData = {
 
     estadosApp: [
         
-        {nombre: "tarifa", descripcion: "Enviar correos referentes al modulo tarifa: creacion de periodos y la configuracion de servicios", estado: true},
-        {nombre: "liquidacion", descripcion: "Enviar correos refrentes al modulo liquidacion: creacion de liquidacion, aprobacion o desaprobacion de liquidacion de ordenes", estado: true},
-
+        {nombre: "creacion periodo", descripcion: "Enviar correos referentes al modulo tarifa: creacion de periodos", estado: true},
+        {nombre: "configuracion de tarifas de un periodo", descripcion: "Enviar correos refrentes al modulo tarifas: configurar tarifas a un periodo", estado: true},
+        {nombre: "creacion liquidacion", descripcion: "Enviar correos refrentes al modulo liquidacion: creacion de liquidacion", estado: true},
+        {nombre: "aprobacion/desaprobacion liquidacion", descripcion: "Enviar correos refrentes al modulo liquidacion: aprobacion o desaprobacion de liquidacion de ordenes", estado: true},
+        
     ],
 
     roles: [
