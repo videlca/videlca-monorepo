@@ -398,7 +398,7 @@ export class LiquidacionesService {
 
     if (!grupo) throw new NotFoundException('Grupo de liquidación no encontrado');
 
-    grupo[dto.campo] = dto.valor;
+    grupo[dto.campo] = dto.valor === 'true';
     await this.grupoLiquidacionrepo.save(grupo);
 
     return {
