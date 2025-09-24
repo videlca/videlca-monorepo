@@ -1,14 +1,5 @@
 import { ButtonAction } from "../../../common/ButtonAction";
-import {
-  Building2,
-  EyeIcon,
-  Mail,
-  PencilIcon,
-  PlusIcon,
-  TrashIcon,
-  User,
-  XIcon,
-} from "lucide-react";
+import { Building2, Mail, PlusIcon, User } from "lucide-react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
@@ -33,7 +24,6 @@ import type {
 import { InputForm } from "../../../common/InputForm";
 import {
   useCiudad,
-  useEstadoOrden,
   useTipoCliente,
   useTipoIdentificacionActivo,
 } from "../../../../api/queryFunctions/configuracion";
@@ -45,7 +35,7 @@ import { InputSelect } from "../../../common/InputSelect";
 import { InputSelectStateBoolean } from "../../../common/InputSelectState";
 import { FormsModal } from "../../modals/FormsModal";
 import { FormSection } from "../../../common/FormSection";
-import { toast } from "sonner";
+import { ConfiguracionCorreo } from "../../../common/ConfiguracionCorreo";
 import { useNavigate } from "@tanstack/react-router";
 import { MoreActionsButton } from "../../common/MoreActionsButton";
 
@@ -58,15 +48,6 @@ export function ClientesTab() {
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
 
-  const [correoInput, setCorreoInput] = useState<{
-    nombre: string;
-    apellido: string;
-    correo: string;
-  }>({
-    nombre: "",
-    apellido: "",
-    correo: "",
-  });
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
 
   // Mutaciones y queries
@@ -85,7 +66,6 @@ export function ClientesTab() {
   const { data: tipoCliente } = useTipoCliente();
   const { data: subSegmentaciones } = useSubSegmentaciones();
   const { data: ciudades } = useCiudad();
-  const { data: estadosOrdenServicio } = useEstadoOrden();
 
   // Fomularios
   const {
@@ -162,11 +142,6 @@ export function ClientesTab() {
     setIsAddPuestoModalOpen(false);
     resetFormAddPuesto();
     setCorreos([]);
-    setCorreoInput({
-      nombre: "",
-      apellido: "",
-      correo: "",
-    });
   };
 
   const handleShowViewPuestoModal = (row: Row<Cliente>) => {
@@ -636,176 +611,10 @@ export function ClientesTab() {
                 </p>
               }
             >
-              <div className="col-span-2 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <div className="">
-                  <label
-                    htmlFor="correo"
-                    className="space-y-2 text-base font-medium text-gray-700"
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <input
-                        type="text"
-                        id="nombre"
-                        placeholder="Nombre"
-                        className="w-full rounded-md border border-gray-300 p-2"
-                        value={correoInput.nombre}
-                        onChange={(e) =>
-                          setCorreoInput({
-                            ...correoInput,
-                            nombre: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="email"
-                        id="apellido"
-                        placeholder="Apellido"
-                        className="w-full rounded-md border border-gray-300 p-2"
-                        value={correoInput.apellido}
-                        onChange={(e) =>
-                          setCorreoInput({
-                            ...correoInput,
-                            apellido: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="email"
-                        id="correo"
-                        placeholder="Correo"
-                        className="w-full rounded-md border border-gray-300 p-2"
-                        value={correoInput.correo}
-                        onChange={(e) =>
-                          setCorreoInput({
-                            ...correoInput,
-                            correo: e.target.value,
-                          })
-                        }
-                      />
-                      <ButtonAction
-                        Icon={PlusIcon}
-                        label="Añadir"
-                        type="button"
-                        onClick={() => {
-                          if (correoInput.correo.trim() === "") {
-                            toast.error(
-                              "El correo electrónico no puede estar vacío",
-                            );
-                            return;
-                          }
-                          setCorreos([
-                            ...correos,
-                            {
-                              email: correoInput.correo,
-                              nombre: correoInput.nombre,
-                              apellido: correoInput.apellido,
-                              estados: [],
-                            },
-                          ]);
-                          setCorreoInput({
-                            nombre: "",
-                            apellido: "",
-                            correo: "",
-                          });
-                        }}
-                      />
-                    </div>
-                  </label>
-                </div>
-                <span className="text-sm text-gray-500">
-                  Presione el botón de "Añadir" para agregar un nuevo correo a
-                  la lista
-                </span>
-              </div>
-              <div className="mt-4 flex h-full flex-col gap-2 overflow-y-auto">
-                {correos.length > 0 &&
-                  correos.map((correo) => (
-                    <div
-                      key={correo.email}
-                      className="flex flex-col gap-2 rounded-md border border-gray-200 bg-gray-50 px-4 py-4"
-                    >
-                      <div className="flex flex-row items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-gray-900">
-                          {correo.email}
-                        </p>
-                        <button
-                          className="cursor-pointer rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-200 hover:text-red-500"
-                          onClick={() => {
-                            setCorreos(
-                              correos.filter((c) => c.email !== correo.email),
-                            );
-                          }}
-                        >
-                          <XIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Estados de Notificación
-                        <span className="ml-1 text-xs text-gray-500">
-                          ({correo.estados.length || 0} seleccionados)
-                        </span>
-                      </label>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        {estadosOrdenServicio?.data
-                          ?.filter((estado) => estado.estado) // Solo estados activos
-                          .map((estado, index) => (
-                            <div
-                              key={estado.idEstadoOrdenServicio}
-                              className="flex items-start space-x-2 rounded-md p-2 hover:bg-gray-50"
-                            >
-                              <input
-                                type="checkbox"
-                                id={`estado-${index}-${estado.idEstadoOrdenServicio}`}
-                                checked={correo.estados?.includes(
-                                  estado.idEstadoOrdenServicio,
-                                )}
-                                // Manejo de estados asignados al correo
-                                onChange={(e) => {
-                                  setCorreos(
-                                    correos.map((c) =>
-                                      c.email === correo.email
-                                        ? {
-                                            ...c,
-                                            estados: e.target.checked
-                                              ? [
-                                                  ...c.estados,
-                                                  estado.idEstadoOrdenServicio,
-                                                ]
-                                              : c.estados.filter(
-                                                  (id) =>
-                                                    id !==
-                                                    estado.idEstadoOrdenServicio,
-                                                ),
-                                          }
-                                        : c,
-                                    ),
-                                  );
-                                }}
-                                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <div className="flex-1">
-                                <label
-                                  htmlFor={`estado-${index}-${estado.idEstadoOrdenServicio}`}
-                                  className="cursor-pointer text-sm font-medium text-gray-700 capitalize"
-                                >
-                                  {estado.nombre}
-                                </label>
-                                <p className="mt-0.5 text-xs text-gray-500">
-                                  {estado.descripcion}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
-                {correos.length === 0 && (
-                  <div className="rounded-md border border-gray-200 bg-gray-50 p-2 py-10 text-center text-sm text-gray-500">
-                    No hay correos configurados
-                  </div>
-                )}
-              </div>
+              <ConfiguracionCorreo
+                correos={correos}
+                onCorreosChange={setCorreos}
+              />
             </FormSection>
           </div>
         </FormsModal>

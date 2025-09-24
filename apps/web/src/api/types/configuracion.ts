@@ -62,3 +62,10 @@ export interface TipoContrato {
   estado: boolean
   personal: Personal[]
 }
+
+// Estados app
+export interface EstadoApp {
+  idEstadoApp: number
+  nombre: string
+  descripcion: string
+}

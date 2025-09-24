@@ -8,38 +8,25 @@ import type { CreateCorreoDto, UpdatePuestoDto } from "../../../api/dtos";
 import {
   useDeletePuesto,
   usePuestoById,
-  usePuestos,
   usePuestosByCliente,
   useUpdatePuesto,
 } from "../../../api/queryFunctions/clientes";
-import {
-  useCiudad,
-  useEstadoOrden,
-} from "../../../api/queryFunctions/configuracion";
+import { useCiudad } from "../../../api/queryFunctions/configuracion";
 import { useForm } from "../../../hooks/useForm";
 import type { Puesto } from "../../../types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import {
-  ArrowLeftIcon,
-  Building2,
-  Mail,
-  PencilIcon,
-  PlusIcon,
-  TrashIcon,
-  User,
-  XIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, Building2, Mail, User } from "lucide-react";
 import Table from "../../../components/common/Table";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
 import { InputForm } from "../../../components/common/InputForm";
 import { InputSelect } from "../../../components/common/InputSelect";
-import { toast } from "sonner";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
+import { ConfiguracionCorreo } from "../../../components/common/ConfiguracionCorreo";
 
 export const Route = createFileRoute("/dashboard/clientes/$idCliente/puestos")({
   component: RouteComponent,
@@ -53,15 +40,6 @@ export function RouteComponent() {
   const navigate = useNavigate({ from: "/dashboard/clientes" });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
-  const [correoInput, setCorreoInput] = useState<{
-    nombre: string;
-    apellido: string;
-    correo: string;
-  }>({
-    nombre: "",
-    apellido: "",
-    correo: "",
-  });
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
   const [idPuestoSelected, setIdPuestoSelected] = useState<number | null>(null);
 
@@ -69,7 +47,6 @@ export function RouteComponent() {
   const { data: puestos } = usePuestosByCliente(Number(idCliente));
   const { data: ciudades } = useCiudad();
   // const { data: clientes } = useClientesActivo();
-  const { data: estadosOrdenServicio } = useEstadoOrden();
 
   const { mutate: updatePuesto, isPending: isUpdatingPuesto } =
     useUpdatePuesto();
@@ -135,6 +112,12 @@ export function RouteComponent() {
       },
     });
     setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditPuesto = () => {
+    setIsEditModalOpen(false);
+    resetFormEditPuesto();
+    setCorreos([]);
   };
 
   const columnsPuestos: ColumnDef<Puesto>[] = [
@@ -238,17 +221,6 @@ export function RouteComponent() {
     },
   ];
 
-  const handleCloseEditPuesto = () => {
-    setIsEditModalOpen(false);
-    resetFormEditPuesto();
-    setCorreos([]);
-    setCorreoInput({
-      nombre: "",
-      apellido: "",
-      correo: "",
-    });
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between">
@@ -318,20 +290,6 @@ export function RouteComponent() {
                 onChange={handleChangeEditPuesto}
                 required
               />
-              {/* <InputSelect
-                label="Cliente*"
-                placeholder="Cliente"
-                id="idCliente"
-                value={formEditPuesto.idCliente || 0}
-                onChange={handleNumericChangeEditPuesto}
-                options={
-                  clientes?.data?.map((cliente) => ({
-                    id: cliente.idCliente,
-                    descripcion: cliente.nombre,
-                  })) || []
-                }
-                required
-              /> */}
               <InputSelect
                 label="Ciudad*"
                 placeholder="Ciudad"
@@ -442,172 +400,10 @@ export function RouteComponent() {
                 </p>
               }
             >
-              <div className="col-span-2 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                <div className="">
-                  <div className="flex flex-col items-center gap-2">
-                    <input
-                      type="text"
-                      id="nombre"
-                      placeholder="Nombre"
-                      className="w-full rounded-md border border-gray-300 p-2"
-                      value={correoInput.nombre}
-                      onChange={(e) =>
-                        setCorreoInput({
-                          ...correoInput,
-                          nombre: e.target.value,
-                        })
-                      }
-                    />
-                    <input
-                      type="text"
-                      id="apellido"
-                      placeholder="Apellido"
-                      className="w-full rounded-md border border-gray-300 p-2"
-                      value={correoInput.apellido}
-                      onChange={(e) =>
-                        setCorreoInput({
-                          ...correoInput,
-                          apellido: e.target.value,
-                        })
-                      }
-                    />
-                    <input
-                      type="email"
-                      id="correo"
-                      placeholder="Correo"
-                      className="w-full rounded-md border border-gray-300 p-2"
-                      value={correoInput.correo}
-                      onChange={(e) =>
-                        setCorreoInput({
-                          ...correoInput,
-                          correo: e.target.value,
-                        })
-                      }
-                    />
-                    <ButtonAction
-                      Icon={PlusIcon}
-                      label="Añadir"
-                      type="button"
-                      onClick={() => {
-                        if (correoInput.correo.trim() === "") {
-                          toast.error(
-                            "El correo electrónico no puede estar vacío",
-                          );
-                          return;
-                        }
-                        setCorreos([
-                          ...correos,
-                          {
-                            email: correoInput.correo,
-                            nombre: correoInput.nombre,
-                            apellido: correoInput.apellido,
-                            estados: [],
-                          },
-                        ]);
-                        setCorreoInput({
-                          nombre: "",
-                          apellido: "",
-                          correo: "",
-                        });
-                      }}
-                    />
-                  </div>
-                </div>
-                <span className="text-sm text-gray-500">
-                  Presione el botón de "Añadir" para agregar un nuevo correo a
-                  la lista
-                </span>
-              </div>
-              <div className="mt-4 flex h-full flex-col gap-2 overflow-y-auto">
-                {correos.length > 0 &&
-                  correos.map((correo) => (
-                    <div
-                      key={correo.email}
-                      className="flex flex-col gap-2 rounded-md border border-gray-200 bg-gray-50 px-4 py-4"
-                    >
-                      <div className="flex flex-row items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-gray-900">
-                          {correo.email}
-                        </p>
-                        <button
-                          className="cursor-pointer rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-200 hover:text-red-500"
-                          onClick={() => {
-                            setCorreos(
-                              correos.filter((c) => c.email !== correo.email) ||
-                                [],
-                            );
-                          }}
-                        >
-                          <XIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <label className="mb-2 block text-sm font-medium text-gray-700">
-                        Estados de Notificación
-                        <span className="ml-1 text-xs text-gray-500">
-                          ({correo.estados?.length || 0} seleccionados)
-                        </span>
-                      </label>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        {estadosOrdenServicio?.data
-                          ?.filter((estado) => estado.estado) // Solo estados activos
-                          .map((estado, index) => (
-                            <div
-                              key={estado.idEstadoOrdenServicio}
-                              className="flex items-start space-x-2 rounded-md p-2 hover:bg-gray-50"
-                            >
-                              <input
-                                type="checkbox"
-                                id={`estado-${index}-${estado.idEstadoOrdenServicio}`}
-                                checked={correo.estados?.includes(
-                                  estado.idEstadoOrdenServicio,
-                                )}
-                                // Manejo de estados asignados al correo
-                                onChange={(e) => {
-                                  setCorreos(
-                                    correos.map((c) =>
-                                      c.email === correo.email
-                                        ? {
-                                            ...c,
-                                            estados: e.target.checked
-                                              ? [
-                                                  ...c.estados,
-                                                  estado.idEstadoOrdenServicio,
-                                                ]
-                                              : c.estados.filter(
-                                                  (id) =>
-                                                    id !==
-                                                    estado.idEstadoOrdenServicio,
-                                                ),
-                                          }
-                                        : c,
-                                    ),
-                                  );
-                                }}
-                                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <div className="flex-1">
-                                <label
-                                  htmlFor={`estado-${index}-${estado.idEstadoOrdenServicio}`}
-                                  className="cursor-pointer text-sm font-medium text-gray-700 capitalize"
-                                >
-                                  {estado.nombre}
-                                </label>
-                                <p className="mt-0.5 text-xs text-gray-500">
-                                  {estado.descripcion}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
-                {correos.length === 0 && (
-                  <div className="rounded-md border border-gray-200 bg-gray-50 p-2 py-10 text-center text-sm text-gray-500">
-                    No hay correos configurados
-                  </div>
-                )}
-              </div>
+              <ConfiguracionCorreo
+                correos={correos}
+                onCorreosChange={setCorreos}
+              />
             </FormSection>
           </div>
         </FormsModal>

@@ -46,9 +46,10 @@ export interface CreateCorreoDto {
   apellido: string;
   email: string;
   estados: number[];
+  // estadosApp?: string[];
 }
 
-// Clientes
+// Clientes 
 export interface CreateClienteDto {
   numeroIdentificacion: string;
   idTipoIdentificacion: number;
