@@ -64,7 +64,12 @@ export class CorreoDefaultService {
         const crearCorreos = await this.analizarCambiosCorreos(correosExistentes, uniqueCorreos);
 
         // Eliminar correos existentes
-        await queryRunner.manager.delete(CorreoDefault, {});
+        await queryRunner.manager
+            .createQueryBuilder()
+            .delete()
+            .from(CorreoDefault)
+            .where("1=1")
+            .execute();
     
         try {
 
@@ -195,6 +200,7 @@ export class CorreoDefaultService {
         if (todosLosEstados.length === 0) {
             throw new BadRequestException('No hay estados configurados en el sistema');
         }
+
     
         // 2. Recopilar todos los estados asignados en los correos
         const estadosAsignados = new Set<number>();
@@ -204,6 +210,7 @@ export class CorreoDefaultService {
                 estadosAsignados.add(estadoId);
             });
         });
+
     
         // 3. Verificar que todos los estados estén cubiertos
         const estadosRequeridos = new Set(
@@ -213,6 +220,7 @@ export class CorreoDefaultService {
         const estadosFaltantes = [...estadosRequeridos].filter(
             estadoId => !estadosAsignados.has(estadoId)
         );
+
     
         if (estadosFaltantes.length > 0) {
     
@@ -230,6 +238,7 @@ export class CorreoDefaultService {
         const estadosInvalidos = [...estadosAsignados].filter(
             estadoId => !estadosRequeridos.has(estadoId)
         );
+
     
         if (estadosInvalidos.length > 0) {
             throw new BadRequestException(
@@ -258,7 +267,7 @@ export class CorreoDefaultService {
         const estadosAsignados = new Set<number>();
         
         correos.forEach(correo => {
-            correo.estados.forEach(estadoId => {
+            correo.estadosApp.forEach(estadoId => {
                 estadosAsignados.add(estadoId);
             });
         });
@@ -267,6 +276,7 @@ export class CorreoDefaultService {
         const estadosRequeridos = new Set(
             todosLosEstados.map(estado => estado.idEstadoApp)
         );
+
     
         const estadosFaltantes = [...estadosRequeridos].filter(
             estadoId => !estadosAsignados.has(estadoId)
