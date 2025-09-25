@@ -1,3 +1,4 @@
+
 // Estados de orden
 export interface CreateEstadoOrdenDto {
   nombre: string
@@ -55,4 +56,16 @@ export interface CreateTipoContrato {
 
 export interface ActualizarTipoContrato extends Partial<CreateTipoContrato> {
   estado: boolean
+}
+
+// Correos por defecto
+export interface CreateCorreoDefaultDto {
+  descripcion: string
+  email: string
+  estados: number[]
+  estadosApp: number[]
+}
+
+export interface CorreoDefaultDto {
+  correos: CreateCorreoDefaultDto[]
 }

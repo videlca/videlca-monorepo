@@ -59,6 +59,7 @@ import { Route as DashboardConfiguracionTipoGeneroRouteImport } from './routes/d
 import { Route as DashboardConfiguracionTipoContratoRouteImport } from './routes/dashboard/configuracion/tipo-contrato'
 import { Route as DashboardConfiguracionTipoClienteRouteImport } from './routes/dashboard/configuracion/tipo-cliente'
 import { Route as DashboardConfiguracionEstadoOrdenServicioRouteImport } from './routes/dashboard/configuracion/estado-orden-servicio'
+import { Route as DashboardConfiguracionCorreosDefaultRouteImport } from './routes/dashboard/configuracion/correos-default'
 import { Route as DashboardTarifasVerTarifasIdPeriodoRouteImport } from './routes/dashboard/tarifas/ver-tarifas.$id-periodo'
 import { Route as DashboardTarifasConfigurarServiciosIdPeriodoRouteImport } from './routes/dashboard/tarifas/configurar-servicios.$id-periodo'
 import { Route as DashboardPersonalNovedadesPersonalIdRouteImport } from './routes/dashboard/personal/novedades-personal.$id'
@@ -339,6 +340,12 @@ const DashboardConfiguracionEstadoOrdenServicioRoute =
     path: '/estado-orden-servicio',
     getParentRoute: () => DashboardConfiguracionRoute,
   } as any)
+const DashboardConfiguracionCorreosDefaultRoute =
+  DashboardConfiguracionCorreosDefaultRouteImport.update({
+    id: '/correos-default',
+    path: '/correos-default',
+    getParentRoute: () => DashboardConfiguracionRoute,
+  } as any)
 const DashboardTarifasVerTarifasIdPeriodoRoute =
   DashboardTarifasVerTarifasIdPeriodoRouteImport.update({
     id: '/ver-tarifas/$id-periodo',
@@ -385,6 +392,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/usuarios': typeof DashboardUsuariosRouteWithChildren
   '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/configuracion/correos-default': typeof DashboardConfiguracionCorreosDefaultRoute
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-contrato': typeof DashboardConfiguracionTipoContratoRoute
@@ -430,6 +438,7 @@ export interface FileRoutesByTo {
   '/dashboard/permisos': typeof DashboardPermisosRouteWithChildren
   '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/configuracion/correos-default': typeof DashboardConfiguracionCorreosDefaultRoute
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-contrato': typeof DashboardConfiguracionTipoContratoRoute
@@ -487,6 +496,7 @@ export interface FileRoutesById {
   '/dashboard/usuarios': typeof DashboardUsuariosRouteWithChildren
   '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/configuracion/correos-default': typeof DashboardConfiguracionCorreosDefaultRoute
   '/dashboard/configuracion/estado-orden-servicio': typeof DashboardConfiguracionEstadoOrdenServicioRoute
   '/dashboard/configuracion/tipo-cliente': typeof DashboardConfiguracionTipoClienteRoute
   '/dashboard/configuracion/tipo-contrato': typeof DashboardConfiguracionTipoContratoRoute
@@ -545,6 +555,7 @@ export interface FileRouteTypes {
     | '/dashboard/usuarios'
     | '/olvide-password/$id'
     | '/dashboard/'
+    | '/dashboard/configuracion/correos-default'
     | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-contrato'
@@ -590,6 +601,7 @@ export interface FileRouteTypes {
     | '/dashboard/permisos'
     | '/olvide-password/$id'
     | '/dashboard'
+    | '/dashboard/configuracion/correos-default'
     | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-contrato'
@@ -646,6 +658,7 @@ export interface FileRouteTypes {
     | '/dashboard/usuarios'
     | '/olvide-password/$id'
     | '/dashboard/'
+    | '/dashboard/configuracion/correos-default'
     | '/dashboard/configuracion/estado-orden-servicio'
     | '/dashboard/configuracion/tipo-cliente'
     | '/dashboard/configuracion/tipo-contrato'
@@ -1042,6 +1055,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardConfiguracionEstadoOrdenServicioRouteImport
       parentRoute: typeof DashboardConfiguracionRoute
     }
+    '/dashboard/configuracion/correos-default': {
+      id: '/dashboard/configuracion/correos-default'
+      path: '/correos-default'
+      fullPath: '/dashboard/configuracion/correos-default'
+      preLoaderRoute: typeof DashboardConfiguracionCorreosDefaultRouteImport
+      parentRoute: typeof DashboardConfiguracionRoute
+    }
     '/dashboard/tarifas/ver-tarifas/$id-periodo': {
       id: '/dashboard/tarifas/ver-tarifas/$id-periodo'
       path: '/ver-tarifas/$id-periodo'
@@ -1103,6 +1123,7 @@ const DashboardClientesRouteWithChildren =
   DashboardClientesRoute._addFileChildren(DashboardClientesRouteChildren)
 
 interface DashboardConfiguracionRouteChildren {
+  DashboardConfiguracionCorreosDefaultRoute: typeof DashboardConfiguracionCorreosDefaultRoute
   DashboardConfiguracionEstadoOrdenServicioRoute: typeof DashboardConfiguracionEstadoOrdenServicioRoute
   DashboardConfiguracionTipoClienteRoute: typeof DashboardConfiguracionTipoClienteRoute
   DashboardConfiguracionTipoContratoRoute: typeof DashboardConfiguracionTipoContratoRoute
@@ -1115,6 +1136,8 @@ interface DashboardConfiguracionRouteChildren {
 
 const DashboardConfiguracionRouteChildren: DashboardConfiguracionRouteChildren =
   {
+    DashboardConfiguracionCorreosDefaultRoute:
+      DashboardConfiguracionCorreosDefaultRoute,
     DashboardConfiguracionEstadoOrdenServicioRoute:
       DashboardConfiguracionEstadoOrdenServicioRoute,
     DashboardConfiguracionTipoClienteRoute:

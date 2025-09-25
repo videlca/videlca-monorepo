@@ -16,7 +16,7 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
   children,
   title,
   size = "md",
-  clickOutsideClose = true,
+  clickOutsideClose = false,
 }) => {
   const sizeClasses = {
     sm: "max-w-sm",

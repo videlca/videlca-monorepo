@@ -5,7 +5,6 @@ import { ChevronDown, PlusIcon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { CreateCorreoDto } from "../../api/dtos/clientes";
 import { useEstadoOrden } from "../../api/queryFunctions/configuracion";
-import { useEstadosApp } from "../../api/queryFunctions/configuracion/estado-app";
 
 interface ConfiguracionCorreoProps {
   correos: CreateCorreoDto[];
@@ -32,7 +31,6 @@ export function ConfiguracionCorreo({
   const [expandedEmails, setExpandedEmails] = useState<Set<string>>(new Set());
 
   const { data: estadosOrdenServicio } = useEstadoOrden();
-  // const { data: estadosApp } = useEstadosApp(isAppStates);
 
   const toggleEmailStates = (email: string) => {
     setExpandedEmails((prev) => {
@@ -81,7 +79,6 @@ export function ConfiguracionCorreo({
       nombre: correoInput.nombre.trim(),
       apellido: correoInput.apellido.trim(),
       estados: [],
-      // estadosApp: isAppStates ? [] : undefined,
     };
 
     onCorreosChange([...correos, newCorreo]);
@@ -90,7 +87,6 @@ export function ConfiguracionCorreo({
       apellido: "",
       correo: "",
       estados: [],
-      // estadosApp: isAppStates ? [] : undefined,
     });
   };
 
@@ -102,7 +98,6 @@ export function ConfiguracionCorreo({
     email: string,
     idEstadoOrdenServicio: number,
     checked: boolean,
-    // isAppState: boolean = false,
   ) => {
     onCorreosChange(
       correos.map((c) =>
@@ -112,20 +107,6 @@ export function ConfiguracionCorreo({
               estados: checked
                 ? [...c.estados, idEstadoOrdenServicio]
                 : c.estados.filter((id) => id !== idEstadoOrdenServicio),
-              // estados: // isAppState
-              // ? c.estados
-              // : checked
-              //   ? [...c.estados, estadoNombre]
-              //   : c.estados.filter((nombre) => nombre !== estadoNombre),
-              // estadosApp: isAppState
-              // estados: // isAppState
-              // ? checked
-              //   ? [...(c.estadosApp || []), estadoNombre]
-              //   : (c.estadosApp || []).filter(
-              //       (nombre) => nombre !== estadoNombre,
-              //     )
-              // : c.estadosApp,
-              // : c.estadosApp,
             }
           : c,
       ),

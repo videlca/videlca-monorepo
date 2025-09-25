@@ -13,6 +13,7 @@ import {
   LucideCalendarClock,
   LucideCircleUserRound,
   LucideSlidersVertical,
+  MailIcon,
   MapPinIcon,
   ShieldCheckIcon,
   UserIcon,
@@ -89,6 +90,12 @@ export const linksSideBar: LinksSideBar = {
       label: "Tipo de Contrato",
       description: "tipo-contrato",
       icon: <FileTextIcon className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/configuracion/correos-default",
+      label: "Correos por defecto",
+      description: "correos-por-defecto",
+      icon: <MailIcon className="h-6 w-6" />,
     },
   ],
   clientes: [
