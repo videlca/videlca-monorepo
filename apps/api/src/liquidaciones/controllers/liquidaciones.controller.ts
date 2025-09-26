@@ -39,17 +39,10 @@ export class LiquidacionesController {
 
   @Get('ordenes-por-mes')
   async findByMes(
-    @Query('anio') anio: string,
-    @Query('mes') mes: string,
+    @Query('anio', ParseIntPipe) anio: number,
+    @Query('mes', ParseIntPipe) mes: number,
   ) {
-    const anioNum = parseInt(anio, 10);
-    const mesNum = parseInt(mes, 10);
-
-    if (isNaN(anioNum) || isNaN(mesNum)) {
-      throw new BadRequestException('anio y mes deben ser numéricos');
-    }
-
-    return this.service.findByCreacionMes(anioNum, mesNum);
+    return this.service.findByCreacionMes(anio, mes);
   }
 
   @Get('/by-estado')

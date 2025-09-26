@@ -18,5 +18,13 @@ export { UpdatetipoDto } from './tipo/update-tipo.dto';
 export { CreateEstadoOrdenDto } from './estado-orden-servicio/create-estado-orden-servicio.dto';
 export { UpdateEstadoOrdenDto } from './estado-orden-servicio/update-estado-orden-servicio.dto';
 
+// ESTADO APP
+export { CreateEstadoAppDto } from './estado-app/create-estado-app.dto';
+export { UpdateEstadoAppDto } from './estado-app/update-estado-app.dto';
+
+// CORREO DEFAULT APP
+export { CorreoDefaultDto } from './correo-default/correo-default.dto';
+export { CreateCorreoDefaultDto } from './correo-default/correo-default.dto';
+
 // PAGINATION
 export { PaginationDto } from "./pagination.dto";

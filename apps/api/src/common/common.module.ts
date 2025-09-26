@@ -13,8 +13,11 @@ import {
     TipoIdentificacion, // tipo id
 
     EstadoOrdenServicio, // Estado Orden servicio
+    EstadoApp, // Estados de la app
     
     TipoCliente, // Tipo cliente
+
+    CorreoDefault
 } from './entities';
 
 import { 
@@ -27,6 +30,10 @@ import {
   UbicacionService, // Ubicacion
 
   EstadoOrdenServicioService, // Estado Orden Servicio
+
+  EstadoAppService, // Estados de la aplicacion
+
+  CorreoDefaultService // Correos por default
 } from './services';
 
 import { 
@@ -37,6 +44,10 @@ import {
   UbicacionController, // Ubicacion
 
   EstadoOrdenController, // Estado Orden Servicio
+
+  EstadoAppController, // Estados de la aplicacion
+
+  CorreoDefaultController, // Correos por default
 } from './controllers';
 
 
@@ -50,6 +61,8 @@ import {
       TipoIdentificacion,
       TipoCliente,
       EstadoOrdenServicio,
+      EstadoApp,
+      CorreoDefault
   ]),
     ConfigModule,
     forwardRef(() => AuthModule), // Use forwardRef if AuthModule imports CommonModule
@@ -59,14 +72,18 @@ import {
     TipoIdentificacionController,
     TipoClienteController,
     UbicacionController,
-    EstadoOrdenController
+    EstadoOrdenController,
+    EstadoAppController,
+    CorreoDefaultController
   ],
   providers: [
     EmailService,
     TipoIdentificacionService,
     TipoClienteService,
     UbicacionService,
-    EstadoOrdenServicioService
+    EstadoOrdenServicioService,
+    EstadoAppService,
+    CorreoDefaultService
   ],
   exports: [
     TypeOrmModule, 
@@ -74,7 +91,9 @@ import {
     TipoIdentificacionService,
     TipoClienteService,
     UbicacionService,
-    EstadoOrdenServicioService
+    EstadoOrdenServicioService,
+    EstadoAppService,
+    CorreoDefaultService
   ]
 })
 export class CommonModule {}

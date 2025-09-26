@@ -165,7 +165,24 @@ export class TarifasService {
       queryBuilder.take(limit).skip(offset);
     }
 
-    return await queryBuilder.getMany();
+    const tarifas = await queryBuilder.getMany();
+
+    // Agrupar por tipo de servicio
+    const tarifasAgrupadas = tarifas.reduce((acc, tarifa) => {
+      
+      const tipo = tarifa.idServicio.idTipoServicio.nombre
+  
+      if (!acc[tipo]) {
+        acc[tipo] = [];
+      }
+  
+      acc[tipo].push(tarifa);
+  
+      return acc;
+
+    }, {} as Record<string, Tarifa[]>);
+
+    return tarifasAgrupadas;
 
   }
   

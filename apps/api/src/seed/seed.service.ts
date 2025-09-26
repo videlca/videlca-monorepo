@@ -2,7 +2,7 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { ClientesService, SegmentacionService } from '../clientes/services';
-import { EstadoOrdenServicioService, TipoClienteService, TipoIdentificacionService, UbicacionService } from '../common/services';
+import { EstadoOrdenServicioService, EstadoAppService, TipoClienteService, TipoIdentificacionService, UbicacionService } from '../common/services';
 import { UsersService } from '../users/users.service';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PersonalService, TipoGeneroService, TipoPersonalService } from '../personal/services';
@@ -23,6 +23,7 @@ export class SeedService {
         private readonly clienteService: ClientesService,
         private readonly segmentacionService: SegmentacionService,
         private readonly estadoOrdenServicioService: EstadoOrdenServicioService,
+        private readonly estadoAppService: EstadoAppService,
         private readonly tipoClienteService: TipoClienteService,
         private readonly tipoIdService: TipoIdentificacionService,
         private readonly ubicacionService: UbicacionService,
@@ -146,6 +147,7 @@ export class SeedService {
         const tiposNovedad = initialData.tiposNovedad;
 
         const estadosOrdenesServicio = initialData.estadosOrdenServicio;
+        const estadosapp = initialData.estadosApp;
 
         const roles = initialData.roles;
         const permisos = initialData.permissions;
@@ -198,6 +200,11 @@ export class SeedService {
         // insertar estados orden de servicio
         estadosOrdenesServicio.forEach(estadoOrden => {
             insertPromises.push(this.estadoOrdenServicioService.createEstadoOrdenSeed(estadoOrden))
+        });
+        
+        // insertar estados aplicacion
+        estadosapp.forEach(estadoApp => {
+            insertPromises.push(this.estadoAppService.createEstadoAppSeed(estadoApp))
         });
 
         // insertar rol

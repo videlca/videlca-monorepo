@@ -290,6 +290,10 @@ export class LiquidacionesService {
       throw new BadRequestException('Parámetros inválidos (anio, mes)');
     }
 
+    const today = new Date();
+    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
+      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+
     // Rango del mes objetivo: [inicioMes, finMes)
     const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
     const finMes = new Date(Date.UTC(anio, mes1a12, 1, 0, 0, 0)); // inicio del mes siguiente
@@ -414,7 +418,7 @@ export class LiquidacionesService {
 
     if (!grupo) throw new NotFoundException('Grupo de liquidación no encontrado');
 
-    grupo[dto.campo] = dto.valor;
+    grupo[dto.campo] = dto.valor === 'true';
     await this.grupoLiquidacionrepo.save(grupo);
 
     return {

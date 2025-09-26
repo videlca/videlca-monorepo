@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString, Length, ValidateNested, ArrayMinSize, IsNumber, IsPositive, Min, Max, MaxLength, MinLength } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, IsEmail, Length, ValidateNested, ArrayMinSize, IsNumber, IsPositive, Min, Max, MaxLength, MinLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 
@@ -16,6 +16,7 @@ export class CreateCorreoDto {
 
   @IsString()
   @IsNotEmpty()
+  @IsEmail()
   @Length(1, 100)
   email: string;
 

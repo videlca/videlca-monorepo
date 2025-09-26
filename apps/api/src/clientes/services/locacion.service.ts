@@ -42,7 +42,7 @@ export class LocacionService {
         const { correos = [], ...locacionData } = createLocacionDto;
 
         // Validar que todos los estados estén cubiertos
-        await this.validateEstadosCompletos(createLocacionDto.correos);
+        // await this.validateEstadosCompletos(createLocacionDto.correos);
     
         // Usar QueryRunner para transacción manual
         const queryRunner = this.dataSource.createQueryRunner();
@@ -72,6 +72,12 @@ export class LocacionService {
             const uniqueCorreos = this.removeDuplicatesByEmail(correos);
             
             for (const correoDto of uniqueCorreos) {
+
+                if (correoDto.estados.length <= 0){
+
+                    throw new BadRequestException(`Se debe enviar al menos un estado en cada correo`);
+
+                }
         
                 // Validar que los estados existen
                 // Busca los estados por sus IDs
@@ -371,10 +377,14 @@ export class LocacionService {
     // Actualizar locación
     async update(id: number, updateLocacionDto: UpdateLocacionDto) {
 
-        const { correos, idCiudad, idCliente, ...locacionData } = updateLocacionDto;
+        const { correos = [], idCiudad, idCliente, ...locacionData } = updateLocacionDto;
+
+        if (correos.length <= 0){
+            throw new BadRequestException(`Se debe añadir al menos un correo`);
+        }
 
         // Validar que todos los estados estén cubiertos
-        await this.validateEstadosCompletos(correos);
+        // await this.validateEstadosCompletos(correos);
     
         // Verificar que la locación existe
         const locacionExistente = await this.locacionRepository.preload({idLocacion: id, ...locacionData});

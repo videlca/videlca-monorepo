@@ -43,6 +43,12 @@ interface EstadoOrdenServicio {
     programable: boolean;
 }
 
+interface EstadoApp {
+    nombre: string,
+    descripcion: string;
+    estado: boolean;
+}
+
 // tipo novedad
 interface TipoNovedad {
     descripcion: string;
@@ -66,6 +72,7 @@ interface SeedData {
     paises: Tipo[],
     tiposNovedad: TipoNovedad[],
     estadosOrdenServicio: EstadoOrdenServicio[],
+    estadosApp: EstadoApp[],
     tiposUnidadTiempo: TipoUnidadTiempo[],
     tiposTarifa: TipoTarifa[]
 }
@@ -107,6 +114,15 @@ export const initialData: SeedData = {
             programable: true
         },
         {nombre: "terminado", descripcion: "Estado para indicar que una orden servicio ha terminado", estado: true, programable: false}
+    ],
+
+    estadosApp: [
+        
+        {nombre: "creacion periodo", descripcion: "Enviar correos referentes al modulo tarifa: creacion de periodos", estado: true},
+        {nombre: "configuracion de tarifas de un periodo", descripcion: "Enviar correos refrentes al modulo tarifas: configurar tarifas a un periodo", estado: true},
+        {nombre: "creacion liquidacion", descripcion: "Enviar correos refrentes al modulo liquidacion: creacion de liquidacion", estado: true},
+        {nombre: "aprobacion/desaprobacion liquidacion", descripcion: "Enviar correos refrentes al modulo liquidacion: aprobacion o desaprobacion de liquidacion de ordenes", estado: true},
+        
     ],
 
     roles: [
