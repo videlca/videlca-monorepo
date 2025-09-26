@@ -16,6 +16,22 @@ import { GrupoLiquidacion } from '../entities/grupo_liquidaciones.entity';
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 import { PrecioOrdenDto } from 'src/orden-servicio/dto';
 import { OrdenServicioService } from 'src/orden-servicio/services';
+import { Cliente } from 'src/clientes/entities';
+import { Tarifa } from 'src/tarifas/entities';
+
+type ClienteGrupoResumen = {
+  cliente: Cliente;
+  totalLiquidaciones: number;
+  totalOrdenes: number;
+  ordenes: Array<{
+    liquidacionId: number;
+    valorLiquidacion: number;
+    fechaCreacion: Date;
+    totalOrdenServicio: number;
+    ordenServicio: OrdenServicio;
+    servicios: Tarifa[];
+  }>;
+};
 
 @Injectable()
 export class LiquidacionesService {
@@ -90,11 +106,11 @@ export class LiquidacionesService {
     }
 
     const today = new Date();
-    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
-      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+//    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
+//      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    if (today.getMonth() + 1 === mes && today.getDate() < 20)
-      throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
+//    if (today.getMonth() + 1 === mes && today.getDate() < 20)
+//      throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
 
     return this.withRetry(() =>
       this.ds.transaction('READ COMMITTED', async (tm) => {
@@ -439,6 +455,90 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .getMany();
+  }
+
+  async obtenerOrdenesPorCliente(idGrupoLiquidacion: number) {
+    const grupoId = Number(idGrupoLiquidacion);
+    if (!grupoId || Number.isNaN(grupoId)) {
+      throw new BadRequestException('idGrupoLiquidacion inválido');
+    }
+
+    const grupo = await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: grupoId },
+    });
+
+    if (!grupo) {
+      throw new NotFoundException('Grupo de liquidación no encontrado');
+    }
+
+    const liquidaciones = await this.repo
+      .createQueryBuilder('liq')
+      .leftJoinAndSelect('liq.ordenServicio', 'orden')
+      .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
+      .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
+      .leftJoinAndSelect('orden.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('orden.tarifas', 'ost')
+      .leftJoinAndSelect('ost.idTarifa', 'tarifa')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
+      .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
+      .orderBy('cliente.nombre', 'ASC')
+      .addOrderBy('orden.idOrdenServicio', 'ASC')
+      .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
+      .getMany();
+
+    const agrupado = new Map<number, ClienteGrupoResumen>();
+
+    for (const liquidacion of liquidaciones) {
+      const orden = liquidacion.ordenServicio;
+      if (!orden) continue;
+
+      const cliente = orden.idLocacion?.idCliente;
+      if (!cliente?.idCliente) continue;
+
+      const entry = agrupado.get(cliente.idCliente) ?? {
+        cliente,
+        totalLiquidaciones: 0,
+        totalOrdenes: 0,
+        ordenes: [],
+      };
+
+      const valorLiquidacionRaw = Number(liquidacion.valor_liquidacion ?? 0);
+      const valorLiquidacion = Number.isFinite(valorLiquidacionRaw) ? valorLiquidacionRaw : 0;
+      const totalOrdenRaw = Number(orden.precioTotal ?? 0);
+      const totalOrdenServicio = Number.isFinite(totalOrdenRaw) ? totalOrdenRaw : 0;
+
+      entry.totalLiquidaciones += valorLiquidacion;
+      entry.totalOrdenes += totalOrdenServicio;
+
+      const servicios = (orden.tarifas ?? [])
+        .map((detalle) => detalle?.idTarifa)
+        .filter((tarifa): tarifa is Tarifa => Boolean(tarifa));
+
+      entry.ordenes.push({
+        liquidacionId: liquidacion.idLiquidacion,
+        valorLiquidacion: round2(valorLiquidacion),
+        fechaCreacion: liquidacion.fechaCreacion,
+        totalOrdenServicio: round2(totalOrdenServicio),
+        ordenServicio: orden,
+        servicios,
+      });
+
+      agrupado.set(cliente.idCliente, entry);
+    }
+
+    const clientes = Array.from(agrupado.values())
+      .map(({ cliente, ordenes, totalLiquidaciones, totalOrdenes }) => ({
+        cliente,
+        ordenes,
+        totalLiquidaciones: round2(totalLiquidaciones),
+        totalOrdenes: round2(totalOrdenes),
+      }))
+      .sort((a, b) => (a.cliente?.nombre ?? '').localeCompare(b.cliente?.nombre ?? ''));
+
+    return { grupo, clientes };
   }
 
 }
