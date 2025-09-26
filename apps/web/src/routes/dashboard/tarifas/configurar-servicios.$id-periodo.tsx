@@ -255,11 +255,11 @@ function RouteComponent() {
     <Section>
       <div className="flex items-center justify-between gap-8">
         <div className="flex w-full flex-col gap-2">
-          <h1 className="text-3xl font-bold">
+          <h1 className="flex flex-col gap-2 text-3xl font-bold lg:flex-row lg:items-center">
             {" "}
             Periodo {periodo?.data?.anioInicio}{" "}
-            <span
-              className={`ml-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
+            <p
+              className={`ml-2 w-fit rounded-full px-3 py-1.5 text-sm font-semibold ${
                 periodo?.data?.periodoActivoFacturacion
                   ? "bg-green-200 text-green-700"
                   : "bg-red-200 text-red-700"
@@ -268,7 +268,7 @@ function RouteComponent() {
               {periodo?.data?.periodoActivoFacturacion
                 ? "Activo para facturación"
                 : "Inactivo para facturación"}
-            </span>
+            </p>
           </h1>
           <h1 className="text-base font-semibold text-gray-600">
             {periodo?.data?.nombre}

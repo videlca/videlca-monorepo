@@ -93,7 +93,7 @@ export const linksSideBar: LinksSideBar = {
     },
     {
       to: "/dashboard/configuracion/correos-default",
-      label: "Correos por defecto",
+      label: "Correos de aplicación",
       description: "correos-por-defecto",
       icon: <MailIcon className="h-6 w-6" />,
     },

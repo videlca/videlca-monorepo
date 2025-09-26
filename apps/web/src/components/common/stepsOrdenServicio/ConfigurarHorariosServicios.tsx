@@ -88,7 +88,6 @@ export const ConfigurarHorariosServicios = ({
                     <div className="grid grid-cols-2 gap-4">
                       <InputTime24H
                         label="Hora de Inicio"
-                        placeholder="00:00"
                         id="horaInicio"
                         name="horaInicio"
                         value={
@@ -114,7 +113,6 @@ export const ConfigurarHorariosServicios = ({
                       />
                       <InputTime24H
                         label="Hora de Fin"
-                        placeholder="00:00"
                         id="horaFin"
                         name="horaFin"
                         value={

@@ -27,7 +27,7 @@ import {
   useTipoTarifa,
 } from "../../../api/queryFunctions/tarifas";
 import { StateLabel } from "../../../components/common/StateLabel";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { useForm } from "../../../hooks/useForm";
@@ -284,6 +284,12 @@ function RouteComponent() {
       },
     },
   ];
+
+  const serviciosData = useMemo(
+    () => Object.entries(tarifas?.data || []),
+    [tarifas?.data],
+  );
+
   return (
     <Section>
       <div className="flex items-center justify-between gap-8">
@@ -331,14 +337,27 @@ function RouteComponent() {
           />
         </div>
       </div>
-      <Table
-        columns={columns}
-        data={tarifas?.data || []}
-        enablePagination={true}
-        enableSorting={true}
-        pageSize={10}
-        enableFiltering={true}
-      />
+
+      <div className="flex flex-col gap-6">
+        {serviciosData.map(([key, value]: [string, any]) => {
+          return (
+            <div
+              key={key}
+              className="rounded-lg border border-blue-200 bg-blue-100/70 pt-2"
+            >
+              <h2 className="mb-2 w-fit rounded-lg p-2 px-4 text-xl font-medium text-blue-600">
+                {key}
+              </h2>
+              <Table
+                columns={columns}
+                data={value || []}
+                pageSize={10}
+                enablePagination={false}
+              />
+            </div>
+          );
+        })}
+      </div>
 
       {/* TODO: mostrar datos de la tarifa */}
       <SimpleModal

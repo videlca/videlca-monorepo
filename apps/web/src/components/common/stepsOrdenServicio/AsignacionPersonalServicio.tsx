@@ -168,7 +168,6 @@ export const AsignacionPersonalServicio = ({
                               <div className="flex-1">
                                 <InputTime24H
                                   label="Hora de Inicio"
-                                  placeholder="00:00"
                                   id={`horaInicio-${index}`}
                                   name={`horaInicio-${index}`}
                                   value={
@@ -229,7 +228,6 @@ export const AsignacionPersonalServicio = ({
                               <div className="flex-1">
                                 <InputTime24H
                                   label="Hora de Fin"
-                                  placeholder="00:00"
                                   id={`horaFin-${index}`}
                                   name={`horaFin-${index}`}
                                   value={

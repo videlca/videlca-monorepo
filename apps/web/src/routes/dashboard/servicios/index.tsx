@@ -3,12 +3,9 @@ import {
   BarChart3,
   Calendar,
   Clock,
-  EyeIcon,
   FileText,
-  PencilIcon,
   PlusIcon,
   Shield,
-  TrashIcon,
   UserCheck,
   UserX,
 } from "lucide-react";
@@ -28,7 +25,7 @@ import {
 import type { Servicio } from "../../../api/types/servicio";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import Button from "../../../components/common/Button";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
@@ -111,34 +108,49 @@ function RouteComponent() {
     {
       header: "Descripción",
       accessorKey: "descripcion",
-    },
-    {
-      header: "Tipo de servicio",
-      accessorKey: "idTipoServicio.nombre",
+      cell: ({ row }) => {
+        return (
+          <span className="whitespace-nowrap">{row.original.descripcion}</span>
+        );
+      },
     },
     {
       header: "Duración",
       accessorKey: "idTipoDuracion.descripcion",
+      cell: ({ row }) => {
+        return (
+          <span className="whitespace-nowrap">
+            {row.original.idTipoDuracion.descripcion}
+          </span>
+        );
+      },
     },
     {
       header: "Horario",
       accessorKey: "idTipoHorarioDescripcion.nombre",
+      cell: ({ row }) => {
+        return (
+          <span className="whitespace-nowrap">
+            {row.original.idTipoHorarioDescripcion.nombre}
+          </span>
+        );
+      },
     },
     {
       header: "Horas",
       cell: ({ row }) => {
-        if (row.original.idTipoDuracion.descripcion === "fija") {
+        if (row.original.idTipoDuracion?.descripcion === "fija") {
           return (
             <div className="flex flex-col gap-2">
               <p>Fijas: {row.original.horasFijas}</p>
             </div>
           );
         }
-        if (row.original.idTipoDuracion.descripcion === "flexible") {
+        if (row.original.idTipoDuracion?.descripcion === "flexible") {
           return (
-            <div className="flex flex-col gap-2">
-              <p>Mínimas: {row.original.horasMinimas}</p>
-              <p>Máximas: {row.original.horasMaximas}</p>
+            <div className="flex flex-col gap-2 whitespace-nowrap">
+              <span>Mínimas: {row.original.horasMinimas}</span>
+              <span>Máximas: {row.original.horasMaximas}</span>
             </div>
           );
         }
@@ -206,6 +218,10 @@ function RouteComponent() {
     },
   ];
 
+  const serviciosData = useMemo(
+    () => Object.entries(servicios?.data || []),
+    [servicios?.data],
+  );
   return (
     <Section>
       <div className="flex justify-end">
@@ -216,13 +232,28 @@ function RouteComponent() {
         />
       </div>
 
-      <Table
-        columns={columns}
-        data={servicios?.data || []}
-        enablePagination={true}
-        enableSorting={true}
-        enableFiltering={true}
-      />
+      <div className="flex flex-col gap-6">
+        {serviciosData.map(([key, value]: [string, any]) => {
+          console.log(value.length);
+
+          return (
+            <div
+              key={key}
+              className="rounded-lg border border-blue-200 bg-blue-100/70 pt-2"
+            >
+              <h2 className="mb-2 w-fit rounded-lg p-2 px-4 text-xl font-medium text-blue-600">
+                {key}
+              </h2>
+              <Table
+                columns={columns}
+                data={value || []}
+                pageSize={10}
+                enablePagination={false}
+              />
+            </div>
+          );
+        })}
+      </div>
 
       <SimpleModal
         isOpen={isOpenAddModal}
