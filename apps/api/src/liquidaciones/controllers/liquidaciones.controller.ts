@@ -88,6 +88,11 @@ export class LiquidacionesController {
     return this.service.buscarGrupoLiquidaciones();
   }
 
+  @Get('grupo/:id/ordenes-por-cliente')
+  async obtenerOrdenesPorCliente(@Param('id', ParseIntPipe) id: number) {
+    return this.service.obtenerOrdenesPorCliente(id);
+  }
+
 
   @Get()
   @ApiQuery({ name: 'page', required: false, example: 1 })
