@@ -121,7 +121,7 @@ export const initialData: SeedData = {
         {nombre: "anulacion ID orden servicio", descripcion: "Enviar correos cuando se anule un ID de orden de servicio", estado: true},
         {nombre: "creacion/eliminacion de usuarios de la aplicacion", descripcion: "Enviar correos cuando se cree o elimine un usuario de la aplicacion", estado: true},
         {nombre: "comentarios en orden de servicio", descripcion: "Enviar correos cuando se añada un comentario a una orden de servicio", estado: true},
-        {nombre: "creacion novedades personal", descripcion: "Enviar correos cuando se cree una novedad a un empleado", estado: true},
+        {nombre: "novedades personal", descripcion: "Enviar correos asociados a novedades de un empleado", estado: true},
         
         {nombre: "creacion periodo", descripcion: "Enviar correos referentes al modulo tarifa: creacion de periodos", estado: true},
         {nombre: "configuracion de tarifas de un periodo", descripcion: "Enviar correos refrentes al modulo tarifas: configurar tarifas a un periodo", estado: true},

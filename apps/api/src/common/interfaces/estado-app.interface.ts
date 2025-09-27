@@ -19,7 +19,7 @@ export enum EstadoAppInterface {
     COMENTARIOS_ORDEN_SERVICIO = "comentarios en orden de servicio",
 
     // CREACION NOVEDADES PERSONAL
-    CREACION_NOVEDADES_PERSONAL = "creacion novedades personal",
+    NOVEDADES_PERSONAL = "novedades personal",
 
     // ANULACION ID ORDEN DE SERVICIO
     ANULACION_ID_ORDEN_SERVICIO = "anulacion ID orden servicio",
