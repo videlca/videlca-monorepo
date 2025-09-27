@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
+import { CommonModule } from '../common/common.module';
 import { AuthModule } from '../auth/auth.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 
@@ -17,6 +18,7 @@ import { PeriodosController } from './periodos.controller';
     ]),
     AuthModule,
     PermissionsModule,
+    CommonModule,
     ConfigModule,
 
   ],
