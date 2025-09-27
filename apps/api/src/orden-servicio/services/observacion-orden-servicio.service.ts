@@ -74,8 +74,10 @@ export class ObservacionesOrdenServicioService {
         } catch (error) {
 
             await queryRunner.rollbackTransaction();
+
+            throw error;
             
-            this.handleDbExceptions(error);
+            // this.handleDbExceptions(error);
     
         } finally {
 
@@ -177,11 +179,11 @@ export class ObservacionesOrdenServicioService {
     }
 
     // ENVIAR CORREO PARA INFORMAR CREACION DE COMENTARIO/OBSERVACION
-      private async notificationEmail(
+    private async notificationEmail(
         idOrdenServicio: number,
         nombreUsuario: string,
         comentario: string
-      ) {        
+    ) {        
     
         const html = `
         <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">

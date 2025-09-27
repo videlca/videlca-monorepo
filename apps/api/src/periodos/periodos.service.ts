@@ -116,7 +116,9 @@ export class PeriodosService {
       
       await queryRunner.rollbackTransaction();
 
-      this.handleDbExceptions(error);
+      throw error;
+
+      // this.handleDbExceptions(error);
 
     } finally {
 
