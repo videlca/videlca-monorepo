@@ -10,6 +10,15 @@ export enum EstadoApp {
     CREACION_LIQUIDACION = "creacion liquidacion",
     
     // APROBACION / DESAPROBACION LIQUIDACION
-    APROBACION_DESAPROBACION_LIQUIDACION = "aprobacion/desaprobacion liquidacion"
+    APROBACION_DESAPROBACION_LIQUIDACION = "aprobacion/desaprobacion liquidacion",
+
+    // CREACION / ELIMINACION USUARIOS DE LA APLICACION
+    CREACION_ELIMINACION_USUARIOS = "creacion/eliminacion de usuarios de la aplicacion",
+
+    // COMENTARIOS EN ORDEN DE SERVICIO
+    COMENTARIOS_ORDEN_SERVICIO = "comentarios en orden de servicio",
+
+    // CREACION NOVEDADES PERSONAL
+    CREACION_NOVEDADES_PERSONAL = "creacion novedades personal",
 
 }
