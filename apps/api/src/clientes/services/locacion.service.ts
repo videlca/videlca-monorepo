@@ -162,19 +162,50 @@ export class LocacionService {
     private async notificationEmail(correoInfo: CreateCorreoDto) {
 
         const nombreCompleto = `${correoInfo.nombre} ${correoInfo.apellido}`;        
-    
+
         const html = `
-        <div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 600px; margin: 20px auto; text-align: center; font-family: 'Poppins', sans-serif;">
-            <h2 style="margin-bottom: 20px; color: #333; font-weight: 700;">CORREO INFORMATIVO VIDELCA - GEVID 👮‍♂️</h2>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Buen día ${nombreCompleto}, este correo ha sido añadido en el sistema de notificaciones de Videlca</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no brindo su correo para el sistema de notificaciones, omita este mensaje.</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+        <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+          <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+            
+            <!-- Encabezado -->
+            <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+              <h2 style="margin: 0; font-size: 22px; font-weight: 700;">CORREO VINCULADO A LAS NOTIFICACIONES DE GEVID</h2>
+            </div>
+            
+            <!-- Cuerpo -->
+            <div style="padding: 25px; text-align: center;">
+              <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+                Buen día <strong>${nombreCompleto}</strong>, este correo ha sido añadido en el sistema de notificaciones de <b>Videlca</b>.
+              </p>
+              <p style="font-size: 15px; line-height: 1.6; color: #555;">
+                Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+              </p>
+              <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+              <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+            </div>
+        
+            <!-- Imagen -->
+            <div style="text-align: center; padding: 15px;">
+              <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                   alt="videlca" 
+                   style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+            </div>
+        
+            <!-- Mensaje de aplicación -->
+            <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+              📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+            </div>
+        
+            <!-- Pie de página -->
+            <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+              © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+            </div>
+            
+          </div>
         </div>
         `;
-        
-        const subject = `CORREO INFORMATIVO VIDELCA - GEVID 👮‍♂️`;
+
+        const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): correo electronico vinculado a la aplicacion`;
 
         // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
         const options: SendMailOptions = {

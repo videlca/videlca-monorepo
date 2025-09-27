@@ -104,22 +104,51 @@ export class AuthService {
         const url = `${this.hostFrontend}/olvide-password/${token}`;
 
         const nombreCompleto = fullName;        
-    
+
         const html = `
-        <div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 600px; margin: 20px auto; text-align: center; font-family: 'Poppins', sans-serif;">
-            <h2 style="margin-bottom: 20px; color: #333; font-weight: 700;">Reestablecer contraseña en GEVID 👮‍♂️</h2>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Buen día ${nombreCompleto}, para reestablecer tu contraseña en GEVID por favor haz click sobre el enlace</p>
-            <div style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 20px 0;">
-                <p>📎 Enlace para reestablecer contraseña: <strong><a href="${url}">Reestablecer contraseña</a></strong></p>
+        <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+          <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+            
+            <!-- Encabezado -->
+            <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+              <h2 style="margin: 0; font-size: 22px; font-weight: 700;">REESTABLECER CONTRASEÑA</h2>
             </div>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omita este mensaje.</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+            
+            <!-- Cuerpo -->
+            <div style="padding: 25px; text-align: center;">
+              <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+                Buen día <strong>${nombreCompleto}</strong>, para reestablecer tu contraseña en <b>GEVID</b> por favor haz click sobre el enlace: <br><br>
+                📎 Enlace para reestablecer contraseña: <strong><a href="${url}">Reestablecer contraseña</a></strong>
+              </p>
+              <p style="font-size: 15px; line-height: 1.6; color: #555;">
+                Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+              </p>
+              <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+              <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+            </div>
+        
+            <!-- Imagen -->
+            <div style="text-align: center; padding: 15px;">
+              <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                   alt="videlca" 
+                   style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+            </div>
+        
+            <!-- Mensaje de aplicación -->
+            <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+              📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+            </div>
+        
+            <!-- Pie de página -->
+            <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+              © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+            </div>
+            
+          </div>
         </div>
         `;
-        
-        const subject = `${nombreCompleto} Reestablece tu contraseña en GEVID`;
+
+        const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): reestablece tu contraseña`;
 
         // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
         const options: SendMailOptions = {
@@ -185,22 +214,51 @@ export class AuthService {
         const { fullName, token, email } = await this.validateUser(numeroIdentificacion);
 
         const url = `${this.hostFrontend}/actualizar/${token}`;
-    
+
         const html = `
-        <div style="background-color: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; max-width: 600px; margin: 20px auto; text-align: center; font-family: 'Poppins', sans-serif;">
-            <h2 style="margin-bottom: 20px; color: #333; font-weight: 700;">Reestablecer cuenta en GEVID 👮‍♂️</h2>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Buen día ${fullName}, para reestablecer tu cuenta en GEVID por favor haz click sobre el enlace</p>
-            <div style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 20px 0;">
-                <p>📎 Enlace para reestablecer cuenta: <strong><a href="${url}">Reestablecer cuenta</a></strong></p>
+        <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+          <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+            
+            <!-- Encabezado -->
+            <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+              <h2 style="margin: 0; font-size: 22px; font-weight: 700;">REESTABLECER CUENTA</h2>
             </div>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omita este mensaje.</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
+            
+            <!-- Cuerpo -->
+            <div style="padding: 25px; text-align: center;">
+              <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+                Buen día <strong>${fullName}</strong>, para reestablecer tu cuenta en <b>GEVID</b> por favor haz click sobre el enlace: <br><br>
+                📎 Enlace para reestablecer cuenta: <strong><a href="${url}">Reestablecer contraseña</a></strong>
+              </p>
+              <p style="font-size: 15px; line-height: 1.6; color: #555;">
+                Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+              </p>
+              <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+              <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+            </div>
+        
+            <!-- Imagen -->
+            <div style="text-align: center; padding: 15px;">
+              <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                   alt="videlca" 
+                   style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+            </div>
+        
+            <!-- Mensaje de aplicación -->
+            <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+              📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+            </div>
+        
+            <!-- Pie de página -->
+            <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+              © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+            </div>
+            
+          </div>
         </div>
         `;
-        
-        const subject = `${fullName} Reestablece tu cuenta en GEVID`;
+
+        const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): reestablecer cuenta`;
 
         // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
         const options: SendMailOptions = {
