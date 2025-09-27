@@ -112,7 +112,7 @@ export class AuthService {
             <div style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 20px 0;">
                 <p>📎 Enlace para reestablecer contraseña: <strong><a href="${url}">Reestablecer contraseña</a></strong></p>
             </div>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omiste este mensaje.</p>
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omita este mensaje.</p>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
@@ -120,9 +120,16 @@ export class AuthService {
         `;
         
         const subject = `${nombreCompleto} Reestablece tu contraseña en GEVID`;
+
+        // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+        const options: SendMailOptions = {
+            to: email,
+            subject: subject,
+            htmlBody: html
+        }
     
         // Enviamos correo para reestablecer la contraseña
-        const isEmailSend = await this.sendEmail(email, html, subject);
+        const isEmailSend = await this.emailService.sendEmail(options);
     
         if (!isEmailSend){
             throw new InternalServerErrorException('Error al enviar correo para reestablecer contraseña');
@@ -186,7 +193,7 @@ export class AuthService {
             <div style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 20px 0;">
                 <p>📎 Enlace para reestablecer cuenta: <strong><a href="${url}">Reestablecer cuenta</a></strong></p>
             </div>
-            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omiste este mensaje.</p>
+            <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no tiene una cuenta en GEVID omita este mensaje.</p>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
             <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
@@ -194,9 +201,16 @@ export class AuthService {
         `;
         
         const subject = `${fullName} Reestablece tu cuenta en GEVID`;
+
+        // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+        const options: SendMailOptions = {
+            to: email,
+            subject: subject,
+            htmlBody: html
+        }
     
         // Enviamos correo para reestablecer la cuents
-        const isEmailSend = await this.sendEmail(email, html, subject);
+        const isEmailSend = await this.emailService.sendEmail(options);
     
         if (!isEmailSend){
             throw new InternalServerErrorException('Error al enviar correo para reestablecer cuenta');
@@ -267,22 +281,6 @@ export class AuthService {
             throw new UnauthorizedException('El token expiro o es incorrecto');
     
         }
-
-    }
-
-    // EMAIL PARA REESTABLECER CONTRASEÑA
-    async sendEmail(email: string, html: string, subject: string) {
-    
-        // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
-        const options: SendMailOptions = {
-            to: email,
-            subject: subject,
-            htmlBody: html
-        }
-        
-        const isSend = await this.emailService.sendEmail(options);
-        
-        return isSend; 
 
     }
   

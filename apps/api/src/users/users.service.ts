@@ -458,7 +458,7 @@ export class UsersService {
         <div style="background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 20px 0;">
             <p>📎 Enlace para comprobar cuenta: <strong><a href="${url}">Comprobar Cuenta</a></strong></p>
         </div>
-        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si tu no creaste una cuenta en GEVID omiste este mensaje.</p>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si tu no creaste una cuenta en GEVID omita este mensaje.</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">

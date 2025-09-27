@@ -7,14 +7,14 @@ import { CorreoDefaultService } from '../../services';
 import { CorreoDefaultDto, PaginationDto } from '../../dto';
 
 @Controller('correo-default')
-@AppAuth(DescriptionRoutes.CONFIGURACION) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+// @AppAuth(DescriptionRoutes.CONFIGURACION) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class CorreoDefaultController {
 
   constructor(private readonly correoDefaultService: CorreoDefaultService) {}
   
   @Post()
   create(@Body() correoDefaultDto: CorreoDefaultDto) {
-      return this.correoDefaultService.create(correoDefaultDto);
+    return this.correoDefaultService.create(correoDefaultDto);
   }
   
   @Get()

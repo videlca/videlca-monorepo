@@ -1,4 +1,4 @@
-import { BadGatewayException, BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -326,37 +326,28 @@ export class OrdenServicioService {
           <p style="line-height: 1.6; margin: 10px 0; color: #555;">Fecha de inicio de la orden: ${fechaInicio}</p>
           <p style="line-height: 1.6; margin: 10px 0; color: #555;">Fecha de fin de la orden: ${fechaFin}</p>
           <p style="line-height: 1.6; margin: 10px 0; color: #555;">Estado de la orden: ${estadoOrden}</p>
-          <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no brindo su correo para el sistema de notificaciones, omiste este mensaje.</p>
+          <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no brindo su correo para el sistema de notificaciones, omita este mensaje.</p>
           <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
           <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
           <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
       </div>
       `;
       
-      const subject = `CORREO INFORMATIVO VIDELCA - ACTUALIZACION ORDEN DE SERVICIO - GEVID 👮‍♂️`;
+      const subject = `CORREO INFORMATIVO VIDELCA - CREACION ORDEN DE SERVICIO - GEVID 👮‍♂️`;
+
+      // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+        const options: SendMailOptions = {
+            to: email,
+            subject: subject,
+            htmlBody: html
+        }
   
       // Enviamos correo para notificar al usuario
-      const isEmailSend = await this.sendEmail(email, html, subject);
+      const isEmailSend = await this.emailService.sendEmail(options);
   
       if (!isEmailSend){
-          throw new BadGatewayException(`Error al enviar correo de notificacion al email ${email}, revisar correo`);
+          throw new InternalServerErrorException(`Error al enviar correo de notificacion al email ${email}, revisar correo si esta bien escrito`);
       }
-
-  }
-
-  // EMAIL PARA NOTIFICAR AL USUARIO
-  async sendEmail(email: string[], html: string, subject: string) {
-  
-      // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
-      const options: SendMailOptions = {
-          to: email,
-          subject: subject,
-          htmlBody: html
-      }
-      
-      const isSend = await this.emailService.sendEmail(options);
-      
-      return isSend; 
 
   }
 
@@ -1369,7 +1360,7 @@ export class OrdenServicioService {
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">Fecha de inicio de la orden: ${fechaInicio}</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">Fecha de fin de la orden: ${fechaFin}</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">Estado de la orden: ${estadoOrden}</p>
-        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no brindo su correo para el sistema de notificaciones, omiste este mensaje.</p>
+        <p style="line-height: 1.6; margin: 10px 0; color: #555;">Si usted no brindo su correo para el sistema de notificaciones, omita este mensaje.</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">Saludos,</p>
         <p style="line-height: 1.6; margin: 10px 0; color: #555;">El equipo de GEVID</p>
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" alt="videlca" style="width: 100%; height: auto; margin-top: 20px; border-radius: 5px;">
@@ -1378,11 +1369,18 @@ export class OrdenServicioService {
     
     const subject = `CORREO INFORMATIVO VIDELCA - ACTUALIZACION ORDEN DE SERVICIO - GEVID 👮‍♂️`;
 
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+        to: email,
+        subject: subject,
+        htmlBody: html
+    }
+
     // Enviamos correo para notificar al usuario
-    const isEmailSend = await this.sendEmail(email, html, subject);
+    const isEmailSend = await this.emailService.sendEmail(options);
 
     if (!isEmailSend){
-        throw new BadGatewayException(`Error al enviar correo de notificacion al email ${email}, revisar correo`);
+        throw new InternalServerErrorException(`Error al enviar correo de notificacion al email ${email}, revisar correo si esta bien escrito`);
     }
 
   }
@@ -1430,45 +1428,6 @@ export class OrdenServicioService {
       await queryRunner.release();
     }
   }
-
-  // async anularId(anularIdDto: AnularIdOrdenServicioDto){
-
-  //   try {
-
-  //     const idExistente = await this.ordenServicioIdRepository.findOne({
-  //       where: {
-  //         descripcionId: anularIdDto.descripcionId
-  //       },
-  //       relations: {
-  //         ordenServicio: true
-  //       }
-  //     });
-
-  //     if (idExistente) {
-        
-  //       // Si existe y tiene orden asociada, error
-  //       if (idExistente.ordenServicio) {
-  //         throw new BadRequestException(`No se puede anular el ID "${anularIdDto.descripcionId}" porque tiene una orden asociada`);
-  //       }
-
-  //       // Si existe pero no tiene orden, también es error (ya está anulado)
-  //       throw new BadRequestException(`El ID "${anularIdDto.descripcionId}" ya existe`);
-  //     }
-
-  //     const idAnulado = this.ordenServicioIdRepository.create({
-  //       ...anularIdDto,
-  //       anulado: true
-  //     });
-
-  //     await this.ordenServicioIdRepository.save(idAnulado);
-      
-  //   } catch (error) {
-
-  //     this.handleDbExceptions(error);
-      
-  //   }
-
-  // }
 
   private handleDbExceptions(error: any){
           

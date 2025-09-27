@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Transporter } from "nodemailer";
 import * as nodemailer from 'nodemailer';
+import { promises as dns } from "dns";
 
 // Opciones requeridas para enviar un email
 export interface SendMailOptions {
@@ -38,11 +39,36 @@ export class EmailService {
       });
 
     }
+
+    // ✅ Validar si el dominio del correo tiene MX
+    private async validateEmailDomain(email: string): Promise<boolean> {
+      const domain = email.split("@")[1];
+      try {
+        const mxRecords = await dns.resolveMx(domain);
+    
+        // Filtrar el caso de Null MX → { exchange: '', priority: 0 }
+        const validMx = mxRecords.filter(mx => mx.exchange && mx.exchange.trim() !== "");
+    
+        return validMx.length > 0;
+      } catch {
+        return false;
+      }
+    }
+    
     
     // ENVIAR EMAIL
     async sendEmail( options: SendMailOptions ): Promise<boolean> {
 
         const { to, subject, htmlBody } = options;
+
+        // Validar dominio antes de enviar
+        const validDomain = await this.validateEmailDomain(
+          Array.isArray(to) ? to[0] : to
+        );
+    
+        if (!validDomain) {
+          return false; // acá ya no dejas crear el correo en tu app
+        }
     
         try {
     
