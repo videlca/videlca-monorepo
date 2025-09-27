@@ -8,6 +8,8 @@ import { SendMailOptions } from '../../services/email/email.service';
 import { EstadoApp, CorreoDefault, EstadoOrdenServicio } from '../../entities';
 
 import { PaginationDto } from '../../dto';
+import { EstadoAppInterface } from '../../interfaces/estado-app.interface';
+import { EstadoOrdenServicio as EstadoOrdenServicioInterface } from '../../interfaces/estado-orden-servicio.interface';
 
 import { CorreoDefaultDto, CreateCorreoDefaultDto } from '../../dto';
 
@@ -143,9 +145,9 @@ export class CorreoDefaultService {
                     emailEnvio.email === correo.email
                 );
                 
-                await this.notificationEmail(correoDto);
                 if (debeEnviarCorreo) {
                     // ENVIAR EMAIL PARA SABER SI CORREO FUNCIONA
+                    await this.notificationEmail(correoDto);
                 }
             
                 correosCreados.push(savedCorreo);
@@ -408,7 +410,7 @@ export class CorreoDefaultService {
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const locaciones = await this.correoDefaultRepository.find({
+            const correosDefault = await this.correoDefaultRepository.find({
                 take: limit,
                 skip: offset,
                 order: {
@@ -420,7 +422,7 @@ export class CorreoDefaultService {
                 }
             });
   
-            return locaciones;
+            return correosDefault;
 
         }    
         
@@ -433,6 +435,58 @@ export class CorreoDefaultService {
                 descripcion: 'ASC'
             }
         });
+    }
+    
+    // Obtener todos los correos default por estado de app
+    async findAllByEstadoApp(estadoApp: EstadoAppInterface) {  
+        
+        const correosDefault = await this.correoDefaultRepository.find({
+            where: {
+                estadosApp: {
+                    nombre: estadoApp
+                }
+            },
+            relations: {
+                estados: true,
+                estadosApp: true
+            },
+            order: {
+                descripcion: 'ASC'
+            }
+        });
+
+        if (correosDefault.length === 0) {
+            throw new NotFoundException(`No hay correos asociados al estado de app "${estadoApp}"`);
+        }
+
+        return correosDefault.map(correo => correo.email);
+
+    }
+    
+    // Obtener todos los correos defaultnpor estado de orden de servicio
+    async findAllByEstadoOrden(estadoOrden: EstadoOrdenServicioInterface) {  
+        
+        const correosDefault = await this.correoDefaultRepository.find({
+            where: {
+                estados: {
+                    nombre: estadoOrden
+                }
+            },
+            relations: {
+                estados: true,
+                estadosApp: true
+            },
+            order: {
+                descripcion: 'ASC'
+            }
+        });
+
+        if (correosDefault.length === 0) {
+            throw new NotFoundException(`No hay correos asociados al estado de orden "${estadoOrden}"`);
+        }
+
+        return correosDefault.map(correo => correo.email);
+
     }
 
     // Obtener un correo default por id

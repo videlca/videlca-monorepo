@@ -1,4 +1,4 @@
-export enum EstadoApp { 
+export enum EstadoAppInterface { 
 
     // CREACION PERIODO
     CREACION_PERIODO = "creacion periodo",
