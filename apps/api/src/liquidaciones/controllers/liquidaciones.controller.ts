@@ -71,11 +71,6 @@ export class LiquidacionesController {
     return this.service.actualizarCampoGrupoEstado(id, dto);
   }
 
-  @Get('buscar-por-campo')
-  async buscarPorCampoEstado(@Query() filtro: FiltroGrupoLiquidacionDto) {
-    return this.service.findGruposPorCampoEstado(filtro.campo, filtro.valor);
-  }
-
   @Get('buscar-grupos-liquidaciones')
   async buscarGrupoLiquidaciones() {
     return this.service.buscarGrupoLiquidaciones();
