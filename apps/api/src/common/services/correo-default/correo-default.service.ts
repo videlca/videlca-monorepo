@@ -464,7 +464,7 @@ export class CorreoDefaultService {
     }
     
     // Obtener todos los correos defaultnpor estado de orden de servicio
-    async findAllByEstadoOrden(estadoOrden: EstadoOrdenServicioInterface) {  
+    async findAllByEstadoOrden(estadoOrden: string) {  
         
         const correosDefault = await this.correoDefaultRepository.find({
             where: {

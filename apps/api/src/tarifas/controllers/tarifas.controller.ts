@@ -10,7 +10,7 @@ import { TarifasService } from '../services/tarifas.service';
 import { CreateTarifaDto, UpdateTarifaDto, SaveTarifaDto } from '../dto';
 
 @Controller('tarifas')
-// @AppAuth(DescriptionRoutes.TARIFAS) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+@AppAuth(DescriptionRoutes.TARIFAS) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class TarifasController {
   constructor(private readonly tarifasService: TarifasService) {}
   

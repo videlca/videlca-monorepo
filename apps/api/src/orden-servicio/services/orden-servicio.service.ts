@@ -9,7 +9,7 @@ import { User } from '../../users/entities/user.entity';
 import { EstadoOrdenServicio as EstadoOrdenEntity} from "../../common/entities";
 import { SendMailOptions } from '../../common/services/email/email.service';
 
-import { EstadoOrdenServicioService, EmailService } from '../../common/services';
+import { EstadoOrdenServicioService, EmailService, CorreoDefaultService } from '../../common/services';
 import { LocacionService } from '../../clientes/services';
 import { TarifasService } from '../../tarifas/services';
 import { ServiciosService, TipoHorarioService } from '../../servicios/services';
@@ -74,6 +74,7 @@ export class OrdenServicioService {
       private readonly tipoHorarioService: TipoHorarioService,
       private readonly servicioService: ServiciosService,
       private readonly emailService: EmailService, // Servicio de email para envio de correos
+      private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
       private readonly reporteOrdenServicioService: ReporteOrdenServicioService, // Servicio para generar reportes
       private readonly dataSource: DataSource,
       private readonly configService: ConfigService,
@@ -275,12 +276,17 @@ export class OrdenServicioService {
       // envio de correos que se tengan registrados en la locacion
       const nombreResponsable = `${locacion.primerNombreResponsable} ${locacion.primerApellidoResponsable}`;
 
-      const emails = await this.locacionService.getEmailsByLocacionAndEstado(
+      const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
         createOrdenServicioDto.idLocacion, 
         estadoOrdenServicio.idEstadoOrdenServicio
       )
 
+      const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoOrdenServicio.nombre);
+
+      const emails = [...emailsLocacion, ...emailsApp];
+
       await this.notificationEmail(
+        savedOrdenServicio,
         nombreResponsable, 
         locacion.nombre,
         emails
@@ -307,9 +313,10 @@ export class OrdenServicioService {
 
   // ENVIAR CORREO PARA INFORMAR CREACION DE ORDEN DE SERVICIO
   private async notificationEmail(
-    nombreCompleto: string, 
+    ordenServicio: OrdenServicio,
+    nombreResponsable: string,
     locacion: string,
-    email: string[]
+    emails: string[]
   ) {        
 
     const html = `
@@ -324,7 +331,7 @@ export class OrdenServicioService {
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día <strong>${nombreCompleto}</strong>, se ha creado una orden de servicio para el puesto <b>${locacion}</b>. <br><br>
+              Buen día, se ha creado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
               Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
@@ -357,18 +364,27 @@ export class OrdenServicioService {
 
       const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): creacion orden de servicio`;
 
+      const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicio);
+
       // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
       const options: SendMailOptions = {
-          to: email,
+          to: emails,
           subject: subject,
-          htmlBody: html
+          htmlBody: html,
+          attachments: [
+          {
+            filename: `Orden-servicio-${ordenServicio.idOrdenServicio}.pdf`,
+            content: ordenServicioBuffer,
+            contentType: 'application/pdf',
+          },
+        ],
       }
   
       // Enviamos correo para notificar al usuario
       const isEmailSend = await this.emailService.sendEmail(options);
   
       if (!isEmailSend){
-          throw new InternalServerErrorException(`Error al enviar correo de notificacion al email ${email}, revisar correo si esta bien escrito`);
+          throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
       }
 
   }
