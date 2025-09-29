@@ -1541,19 +1541,19 @@ export class OrdenServicioService {
       subject: subject,
       htmlBody: html,
       attachments: [
-      {
-        filename: `Orden-servicio-${ordenServicio.idOrdenServicio}.pdf`,
-        content: ordenServicioBuffer,
-        contentType: 'application/pdf',
-      },
-    ],
+        {
+          filename: `Orden-servicio-${ordenServicio.idOrdenServicio}.pdf`,
+          content: ordenServicioBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
     }
 
     // Enviamos correo para notificar al usuario
     const isEmailSend = await this.emailService.sendEmail(options);
 
     if (!isEmailSend){
-        throw new InternalServerErrorException(`Error al enviar correo con PDF orden de servicio al email ${emails}, revisar correos si estan bien escritos`);
+        throw new InternalServerErrorException(`Error al enviar correo con PDF orden de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
     }
 
   }

@@ -27,7 +27,7 @@ import { LiquidacionesService } from '../../liquidaciones/services/liquidaciones
 
 
 @Controller('orden-servicio')
-// @AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+@AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class OrdenServicioController {
   constructor(
     private readonly ordenServicioService: OrdenServicioService,

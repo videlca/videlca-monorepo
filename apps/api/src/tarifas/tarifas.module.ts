@@ -6,6 +6,8 @@ import { AuthModule } from '../auth/auth.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 import { PeriodosModule } from '../periodos/periodos.module';
 import { ServiciosModule } from '../servicios/servicios.module';
+import { ReportesModule } from '../reportes/reportes.module';
+import { CommonModule } from '../common/common.module';
 
 import { Tarifa, TipoTarifa, TipoUnidadTiempo } from './entities';
 
@@ -23,6 +25,8 @@ import { TarifasController, TipoTarifaController, TipoUnidadTiempoController } f
     ]),
     AuthModule,
     PermissionsModule,
+    CommonModule,
+    ReportesModule,
     PeriodosModule,
     ServiciosModule,
     ConfigModule,
