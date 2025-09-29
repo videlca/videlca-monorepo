@@ -9,6 +9,11 @@ export interface SendMailOptions {
     to: string | string[];
     subject: string;
     htmlBody: string;
+    attachments?: {
+      filename: string;
+      content: Buffer | string;
+      contentType?: string;
+    }[];
 }
 
 @Injectable()
@@ -59,7 +64,7 @@ export class EmailService {
     // ENVIAR EMAIL
     async sendEmail( options: SendMailOptions ): Promise<boolean> {
 
-        const { to, subject, htmlBody } = options;
+        const { to, subject, htmlBody, attachments } = options;
 
         // Validar dominio antes de enviar
         const validDomain = await this.validateEmailDomain(
@@ -76,6 +81,7 @@ export class EmailService {
             to: to,
             subject: subject,
             html: htmlBody,
+            attachments: attachments,
           });
           
           // Si se envia el correo con exito

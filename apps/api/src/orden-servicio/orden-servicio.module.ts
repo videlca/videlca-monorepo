@@ -10,6 +10,8 @@ import { ClientesModule } from '../clientes/clientes.module';
 import { TarifasModule } from '../tarifas/tarifas.module';
 import { ServiciosModule } from '../servicios/servicios.module';
 import { PersonalModule } from '../personal/personal.module';
+import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
+import { ReportesModule } from 'src/reportes/reportes.module';
 
 import { 
   OrdenServicio, 
@@ -30,8 +32,6 @@ import {
   OrdenServicioIdController,
   ObservacionesOrdenServicioController, 
 } from './controllers';
-
-import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
 
 @Module({
   imports: [
@@ -55,6 +55,7 @@ import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
     ServiciosModule,
     PersonalModule,
     LiquidacionesModule,
+    ReportesModule
 
   ],
   controllers: [

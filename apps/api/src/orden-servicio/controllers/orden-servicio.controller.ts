@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query, DefaultValuePipe, Res } from '@nestjs/common';
+import type { Response } from 'express';
 
 import { AppAuth, GetUser, ValidateJwtAuth } from '../../auth/decorators';
 import { DescriptionRoutes } from '../../auth/interfaces';
@@ -19,6 +20,7 @@ import {
   UpdateValidarFechaOrdenServicioDto,
   CreateOrdenServicioDto,
   UpdateOrdenServicioDto,
+  EnviarOrdenDto,
 } from '../dto';
 
 import { ApiQuery } from '@nestjs/swagger';
@@ -26,7 +28,7 @@ import { LiquidacionesService } from '../../liquidaciones/services/liquidaciones
 
 
 @Controller('orden-servicio')
-@AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+// @AppAuth(DescriptionRoutes.ORDENES_SERVICIO) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class OrdenServicioController {
   constructor(
     private readonly ordenServicioService: OrdenServicioService,
@@ -96,7 +98,7 @@ export class OrdenServicioController {
     return this.ordenServicioService.removeOrdenServicio(id);
   }
 
-   @Get(':ordenId/liquidaciones')
+  @Get(':ordenId/liquidaciones')
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
   findLiquidacionesDeOrden(
@@ -105,6 +107,30 @@ export class OrdenServicioController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     return this.liquidacionesService.findAll({ page, limit, ordenId });
+  }
+
+  @Get(':ordenId/generar-pdf')
+  async generarReporte(
+    @Param('ordenId', ParseIntPipe) ordenId: number,
+    @Res() res: Response
+  ) {
+    
+    const {pdfDoc, title} = await this.ordenServicioService.downloadOrdenServicioPdf(ordenId);
+
+    pdfDoc.info.Title = title;
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+
+  }
+  
+  @Post(':ordenId/enviar-pdf')
+  enviarReporte(
+    @Param('ordenId', ParseIntPipe) ordenId: number,
+    @Body() enviarOrdenServicioDto: EnviarOrdenDto
+  ) {
+    return this.ordenServicioService.sendOrdenServicioPdf(ordenId, enviarOrdenServicioDto);
   }
 
   // @Patch(':id')

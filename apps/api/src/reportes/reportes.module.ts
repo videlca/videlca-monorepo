@@ -1,9 +1,38 @@
 import { Module } from '@nestjs/common';
-import { ReportesService } from './reportes.service';
-import { ReportesController } from './reportes.controller';
+
+import { CommonModule } from '../common/common.module';
+
+import { 
+  ReporteOrdenServicioService,
+  ReporteTarifasService,
+  ReporteConsolidacionService,
+  ReporteAnexoFacturacionService,
+  ReporteInterfaseService,
+  ReporteLiquidacionService
+} from './services';
+
 
 @Module({
-  controllers: [ReportesController],
-  providers: [ReportesService],
+  imports: [
+    
+    CommonModule
+
+  ],
+  providers: [
+    ReporteOrdenServicioService,
+    ReporteTarifasService,
+    ReporteConsolidacionService,
+    ReporteAnexoFacturacionService,
+    ReporteInterfaseService,
+    ReporteLiquidacionService
+  ],
+  exports: [
+    ReporteOrdenServicioService,
+    ReporteTarifasService,
+    ReporteConsolidacionService,
+    ReporteAnexoFacturacionService,
+    ReporteInterfaseService,
+    ReporteLiquidacionService
+  ],
 })
 export class ReportesModule {}

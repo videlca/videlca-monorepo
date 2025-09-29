@@ -11,3 +11,5 @@ export { TipoClienteService } from "./tipo-cliente/tipo-cliente.service";
 export { EstadoOrdenServicioService } from "./estado-orden-servicio/estado-orden-servicio.service";
 
 export { EstadoAppService } from "./estado-app/estado-app.service";
+
+export { PrinterService } from "./printer/printer.service";

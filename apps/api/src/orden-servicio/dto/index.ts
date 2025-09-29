@@ -3,6 +3,7 @@ export { CreateOrdenServicioDto } from "./orden-servicio/create-orden-servicio.d
 export { UpdateOrdenServicioDto } from "./orden-servicio/update-orden-servicio.dto";
 export { CreatePersonalServicioDto } from "./orden-servicio/create-orden-servicio.dto";
 export { AnularIdOrdenServicioDto } from "./orden-servicio/anular-id-orden-servicio.dto";
+export { EnviarOrdenDto } from "./orden-servicio/enviar-orden-servicio.dto";
 
 // VALIDACIONES POR CADA PASO DE LA CREACION
 export { ValidarIdOrdenServicioDto } from "./steps/validar-orden-servicio-id.dto";

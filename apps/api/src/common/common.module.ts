@@ -23,6 +23,8 @@ import {
 import { 
   EmailService, // Email
 
+  PrinterService, // PDF
+
   TipoIdentificacionService, // Tipo id
 
   TipoClienteService, // Tipo Cliente
@@ -78,6 +80,7 @@ import {
   ],
   providers: [
     EmailService,
+    PrinterService,
     TipoIdentificacionService,
     TipoClienteService,
     UbicacionService,
@@ -88,6 +91,7 @@ import {
   exports: [
     TypeOrmModule, 
     EmailService,
+    PrinterService,
     TipoIdentificacionService,
     TipoClienteService,
     UbicacionService,
