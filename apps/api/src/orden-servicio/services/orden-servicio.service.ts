@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
-import { PaginationDto } from '../../common/dto';
+import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
 
 import { User } from '../../users/entities/user.entity';
 import { EstadoOrdenServicio as EstadoOrdenEntity} from "../../common/entities";
@@ -44,9 +44,6 @@ import {
 
   // VALIDACIONES ACTUALIZACION
   UpdateValidarFechaOrdenServicioDto,
-
-  // ENVIO ORDEN SERVICIO
-  EnviarOrdenDto,
 
   // ANULAR ORDEN
   AnularIdOrdenServicioDto 
@@ -1485,7 +1482,7 @@ export class OrdenServicioService {
 
   }
   
-  async sendOrdenServicioPdf(id: number, enviarOrdenDto: EnviarOrdenDto){
+  async sendOrdenServicioPdf(id: number, enviarCorreoDto: EnviarCorreoDto){
 
     const ordenServicio = await this.findOne(id);
 
@@ -1536,7 +1533,7 @@ export class OrdenServicioService {
       </div>
       `;
 
-    const emails = enviarOrdenDto.correos.map(correo => correo.email);
+    const emails = enviarCorreoDto.correos.map(correo => correo.email);
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {

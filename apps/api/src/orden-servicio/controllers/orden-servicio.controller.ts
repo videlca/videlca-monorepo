@@ -4,7 +4,7 @@ import type { Response } from 'express';
 import { AppAuth, GetUser, ValidateJwtAuth } from '../../auth/decorators';
 import { DescriptionRoutes } from '../../auth/interfaces';
 
-import { PaginationDto } from '../../common/dto';
+import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
 
 import { User } from '../../users/entities/user.entity';
 
@@ -20,7 +20,6 @@ import {
   UpdateValidarFechaOrdenServicioDto,
   CreateOrdenServicioDto,
   UpdateOrdenServicioDto,
-  EnviarOrdenDto,
 } from '../dto';
 
 import { ApiQuery } from '@nestjs/swagger';
@@ -128,9 +127,9 @@ export class OrdenServicioController {
   @Post(':ordenId/enviar-pdf')
   enviarReporte(
     @Param('ordenId', ParseIntPipe) ordenId: number,
-    @Body() enviarOrdenServicioDto: EnviarOrdenDto
+    @Body() enviarCorreoDto: EnviarCorreoDto
   ) {
-    return this.ordenServicioService.sendOrdenServicioPdf(ordenId, enviarOrdenServicioDto);
+    return this.ordenServicioService.sendOrdenServicioPdf(ordenId, enviarCorreoDto);
   }
 
   // @Patch(':id')

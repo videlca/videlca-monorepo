@@ -13,7 +13,7 @@ export class CorreosDto {
 
 }
 
-export class EnviarOrdenDto {
+export class EnviarCorreoDto {
 
   // Array de correos (mínimo 1)
   @IsArray()

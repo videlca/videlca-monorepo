@@ -28,3 +28,6 @@ export { CreateCorreoDefaultDto } from './correo-default/correo-default.dto';
 
 // PAGINATION
 export { PaginationDto } from "./pagination.dto";
+
+// ENVIAR CORREO
+export { EnviarCorreoDto } from './enviar-correo.dto';
