@@ -76,12 +76,6 @@ export class LiquidacionesController {
     return this.service.buscarGrupoLiquidaciones();
   }
 
-  @Get('grupo/:id/ordenes-por-cliente')
-  async obtenerOrdenesPorCliente(@Param('id', ParseIntPipe) id: number) {
-    return this.service.obtenerOrdenesPorCliente(id);
-  }
-
-
   @Get()
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
@@ -94,8 +88,5 @@ export class LiquidacionesController {
     const oid = ordenId ? Number(ordenId) : undefined;
     return this.service.findAll({ page, limit, ordenId: oid });
   }
-
-
-
 
 }

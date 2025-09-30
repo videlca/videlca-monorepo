@@ -19,19 +19,15 @@ import { OrdenServicioService } from 'src/orden-servicio/services';
 import { Cliente } from 'src/clientes/entities';
 import { Tarifa } from 'src/tarifas/entities';
 
-type ClienteGrupoResumen = {
-  cliente: Cliente;
-  totalLiquidaciones: number;
-  totalOrdenes: number;
-  ordenes: Array<{
-    liquidacionId: number;
-    valorLiquidacion: number;
-    fechaCreacion: Date;
-    totalOrdenServicio: number;
-    ordenServicio: OrdenServicio;
-    servicios: Tarifa[];
-  }>;
-};
+export interface Consolidacion {
+  liquidacion: string;
+  cliente: string;
+  servicios: {
+    descripcion: string;
+    cantidad: number;
+    valor: number;
+  }[];
+}
 
 @Injectable()
 export class LiquidacionesService {
@@ -42,7 +38,6 @@ export class LiquidacionesService {
     @InjectRepository(OrdenServicio) private readonly ordenRepo: Repository<OrdenServicio>,
     @InjectRepository(GrupoLiquidacion)
     private readonly grupoLiquidacionrepo: Repository<GrupoLiquidacion>,
-
     private ordenServicioService: OrdenServicioService,
   ) { }
 
@@ -430,9 +425,9 @@ export class LiquidacionesService {
   }
 
   async findGruposPorCampoEstado(campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo', valor: string) {
-    return this.grupoLiquidacionrepo
+    
+    const query = this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
-      .where(`grupo.${campo} = :valor`, { valor: valor === 'true' })
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
       .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
       .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
@@ -440,7 +435,24 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
-      .getMany();
+
+      if (campo === 'consolidacion_orden') {
+        query.where(`grupo.consolidacion_orden = :valor`, { valor: valor === 'true' });
+      }
+
+
+      if (campo === 'generacion_interfase') {
+        query.where('grupo.consolidacion_orden = :cons', { cons: true })
+             .andWhere('grupo.generacion_interfase = :valor', { valor: valor === 'true' });
+      }
+    
+      if (campo === 'generacion_anexo') {
+        query.where('grupo.consolidacion_orden = :cons', { cons: true })
+             .andWhere('grupo.generacion_interfase = :interfase', { interfase: true })
+             .andWhere('grupo.generacion_anexo = :valor', { valor: valor === 'true' });
+      }
+    
+      return query.getMany();
   }
 
   async buscarGrupoLiquidaciones() {
@@ -457,14 +469,18 @@ export class LiquidacionesService {
       .getMany();
   }
 
-  async obtenerOrdenesPorCliente(idGrupoLiquidacion: number) {
+  async obtenerServiciosPorCliente(idGrupoLiquidacion: number) {
+
     const grupoId = Number(idGrupoLiquidacion);
+    
     if (!grupoId || Number.isNaN(grupoId)) {
       throw new BadRequestException('idGrupoLiquidacion inválido');
     }
 
     const grupo = await this.grupoLiquidacionrepo.findOne({
-      where: { idGrupoLiquidacion: grupoId },
+      where: { 
+        idGrupoLiquidacion: grupoId 
+      },
     });
 
     if (!grupo) {
@@ -489,56 +505,9 @@ export class LiquidacionesService {
       .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
       .getMany();
 
-    const agrupado = new Map<number, ClienteGrupoResumen>();
+    
 
-    for (const liquidacion of liquidaciones) {
-      const orden = liquidacion.ordenServicio;
-      if (!orden) continue;
-
-      const cliente = orden.idLocacion?.idCliente;
-      if (!cliente?.idCliente) continue;
-
-      const entry = agrupado.get(cliente.idCliente) ?? {
-        cliente,
-        totalLiquidaciones: 0,
-        totalOrdenes: 0,
-        ordenes: [],
-      };
-
-      const valorLiquidacionRaw = Number(liquidacion.valor_liquidacion ?? 0);
-      const valorLiquidacion = Number.isFinite(valorLiquidacionRaw) ? valorLiquidacionRaw : 0;
-      const totalOrdenRaw = Number(orden.precioTotal ?? 0);
-      const totalOrdenServicio = Number.isFinite(totalOrdenRaw) ? totalOrdenRaw : 0;
-
-      entry.totalLiquidaciones += valorLiquidacion;
-      entry.totalOrdenes += totalOrdenServicio;
-
-      const servicios = (orden.tarifas ?? [])
-        .map((detalle) => detalle?.idTarifa)
-        .filter((tarifa): tarifa is Tarifa => Boolean(tarifa));
-
-      entry.ordenes.push({
-        liquidacionId: liquidacion.idLiquidacion,
-        valorLiquidacion: round2(valorLiquidacion),
-        fechaCreacion: liquidacion.fechaCreacion,
-        totalOrdenServicio: round2(totalOrdenServicio),
-        ordenServicio: orden,
-        servicios,
-      });
-
-      agrupado.set(cliente.idCliente, entry);
-    }
-
-    const clientes = Array.from(agrupado.values())
-      .map(({ cliente, ordenes, totalLiquidaciones, totalOrdenes }) => ({
-        cliente,
-        ordenes,
-        totalLiquidaciones: round2(totalLiquidaciones),
-        totalOrdenes: round2(totalOrdenes),
-      }))
-      .sort((a, b) => (a.cliente?.nombre ?? '').localeCompare(b.cliente?.nombre ?? ''));
-
-    return { grupo, clientes };
+    
   }
 
 }
