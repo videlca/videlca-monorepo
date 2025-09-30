@@ -35,7 +35,8 @@ async function main() {
   app.enableCors({
     origin: true,
     methods: 'GET,PUT,PATCH,POST,DELETE',
-    credentials: true
+    credentials: true,
+    exposedHeaders: ['Content-Type', 'Authorization', 'Content-Disposition']
   });
 
   await app.listen(process.env.PORT || 3000);
