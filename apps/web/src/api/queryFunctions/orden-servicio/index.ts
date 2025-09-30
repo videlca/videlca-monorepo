@@ -1,6 +1,6 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { createOrdenServicio, deleteOrdenServicio, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
-import type { CreateOrdenServicioDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
+import { createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
+import type { CreateOrdenServicioDto, EnviarCorreoDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 import type { ApiResponse, Personal } from "../../types";
 import { toast } from "sonner";
@@ -221,6 +221,50 @@ export const useValidarRangoHorarioPersonalOrdenServicio = (): UseMutationResult
     },
     onError: (error) => {
       toast.error(error.message || "Error al validar el rango horario personal");
+    },
+  });
+}
+
+// generacion de archivos
+export const useEnviarPdfPorCorreo = (): UseMutationResult<ApiResponse<any>, Error, { id: number, data: EnviarCorreoDto }> => {
+  return useMutation({
+    mutationKey: ["enviar-pdf-por-correo"],
+    mutationFn: ({ id, data }) => enviarPdfPorCorreo(id, data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("PDF enviado por correo correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["enviar-pdf-por-correo"],
+        });
+      } else {
+        throw new Error(data.message || "Error al enviar el PDF por correo");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al enviar el PDF por correo");
+    },
+  });
+}
+
+export const useDescargarPdf = (): UseMutationResult<{ blob: Blob; filename: string }, Error, number> => {
+  return useMutation({
+    mutationKey: ["descargar-pdf"],
+    mutationFn: (id: number) => descargarPdf(id),
+    onSuccess: ({ blob, filename }) => {
+      // Create a download link from the blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("PDF descargado correctamente");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al descargar el PDF");
     },
   });
 }

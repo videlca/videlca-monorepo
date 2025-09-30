@@ -7,6 +7,8 @@ import {
 import {
   createTarifa,
   deleteTarifa,
+  descargarExcel,
+  enviarExcelPorCorreo,
   getTarifaById,
   getTarifasActivo,
   getTarifasByPeriodo,
@@ -24,6 +26,7 @@ import type { ApiResponse } from "../../types";
 import type { Tarifa } from "../../types/periodo";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
+import type { EnviarCorreoDto } from "../../dtos/common";
 
 export const useTarifas = (
   idPeriodo: number,
@@ -179,6 +182,58 @@ export const useEliminarTarifa = (): UseMutationResult<
     },
     onError: (error) => {
       toast.error(error.message || "Error al eliminar la tarifa");
+    },
+  });
+};
+
+// generacion de archivos
+export const useEnviarExcelPorCorreo = (): UseMutationResult<
+  ApiResponse<any>,
+  Error,
+  { id: number; data: EnviarCorreoDto }
+> => {
+  return useMutation({
+    mutationKey: ["enviar-excel-por-correo"],
+    mutationFn: ({ id, data }) => enviarExcelPorCorreo(id, data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Excel enviado por correo correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["enviar-excel-por-correo"],
+        });
+      } else {
+        throw new Error(data.message || "Error al enviar el Excel por correo");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al enviar el Excel por correo");
+    },
+  });
+};
+
+export const useDescargarExcel = (): UseMutationResult<
+  { blob: Blob; filename: string },
+  Error,
+  number
+> => {
+  return useMutation({
+    mutationKey: ["descargar-excel"],
+    mutationFn: (id: number) => descargarExcel(id),
+    onSuccess: ({ blob, filename }) => {
+      // Create a download link from the blob
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Excel descargado correctamente");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al descargar el Excel");
     },
   });
 };

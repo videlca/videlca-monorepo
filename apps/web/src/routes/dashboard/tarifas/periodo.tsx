@@ -2,13 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 import Table from "../../../components/common/Table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import {
-  EyeIcon,
-  PencilIcon,
-  PlusIcon,
-  SettingsIcon,
-  TrashIcon,
-} from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import type { Periodo } from "../../../api/types/periodo";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
@@ -153,6 +147,7 @@ function RouteComponent() {
                   setIsOpenDeleteTarifa(true);
                   setSelectedPeriodo(row.original);
                 },
+                color: "red" as const,
               },
             ]}
           />

@@ -1,5 +1,5 @@
-import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
-import type { PaginationDto } from "../../dtos/common";
+import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
+import type { EnviarCorreoDto, PaginationDto } from "../../dtos/common";
 import type { CreateTarifaDto, SaveTarifaDto, UpdateTarifaDto } from "../../dtos/tarifas";
 import type { ApiResponse } from "../../types";
 import type { Tarifa } from "../../types/periodo";
@@ -44,3 +44,27 @@ export const getTarifasPeriodoActivoByIdTipoServicio = async (
 ): Promise<ApiResponse<Tarifa[]>> => {
   return await apiGet<Tarifa[]>(`/tarifas/periodo-activo-facturacion/${idTipoServicio}`, pagination);
 };
+
+// generacion de archivos
+
+export const enviarExcelPorCorreo = async (id: number, data: EnviarCorreoDto): Promise<ApiResponse<any>> => {
+  return await apiPost<any>(`/tarifas/${id}/enviar-excel`, data);
+}
+
+export const descargarExcel = async (id: number): Promise<{ blob: Blob; filename: string }> => {
+  const response = await axiosClient.get(`/tarifas/${id}/generar-excel`, {
+    responseType: 'blob',
+  });
+
+  const contentDisposition = response.headers['content-disposition'];
+  let filename = `tarifas-${id}.xlsx`;
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    console.log("filenameMatch: ", filenameMatch[1]);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1].replace(/['"]/g, '');
+    }
+  }
+  
+  return { blob: response.data, filename };
+}

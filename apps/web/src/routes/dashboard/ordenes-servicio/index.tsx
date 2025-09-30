@@ -17,6 +17,8 @@ import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import {
   useCreateOrdenServicio,
   useDeleteOrdenServicio,
+  useDescargarPdf,
+  useEnviarPdfPorCorreo,
   useGetOrdenesServicio,
   useGetOrdenServicioById,
   useGetPrecioOrdenServicio,
@@ -29,6 +31,7 @@ import {
   useValidateFechasOrdenServicio,
 } from "../../../api/queryFunctions/orden-servicio";
 import type {
+  CorreosDto,
   CreateOrdenServicioDto,
   CreateOrdenServicioTarifaDto,
   UpdateOrdenServicioDto,
@@ -48,6 +51,7 @@ import { toast } from "sonner";
 import type { Servicio } from "../../../api/types/servicio";
 import { SeleccionarIdentificadorOrden } from "../../../components/common/stepsOrdenServicio/SeleccionarIdentificadorOrden";
 import { ConfigurarFechaOrdenServicio } from "../../../components/common/stepsOrdenServicio/ConfigurarFechaOrdenServicio";
+import { EmailsInput } from "../../../components/common/EmailsInput";
 import { SeleccionarServicio } from "../../../components/common/stepsOrdenServicio/SeleccionarServicio";
 import { ConfigurarHorariosServicios } from "../../../components/common/stepsOrdenServicio/ConfigurarHorariosServicios";
 import { AsignacionPersonalServicio } from "../../../components/common/stepsOrdenServicio/AsignacionPersonalServicio";
@@ -73,6 +77,8 @@ function RouteComponent() {
   const [isOpenDetails, setIsOpenDetails] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [isOpenObservaciones, setIsOpenObservaciones] = useState(false);
+  const [isOpenPdf, setIsOpenPdf] = useState(false);
+  const [pdfEmails, setPdfEmails] = useState<CorreosDto[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
   const [identificador, setIdentificador] = useState<{
     prefijo: string;
@@ -154,6 +160,11 @@ function RouteComponent() {
   const { data: observacionesQueryData } = useGetObservacionesOrdenServicio(
     selectedOrderIdForObservaciones || 0,
   );
+
+  // Generacion de archivos
+  const { mutate: enviarPdfPorCorreo } = useEnviarPdfPorCorreo();
+  const { mutate: descargarPdf } = useDescargarPdf();
+
   // Formulario crear orden de servicio
   const {
     form: formOrdenServicio,
@@ -530,8 +541,27 @@ function RouteComponent() {
     setIsIndefinite(ordenServicioById?.data?.fechaFin === null);
   };
 
-  const handleLiquidarOrdenServicio = (idOrdenServicio: number) => {
+  const handleDownloadPdf = (idOrdenServicio: number) => {
     console.log("idOrdenServicio: ", idOrdenServicio);
+    descargarPdf(idOrdenServicio);
+  };
+
+  const handleSendPdf = (idOrdenServicio: number) => {
+    console.log("idOrdenServicio: ", idOrdenServicio);
+    enviarPdfPorCorreo(
+      {
+        id: idOrdenServicio,
+        data: {
+          correos: pdfEmails,
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsOpenPdf(false);
+          setPdfEmails([]);
+        },
+      },
+    );
   };
 
   const handleValidarEmpleadosDisponibles = async (
@@ -684,12 +714,19 @@ function RouteComponent() {
                 );
               },
             },
-            // {
-            //   label: "Liquidar",
-            //   onClick: () => {
-            //     handleLiquidarOrdenServicio(row.original.idOrdenServicio);
-            //   },
-            // },
+            {
+              label: "Descargar PDF",
+              onClick: () => {
+                handleDownloadPdf(row.original.idOrdenServicio);
+              },
+            },
+            {
+              label: "Enviar por correo",
+              onClick: () => {
+                setIsOpenPdf(true);
+                setSelectedOrderDetail(row.original);
+              },
+            },
             {
               label: "Eliminar",
               onClick: () => {
@@ -1191,6 +1228,49 @@ function RouteComponent() {
           >
             Cerrar
           </button>
+        </div>
+      </SimpleModal>
+
+      <SimpleModal
+        isOpen={isOpenPdf}
+        onClose={() => {
+          setIsOpenPdf(false);
+          setPdfEmails([]);
+        }}
+        title="Ingresar correos para enviar el PDF"
+        size="xl"
+      >
+        <div className="space-y-6">
+          <EmailsInput
+            emails={pdfEmails.map((email) => email.email)}
+            setEmails={(emails) =>
+              setPdfEmails(emails.map((email) => ({ email: email })))
+            }
+            placeholder="Ingrese un correo electrónico"
+          />
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+              onClick={() => {
+                setIsOpenPdf(false);
+                setPdfEmails([]);
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={pdfEmails.length === 0}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
+              onClick={() => {
+                handleSendPdf(selectedOrderDetail?.idOrdenServicio || 0);
+              }}
+            >
+              Enviar PDF
+            </button>
+          </div>
         </div>
       </SimpleModal>
 

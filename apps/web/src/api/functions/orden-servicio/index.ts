@@ -1,5 +1,5 @@
-import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
-import type { AnularIdOrdenServicioDto, CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
+import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
+import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
 import type { ApiResponse, Personal } from "../../types";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 
@@ -73,4 +73,26 @@ export const validarRangoHorarioPersonalOrdenServicio = async (data: ValidarRang
 
 export const updateValidarFechasOrdenServicio = async (id: number, data: UpdateValidarFechaOrdenServicioDto): Promise<ApiResponse<any>> => {
   return await apiPost<any>(`/orden-servicio/update-validacion-fechas/${id}`, data);
+}
+
+// generacion de archivos
+
+export const enviarPdfPorCorreo = async (id: number, data: EnviarCorreoDto): Promise<ApiResponse<any>> => {
+  return await apiPost<any>(`/orden-servicio/${id}/enviar-pdf`, data);
+}
+
+export const descargarPdf = async (id: number): Promise<{ blob: Blob; filename: string }> => {
+  const response = await axiosClient.get(`/orden-servicio/${id}/generar-pdf`, {
+    responseType: 'blob',
+  });
+  let filename = `orden-servicio-${id}.pdf`;
+  const contentDisposition = response.headers['content-disposition'];
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1].replace(/['"]/g, '');
+    }
+  }
+  
+  return { blob: response.data, filename };
 }

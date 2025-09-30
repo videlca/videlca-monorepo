@@ -4,5 +4,5 @@ import type { ApiResponse } from "../../types/common";
 import type { FiltroGrupoLiquidacionDto } from "../../dtos/exportaciones";
 
 export const getGruposLiquidacionesExportaciones = async (params: FiltroGrupoLiquidacionDto): Promise<ApiResponse<GruposLiquidaciones[]>> => {
-  return await apiGet<GruposLiquidaciones[]>(`/liquidaciones/buscar-por-campo?campo=${params.campo}&valor=${params.valor}`);
+  return await apiGet<GruposLiquidaciones[]>(`/exportacion/buscar-por-campo?campo=${params.campo}&valor=${params.valor}`);
 };

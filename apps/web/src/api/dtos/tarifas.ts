@@ -36,3 +36,4 @@ export interface CreateTarifaDto {
 export interface UpdateTarifaDto extends Partial<CreateTarifaDto> {
   estado?: boolean;
 }
+
