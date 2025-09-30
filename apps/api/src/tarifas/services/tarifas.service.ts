@@ -5,11 +5,12 @@ import { ConfigService } from '@nestjs/config';
 
 import { ServiciosService } from '../../servicios/services';
 import { PeriodosService } from '../../periodos/periodos.service';
-import { EmailService } from '../../common/services';
+import { EmailService, CorreoDefaultService } from '../../common/services';
 import { ReporteTarifasService } from '../../reportes/services';
 
 import { SendMailOptions } from '../../common/services/email/email.service';
 import { EnviarCorreoDto, PaginationDto } from '../../common/dto';
+import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
 import { Tarifa } from '../entities';
 
@@ -31,6 +32,7 @@ export class TarifasService {
     private readonly servicioService: ServiciosService,
     private readonly periodoService: PeriodosService,
     private readonly emailService: EmailService, // Servicio de email para envio de correos
+    private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
     private readonly reporteTarifasService: ReporteTarifasService, // Servicio para generar reportes
     private readonly configService: ConfigService,
   ) {
@@ -57,7 +59,7 @@ export class TarifasService {
         }
         
         // 3. Validar y obtener las entidades relacionadas para todas las tarifas
-        const tarifasToCreate = [];
+        const tarifasToCreate: Tarifa[] = [];
         
         for (const tarifaDto of tarifas) {
 
@@ -77,7 +79,7 @@ export class TarifasService {
             const tipoTarifa = await this.tipoTarifaService.findOne(tarifaDto.idTipoTarifa);
             
             // Crear la entidad tarifa
-            const tarifa = queryRunner.manager.create('Tarifa', {
+            const tarifa = queryRunner.manager.create(Tarifa, {
                 ...tarifaDto,
                 idTipoTarifa: tipoTarifa,
                 idServicio: servicio,
@@ -88,9 +90,12 @@ export class TarifasService {
         }
         
         // 4. Guardar todas las tarifas de una vez
-        const savedTarifas = await queryRunner.manager.save('Tarifa', tarifasToCreate);
+        const savedTarifas = await queryRunner.manager.save(Tarifa, tarifasToCreate);
+
+        // 5. Notificar por correo la creación de las tarifas
+        await this.notificarTarifasPeriodoExcel(savedTarifas); 
         
-        // 5. Confirmar la transacción
+        // 6. Confirmar la transacción
         await queryRunner.commitTransaction();
         
         return {
@@ -472,6 +477,97 @@ export class TarifasService {
       `;
 
     const emails = enviarCorreoDto.correos.map(correo => correo.email);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
+        {
+          filename: `tarifas-periodo-${nombrePeriodo}.xlsx`,
+          content: excelBuffer,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+        throw new InternalServerErrorException(`Error al enviar correo con tarifas del periodo ${nombrePeriodo} a los emails ${emails}, revisar correos si estan bien escritos`);
+    }
+
+  }
+
+  async notificarTarifasPeriodoExcel(tarifasPeriodo: Tarifa[]){
+
+    // Agrupar por tipo de servicio
+    const tarifasAgrupadas = tarifasPeriodo.reduce((acc, tarifa) => {
+      
+      const tipo = tarifa.idServicio.idTipoServicio.nombre
+  
+      if (!acc[tipo]) {
+        acc[tipo] = [];
+      }
+  
+      acc[tipo].push(tarifa);
+  
+      return acc;
+
+    }, {} as Record<string, Tarifa[]>);
+
+    const nombrePeriodo = tarifasPeriodo[0]?.idPeriodo?.nombre || 'Periodo';
+
+    const excelBuffer = await this.reporteTarifasService.generateExcel(nombrePeriodo, tarifasAgrupadas);
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Tarifas periodo ${nombrePeriodo}`;
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">PERIODO ${nombrePeriodo}</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se han creado tarifas para el periodo <b>${nombrePeriodo}</b>. <br><br>
+              Por favor, revise el <b>EXCEL adjunto</b> para más detalles.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.CONFIGURACION_TARIFAS);
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {
