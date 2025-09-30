@@ -4,6 +4,7 @@ import { Brackets, DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
+import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
 import { User } from '../../users/entities/user.entity';
 import { EstadoOrdenServicio as EstadoOrdenEntity} from "../../common/entities";
@@ -325,7 +326,7 @@ export class OrdenServicioService {
           
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
-            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">CREACION ORDEN DE SERVICIO</h2>
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">CREACION ORDEN DE SERVICIO ${ordenServicio.ordenServicioId.descripcionId}</h2>
           </div>
           
           <!-- Cuerpo -->
@@ -362,7 +363,7 @@ export class OrdenServicioService {
       </div>
       `;
 
-      const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): creacion orden de servicio`;
+      const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): creacion orden de servicio ${ordenServicio.ordenServicioId.descripcionId}`;
 
       const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicio);
 
@@ -373,7 +374,7 @@ export class OrdenServicioService {
           htmlBody: html,
           attachments: [
           {
-            filename: `Orden-servicio-${ordenServicio.idOrdenServicio}.pdf`,
+            filename: `Orden-servicio-${ordenServicio.ordenServicioId.descripcionId}.pdf`,
             content: ordenServicioBuffer,
             contentType: 'application/pdf',
           },
@@ -1260,9 +1261,15 @@ export class OrdenServicioService {
 
     }
 
-    try {
+    let cambioEstadoOrden: boolean = false;
 
-      const ordenServicio = await this.findOne(id);
+    const ordenServicio = await this.findOne(id);
+
+    if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio != estadoOrdenServicio.idEstadoOrdenServicio){
+      cambioEstadoOrden = true;
+    }
+
+    try {
       
       // actualizar campos
       ordenServicio.fechaInicio = fechaInicioOrden;
@@ -1343,19 +1350,28 @@ export class OrdenServicioService {
 
       }
 
-      // envio de correos que se tengan registrados en la locacion
-      const nombreResponsable = `${ordenServicio.idLocacion.primerNombreResponsable} ${ordenServicio.idLocacion.primerApellidoResponsable}`;
+      if (cambioEstadoOrden){
 
-      const emails = await this.locacionService.getEmailsByLocacionAndEstado(
-        ordenServicio.idLocacion.idLocacion, 
-        estadoOrdenServicio.idEstadoOrdenServicio
-      )
-
-      await this.notificationUpdateEmail(
-        nombreResponsable, 
-        ordenServicio.idLocacion.nombre,
-        emails
-      );
+        // envio de correos que se tengan registrados en la locacion
+        const nombreResponsable = `${ordenServicio.idLocacion.primerNombreResponsable} ${ordenServicio.idLocacion.primerApellidoResponsable}`;
+  
+        const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
+          ordenServicio.idLocacion.idLocacion, 
+          estadoOrdenServicio.idEstadoOrdenServicio
+        )
+  
+        const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoOrdenServicio.nombre);
+  
+        const emails = [...emailsLocacion, ...emailsApp];
+  
+        await this.notificationUpdateEmail(
+          savedOrdenServicio,
+          nombreResponsable, 
+          ordenServicio.idLocacion.nombre,
+          emails
+        );
+        
+      }
       
       await queryRunner.commitTransaction();
       
@@ -1377,9 +1393,10 @@ export class OrdenServicioService {
 
   // ENVIAR CORREO PARA INFORMAR ACTUALIZACION DE ORDEN DE SERVICIO
   private async notificationUpdateEmail(
-    nombreCompleto: string, 
-    locacion: string, 
-    email: string[]
+    ordenServicio: OrdenServicio,
+    nombreResponsable: string,
+    locacion: string,
+    emails: string[]
   ) {        
 
     const html = `
@@ -1388,13 +1405,13 @@ export class OrdenServicioService {
           
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
-            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">MODIFICACION ORDEN DE SERVICIO</h2>
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">MODIFICACION ORDEN DE SERVICIO ${ordenServicio.ordenServicioId.descripcionId}</h2>
           </div>
           
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día <strong>${nombreCompleto}</strong>, se ha modificado una orden de servicio para el puesto <b>${locacion}</b>. <br><br>
+              Buen día, se ha modificado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
               Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
@@ -1425,26 +1442,36 @@ export class OrdenServicioService {
       </div>
       `;
 
-    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): modificacion en orden de servicio`;
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): modificacion orden de servicio ${ordenServicio.ordenServicioId.descripcionId}`;
+
+    const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicio);
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {
-      to: email,
-      subject: subject,
-      htmlBody: html
+        to: emails,
+        subject: subject,
+        htmlBody: html,
+        attachments: [
+        {
+          filename: `Orden-servicio-${ordenServicio.ordenServicioId.descripcionId}.pdf`,
+          content: ordenServicioBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
     }
 
     // Enviamos correo para notificar al usuario
     const isEmailSend = await this.emailService.sendEmail(options);
 
     if (!isEmailSend){
-        throw new InternalServerErrorException(`Error al enviar correo de notificacion al email ${email}, revisar correo si esta bien escrito`);
+        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
     }
 
   }
 
   // ELIMINAR ORDEN DE LA BD
   async removeOrdenServicio(id: number) {
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -1467,8 +1494,21 @@ export class OrdenServicioService {
       if (ordenServicio.ordenServicioId) {
         await queryRunner.manager.remove(ordenServicio.ordenServicioId);
       }
-  
+
+      // envio de correos que se tengan registrados en la locacion
+      const nombreResponsable = `${ordenServicio.idLocacion.primerNombreResponsable} ${ordenServicio.idLocacion.primerApellidoResponsable}`;
+
+      const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.ELIMINACION_ORDEN_SERVICIO);
+
+      await this.notificationDeleteEmail(
+        ordenServicio,
+        nombreResponsable, 
+        ordenServicio.idLocacion.nombre,
+        emails
+      );
+      
       await queryRunner.commitTransaction();
+
       return { message: `Orden de servicio ${id} eliminada correctamente` };
   
     } catch (error) {
@@ -1485,6 +1525,84 @@ export class OrdenServicioService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  // ENVIAR CORREO PARA INFORMAR ELIMINACION DE ORDEN DE SERVICIO
+  private async notificationDeleteEmail(
+    ordenServicio: OrdenServicio,
+    nombreResponsable: string,
+    locacion: string,
+    emails: string[]
+  ) {        
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ELIMINACION ORDEN DE SERVICIO ${ordenServicio.ordenServicioId.descripcionId}</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se ha eliminado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio eliminada.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): eliminacion orden de servicio ${ordenServicio.ordenServicioId.descripcionId}`;
+
+    const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicio);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+        to: emails,
+        subject: subject,
+        htmlBody: html,
+        attachments: [
+        {
+          filename: `Orden-servicio-${ordenServicio.ordenServicioId.descripcionId}.pdf`,
+          content: ordenServicioBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    }
+
   }
 
   async downloadOrdenServicioPdf(id: number){
@@ -1504,7 +1622,7 @@ export class OrdenServicioService {
 
     const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicio);
 
-    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): PDF orden de servicio`;
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): PDF orden de servicio ${ordenServicio.ordenServicioId.descripcionId}`;
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -1512,13 +1630,13 @@ export class OrdenServicioService {
           
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
-            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ORDEN DE SERVICIO</h2>
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ORDEN DE SERVICIO ${ordenServicio.ordenServicioId.descripcionId}</h2>
           </div>
           
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día, se envia PDF adjunto de orden de servicio <b>${ordenServicio.idOrdenServicio}</b>. <br><br>
+              Buen día, se envia PDF adjunto de orden de servicio <b>${ordenServicio.ordenServicioId.descripcionId}</b>. <br><br>
               Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
@@ -1558,7 +1676,7 @@ export class OrdenServicioService {
       htmlBody: html,
       attachments: [
         {
-          filename: `Orden-servicio-${ordenServicio.idOrdenServicio}.pdf`,
+          filename: `Orden-servicio-${ordenServicio.ordenServicioId.descripcionId}.pdf`,
           content: ordenServicioBuffer,
           contentType: 'application/pdf',
         },

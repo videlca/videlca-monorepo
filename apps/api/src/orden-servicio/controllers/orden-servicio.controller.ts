@@ -119,6 +119,10 @@ export class OrdenServicioController {
     pdfDoc.info.Title = title;
     
     res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${title}.pdf"`,
+    );
     pdfDoc.pipe(res);
     pdfDoc.end();
 
@@ -131,15 +135,5 @@ export class OrdenServicioController {
   ) {
     return this.ordenServicioService.sendOrdenServicioPdf(ordenId, enviarCorreoDto);
   }
-
-  // @Patch(':id')
-  // update(@Param('id', ParseIntPipe) id: number, @Body() updateOrdenServicioDto: UpdateOrdenServicioDto) {
-  //   return this.ordenServicioService.update(id, updateOrdenServicioDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id', ParseIntPipe) id: number) {
-  //   return this.ordenServicioService.remove(id);
-  // }
 
 }

@@ -80,6 +80,7 @@ export class TarifasController {
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
+    
     res.setHeader(
       'Content-Disposition',
       `attachment; filename=${title}.xlsx`,
