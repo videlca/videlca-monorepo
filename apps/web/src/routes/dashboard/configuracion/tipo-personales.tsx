@@ -160,7 +160,7 @@ function RouteComponent() {
           data={tipoPersonal?.data || []}
           columns={columns}
           enablePagination={true}
-          pageSize={10}
+          pageSize={5}
           enableSorting={true}
           loading={isLoading}
         />

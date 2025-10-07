@@ -247,7 +247,6 @@ function RouteComponent() {
               <Table
                 columns={columns}
                 data={value || []}
-                pageSize={10}
                 enablePagination={false}
               />
             </div>

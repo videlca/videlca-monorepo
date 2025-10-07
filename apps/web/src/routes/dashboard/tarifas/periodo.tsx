@@ -169,7 +169,7 @@ function RouteComponent() {
         <Table
           data={periodos?.data || []}
           columns={columns}
-          pageSize={10}
+          pageSize={5}
           enableFiltering={true}
           enableSorting={false}
           enablePagination={true}

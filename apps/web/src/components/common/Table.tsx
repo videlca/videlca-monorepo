@@ -32,6 +32,7 @@ interface TableProps<TData, TValues> {
   showHeader?: boolean;
   loading?: boolean;
   emptyMessage?: string;
+  pageSizeOptions?: number[];
 }
 
 const Table = <TData, TValues>({
@@ -41,10 +42,11 @@ const Table = <TData, TValues>({
   enableSorting = true,
   enablePagination = true,
   enableFiltering = false,
-  pageSize = 10,
+  pageSize = 5,
   showHeader = true,
   loading = false,
   emptyMessage = "No data available",
+  pageSizeOptions = [2, 5, 10, 15, 20],
 }: TableProps<TData, TValues>) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
@@ -277,6 +279,20 @@ const Table = <TData, TValues>({
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value={0} disabled>
+                Seleccionar
+              </option>
+              {pageSizeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
             <button
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}

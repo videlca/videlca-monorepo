@@ -71,7 +71,7 @@ function RouteComponent() {
           data={correosDefault?.data || []}
           columns={columns}
           enablePagination={true}
-          pageSize={20}
+          pageSize={5}
           enableSorting={false}
           enableFiltering={true}
         />

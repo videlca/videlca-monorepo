@@ -164,7 +164,7 @@ export const CiudadTab = () => {
           data={ciudades?.data || []}
           columns={columnsCiudades}
           enablePagination={true}
-          pageSize={10}
+          pageSize={5}
           enableSorting={true}
           enableFiltering={true}
         />

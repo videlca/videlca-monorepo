@@ -150,7 +150,7 @@ function RouteComponent() {
           data={tipoCliente?.data || []}
           columns={columns}
           enablePagination={true}
-          pageSize={10}
+          pageSize={5}
           enableSorting={true}
         />
       </div>

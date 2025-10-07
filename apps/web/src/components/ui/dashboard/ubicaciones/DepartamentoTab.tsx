@@ -156,7 +156,7 @@ export const DepartamentoTab = () => {
           data={departamentos?.data || []}
           columns={columnsDepartamentos}
           enablePagination={true}
-          pageSize={10}
+          pageSize={5}
           enableSorting={true}
         />
       </div>

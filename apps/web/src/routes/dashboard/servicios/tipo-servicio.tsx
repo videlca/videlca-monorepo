@@ -107,31 +107,6 @@ function RouteComponent() {
     {
       header: "Acciones",
       cell: ({ row }) => (
-        // <div className="flex gap-2">
-        //   <ButtonAction
-        //     Icon={PencilIcon}
-        //     label="Editar"
-        //     onClick={() => {
-        //       setIsOpenEditTipoServicio(true);
-        //       setIdTipoServicio(row.original.idTipoServicio);
-        //       formEditTipoServicio.nombre = row.original.nombre;
-        //       formEditTipoServicio.descripcion = row.original.descripcion;
-        //       formEditTipoServicio.prefijo = row.original.prefijo;
-        //       formEditTipoServicio.requierePersonal =
-        //         row.original.requierePersonal;
-        //       formEditTipoServicio.estado = row.original.estado;
-        //     }}
-        //   />
-        //   <ButtonAction
-        //     Icon={TrashIcon}
-        //     label="Eliminar"
-        //     onClick={() => {
-        //       setIdTipoServicio(row.original.idTipoServicio);
-        //       setIsOpenDeleteTipoServicio(true);
-        //     }}
-        //     color="red"
-        //   />
-        // </div>
         <MoreActionsButton
           menuId={`actions-${row.original.idTipoServicio}`}
           actions={[

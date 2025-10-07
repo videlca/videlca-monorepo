@@ -48,7 +48,7 @@ function RouteComponent() {
           data={estadosOrden?.data || []}
           columns={columns}
           enablePagination={false}
-          pageSize={20}
+          pageSize={5}
           enableSorting={false}
         />
       </div>

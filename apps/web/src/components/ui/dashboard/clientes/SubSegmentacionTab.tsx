@@ -67,7 +67,7 @@ export function SubSegmentacionTab() {
         data={[]}
         columns={columnsSubSegmentacion}
         enablePagination={true}
-        pageSize={10}
+        pageSize={5}
         enableSorting={true}
       />
 

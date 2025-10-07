@@ -894,6 +894,7 @@ function RouteComponent() {
         <Table
           columns={columns}
           data={ordenesDeServicioQuery?.data || []}
+          pageSize={5}
           enableFiltering={true}
           enablePagination={true}
         />

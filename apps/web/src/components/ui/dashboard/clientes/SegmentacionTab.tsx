@@ -323,7 +323,7 @@ export function SegmentacionTab() {
         data={segmentaciones?.data || []}
         columns={columnsSegmentacion}
         enablePagination={true}
-        pageSize={10}
+        pageSize={5}
         enableSorting={true}
       />
 

@@ -10,7 +10,7 @@ export const getActiveRoles = async (pagination: PaginationDto): Promise<ApiResp
 }
 
 export const getRoles = async (pagination: PaginationDto): Promise<ApiResponse<Rol[]>> => {
-  return await apiGet<Rol[]>("/permissions/roles", pagination);
+  return await apiGet<Rol[]>("/permissions/roles?pagination");
 }
 
 export const createRole = async (data: CreateRoleDto): Promise<ApiResponse<Rol>> => {

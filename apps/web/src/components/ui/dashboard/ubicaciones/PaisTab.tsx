@@ -91,7 +91,7 @@ export const PaisTab = () => {
           data={paises?.data || []}
           columns={columnsPaises}
           enablePagination={true}
-          pageSize={10}
+          pageSize={5}
           enableSorting={true}
         />
       </div>

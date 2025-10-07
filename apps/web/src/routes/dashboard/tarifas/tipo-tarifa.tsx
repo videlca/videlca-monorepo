@@ -49,7 +49,7 @@ function RouteComponent() {
       <Table
         data={tipoTarifa?.data || []}
         columns={columns}
-        pageSize={10}
+        pageSize={5}
         enableSorting={true}
         enablePagination={false}
       />

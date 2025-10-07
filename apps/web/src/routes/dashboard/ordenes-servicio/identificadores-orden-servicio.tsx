@@ -125,6 +125,7 @@ function RouteComponent() {
         <Table
           columns={columns}
           data={idsOrdenServicio?.data || []}
+          pageSize={5}
           enableFiltering={false}
           enablePagination={true}
         />

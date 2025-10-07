@@ -165,7 +165,7 @@ function RouteComponent() {
         <Table
           data={tipoHorarios?.data || []}
           columns={columns}
-          pageSize={10}
+          pageSize={5}
           enableSorting={true}
           enablePagination={false}
         />

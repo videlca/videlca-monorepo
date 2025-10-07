@@ -242,7 +242,7 @@ export function ClientesTab() {
         columns={columnsClientes}
         enableSorting={true}
         enablePagination={true}
-        pageSize={10}
+        pageSize={5}
         enableFiltering={true}
       />
 
