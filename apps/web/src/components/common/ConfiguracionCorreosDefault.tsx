@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ButtonAction } from "./ButtonAction";
 import { InputForm } from "./InputForm";
 import { CheckIcon, ChevronDown, PlusIcon, XIcon } from "lucide-react";
@@ -10,22 +10,38 @@ import { useCreateCorreoDefault } from "../../api/queryFunctions/configuracion/c
 
 export function ConfiguracionCorreosDefault({
   setIsOpenAddCorreoDefault,
+  correosPendientes,
+  setCorreosPendientes: _setCorreosPendientes,
+  onSaveSuccess: _onSaveSuccess,
 }: {
   setIsOpenAddCorreoDefault: (isOpen: boolean) => void;
+  correosPendientes: CreateCorreoDefaultDto[];
+  setCorreosPendientes: (correos: CreateCorreoDefaultDto[]) => void;
+  onSaveSuccess: () => void;
 }) {
-  const [correos, setCorreos] = useState<CreateCorreoDefaultDto[]>([]);
+  const [correos, setCorreos] =
+    useState<CreateCorreoDefaultDto[]>(correosPendientes);
   const [correoInput, setCorreoInput] = useState<CreateCorreoDefaultDto>({
     descripcion: "",
     email: "",
     estados: [],
     estadosApp: [],
   });
-  const [expandedEmails, setExpandedEmails] = useState<Set<string>>(new Set());
+  // Auto-expand all existing emails to show their configured states
+  const [expandedEmails, setExpandedEmails] = useState<Set<string>>(
+    new Set(correosPendientes.map((c) => c.email)),
+  );
 
   const { data: estadosOrdenServicio } = useEstadoOrden();
   const { data: estadosApp } = useEstadosApp();
   const { mutate: createCorreoDefault, isPending: isCreatingCorreoDefault } =
     useCreateCorreoDefault();
+
+  // Sync correos state when correosPendientes changes
+  useEffect(() => {
+    setCorreos(correosPendientes);
+    setExpandedEmails(new Set(correosPendientes.map((c) => c.email)));
+  }, [correosPendientes]);
 
   const toggleEmailStates = (email: string) => {
     setExpandedEmails((prev) => {
@@ -75,9 +91,9 @@ export function ConfiguracionCorreosDefault({
       estadosApp: [],
     };
 
-    console.log(newCorreo);
-
     setCorreos([...correos, newCorreo]);
+    // Auto-expand the newly added email
+    setExpandedEmails((prev) => new Set([...prev, newCorreo.email]));
     setCorreoInput({
       descripcion: "",
       email: "",
@@ -94,6 +110,13 @@ export function ConfiguracionCorreosDefault({
       {
         onSuccess: () => {
           setCorreos([]);
+          setCorreoInput({
+            descripcion: "",
+            email: "",
+            estados: [],
+            estadosApp: [],
+          });
+          setExpandedEmails(new Set());
           setIsOpenAddCorreoDefault(false);
         },
       },
@@ -102,6 +125,12 @@ export function ConfiguracionCorreosDefault({
 
   const handleRemoveCorreo = (email: string) => {
     setCorreos(correos.filter((correoGroup) => correoGroup.email !== email));
+    // Also remove from expanded state
+    setExpandedEmails((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(email);
+      return newSet;
+    });
   };
 
   const handleEstadoChange = (
