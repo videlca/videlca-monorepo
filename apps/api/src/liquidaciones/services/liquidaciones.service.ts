@@ -16,6 +16,7 @@ import { GrupoLiquidacion } from '../entities/grupo_liquidaciones.entity';
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 import { PrecioOrdenDto } from 'src/orden-servicio/dto';
 import { OrdenServicioService } from 'src/orden-servicio/services';
+import { ReporteConsolidacionService } from '../../reportes/services';
 import { Cliente } from 'src/clientes/entities';
 import { Tarifa } from 'src/tarifas/entities';
 
@@ -29,6 +30,22 @@ export interface Consolidacion {
   }[];
 }
 
+type ServicioAgrupado = {
+  tipoServicio: string;
+  servicioAplicacion: string;
+  codigoServicioSiigo: string;
+  cantidadOrdenes: number;
+  valorTotalLiquidacion: number;
+};
+
+type ClienteAgrupado = {
+  cliente: string;
+  numeroId: string;
+  servicios: Record<number, ServicioAgrupado>;
+  totalOrdenes: number;
+  totalLiquidacion: number;
+};
+
 @Injectable()
 export class LiquidacionesService {
   constructor(
@@ -39,6 +56,7 @@ export class LiquidacionesService {
     @InjectRepository(GrupoLiquidacion)
     private readonly grupoLiquidacionrepo: Repository<GrupoLiquidacion>,
     private ordenServicioService: OrdenServicioService,
+    private readonly reporteConsolidacionService: ReporteConsolidacionService, // Servicio para generar reportes
   ) { }
 
   async findAll(params?: { page?: number; limit?: number; ordenId?: number }) {
@@ -505,9 +523,89 @@ export class LiquidacionesService {
       .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
       .getMany();
 
+    console.log(`Liquidaciones encontradas para el grupo ${grupoId}: ${liquidaciones.length}`);
     
+    // 🔹 Agrupar por cliente y servicio
+    const agrupado: Record<number, ClienteAgrupado> = {};
+    
+    for (const liq of liquidaciones) {
 
+      const cliente = liq.ordenServicio.idLocacion.idCliente;
+      const clienteId = cliente.idCliente;
+      const clienteNombre = cliente.nombre;
+      const clienteNit = cliente.numeroIdentificacion;
     
+      if (!agrupado[clienteId]) {
+
+        agrupado[clienteId] = {
+          cliente: clienteNombre,
+          numeroId: clienteNit,
+          servicios: {},
+          totalOrdenes: 0,
+          totalLiquidacion: 0
+        };
+
+      }
+    
+      for (const tarifa of liq.ordenServicio.tarifas) {
+
+        const servicio = tarifa.idTarifa.idServicio;
+        const servicioId = servicio.idServicio;
+        const tipoServicio = servicio.descripcion; // Puedes cambiarlo por servicio.tipo si existe
+        const codigoServicioSiigo = servicio.codigo; // Asumiendo que este campo existe
+    
+        if (!agrupado[clienteId].servicios[servicioId]) {
+
+          agrupado[clienteId].servicios[servicioId] = {
+            tipoServicio,
+            servicioAplicacion: servicio.descripcion,
+            codigoServicioSiigo,
+            cantidadOrdenes: 0,
+            valorTotalLiquidacion: 0
+          };
+
+        }
+    
+        agrupado[clienteId].servicios[servicioId].cantidadOrdenes += 1;
+        agrupado[clienteId].servicios[servicioId].valorTotalLiquidacion += Number(liq.valor_liquidacion);
+    
+        agrupado[clienteId].totalOrdenes += 1;
+        agrupado[clienteId].totalLiquidacion += Number(liq.valor_liquidacion);
+
+      }
+
+    }
+    
+    // 🔹 Convertir a formato legible
+    const resultado = Object.values(agrupado).map(cliente => ({
+
+      cliente: cliente.cliente,
+      numeroId: cliente.numeroId,
+      servicios: Object.values(cliente.servicios),
+      totalesCliente: {
+        totalOrdenes: cliente.totalOrdenes,
+        totalLiquidacion: cliente.totalLiquidacion
+      }
+
+    }));
+    
+    return resultado;
+    
+  }
+
+  async downloadConsolidacionExcel(idGrupoLiquidacion: number){
+
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    console.log(resultado);
+
+    const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
+
+    return {
+      excelBuffer: excelBuffer,
+      title: `consolidacion_grupo_${idGrupoLiquidacion}`
+    };    
+
   }
 
 }

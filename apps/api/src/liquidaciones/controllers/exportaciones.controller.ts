@@ -9,7 +9,7 @@ import { LiquidacionesService } from '../../liquidaciones/services/liquidaciones
 import { FiltroGrupoLiquidacionDto } from '../dto/filtroGrupoLiquidacion.dto';
 
 @Controller('exportacion')
-@AppAuth(DescriptionRoutes.EXPORTACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+// @AppAuth(DescriptionRoutes.EXPORTACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class ExportacionController {
   
   constructor(
@@ -27,18 +27,19 @@ export class ExportacionController {
     @Res() res: Response
   ) {
 
-  //const {excelBuffer, title} = await this.liquidacionesService.obtenerOrdenesPorCliente(idGrupoLiquidacion);
-
-  //   res.setHeader(
-  //     'Content-Type',
-  //     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  //   );
-  //   res.setHeader(
-  //     'Content-Disposition',
-  //     `attachment; filename=${title}.xlsx`,
-  //   );
-
-  //   res.end(excelBuffer);
+    const {excelBuffer, title} = await this.liquidacionesService.downloadConsolidacionExcel(idGrupoLiquidacion);
+  
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${title}.xlsx`,
+    );
+  
+    res.end(excelBuffer);
 
   }
   
