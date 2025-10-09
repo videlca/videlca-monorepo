@@ -43,7 +43,6 @@ import { useTarifasPeriodoActivoByIdTipoServicio } from "../../../api/queryFunct
 import { priceFormat } from "../../../utils/PriceFormat";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { dateFormat } from "../../../utils/DateFormat";
-import type { Tarifa } from "../../../api/types/periodo";
 import { useForm } from "../../../hooks/useForm";
 import { OrderStateLabel } from "../../../components/common/OrderStateLabel";
 import type { Puesto } from "../../../types";
@@ -87,11 +86,7 @@ function RouteComponent() {
   }>({ prefijo: "", codigo: 0, codigoTipoServicio: 0 });
 
   const [selectedPuesto, setSelectedPuesto] = useState<Puesto | null>(null);
-  const [selectedTipoServicio, setSelectedTipoServicio] = useState<
-    number | null
-  >(null);
   const [selectedServices, setSelectedServices] = useState<Servicio[]>([]);
-  const [selectedTarifa, setSelectedTarifa] = useState<Tarifa | null>(null);
 
   const [mensajeRespuesta, setMensajeRespuesta] = useState<string>("");
 
@@ -206,10 +201,9 @@ function RouteComponent() {
     setIsOpenAdd(false);
     setIsEditing(false);
     setCurrentStep(1);
-    setSelectedTipoServicio(null);
     setSelectedPuesto(null);
+    setConfiguracionServicioTarifa([]);
     setSelectedServices([]);
-    setSelectedTarifa(null);
     setIsIndefinite(false);
     resetFormOrdenServicio();
     resetFormOrdenServicioEdit();
@@ -289,7 +283,7 @@ function RouteComponent() {
         const response = await Promise.allSettled(
           configuracionServicioTarifa.map(async (servicio) => {
             return validarHorarioServicioOrdenServicio({
-              idTarifa: servicio.idTarifa,
+              idTarifa: servicio.idTarifa || 0,
               idServicio: servicio.idServicio || 0,
               horaInicio: timeFormat(servicio.horaInicio),
               horaFin:
@@ -331,7 +325,7 @@ function RouteComponent() {
               horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
               fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
               fechaInicio: formOrdenServicio.fechaInicio,
-              idTarifa: servicio.idTarifa,
+              idTarifa: servicio.idTarifa || 0,
               idServicio: servicio.idServicio || 0,
             });
 
@@ -412,7 +406,7 @@ function RouteComponent() {
               horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
               fechaFin: isIndefinite ? null : formOrdenServicioEdit.fechaFin,
               fechaInicio: formOrdenServicioEdit.fechaInicio,
-              idTarifa: servicio.idTarifa,
+              idTarifa: servicio.idTarifa || 0,
               idServicio: servicio.idServicio || 0,
             });
 
@@ -604,23 +598,6 @@ function RouteComponent() {
     }
   };
 
-  useEffect(() => {
-    setSelectedServices([]);
-  }, [selectedTipoServicio]);
-
-  useEffect(() => {
-    const initialConfig = selectedServices.map((service) => ({
-      idTarifa: selectedTarifa?.idTarifa || 0,
-      idServicio: service.idServicio,
-      cantidadPersonal: 0,
-      horaInicio: "",
-      horaFin: "",
-      precio: 0,
-      personal: [],
-    }));
-    setConfiguracionServicioTarifa(initialConfig);
-  }, [selectedServices]);
-
   const columns: ColumnDef<OrdenServicio>[] = [
     {
       accessorKey: "numeroOrdenServicio",
@@ -782,7 +759,6 @@ function RouteComponent() {
             tipoServiciosQuery={tipoServiciosQuery?.data || []}
             handleSelectedServices={handleSelectedServices}
             setConfiguracionServicioTarifa={setConfiguracionServicioTarifa}
-            setSelectedTarifa={setSelectedTarifa}
           />
         );
 
@@ -816,7 +792,6 @@ function RouteComponent() {
         return (
           <PreviewInformacionOrden
             selectedPuesto={selectedPuesto}
-            selectedTarifa={selectedTarifa}
             formOrdenServicio={formOrdenServicio}
             configuracionServicioTarifa={configuracionServicioTarifa}
             mensajeRespuesta={mensajeRespuesta}
@@ -848,7 +823,11 @@ function RouteComponent() {
           <AsignacionPersonalServicio
             selectedServices={selectedServices}
             configuracionServicioTarifa={configuracionServicioTarifaEdit}
-            setConfiguracionServicioTarifa={setConfiguracionServicioTarifaEdit}
+            setConfiguracionServicioTarifa={(configuracionServicioTarifa) =>
+              setConfiguracionServicioTarifaEdit(
+                configuracionServicioTarifa as UpdateOrdenServicioTarifaDtoInternal[],
+              )
+            }
             handleValidarEmpleadosDisponibles={
               handleValidarEmpleadosDisponibles
             }
@@ -866,7 +845,6 @@ function RouteComponent() {
           <PreviewInformacionOrden
             isEditing={isEditing}
             selectedPuesto={selectedOrderDetail?.idLocacion || null}
-            selectedTarifa={selectedTarifa}
             formOrdenServicio={formOrdenServicioEdit}
             configuracionServicioTarifa={configuracionServicioTarifaEdit}
             mensajeRespuesta={mensajeRespuesta}

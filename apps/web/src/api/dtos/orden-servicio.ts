@@ -18,7 +18,7 @@ export interface UpdateOrdenServicioDto {
 }
 
 export interface CreateOrdenServicioTarifaDto {
-  idTarifa: number;
+  idTarifa?: number;
   idServicio?: number;
   cantidadPersonal: number;
   horaInicio: string;

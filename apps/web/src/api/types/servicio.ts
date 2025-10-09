@@ -1,6 +1,7 @@
 import type { Tarifa } from "./periodo";
 
 export interface Servicio {
+  idTarifa: Tarifa;
   idServicio: number;
   codigo: string;
   descripcion: string;

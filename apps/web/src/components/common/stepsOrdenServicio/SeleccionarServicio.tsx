@@ -10,7 +10,6 @@ export const SeleccionarServicio = ({
   tipoServiciosQuery,
   handleSelectedServices,
   setConfiguracionServicioTarifa,
-  setSelectedTarifa,
 }: {
   selectedServices: Servicio[];
   tarifasPeriodoActivoByIdTipoServicioData: Tarifa[];
@@ -23,7 +22,6 @@ export const SeleccionarServicio = ({
           prev: CreateOrdenServicioTarifaDto[],
         ) => CreateOrdenServicioTarifaDto[]),
   ) => void;
-  setSelectedTarifa: (tarifa: Tarifa) => void;
 }) => {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -61,7 +59,8 @@ export const SeleccionarServicio = ({
                       const index = newArray.findIndex(
                         (s) => s.idServicio === tarifa.idServicio.idServicio,
                       );
-                      newArray[index] = {
+
+                      const newConfig = {
                         idTarifa: tarifa.idTarifa,
                         idServicio: tarifa.idServicio.idServicio,
                         cantidadPersonal: 0,
@@ -70,10 +69,18 @@ export const SeleccionarServicio = ({
                         precio: 0,
                         personal: [],
                       };
+
+                      if (index >= 0) {
+                        // Update existing
+                        newArray[index] = newConfig;
+                      } else {
+                        // Add new
+                        newArray.push(newConfig);
+                      }
+
                       return newArray;
                     },
                   );
-                  setSelectedTarifa(tarifa);
                 }}
               >
                 <div className="mb-2 flex items-start justify-between">
