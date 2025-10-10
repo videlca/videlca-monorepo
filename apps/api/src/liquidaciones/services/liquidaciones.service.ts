@@ -333,6 +333,36 @@ export class LiquidacionesService {
     return qb.getMany();
   }
 
+  async findByMesLiquidacionesAprobadas(anio: number, mes1a12: number) {
+    if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
+      throw new BadRequestException('Parámetros inválidos (anio, mes)');
+    }
+
+    // const today = new Date();
+    // if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
+    //   throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+
+    // Rango del mes objetivo: [inicioMes, finMes)
+    const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
+    const finMes = new Date(Date.UTC(anio, mes1a12, 1, 0, 0, 0)); // inicio del mes siguiente
+
+    return this.grupoLiquidacionrepo
+      .createQueryBuilder('grupo')
+      .where(`grupo.estado = :estado`, { estado: true })
+      .andWhere('grupo.fechaCreacion < :fin AND (grupo.fechaCreacion >= :ini)', {
+        ini: inicioMes,
+        fin: finMes,
+      })
+      .orderBy('grupo.idGrupoLiquidacion', 'DESC')
+      .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
+      .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
+      .leftJoinAndSelect('ordenServicio.ordenServicioId', 'ordenServicioId')
+      .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
+      .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .getMany();
+  }
+
 
   async findByEstado(estado: boolean) {
     return this.grupoLiquidacionrepo.find({

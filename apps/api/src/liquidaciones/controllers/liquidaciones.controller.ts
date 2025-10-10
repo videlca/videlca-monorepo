@@ -45,6 +45,14 @@ export class LiquidacionesController {
     return this.service.findByCreacionMes(anio, mes);
   }
 
+  @Get('historial-liquidaciones-aprobadas')
+  async findByMesLiquidacionesAprobadas(
+    @Query('anio', ParseIntPipe) anio: number,
+    @Query('mes', ParseIntPipe) mes: number,
+  ) {
+    return this.service.findByMesLiquidacionesAprobadas(anio, mes);
+  }
+
   @Get('/by-estado')
   async listByEstado(
     @Query('estado') estado: boolean,
