@@ -2,7 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { CheckIcon, FileTextIcon, PlusIcon, Search } from "lucide-react";
+import {
+  AlertCircleIcon,
+  CheckIcon,
+  FileTextIcon,
+  PlusIcon,
+  Search,
+} from "lucide-react";
 import { getYear, subYears } from "date-fns";
 import { InputSelect } from "../../../components/common/InputSelect";
 import {
@@ -48,11 +54,14 @@ function RouteComponent() {
     data: liquidaciones,
     isLoading: isLoadingLiquidaciones,
     refetch: refetchLiquidaciones,
+    isError: isErrorLiquidaciones,
+    error: errorLiquidaciones,
   } = useGetLiquidacionesPorMes(
     Number(searchYear),
     Number(searchMonth),
     isSearching,
   );
+
   const {
     mutateAsync: crearLiquidacionMensual,
     isPending: isCreatingLiquidacionMensualPending,
@@ -130,13 +139,19 @@ function RouteComponent() {
         </div>
       </div>
 
-      {liquidaciones?.data?.length === 0 && (
+      {(liquidaciones?.data?.length === 0 || isErrorLiquidaciones) && (
         <div className="py-12 text-center">
           <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
-            <FileTextIcon className="h-12 w-12 text-gray-400" />
+            {isErrorLiquidaciones ? (
+              <AlertCircleIcon className="h-12 w-12 text-gray-400" />
+            ) : (
+              <FileTextIcon className="h-12 w-12 text-gray-400" />
+            )}
           </div>
           <h3 className="mb-2 text-lg font-medium text-gray-900">
-            No se encontraron órdenes de servicio
+            {isErrorLiquidaciones
+              ? errorLiquidaciones?.message
+              : "No se encontraron órdenes de servicio"}
           </h3>
         </div>
       )}
