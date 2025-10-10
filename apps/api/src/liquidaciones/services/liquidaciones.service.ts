@@ -16,21 +16,34 @@ import { GrupoLiquidacion } from '../entities/grupo_liquidaciones.entity';
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 import { PrecioOrdenDto } from 'src/orden-servicio/dto';
 import { OrdenServicioService } from 'src/orden-servicio/services';
+import { ReporteConsolidacionService } from '../../reportes/services';
 import { Cliente } from 'src/clientes/entities';
 import { Tarifa } from 'src/tarifas/entities';
 
-type ClienteGrupoResumen = {
-  cliente: Cliente;
-  totalLiquidaciones: number;
+export interface Consolidacion {
+  liquidacion: string;
+  cliente: string;
+  servicios: {
+    descripcion: string;
+    cantidad: number;
+    valor: number;
+  }[];
+}
+
+type ServicioAgrupado = {
+  tipoServicio: string;
+  servicioAplicacion: string;
+  codigoServicioSiigo: string;
+  cantidadOrdenes: number;
+  valorTotalLiquidacion: number;
+};
+
+type ClienteAgrupado = {
+  cliente: string;
+  numeroId: string;
+  servicios: Record<number, ServicioAgrupado>;
   totalOrdenes: number;
-  ordenes: Array<{
-    liquidacionId: number;
-    valorLiquidacion: number;
-    fechaCreacion: Date;
-    totalOrdenServicio: number;
-    ordenServicio: OrdenServicio;
-    servicios: Tarifa[];
-  }>;
+  totalLiquidacion: number;
 };
 
 @Injectable()
@@ -42,8 +55,8 @@ export class LiquidacionesService {
     @InjectRepository(OrdenServicio) private readonly ordenRepo: Repository<OrdenServicio>,
     @InjectRepository(GrupoLiquidacion)
     private readonly grupoLiquidacionrepo: Repository<GrupoLiquidacion>,
-
     private ordenServicioService: OrdenServicioService,
+    private readonly reporteConsolidacionService: ReporteConsolidacionService, // Servicio para generar reportes
   ) { }
 
   async findAll(params?: { page?: number; limit?: number; ordenId?: number }) {
@@ -460,9 +473,9 @@ export class LiquidacionesService {
   }
 
   async findGruposPorCampoEstado(campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo', valor: string) {
-    return this.grupoLiquidacionrepo
+    
+    const query = this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
-      .where(`grupo.${campo} = :valor`, { valor: valor === 'true' })
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
       .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
       .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
@@ -470,7 +483,24 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
-      .getMany();
+
+      if (campo === 'consolidacion_orden') {
+        query.where(`grupo.consolidacion_orden = :valor`, { valor: valor === 'true' });
+      }
+
+
+      if (campo === 'generacion_interfase') {
+        query.where('grupo.consolidacion_orden = :cons', { cons: true })
+             .andWhere('grupo.generacion_interfase = :valor', { valor: valor === 'true' });
+      }
+    
+      if (campo === 'generacion_anexo') {
+        query.where('grupo.consolidacion_orden = :cons', { cons: true })
+             .andWhere('grupo.generacion_interfase = :interfase', { interfase: true })
+             .andWhere('grupo.generacion_anexo = :valor', { valor: valor === 'true' });
+      }
+    
+      return query.getMany();
   }
 
   async buscarGrupoLiquidaciones() {
@@ -487,14 +517,18 @@ export class LiquidacionesService {
       .getMany();
   }
 
-  async obtenerOrdenesPorCliente(idGrupoLiquidacion: number) {
+  async obtenerServiciosPorCliente(idGrupoLiquidacion: number) {
+
     const grupoId = Number(idGrupoLiquidacion);
+    
     if (!grupoId || Number.isNaN(grupoId)) {
       throw new BadRequestException('idGrupoLiquidacion inválido');
     }
 
     const grupo = await this.grupoLiquidacionrepo.findOne({
-      where: { idGrupoLiquidacion: grupoId },
+      where: { 
+        idGrupoLiquidacion: grupoId 
+      },
     });
 
     if (!grupo) {
@@ -519,56 +553,89 @@ export class LiquidacionesService {
       .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
       .getMany();
 
-    const agrupado = new Map<number, ClienteGrupoResumen>();
+    console.log(`Liquidaciones encontradas para el grupo ${grupoId}: ${liquidaciones.length}`);
+    
+    // 🔹 Agrupar por cliente y servicio
+    const agrupado: Record<number, ClienteAgrupado> = {};
+    
+    for (const liq of liquidaciones) {
 
-    for (const liquidacion of liquidaciones) {
-      const orden = liquidacion.ordenServicio;
-      if (!orden) continue;
+      const cliente = liq.ordenServicio.idLocacion.idCliente;
+      const clienteId = cliente.idCliente;
+      const clienteNombre = cliente.nombre;
+      const clienteNit = cliente.numeroIdentificacion;
+    
+      if (!agrupado[clienteId]) {
 
-      const cliente = orden.idLocacion?.idCliente;
-      if (!cliente?.idCliente) continue;
+        agrupado[clienteId] = {
+          cliente: clienteNombre,
+          numeroId: clienteNit,
+          servicios: {},
+          totalOrdenes: 0,
+          totalLiquidacion: 0
+        };
 
-      const entry = agrupado.get(cliente.idCliente) ?? {
-        cliente,
-        totalLiquidaciones: 0,
-        totalOrdenes: 0,
-        ordenes: [],
-      };
+      }
+    
+      for (const tarifa of liq.ordenServicio.tarifas) {
 
-      const valorLiquidacionRaw = Number(liquidacion.valor_liquidacion ?? 0);
-      const valorLiquidacion = Number.isFinite(valorLiquidacionRaw) ? valorLiquidacionRaw : 0;
-      const totalOrdenRaw = Number(orden.precioTotal ?? 0);
-      const totalOrdenServicio = Number.isFinite(totalOrdenRaw) ? totalOrdenRaw : 0;
+        const servicio = tarifa.idTarifa.idServicio;
+        const servicioId = servicio.idServicio;
+        const tipoServicio = servicio.descripcion; // Puedes cambiarlo por servicio.tipo si existe
+        const codigoServicioSiigo = servicio.codigo; // Asumiendo que este campo existe
+    
+        if (!agrupado[clienteId].servicios[servicioId]) {
 
-      entry.totalLiquidaciones += valorLiquidacion;
-      entry.totalOrdenes += totalOrdenServicio;
+          agrupado[clienteId].servicios[servicioId] = {
+            tipoServicio,
+            servicioAplicacion: servicio.descripcion,
+            codigoServicioSiigo,
+            cantidadOrdenes: 0,
+            valorTotalLiquidacion: 0
+          };
 
-      const servicios = (orden.tarifas ?? [])
-        .map((detalle) => detalle?.idTarifa)
-        .filter((tarifa): tarifa is Tarifa => Boolean(tarifa));
+        }
+    
+        agrupado[clienteId].servicios[servicioId].cantidadOrdenes += 1;
+        agrupado[clienteId].servicios[servicioId].valorTotalLiquidacion += Number(liq.valor_liquidacion);
+    
+        agrupado[clienteId].totalOrdenes += 1;
+        agrupado[clienteId].totalLiquidacion += Number(liq.valor_liquidacion);
 
-      entry.ordenes.push({
-        liquidacionId: liquidacion.idLiquidacion,
-        valorLiquidacion: round2(valorLiquidacion),
-        fechaCreacion: liquidacion.fechaCreacion,
-        totalOrdenServicio: round2(totalOrdenServicio),
-        ordenServicio: orden,
-        servicios,
-      });
+      }
 
-      agrupado.set(cliente.idCliente, entry);
     }
+    
+    // 🔹 Convertir a formato legible
+    const resultado = Object.values(agrupado).map(cliente => ({
 
-    const clientes = Array.from(agrupado.values())
-      .map(({ cliente, ordenes, totalLiquidaciones, totalOrdenes }) => ({
-        cliente,
-        ordenes,
-        totalLiquidaciones: round2(totalLiquidaciones),
-        totalOrdenes: round2(totalOrdenes),
-      }))
-      .sort((a, b) => (a.cliente?.nombre ?? '').localeCompare(b.cliente?.nombre ?? ''));
+      cliente: cliente.cliente,
+      numeroId: cliente.numeroId,
+      servicios: Object.values(cliente.servicios),
+      totalesCliente: {
+        totalOrdenes: cliente.totalOrdenes,
+        totalLiquidacion: cliente.totalLiquidacion
+      }
 
-    return { grupo, clientes };
+    }));
+    
+    return resultado;
+    
+  }
+
+  async downloadConsolidacionExcel(idGrupoLiquidacion: number){
+
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    console.log(resultado);
+
+    const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
+
+    return {
+      excelBuffer: excelBuffer,
+      title: `consolidacion_grupo_${idGrupoLiquidacion}`
+    };    
+
   }
 
 }
