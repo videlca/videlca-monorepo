@@ -64,7 +64,7 @@ export class OrdenServicioController {
 
   @Post('obtener-precio')
   obtenerPrecioOrden(@Body() obtenerPrecioOrdenDto: PrecioOrdenDto){
-    return this.ordenServicioService.obtenerPrecioServicio(obtenerPrecioOrdenDto);
+    return this.ordenServicioService.obtenerPrecio(obtenerPrecioOrdenDto);
   }
   
   @Post('empleados-disponibles')

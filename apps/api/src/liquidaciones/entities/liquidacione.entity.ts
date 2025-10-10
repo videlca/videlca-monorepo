@@ -1,16 +1,11 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  CreateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, OneToMany } from 'typeorm';
 import { OrdenServicio } from '../../orden-servicio/entities/orden-servicio.entity';
 import { GrupoLiquidacion } from './grupo_liquidaciones.entity';
+import { LiquidacionServicioOrdenServicio } from './liquidacion_servicio_orden_servicio.entity';
 
 @Entity({ name: 'liquidaciones' })
 export class Liquidacione {
+
   @PrimaryGeneratedColumn({ name: 'idLiquidacion' })
   idLiquidacion: number;
 
@@ -22,14 +17,6 @@ export class Liquidacione {
     nullable: false,
   })
   valor_liquidacion: number;
-
-  @CreateDateColumn({
-    name: 'fechaCreacion',
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    precision: 0,
-  })
-  fechaCreacion: Date;
 
   // relación con orden_servicio
   @Column({ name: 'idOrdenServicio', type: 'int' })
@@ -44,11 +31,11 @@ export class Liquidacione {
   ordenServicio: OrdenServicio;
 
   // relación con grupo_liquidaciones
-  @Column({ name: 'idGrupoLiquidacion', type: 'int' })
+  @Column({ 
+    name: 'idGrupoLiquidacion', 
+    type: 'int' 
+  })
   idGrupoLiquidacion: number;
-
-  @Column({ type: 'boolean', default: false })
-  estado: boolean;
 
   @ManyToOne(
     () => GrupoLiquidacion,
@@ -58,10 +45,34 @@ export class Liquidacione {
   @JoinColumn({ name: 'idGrupoLiquidacion' })
   grupo: GrupoLiquidacion;
 
-    @Column({
+  @Column({
     name: 'aniomes_liquidacion',
     type: 'varchar',
     nullable: false
   })
   aniomes_liquidacion: string;
+
+  @Column({ 
+    type: 'boolean', 
+    default: false 
+  })
+  estado: boolean;
+
+  @CreateDateColumn({
+    name: 'fechaCreacion',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+    precision: 0,
+  })
+  fechaCreacion: Date;
+
+  @OneToMany(
+    () => LiquidacionServicioOrdenServicio,
+    (liquidacionServicioOrdenServicio) => liquidacionServicioOrdenServicio.idLiquidacion,
+    {
+      eager: true
+    }
+  )
+  liquidacionServiciosOrdenServicio: LiquidacionServicioOrdenServicio[];
+
 }

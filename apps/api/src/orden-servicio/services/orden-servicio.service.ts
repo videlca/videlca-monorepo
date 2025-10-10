@@ -575,7 +575,6 @@ export class OrdenServicioService {
 
   }
 
-  // TODO: REVISAR LOGICA DE CALCULO DE PRECIO, PARA QUE FUNCIONE POR SERVICIO Y NO POR TARIFA
   async obtenerPrecio(validarPrecioOrdenDto: PrecioOrdenDto){
 
     const { idTarifa, horaInicio, horaFin, fechaInicio, fechaFin } = validarPrecioOrdenDto;
@@ -588,7 +587,13 @@ export class OrdenServicioService {
   
       return {
         "message": "La orden de servicio es indefinida, el precio se calculara al momento de hacer la liquidacion o al finalizar el servicio",
-        "precio": null
+        "precio": null,
+        "costosDirectos": null,
+        "seguroVida": null,
+        "costosDirectosSeguroVida": null,
+        "aui": null,
+        "precioAntesIva": null,
+        "iva": null
       }
         
     }
@@ -614,7 +619,13 @@ export class OrdenServicioService {
 
     let duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
 
-    let precioTotal: number;  
+    let precioTotal: number;
+    let costosDirectos: number;
+    let seguroVida: number;
+    let costosDirectosSeguroVida: number;
+    let aui: number;
+    let precioAntesIva: number;
+    let iva: number; 
 
     // VALIDAR SI SE ESTA PIDIENDO SERVICIO POR UN MES EXACTO, ES DECIR TODO ENERO, TODO FEBRERO, ...
     if (this.esMesCompleto(fechaInicioOrden, fechaFinOrden)) {
@@ -631,31 +642,55 @@ export class OrdenServicioService {
       if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES){
 
         precioTotal = tarifa.precioTotal;
+        costosDirectos = tarifa.costosDirectos;
+        seguroVida = tarifa.seguroVida;
+        costosDirectosSeguroVida = tarifa.costosDirectosSeguroVida;
+        aui = tarifa.aui;
+        precioAntesIva = tarifa.precioAntesIva;
+        iva = tarifa.iva; 
 
       }
 
-       // SI ES UNIDAD O DIA
-       else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa.idTipoTarifa.nombre === TipoTarifaInterface.DIA){
+      // SI ES UNIDAD O DIA
+      else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa.idTipoTarifa.nombre === TipoTarifaInterface.DIA){
 
-        precioTotal = tarifa.precioTotal * diaFinMes;
+        costosDirectos = tarifa.costosDirectos * diaFinMes;
+        seguroVida = tarifa.seguroVida * diaFinMes;
+        aui = tarifa.aui * diaFinMes;
+        costosDirectosSeguroVida = costosDirectos + seguroVida;
+        precioAntesIva = costosDirectosSeguroVida + aui;
+        iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+        precioTotal = Math.round(precioAntesIva + iva);
 
-       }
+      }
 
       // SI ES TIPO HORA
       else {
+        
+        const costosDirectosTotalDia = tarifa.costosDirectos * duracionServicio;
+        const seguroVidaTotalDia = tarifa.seguroVida * duracionServicio;
+        const auiTotalDia = tarifa.aui * duracionServicio;
 
-        const precioHora = tarifa.precioTotal;
-
-        const precioTotalDia = precioHora * duracionServicio;
-
-        precioTotal = precioTotalDia * diaFinMes;
+        costosDirectos = costosDirectosTotalDia * diaFinMes;
+        seguroVida = seguroVidaTotalDia * diaFinMes;
+        aui = auiTotalDia * diaFinMes;
+        costosDirectosSeguroVida = costosDirectos + seguroVida;
+        precioAntesIva = costosDirectosSeguroVida + aui;
+        iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+        precioTotal = Math.round(precioAntesIva + iva);
 
       }
 
 
       return {
         "message": "El servicio es por un mes completo exacto",
-        "precio": precioTotal
+        "precio": precioTotal,
+        "costosDirectos": costosDirectos,
+        "seguroVida": seguroVida,
+        "costosDirectosSeguroVida": costosDirectosSeguroVida,
+        "aui": aui,
+        "precioAntesIva": precioAntesIva,
+        "iva": iva
       }
 
     }
@@ -674,166 +709,60 @@ export class OrdenServicioService {
     // SI EL TIPO DE TARIFA ES POR MES
     if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES){
 
-      const precioServicioDia = tarifa.precioTotal / tarifa.idTipoTarifa.cantidadTiempo;
-
-      precioTotal = precioServicioDia * duracionServicioDias;
+      const costosDirectosDia = tarifa.costosDirectos / tarifa.idTipoTarifa.cantidadTiempo;
+      const seguroVidaDia = tarifa.seguroVida / tarifa.idTipoTarifa.cantidadTiempo;
+      const auiDia = tarifa.aui / tarifa.idTipoTarifa.cantidadTiempo;
+      
+      costosDirectos = costosDirectosDia * duracionServicioDias;
+      seguroVida = seguroVidaDia * duracionServicioDias;
+      aui = auiDia * duracionServicioDias;
+      costosDirectosSeguroVida = costosDirectos + seguroVida;
+      precioAntesIva = costosDirectosSeguroVida + aui;
+      iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+      precioTotal = Math.round(precioAntesIva + iva);
 
     }
     
     // SI ES UNIDAD O DIA
     else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa.idTipoTarifa.nombre === TipoTarifaInterface.DIA){
 
-      precioTotal = tarifa.precioTotal * duracionServicioDias;
+      costosDirectos = tarifa.costosDirectos * duracionServicioDias;
+      seguroVida = tarifa.seguroVida * duracionServicioDias;
+      aui = tarifa.aui * duracionServicioDias;
+      costosDirectosSeguroVida = costosDirectos + seguroVida;
+      precioAntesIva = costosDirectosSeguroVida + aui;
+      iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+      precioTotal = Math.round(precioAntesIva + iva);
 
     }
     
     // SI ES TIPO HORA
     else {
 
-      const precioHora = tarifa.precioTotal;
+      const costosDirectosTotalDia = tarifa.costosDirectos * duracionServicio;
+      const seguroVidaTotalDia = tarifa.seguroVida * duracionServicio;
+      const auiTotalDia = tarifa.aui * duracionServicio;
 
-      const precioTotalDia = precioHora * duracionServicio;
-
-      precioTotal = precioTotalDia * duracionServicioDias;
+      costosDirectos = costosDirectosTotalDia * duracionServicioDias;
+      seguroVida = seguroVidaTotalDia * duracionServicioDias;
+      aui = auiTotalDia * duracionServicioDias;
+      costosDirectosSeguroVida = costosDirectos + seguroVida;
+      precioAntesIva = costosDirectosSeguroVida + aui;
+      iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+      precioTotal = Math.round(precioAntesIva + iva);
 
     }
 
 
     return {
       "message": `El servicio tiene una duracion de ${duracionServicioDias} dia(s)`,
-      "precio": precioTotal
-    }
-    
-  }
-
-  async obtenerPrecioServicio(validarPrecioOrdenDto: PrecioOrdenDto){
-
-    const { idTarifa, idServicio, horaInicio, horaFin, fechaInicio, fechaFin } = validarPrecioOrdenDto;
-
-    // Validar que la tarifa exista
-    // const tarifa = await this.tarifasService.findOne(idTarifa);
-    const servicio = await this.servicioService.findOne(idServicio);
-
-    const tarifa = await this.tarifasService.findTarifaByServicio(idServicio);
-
-    if (!fechaFin) {
-  
-      return {
-        "message": "La orden de servicio es indefinida, el precio se calculara al momento de hacer la liquidacion o al finalizar el servicio",
-        "precio": null
-      }
-        
-    }
-    
-    //! DESESTRUCTURAR FECHAS PARA EL MANEJO CORRECTO
-
-    // FECHA INICIO ORDEN SERVICIO
-                
-    const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
-
-    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
-    
-    const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
-    
-    // FECHA FIN ORDEN SERVICIO
-                
-    const fechaFinSplit = fechaFin.toISOString().split('T')[0];
-
-    const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
-    
-    const fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
-
-
-    let duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
-
-    let precioTotal: number;  
-
-    // VALIDAR SI SE ESTA PIDIENDO SERVICIO POR UN MES EXACTO, ES DECIR TODO ENERO, TODO FEBRERO, ...
-    if (this.esMesCompleto(fechaInicioOrden, fechaFinOrden)) {
-      
-      let diaFinMes: number = diaFin;
-      if (tarifa[0].idServicio.idTipoHorarioDescripcion.nombre == TipoHorarioInterface.NOCTURNO){
-
-        diaFinMes = diaFin - 1;
-
-      } 
-
-      // SI EL TIPO DE TARIFA ES POR MES
-      if (tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.MES){
-
-        precioTotal = tarifa[0].precioTotal;
-
-      }
-
-       // SI ES UNIDAD O DIA
-       else if (tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.DIA){
-
-        precioTotal = tarifa[0].precioTotal * diaFinMes;
-
-       }
-
-      // SI ES TIPO HORA
-      else {
-
-        const precioHora = tarifa[0].precioTotal;
-
-        const precioTotalDia = precioHora * duracionServicio;
-
-        precioTotal = precioTotalDia * diaFinMes;
-
-      }
-
-
-      return {
-        "message": "El servicio es por un mes completo exacto",
-        "precio": precioTotal
-      }
-
-    }
-
-    // VALIDACIONES POR DIA
-    let duracionServicioDias = this.calcularDuracionServicioDias(fechaInicioOrden, fechaFinOrden);
-
-    if (servicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
-
-      duracionServicioDias -= 1
-
-      duracionServicioDias = duracionServicioDias != 0 ? duracionServicioDias : 1;
-
-    }
-
-    // SI EL TIPO DE TARIFA ES POR MES
-    if (tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.MES){
-
-      const precioServicioDia = tarifa[0].precioTotal / tarifa[0].idTipoTarifa.cantidadTiempo;
-
-      precioTotal = precioServicioDia * duracionServicioDias;
-
-    }
-    
-    // SI ES UNIDAD O DIA
-    else if (tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa[0].idTipoTarifa.nombre === TipoTarifaInterface.DIA){
-
-      precioTotal = tarifa[0].precioTotal * duracionServicioDias;
-
-    }
-    
-    // SI ES TIPO HORA
-    else {
-
-      const precioHora = tarifa[0].precioTotal;
-
-      const precioTotalDia = precioHora * duracionServicio;
-
-      precioTotal = precioTotalDia * duracionServicioDias;
-
-    }
-
-
-
-    return {
-      "message": `El servicio tiene una duracion de ${duracionServicioDias} dia(s)`,
-      "precio": precioTotal
+      "precio": precioTotal,
+      "costosDirectos": costosDirectos,
+      "seguroVida": seguroVida,
+      "costosDirectosSeguroVida": costosDirectosSeguroVida,
+      "aui": aui,
+      "precioAntesIva": precioAntesIva,
+      "iva": iva
     }
     
   }

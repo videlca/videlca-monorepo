@@ -3,6 +3,7 @@ import { Periodo } from "../../periodos/entities/periodo.entity";
 import { Servicio } from "../../servicios/entities";
 import { TipoTarifa } from "./tipo-tarifa.entity";
 import { OrdenServicioTarifa } from "../../orden-servicio/entities/orden-servicio-tarifa.entity";
+import { LiquidacionServicioOrdenServicio } from "../../liquidaciones/entities/liquidacion_servicio_orden_servicio.entity";
 
 @Entity({name: 'tarifa'})
 export class Tarifa {
@@ -55,7 +56,7 @@ export class Tarifa {
     })
     costosDirectos: number;
     
-    // COSTOS DIRECTOS
+    // SEGURO VIDA
     @Column({
         type: 'decimal',
         name: 'seguroVida',
@@ -137,5 +138,11 @@ export class Tarifa {
         (ordenServicioTarifa) => ordenServicioTarifa.idTarifa
     )
     ordenesServicio: OrdenServicioTarifa[];
+
+    @OneToMany(
+        () => LiquidacionServicioOrdenServicio,
+        (liquidacionServicioOrdenServicio) => liquidacionServicioOrdenServicio.idTarifa,
+    )
+    liquidacionServiciosOrdenServicio: LiquidacionServicioOrdenServicio[];
 
 }

@@ -1,62 +1,49 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, EntityManager, } from 'typeorm';
-import { Liquidacione } from '../entities/liquidacione.entity';
-import { OrdenServicio } from '../../orden-servicio/entities';
-import {
-  toUTCDateOnly,
-  endOfMonth,
-  minDate,
-  maxDate,
-  diffDaysInclusive,
-  round2,
-  fmtYMD,
-} from '../../common/utils/date-helpers';
-import { GrupoLiquidacion } from '../entities/grupo_liquidaciones.entity';
-import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
-import { PrecioOrdenDto } from 'src/orden-servicio/dto';
-import { OrdenServicioService } from 'src/orden-servicio/services';
+import { DataSource, Repository, EntityManager, QueryRunner, } from 'typeorm';
+
+import { toUTCDateOnly, endOfMonth, minDate, maxDate, diffDaysInclusive, round2, fmtYMD } from '../../common/utils/date-helpers';
+import { PrecioOrdenDto } from '../../orden-servicio/dto';
+
 import { ReporteConsolidacionService } from '../../reportes/services';
-import { Cliente } from 'src/clientes/entities';
-import { Tarifa } from 'src/tarifas/entities';
+import { OrdenServicioService } from '../../orden-servicio/services';
 
-export interface Consolidacion {
-  liquidacion: string;
-  cliente: string;
-  servicios: {
-    descripcion: string;
-    cantidad: number;
-    valor: number;
-  }[];
-}
+import { OrdenServicio } from '../../orden-servicio/entities';
+import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion } from '../entities';
 
-type ServicioAgrupado = {
-  tipoServicio: string;
-  servicioAplicacion: string;
-  codigoServicioSiigo: string;
-  cantidadOrdenes: number;
-  valorTotalLiquidacion: number;
-};
+import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
+import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
+import { ClienteAgrupado } from '../interfaces/consolidacion.interface';
 
-type ClienteAgrupado = {
-  cliente: string;
-  numeroId: string;
-  servicios: Record<number, ServicioAgrupado>;
-  totalOrdenes: number;
-  totalLiquidacion: number;
-};
+// type ServicioAgrupado = {
+//   tipoServicio: string;
+//   servicioAplicacion: string;
+//   codigoServicioSiigo: string;
+//   cantidadOrdenes: number;
+//   valorTotalLiquidacion: number;
+// };
+
+// type ClienteAgrupado = {
+//   cliente: string;
+//   numeroId: string;
+//   servicios: Record<number, ServicioAgrupado>;
+//   totalOrdenes: number;
+//   totalLiquidacion: number;
+// };
 
 @Injectable()
 export class LiquidacionesService {
+
   constructor(
-    private readonly ds: DataSource,
     @InjectRepository(Liquidacione)
-    private readonly repo: Repository<Liquidacione>,
-    @InjectRepository(OrdenServicio) private readonly ordenRepo: Repository<OrdenServicio>,
+    private readonly liquidacionRepo: Repository<Liquidacione>,
     @InjectRepository(GrupoLiquidacion)
     private readonly grupoLiquidacionrepo: Repository<GrupoLiquidacion>,
+    @InjectRepository(OrdenServicio) 
+    private readonly ordenRepo: Repository<OrdenServicio>,
     private ordenServicioService: OrdenServicioService,
     private readonly reporteConsolidacionService: ReporteConsolidacionService, // Servicio para generar reportes
+    private readonly dataSource: DataSource,
   ) { }
 
   async findAll(params?: { page?: number; limit?: number; ordenId?: number }) {
@@ -64,7 +51,7 @@ export class LiquidacionesService {
     const take = Math.min(100, Math.max(1, Number(params?.limit ?? 20)));
     const skip = (page - 1) * take;
 
-    const qb = this.repo
+    const qb = this.liquidacionRepo
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.ordenServicio', 'os')
       .select([
@@ -111,86 +98,91 @@ export class LiquidacionesService {
     throw last;
   }
 
-  // === pública: genera grupo y liquidaciones ===
-  async generarGrupoMensual(dto: { anio: number; mes: number; ordenIds: number[] }) {
-    const { anio, mes, ordenIds } = dto;
+  // Genera grupo y liquidaciones
+  async generarGrupoMensual(crearGrupoMensualDto: CrearGrupoMensualDto) {
+
+    const { anio, mes, ordenIds } = crearGrupoMensualDto;
+
     if (!anio || !mes || mes < 1 || mes > 12 || !ordenIds?.length) {
       throw new BadRequestException('Parámetros inválidos');
     }
 
     const today = new Date();
-//    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
-//      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-//    if (today.getMonth() + 1 === mes && today.getDate() < 20)
-//      throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
+    // if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
+    //  throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    return this.withRetry(() =>
-      this.ds.transaction('READ COMMITTED', async (tm) => {
-        const gRepo = tm.getRepository(GrupoLiquidacion);
-        const lRepo = tm.getRepository(Liquidacione);
+    // if (today.getMonth() + 1 === mes && today.getDate() < 20)
+    // throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
 
-        // 1) Crear grupo
-        const grupo = await gRepo.save(gRepo.create({ estado: false, total: 0 }));
+    // Crear QueryRunner para manejar la transacción
+    const queryRunner = this.dataSource.createQueryRunner();
+    
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-        // 2) Bloquear el grupo para este batch (evita que otro hilo lo toque)
-        await tm
-          .createQueryBuilder(GrupoLiquidacion, 'g')
-          .where('g.idGrupoLiquidacion = :id', { id: grupo.idGrupoLiquidacion })
-          .setLock('pessimistic_write')  // SELECT ... FOR UPDATE
-          .getOne();
+    try {
 
-        const resultados: any[] = [];
-        const nuevas: Liquidacione[] = [];
+      // 1) Crear grupo
+      const grupoLiquidacion = queryRunner.manager.create(GrupoLiquidacion, {
+        estado: false,
+        total: 0
+      });
+      
+      // 2) crear liquidaciones del grupo de ordenes
+      for (const ordenId of ordenIds) {
 
-        // 3) Procesar órdenes secuencialmente en la MISMA transacción/manager
-        for (const ordenId of ordenIds) {
-          try {
-            const liq = await this.crearLiquidacionParaMesTx(
-              tm, ordenId, anio, mes, grupo.idGrupoLiquidacion
-            );
-            nuevas.push(liq);
-            resultados.push({ ordenId, ok: true, liquidacionId: liq.idLiquidacion, monto: Number(liq.valor_liquidacion) });
-          } catch (e: any) {
-            resultados.push({ ordenId, ok: false, error: e?.message ?? 'Error' });
-          }
-        }
+        const liquidacionMensualOrden = await this.crearLiquidacionMensualOrden(
+          queryRunner, 
+          grupoLiquidacion.idGrupoLiquidacion,
+          ordenId, 
+          anio, 
+          mes
+        );
 
-        // 4) Recalcular total UNA sola vez
-        const { sum } = await lRepo
+      }
+      
+      // 3) sumar totales de las liquidaciones de las ordenes
+      const { sum } = await this.liquidacionRepo
           .createQueryBuilder('l')
           .select('COALESCE(SUM(l.valor_liquidacion),0)', 'sum')
-          .where('l.idGrupoLiquidacion = :id', { id: grupo.idGrupoLiquidacion })
+          .where('l.idGrupoLiquidacion = :id', { id: grupoLiquidacion.idGrupoLiquidacion })
           .getRawOne<{ sum: string }>();
 
-        grupo.total = Number(sum ?? 0);
-        grupo.descripcion = `liquidacion_${mes}_${anio}_${grupo.idGrupoLiquidacion}`
-        await gRepo.save(grupo);
+      grupoLiquidacion.total = Number(sum ?? 0);
+      grupoLiquidacion.descripcion = `liquidacion_${mes}_${anio}_${grupoLiquidacion.idGrupoLiquidacion}`
 
-        return {
-          grupo,
-          resultados,
-          totalGenerado: grupo.total,
-          procesadas: resultados.filter(r => r.ok).length,
-          fallidas: resultados.filter(r => !r.ok).length,
-        };
-      })
-    );
+      await queryRunner.manager.save(GrupoLiquidacion, grupoLiquidacion);
+
+      return grupoLiquidacion;
+      
+    } catch (error) {
+
+      // Rollback en caso de error
+      await queryRunner.rollbackTransaction();
+
+      throw error;
+      
+    }
+
+    finally {
+
+        // Liberar el QueryRunner
+        await queryRunner.release();
+
+    }
+
   }
 
-  // === hija: CREA la liquidación usando el manager existente (SIN abrir transacción nueva) ===
-  private async crearLiquidacionParaMesTx(
-    manager: EntityManager,
-    ordenId: number,
-    anio: number,
-    mes1a12: number,
-    idGrupoLiquidacion: number,
-  ) {
-    // 1) trae orden con manager
-    const ordenRepo = manager.getRepository(OrdenServicio);
-    const liqRepo = manager.getRepository(Liquidacione);
-
-    const orden = await this.ordenRepo
+  private async crearLiquidacionMensualOrden(
+    queryRunner: QueryRunner, 
+    idGrupoLiquidacion: number, 
+    ordenId: number, 
+    anio: number, 
+    mes: number
+  ){
+    
+    const ordenServicioLiquidar = await this.ordenRepo
       .createQueryBuilder('os')
       .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
       .where('os.idOrdenServicio = :id', { id: ordenId })
@@ -207,19 +199,21 @@ export class LiquidacionesService {
       .distinct(true)
       .getOne()
 
+    if (!ordenServicioLiquidar) throw new BadRequestException('Orden no encontrada');
 
+    if (ordenServicioLiquidar.fechaFin !== null) {
 
-    if (!orden) throw new BadRequestException('Orden no encontrada');
-
-
-    if (orden.fechaFin !== null) {
-      const total = Number(orden.precioTotal ?? 0);
-      const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
-      const start = toUTCDateOnly(orden.fechaInicio);
-      const end = orden.fechaFin ? toUTCDateOnly(orden.fechaFin) : null;
+      const total = Number(ordenServicioLiquidar.precioTotal ?? 0);
+      
+      const mesIni = new Date(Date.UTC(anio, mes - 1, 1));
+      const start = toUTCDateOnly(ordenServicioLiquidar.fechaInicio);
+      
+      const end = ordenServicioLiquidar.fechaFin ? toUTCDateOnly(ordenServicioLiquidar.fechaFin) : null;
       const mesFin = endOfMonth(mesIni);
+      
       const desde = maxDate(start, mesIni);
       const hasta = end ? minDate(end, mesFin) : mesFin;
+
       if (!isFinite(total) || total <= 0) throw new BadRequestException('PrecioTotal inválido');
 
       // 2) calcula monto (usa tus helpers reales)
@@ -229,27 +223,75 @@ export class LiquidacionesService {
       const totalDiasOrden = end ? diffDaysInclusive(start, end) : diffDaysInclusive(start, hasta);
       const diasEnEsteMes = diffDaysInclusive(desde, hasta);
 
-      const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
-      const endSameMonth = end ? (end.getUTCFullYear() === anio && end.getUTCMonth() === (mes1a12 - 1)) : false;
+      const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes - 1);
+      const endSameMonth = end ? (end.getUTCFullYear() === anio && end.getUTCMonth() === (mes - 1)) : false;
       const ordenCompletaDentroDelMes = startSameMonth && endSameMonth;
 
-      const monto = ordenCompletaDentroDelMes
-        ? round2(total)
-        : round2((total * diasEnEsteMes) / totalDiasOrden);
+      let totalTarifas = 0;
 
       // 3) inserta liquidación con FK del grupo
-      const entity = liqRepo.create({
-        idOrdenServicio: orden.idOrdenServicio,
-        idGrupoLiquidacion,
-        valor_liquidacion: monto,
-        aniomes_liquidacion: `${anio}${mes1a12}`,
-      });
-      return this.withRetry(() => liqRepo.save(entity));
-    } else if (!orden.fechaFin) {
-      const start = toUTCDateOnly(orden.fechaInicio);
-      const end = null; // indefinida
+      const liquidacionOrden = queryRunner.manager.create(Liquidacione, {
+        valor_liquidacion: 0,
+        ordenServicio: ordenServicioLiquidar,
+        idGrupoLiquidacion: idGrupoLiquidacion,
+        aniomes_liquidacion: `${anio}${mes}`
+      })
 
-      const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
+      for (const tarifa of ordenServicioLiquidar.tarifas ?? []) {
+      
+        const precioOrden: PrecioOrdenDto = {
+          idTarifa: tarifa.idTarifa.idTarifa,
+          horaInicio: tarifa.horaInicio,
+          horaFin: tarifa.horaFin,
+          fechaInicio: desde,
+          fechaFin: hasta,
+        };
+
+        const {
+          
+          costosDirectos,
+          seguroVida,
+          aui,
+          costosDirectosSeguroVida,
+          precioAntesIva,
+          iva,
+          precio,
+        
+        } = await this.ordenServicioService.obtenerPrecio(precioOrden);
+
+        const liquidacionServicio = queryRunner.manager.create(LiquidacionServicioOrdenServicio, {
+          idLiquidacion: liquidacionOrden,
+          idTarifa: tarifa.idTarifa,
+          costosDirectos,
+          seguroVida,
+          costosDirectosSeguroVida,
+          aui,
+          precioAntesIva,
+          iva
+        });
+
+        const savedLiquidacionServicio = await queryRunner.manager.save(LiquidacionServicioOrdenServicio, liquidacionServicio);
+
+        totalTarifas += +precio;
+
+      }
+
+      const monto = ordenCompletaDentroDelMes
+        ? round2(totalTarifas)
+        : round2((totalTarifas * diasEnEsteMes) / totalDiasOrden);
+
+      liquidacionOrden.valor_liquidacion = monto;
+
+      const savedLiquidacionOrden = await queryRunner.manager.save(Liquidacione, liquidacionOrden);
+
+    } 
+    
+    // INDEFINIDAS
+    else if (!ordenServicioLiquidar.fechaFin) {
+
+      const start = toUTCDateOnly(ordenServicioLiquidar.fechaInicio);
+
+      const mesIni = new Date(Date.UTC(anio, mes - 1, 1));
       const mesFin = endOfMonth(mesIni);
 
       // Validación de solapamiento con el mes
@@ -261,11 +303,21 @@ export class LiquidacionesService {
       const totalDiasOrden = diffDaysInclusive(start, hasta);
       const diasEnEsteMes = diffDaysInclusive(desde, hasta);
 
-      const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
+      const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes - 1);
       const ordenCompletaDentroDelMes = startSameMonth;
+
       //lógica de orden indefinida.
       let totalTarifas = 0;
-      for (const tarifa of orden.tarifas ?? []) {
+
+      const liquidacionOrden = queryRunner.manager.create(Liquidacione, {
+        valor_liquidacion: 0,
+        ordenServicio: ordenServicioLiquidar,
+        idGrupoLiquidacion: idGrupoLiquidacion,
+        aniomes_liquidacion: `${anio}${mes}`
+      })
+
+      for (const tarifa of ordenServicioLiquidar.tarifas ?? []) {
+      
         const precioOrden: PrecioOrdenDto = {
           idTarifa: tarifa.idTarifa.idTarifa,
           horaInicio: tarifa.horaInicio,
@@ -274,28 +326,174 @@ export class LiquidacionesService {
           fechaFin: hasta,
         };
 
-        const precioTarifa = (await this.ordenServicioService.obtenerPrecio(precioOrden)).precio;
-        totalTarifas += +precioTarifa;
+        const {
+          
+          costosDirectos,
+          seguroVida,
+          aui,
+          costosDirectosSeguroVida,
+          precioAntesIva,
+          iva,
+          precio,
+        
+        } = await this.ordenServicioService.obtenerPrecio(precioOrden);
+
+        const liquidacionServicio = queryRunner.manager.create(LiquidacionServicioOrdenServicio, {
+          idLiquidacion: liquidacionOrden,
+          idTarifa: tarifa.idTarifa,
+          costosDirectos,
+          seguroVida,
+          costosDirectosSeguroVida,
+          aui,
+          precioAntesIva,
+          iva
+        });
+
+        const savedLiquidacionServicio = await queryRunner.manager.save(LiquidacionServicioOrdenServicio, liquidacionServicio);
+
+        totalTarifas += +precio;
+
       }
 
       // if (!totalTarifas || totalTarifas <= 0) throw new Error('Precio de tarifas inválido');
-
 
       const monto = ordenCompletaDentroDelMes
         ? round2(totalTarifas)
         : round2((totalTarifas * diasEnEsteMes) / totalDiasOrden);
 
-      const entity = this.repo.create({
-        valor_liquidacion: monto,
-        ordenServicio: { idOrdenServicio: orden.idOrdenServicio } as any,
-        idGrupoLiquidacion,
-        aniomes_liquidacion: `${anio}${mes1a12}`,
-      });
-      return this.withRetry(() => liqRepo.save(entity));
+      liquidacionOrden.valor_liquidacion = monto;
+
+      const savedLiquidacionOrden = await queryRunner.manager.save(Liquidacione, liquidacionOrden);
 
     }
 
   }
+
+  // === hija: CREA la liquidación usando el manager existente (SIN abrir transacción nueva) ===
+  // private async crearLiquidacionParaMesTx(
+  //   manager: EntityManager,
+  //   ordenId: number,
+  //   anio: number,
+  //   mes1a12: number,
+  //   idGrupoLiquidacion: number,
+  // ) {
+
+  //   // 1) trae orden con manager
+  //   const ordenRepo = manager.getRepository(OrdenServicio);
+  //   const liqRepo = manager.getRepository(Liquidacione);
+  //   const liquidacionServicioOrdenServicioRepo = manager.getRepository(LiquidacionServicioOrdenServicio)
+
+  //   const orden = await this.ordenRepo
+  //     .createQueryBuilder('os')
+  //     .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
+  //     .where('os.idOrdenServicio = :id', { id: ordenId })
+  //     .andWhere('estado.nombre <> :estado', { estado: 'ANULADA' })
+  //     .leftJoinAndSelect('os.tarifas', 'ost')
+  //     .leftJoinAndSelect('ost.idTarifa', 't')
+  //     .leftJoinAndSelect('t.idTipoTarifa', 'tt')
+  //     .leftJoinAndSelect('t.idServicio', 's')
+  //     .leftJoinAndSelect('t.idPeriodo', 'p')
+  //     .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
+  //     .andWhere('t.estado = 1')
+  //     .andWhere('(p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin))')
+  //     .orderBy('ost.idOrdenServicioTarifa', 'ASC')
+  //     .distinct(true)
+  //     .getOne()
+
+  //   if (!orden) throw new BadRequestException('Orden no encontrada');
+
+  //   if (orden.fechaFin !== null) {
+
+  //     const total = Number(orden.precioTotal ?? 0);
+  //     const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
+  //     const start = toUTCDateOnly(orden.fechaInicio);
+  //     const end = orden.fechaFin ? toUTCDateOnly(orden.fechaFin) : null;
+  //     const mesFin = endOfMonth(mesIni);
+  //     const desde = maxDate(start, mesIni);
+  //     const hasta = end ? minDate(end, mesFin) : mesFin;
+  //     if (!isFinite(total) || total <= 0) throw new BadRequestException('PrecioTotal inválido');
+
+  //     // 2) calcula monto (usa tus helpers reales)
+
+  //     if (hasta < desde) throw new BadRequestException('La orden no tiene días en el mes solicitado');
+
+  //     const totalDiasOrden = end ? diffDaysInclusive(start, end) : diffDaysInclusive(start, hasta);
+  //     const diasEnEsteMes = diffDaysInclusive(desde, hasta);
+
+  //     const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
+  //     const endSameMonth = end ? (end.getUTCFullYear() === anio && end.getUTCMonth() === (mes1a12 - 1)) : false;
+  //     const ordenCompletaDentroDelMes = startSameMonth && endSameMonth;
+
+  //     const monto = ordenCompletaDentroDelMes
+  //       ? round2(total)
+  //       : round2((total * diasEnEsteMes) / totalDiasOrden);
+
+  //     // 3) inserta liquidación con FK del grupo
+  //     const entity = liqRepo.create({
+  //       idOrdenServicio: orden.idOrdenServicio,
+  //       idGrupoLiquidacion,
+  //       valor_liquidacion: monto,
+  //       aniomes_liquidacion: `${anio}${mes1a12}`,
+  //     });
+
+  //     return this.withRetry(() => liqRepo.save(entity));
+
+  //   } else if (!orden.fechaFin) {
+
+  //     const start = toUTCDateOnly(orden.fechaInicio);
+  //     const end = null; // indefinida
+
+  //     const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
+  //     const mesFin = endOfMonth(mesIni);
+
+  //     // Validación de solapamiento con el mes
+  //     if (mesFin < start) throw new BadRequestException('La orden no tiene días en el mes solicitado');
+
+  //     const desde = maxDate(start, mesIni);
+  //     const hasta = mesFin;
+
+  //     const totalDiasOrden = diffDaysInclusive(start, hasta);
+  //     const diasEnEsteMes = diffDaysInclusive(desde, hasta);
+
+  //     const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
+  //     const ordenCompletaDentroDelMes = startSameMonth;
+
+  //     //lógica de orden indefinida.
+  //     let totalTarifas = 0;
+
+  //     for (const tarifa of orden.tarifas ?? []) {
+      
+  //       const precioOrden: PrecioOrdenDto = {
+  //         idTarifa: tarifa.idTarifa.idTarifa,
+  //         horaInicio: tarifa.horaInicio,
+  //         horaFin: tarifa.horaFin,
+  //         fechaInicio: desde,
+  //         fechaFin: hasta,
+  //       };
+
+  //       const precioTarifa = (await this.ordenServicioService.obtenerPrecio(precioOrden)).precio;
+
+  //       totalTarifas += +precioTarifa;
+
+  //     }
+
+  //     // if (!totalTarifas || totalTarifas <= 0) throw new Error('Precio de tarifas inválido');
+
+  //     const monto = ordenCompletaDentroDelMes
+  //       ? round2(totalTarifas)
+  //       : round2((totalTarifas * diasEnEsteMes) / totalDiasOrden);
+
+  //     const entity = this.liquidacionRepo.create({
+  //       valor_liquidacion: monto,
+  //       ordenServicio: { idOrdenServicio: orden.idOrdenServicio } as any,
+  //       idGrupoLiquidacion,
+  //       aniomes_liquidacion: `${anio}${mes1a12}`,
+  //     });
+  //     return this.withRetry(() => liqRepo.save(entity));
+
+  //   }
+
+  // }
 
 
   async findByCreacionMes(anio: number, mes1a12: number) {
@@ -393,7 +591,7 @@ export class LiquidacionesService {
 
   async liquidarGrupo(idGrupoLiquidacion: number) {
     return this.withRetry(() =>
-      this.ds.transaction('READ COMMITTED', async (tm) => {
+      this.dataSource.transaction('READ COMMITTED', async (tm) => {
         const grupoRepo = tm.getRepository(GrupoLiquidacion);
         const liqRepo = tm.getRepository(Liquidacione);
 
@@ -425,12 +623,16 @@ export class LiquidacionesService {
   }
 
   async desintegrarGrupo(idGrupoLiquidacion: number) {
+
     return this.withRetry(() =>
-      this.ds.transaction('READ COMMITTED', async (tm) => {
+
+      this.dataSource.transaction('READ COMMITTED', async (tm) => {
+
         const grupoRepo = tm.getRepository(GrupoLiquidacion);
         const liqRepo = tm.getRepository(Liquidacione);
 
         const grupo = await grupoRepo.findOne({ where: { idGrupoLiquidacion } });
+
         if (!grupo) throw new NotFoundException('Grupo de liquidación no encontrado');
 
         await liqRepo
@@ -535,7 +737,7 @@ export class LiquidacionesService {
       throw new NotFoundException('Grupo de liquidación no encontrado');
     }
 
-    const liquidaciones = await this.repo
+    const liquidaciones = await this.liquidacionRepo
       .createQueryBuilder('liq')
       .leftJoinAndSelect('liq.ordenServicio', 'orden')
       .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
@@ -558,53 +760,53 @@ export class LiquidacionesService {
     // 🔹 Agrupar por cliente y servicio
     const agrupado: Record<number, ClienteAgrupado> = {};
     
-    for (const liq of liquidaciones) {
+    // for (const liq of liquidaciones) {
 
-      const cliente = liq.ordenServicio.idLocacion.idCliente;
-      const clienteId = cliente.idCliente;
-      const clienteNombre = cliente.nombre;
-      const clienteNit = cliente.numeroIdentificacion;
+    //   const cliente = liq.ordenServicio.idLocacion.idCliente;
+    //   const clienteId = cliente.idCliente;
+    //   const clienteNombre = cliente.nombre;
+    //   const clienteNit = cliente.numeroIdentificacion;
     
-      if (!agrupado[clienteId]) {
+    //   if (!agrupado[clienteId]) {
 
-        agrupado[clienteId] = {
-          cliente: clienteNombre,
-          numeroId: clienteNit,
-          servicios: {},
-          totalOrdenes: 0,
-          totalLiquidacion: 0
-        };
+    //     agrupado[clienteId] = {
+    //       cliente: clienteNombre,
+    //       numeroId: clienteNit,
+    //       servicios: {},
+    //       totalOrdenes: 0,
+    //       totalLiquidacion: 0
+    //     };
 
-      }
+    //   }
     
-      for (const tarifa of liq.ordenServicio.tarifas) {
+    //   for (const tarifa of liq.ordenServicio.tarifas) {
 
-        const servicio = tarifa.idTarifa.idServicio;
-        const servicioId = servicio.idServicio;
-        const tipoServicio = servicio.descripcion; // Puedes cambiarlo por servicio.tipo si existe
-        const codigoServicioSiigo = servicio.codigo; // Asumiendo que este campo existe
+    //     const servicio = tarifa.idTarifa.idServicio;
+    //     const servicioId = servicio.idServicio;
+    //     const tipoServicio = servicio.descripcion; // Puedes cambiarlo por servicio.tipo si existe
+    //     const codigoServicioSiigo = servicio.codigo; // Asumiendo que este campo existe
     
-        if (!agrupado[clienteId].servicios[servicioId]) {
+    //     if (!agrupado[clienteId].servicios[servicioId]) {
 
-          agrupado[clienteId].servicios[servicioId] = {
-            tipoServicio,
-            servicioAplicacion: servicio.descripcion,
-            codigoServicioSiigo,
-            cantidadOrdenes: 0,
-            valorTotalLiquidacion: 0
-          };
+    //       agrupado[clienteId].servicios[servicioId] = {
+    //         tipoServicio,
+    //         servicioAplicacion: servicio.descripcion,
+    //         codigoServicioSiigo,
+    //         cantidadOrdenes: 0,
+    //         valorTotalLiquidacion: 0
+    //       };
 
-        }
+    //     }
     
-        agrupado[clienteId].servicios[servicioId].cantidadOrdenes += 1;
-        agrupado[clienteId].servicios[servicioId].valorTotalLiquidacion += Number(liq.valor_liquidacion);
+    //     agrupado[clienteId].servicios[servicioId].cantidadOrdenes += 1;
+    //     agrupado[clienteId].servicios[servicioId].valorTotalLiquidacion += Number(liq.valor_liquidacion);
     
-        agrupado[clienteId].totalOrdenes += 1;
-        agrupado[clienteId].totalLiquidacion += Number(liq.valor_liquidacion);
+    //     agrupado[clienteId].totalOrdenes += 1;
+    //     agrupado[clienteId].totalLiquidacion += Number(liq.valor_liquidacion);
 
-      }
+    //   }
 
-    }
+    // }
     
     // 🔹 Convertir a formato legible
     const resultado = Object.values(agrupado).map(cliente => ({
@@ -629,12 +831,12 @@ export class LiquidacionesService {
 
     console.log(resultado);
 
-    const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
+    // const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
 
-    return {
-      excelBuffer: excelBuffer,
-      title: `consolidacion_grupo_${idGrupoLiquidacion}`
-    };    
+    // return {
+    //   excelBuffer: excelBuffer,
+    //   title: `consolidacion_grupo_${idGrupoLiquidacion}`
+    // };    
 
   }
 

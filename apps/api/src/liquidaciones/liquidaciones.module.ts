@@ -6,7 +6,12 @@ import { AuthModule } from '../auth/auth.module';
 import { OrdenServicioModule } from '../orden-servicio/orden-servicio.module';
 import { ReportesModule } from '../reportes/reportes.module';
 
-import { Liquidacione } from './entities/liquidacione.entity';
+import { 
+  Liquidacione,
+  GrupoLiquidacion,
+  LiquidacionServicioOrdenServicio
+} from './entities';
+
 import { LiquidacionesService } from './services/liquidaciones.service';
 
 import { 
@@ -14,11 +19,14 @@ import {
   AprobacionLiquidacionOrdenServicioController, 
   ExportacionController 
 } from './controllers';
-import { GrupoLiquidacion } from './entities/grupo_liquidaciones.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Liquidacione, Liquidacione, GrupoLiquidacion]),
+    TypeOrmModule.forFeature([
+      Liquidacione, 
+      GrupoLiquidacion,
+      LiquidacionServicioOrdenServicio
+    ]),
     forwardRef(() => OrdenServicioModule), // usa forwardRef si hay circularidad
     CommonModule,
     ReportesModule,

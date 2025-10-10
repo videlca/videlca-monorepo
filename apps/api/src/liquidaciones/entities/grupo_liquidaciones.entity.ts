@@ -4,17 +4,29 @@ import { Liquidacione } from 'src/liquidaciones/entities/liquidacione.entity';
 
 @Entity({ name: 'grupo_liquidaciones' })
 export class GrupoLiquidacion {
-  @PrimaryGeneratedColumn({ name: 'idGrupoLiquidacion', type: 'int' })
+
+  @PrimaryGeneratedColumn({ 
+    name: 'idGrupoLiquidacion', 
+    type: 'int' 
+  })
   idGrupoLiquidacion: number;
 
-
-  @Column({ type: 'boolean', default: false })
+  @Column({ 
+    type: 'boolean', 
+    default: false 
+  })
   estado: boolean;
 
-  @Column({ type: 'double', default: 0 })
+  @Column({ 
+    type: 'double', 
+    default: 0 
+  })
   total: number;
 
-  @Column({ type: 'varchar', default: "" })
+  @Column({ 
+    type: 'varchar', 
+    default: "" 
+  })
   descripcion: string;
 
   @CreateDateColumn({
@@ -25,15 +37,27 @@ export class GrupoLiquidacion {
   })
   fechaCreacion: Date;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ 
+    type: 'boolean', 
+    default: false 
+  })
   consolidacion_orden?: boolean;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ 
+    type: 'boolean', 
+    default: false 
+  })
   generacion_interfase?: boolean;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ 
+    type: 'boolean', 
+    default: false 
+  })
   generacion_anexo?: boolean;
 
-  @OneToMany(() => Liquidacione, (l) => l.grupo)
+  @OneToMany(
+    () => Liquidacione, 
+    (liquidacion) => liquidacion.grupo
+  )
   liquidaciones: Liquidacione[];
 }
