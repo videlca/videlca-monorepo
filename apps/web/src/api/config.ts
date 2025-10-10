@@ -46,6 +46,10 @@ export const apiHandler = async <T = any, P = any>(config: ApiRequestConfig<T, P
       message: error.response?.data?.message || error.message || 'Error de conexión',
     };
 
+    if(config.method === HttpMethod.GET) {
+      throw new Error(errorResponse.message);
+    }
+
     // Log error for debugging
     if (import.meta.env.VITE_NODE_ENV === 'development') {
       console.error('API Error:', {

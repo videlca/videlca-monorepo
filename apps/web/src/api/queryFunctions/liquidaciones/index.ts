@@ -1,4 +1,4 @@
-import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes } from "../../functions/liquidaciones"
+import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial } from "../../functions/liquidaciones"
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import type { ApiResponse } from "../../types/common";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
@@ -12,6 +12,14 @@ export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: bo
   return useQuery({
     queryKey: ["liquidaciones-por-mes"],
     queryFn: () => getLiquidacionesPorMes(anio, mes),
+    enabled: !!anio && !!mes && enabled,
+  });
+};
+
+export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
+  return useQuery({
+    queryKey: ["liquidaciones-por-mes-historial"],
+    queryFn: () => getLiquidacionesPorMesHistorial(anio, mes),
     enabled: !!anio && !!mes && enabled,
   });
 };

@@ -9,6 +9,10 @@ export const getLiquidacionesPorMes = async (anio: number, mes: number): Promise
   return await apiGet<OrdenServicio[]>(`/liquidaciones/ordenes-por-mes?anio=${anio}&mes=${mes}`);
 };
 
+export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number): Promise<ApiResponse<GruposLiquidaciones[]>> => {
+  return await apiGet<GruposLiquidaciones[]>(`/liquidaciones/historial-liquidaciones-aprobadas?anio=${anio}&mes=${mes}`);
+};
+
 export const crearLiquidacionMensual = async (data: CrearGrupoMensualDto): Promise<ApiResponse<OrdenServicio>> => {
   return await apiPost<OrdenServicio>(`/liquidaciones/grupo/generar-mes`, data);
 };
