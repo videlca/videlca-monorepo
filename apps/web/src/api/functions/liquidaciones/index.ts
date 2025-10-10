@@ -14,21 +14,21 @@ export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number)
 };
 
 export const crearLiquidacionMensual = async (data: CrearGrupoMensualDto): Promise<ApiResponse<OrdenServicio>> => {
-  return await apiPost<OrdenServicio>(`/liquidaciones/grupo/generar-mes`, data);
+  return await apiPost<OrdenServicio>(`/liquidaciones/generar-mes`, data);
 };
 
 // Grupos de liquidaciones
 
 export const getGruposLiquidaciones = async (): Promise<ApiResponse<GruposLiquidaciones[]>> => {
-  return await apiGet<GruposLiquidaciones[]>(`/liquidaciones/buscar-grupos-liquidaciones`);
+  return await apiGet<GruposLiquidaciones[]>(`/aprobacion-liquidacion-orden-servicio/buscar-grupos-liquidaciones`);
 };
 
 export const aprobarGrupoLiquidacion = async (idGrupoLiquidacion: number): Promise<ApiResponse<GruposLiquidaciones>> => {
-  return await apiPost<GruposLiquidaciones>(`/liquidaciones/${idGrupoLiquidacion}/liquidar-grupo`);
+  return await apiPost<GruposLiquidaciones>(`/aprobacion-liquidacion-orden-servicio/${idGrupoLiquidacion}/liquidar-grupo`);
 };
 
 export const desintegrarGrupoLiquidacion = async (idGrupoLiquidacion: number): Promise<ApiResponse<GruposLiquidaciones>> => {
-  return await apiDelete<GruposLiquidaciones>(`/liquidaciones/${idGrupoLiquidacion}/desintegrar-grupo`);
+  return await apiDelete<GruposLiquidaciones>(`/aprobacion-liquidacion-orden-servicio/${idGrupoLiquidacion}/desintegrar-grupo`);
 };
 
 export const cambiarEstadoExportacion = async (idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto): Promise<ApiResponse<GruposLiquidaciones>> => {
