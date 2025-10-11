@@ -152,16 +152,9 @@ export class ObservacionesOrdenServicioService {
     
         // Buscar observacion a eliminar
         const observacionOrdenServicio = await this.findOne(id);
-    
-        let isUser: boolean = true;
-        
-        // Validamos que la observacion sea de la persona que creo la observacion
-        if(observacionOrdenServicio.idUsuario.idUser != user.idUser){
-            isUser = false;
-        }
-        
+            
         // Solo podra eliminar el comentario si fue el user que lo creo o si el user tiene rol de super admin
-        if(!isUser && user.idRol.nombreRol != Roles.SUPER_ADMIN){
+        if(user.idRol.nombreRol != Roles.SUPER_ADMIN){
             throw new UnauthorizedException('No tienes permiso para eliminar esta observacion de la orden de servicio');
         }
         
