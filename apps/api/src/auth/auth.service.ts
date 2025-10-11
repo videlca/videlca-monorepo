@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef, UnauthorizedException, ForbiddenException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, UnauthorizedException, ForbiddenException, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
@@ -10,13 +10,14 @@ import { SendMailOptions } from './../common/services/email/email.service';
 
 import { Roles, JwtPayload } from './interfaces';
 
-import { LoginUserDto, NewPasswordDto, ReenviarTokenDto, ReestablecerDatosDto } from './dto';
+import { LoginUserDto, NewPasswordDto, ReenviarTokenDto, ReestablecerDatosDto, CredencialesDto } from './dto';
 
 @Injectable()
 export class AuthService {
 
     private hostFrontend: string; // host del frontend (aplicativo web)
     private hostPublic: string; // host del server del backend
+    private tokenVidelca: string; // token de seguridad de videlca
 
     constructor(
         @Inject(forwardRef(() => UsersService))
@@ -29,6 +30,7 @@ export class AuthService {
         // Inicializar variables con valores establecidos en el archivo .env
         this.hostFrontend = this.configService.get<string>('hostFrontend');
         this.hostPublic = this.configService.get<string>('hostPublic');
+        this.tokenVidelca = this.configService.get<string>('tokenVidelca');
     }
 
     // LOGIN EN EL APLICATIVO
@@ -40,7 +42,9 @@ export class AuthService {
         const {user, permisos} = userFound;
         
         if(!user.estado){
-            throw new ForbiddenException('Tu cuenta no está activa, por favor, recupera tu cuenta');
+        
+          throw new ForbiddenException('Tu cuenta no está activa, por favor, recupera tu cuenta comunicandote con el admin');
+        
         }
 
         // Validar si el user tiene el rol de super-admin
@@ -167,21 +171,21 @@ export class AuthService {
     }
 
     // VALIDAR USER
-    async comprobarTokenOlvidePassword(token: string){
+    async comprobarToken(token: string){
     
-        // validamos el token y extraemos el email
-        const payload: JwtPayload = await this.validateToken(token);
-    
-        const { email } = payload;
-        
-        // Verificamos que el user si exista en nuestra BD
-        const user = await this.usersService.findOneByEmail(email);
-    
-        if(user){
-            return
-        }
-    
-        throw new NotFoundException('User no encontrado');
+      // validamos el token y extraemos el email
+      const payload: JwtPayload = await this.validateToken(token);
+  
+      const { email } = payload;
+      
+      // Verificamos que el user si exista en nuestra BD
+      const user = await this.usersService.findOneByEmail(email);
+  
+      if(user){
+          return
+      }
+  
+      throw new NotFoundException('User no encontrado');
 
     }
 
@@ -192,7 +196,7 @@ export class AuthService {
 
         // Validamos que las contraseñas coincidan
         if(clave !== confirmarClave){
-            throw new UnauthorizedException('Las contraseñas no coinciden');
+            throw new BadRequestException('Las contraseñas no coinciden');
         }
     
         // validamos el token y extraemos el email
@@ -273,6 +277,29 @@ export class AuthService {
         if (!isEmailSend){
             throw new InternalServerErrorException('Error al enviar correo para reestablecer cuenta');
         }
+
+    }
+
+    // VALIDAR / VERIFICAR CUENTA DEL USER
+    async validarCuenta(token: string, credencialesDto: CredencialesDto){
+
+      // verificamos token videlca
+      if(this.tokenVidelca !== credencialesDto.tokenVidelca.trim()){
+        throw new UnauthorizedException('Token no valido');
+      }
+      
+      // verificamos contraseñas
+      if(credencialesDto.clave.trim() !== credencialesDto.confirmarClave.trim()){
+        throw new BadRequestException('Contraseñas no coinciden');
+      }
+  
+      // validamos el token y extraemos el email
+      const payload: JwtPayload = await this.validateToken(token);
+  
+      const { email } = payload;
+      
+      // Verificamos cuenta del user, se utiliza funcion que esta en el servicio del user
+      await this.usersService.validateUserAndPassword(email, credencialesDto.clave.trim());    
 
     }
 

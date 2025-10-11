@@ -2,6 +2,7 @@ import * as Joi from 'joi';
 
 export const JoiValidationSchema = Joi.object({
     ENV: Joi.string().default('dev'),
+    TOKEN_VIDELCA: Joi.required(),
     JWT_SECRET: Joi.required(),
     AUTH_TOKEN: Joi.required(),
     DEFAULT_LIMIT: Joi.number().default(10),

@@ -67,6 +67,15 @@ export class UsersController {
     return this.usersService.findAll(paginationDto, paginationDto.pagination);
   }
 
+  // RUTA PROTEGIDA : reenviar token de validacion de cuenta a usuario
+  @Get('reenviar-token/:id')
+  @AppAuth(DescriptionRoutes.USUARIOS)
+  reenviarToken(@Param('id', ParseIntPipe) id: number) {
+      
+    return this.usersService.reenviarToken(id);
+
+  }
+
   // RUTA PROTEGIDA : Obtener data de un user
   @Get(':id')
   @AppAuth(DescriptionRoutes.USUARIOS)
@@ -87,8 +96,14 @@ export class UsersController {
   ){
     return this.usersService.updateUser(id, updateUser);
   }
-  
 
+  @Delete(':id')
+  @AppAuth(DescriptionRoutes.USUARIOS)
+  deleteUser(
+    @Param('id', ParseIntPipe) id: number,
+  ){
+    return this.usersService.removeUser(id);
+  }
 
 
 }

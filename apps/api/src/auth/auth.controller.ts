@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { ValidateJwtAuth } from '../auth/decorators';
 
 import { AuthService } from './auth.service';
-import { LoginUserDto, NewPasswordDto, ReestablecerDatosDto } from './dto';
+import { LoginUserDto, NewPasswordDto, ReestablecerDatosDto, CredencialesDto } from './dto';
 
 
 @Controller('auth')
@@ -73,7 +73,7 @@ export class AuthController {
   // RUTA PUBLICA: CONFIRMAR QUE EL TOKEN ES VALIDO
   @Get('olvide-password/:token')
   comprobarTokenOlvidePassword(@Param('token') token: string) {
-    return this.authService.comprobarTokenOlvidePassword(token);
+    return this.authService.comprobarToken(token);
   }
   
   // RUTA PUBLICA: ENVIAR NUEVA CONTRASEÑA
@@ -84,17 +84,24 @@ export class AuthController {
   }
 
   // RUTA PUBLICA: ENVIAR CORREO PARA REESTABLECER CUENTA
-  @HttpCode(HttpStatus.OK)
-  @Post('reestablecer-cuenta')
-  reestablecerCuenta(@Body() reestablecerCuentaDto: ReestablecerDatosDto) {
-    return this.authService.reestablecerCuenta(reestablecerCuentaDto);
-  }
+  // @HttpCode(HttpStatus.OK)
+  // @Post('reestablecer-cuenta')
+  // reestablecerCuenta(@Body() reestablecerCuentaDto: ReestablecerDatosDto) {
+  //   return this.authService.reestablecerCuenta(reestablecerCuentaDto);
+  // }
 
-  // RUTA PUBLICA: CONFIRMAR LA CUENTA DEL USER EN CASO QUE SE HAYA ELIMINADO
+  // RUTA PUBLICA: CONFIRMAR TOKEN PARA VALIDAR CUENTA DEL USER
   @HttpCode(HttpStatus.OK)
   @Get('confirmar/:token')
   confirmarCuenta(@Param('token') token: string) {
-    return this.authService.confirmarCuenta(token);
+    return this.authService.comprobarToken(token);
+  }
+  
+  // RUTA PUBLICA: CONFIRMAR CREDENCIALES DE LA CUENTA DEL USER A VALIDAR
+  @HttpCode(HttpStatus.OK)
+  @Post('confirmar/:token')
+  confirmarCuentaCredenciales(@Param('token') token: string, @Body() credencialesDto: CredencialesDto) {
+    return this.authService.validarCuenta(token, credencialesDto);
   }
 
 }

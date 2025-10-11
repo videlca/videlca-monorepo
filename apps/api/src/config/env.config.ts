@@ -1,5 +1,6 @@
 export const EnvConfiguration = () => ({
     environment: process.env.ENV || 'dev',
+    tokenVidelca: process.env.TOKEN_VIDELCA,
     jwtSecret: process.env.JWT_SECRET,
     authToken: process.env.AUTH_TOKEN,
     defaultLimit: +process.env.DEAFULT_LIMIT || 10,
