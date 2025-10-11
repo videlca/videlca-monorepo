@@ -25,10 +25,10 @@ export class ExportacionController {
 
   @Patch(':idGrupoLiquidacion/cambiar-estado')
   async actualizarCampoEstado(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateGrupoLiquidacionEstadoDto,
+    @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
+    @Body() updateGrupoLiquidacionEstadoDto: UpdateGrupoLiquidacionEstadoDto,
   ) {
-    return this.liquidacionesService.actualizarCampoGrupoEstado(id, dto);
+    return this.liquidacionesService.actualizarCampoGrupoEstado(idGrupoLiquidacion, updateGrupoLiquidacionEstadoDto);
   }
 
   @Get(':idGrupoLiquidacion/generar-excel-consolidacion')
@@ -54,11 +54,11 @@ export class ExportacionController {
   }
 
   @Post(':idGrupoLiquidacion/enviar-excel-consolidacion')
-  enviarReporte(
+  enviarReporteConsolidacion(
     @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
     @Body() enviarCorreoDto: EnviarCorreoDto
   ) {
-    // return this.liquidacionesService.sendConsolidacionExcel(idGrupoLiquidacion, enviarCorreoDto);
+    return this.liquidacionesService.sendConsolidacionExcel(idGrupoLiquidacion, enviarCorreoDto);
   }
   
   // @Get(':idGrupoLiquidacion/generar-excel-interfase')

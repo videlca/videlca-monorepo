@@ -16,5 +16,10 @@ export type ClienteAgrupado = {
   numeroId: string;
   servicios: Record<number, ServicioAgrupado>;
   totalOrdenes: number;
-  totalLiquidacion: number;
+  totalLiquidarAplicacion: number;
+  totalSeguroVida: number;
+  totalAui: number;
+  totalTarifaAntesIva: number;
+  totalIvaAui: number;
+  totalTarifaConIva: number;
 };

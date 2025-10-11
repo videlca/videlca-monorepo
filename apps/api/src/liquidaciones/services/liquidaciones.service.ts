@@ -1,10 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, EntityManager, QueryRunner, } from 'typeorm';
+import { DataSource, Repository, QueryRunner, } from 'typeorm';
 
-import { toUTCDateOnly, endOfMonth, minDate, maxDate, diffDaysInclusive, round2, fmtYMD } from '../../common/utils/date-helpers';
+import { EnviarCorreoDto } from '../../common/dto';
+import { SendMailOptions } from '../../common/services/email/email.service';
+
+import { toUTCDateOnly, endOfMonth, minDate, maxDate, diffDaysInclusive, round2 } from '../../common/utils/date-helpers';
 import { PrecioOrdenDto } from '../../orden-servicio/dto';
 
+import { EmailService } from '../../common/services';
 import { ReporteConsolidacionService } from '../../reportes/services';
 import { OrdenServicioService } from '../../orden-servicio/services';
 
@@ -14,22 +18,6 @@ import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion } from
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
 import { ClienteAgrupado } from '../interfaces/consolidacion.interface';
-
-// type ServicioAgrupado = {
-//   tipoServicio: string;
-//   servicioAplicacion: string;
-//   codigoServicioSiigo: string;
-//   cantidadOrdenes: number;
-//   valorTotalLiquidacion: number;
-// };
-
-// type ClienteAgrupado = {
-//   cliente: string;
-//   numeroId: string;
-//   servicios: Record<number, ServicioAgrupado>;
-//   totalOrdenes: number;
-//   totalLiquidacion: number;
-// };
 
 @Injectable()
 export class LiquidacionesService {
@@ -43,6 +31,7 @@ export class LiquidacionesService {
     private readonly ordenRepo: Repository<OrdenServicio>,
     private ordenServicioService: OrdenServicioService,
     private readonly reporteConsolidacionService: ReporteConsolidacionService, // Servicio para generar reportes
+    private readonly emailService: EmailService, // Servicio de email para envio de correos
     private readonly dataSource: DataSource,
   ) { }
 
@@ -128,6 +117,8 @@ export class LiquidacionesService {
         estado: false,
         total: 0
       });
+
+      await queryRunner.manager.save(GrupoLiquidacion, grupoLiquidacion);
       
       // 2) crear liquidaciones del grupo de ordenes
       for (const ordenId of ordenIds) {
@@ -143,16 +134,20 @@ export class LiquidacionesService {
       }
       
       // 3) sumar totales de las liquidaciones de las ordenes
-      const { sum } = await this.liquidacionRepo
-          .createQueryBuilder('l')
-          .select('COALESCE(SUM(l.valor_liquidacion),0)', 'sum')
-          .where('l.idGrupoLiquidacion = :id', { id: grupoLiquidacion.idGrupoLiquidacion })
-          .getRawOne<{ sum: string }>();
+      const liquidaciones = await queryRunner.manager.find(Liquidacione, {
+        where: { idGrupoLiquidacion: grupoLiquidacion.idGrupoLiquidacion }
+      });
+
+      const sum = liquidaciones.reduce((acc, liquidacion) => {
+        return acc + Number(liquidacion.valor_liquidacion || 0);
+      }, 0);
 
       grupoLiquidacion.total = Number(sum ?? 0);
       grupoLiquidacion.descripcion = `liquidacion_${mes}_${anio}_${grupoLiquidacion.idGrupoLiquidacion}`
 
       await queryRunner.manager.save(GrupoLiquidacion, grupoLiquidacion);
+
+      await queryRunner.commitTransaction();
 
       return grupoLiquidacion;
       
@@ -237,6 +232,8 @@ export class LiquidacionesService {
         aniomes_liquidacion: `${anio}${mes}`
       })
 
+      await queryRunner.manager.save(Liquidacione, liquidacionOrden);
+
       for (const tarifa of ordenServicioLiquidar.tarifas ?? []) {
       
         const precioOrden: PrecioOrdenDto = {
@@ -267,7 +264,8 @@ export class LiquidacionesService {
           costosDirectosSeguroVida,
           aui,
           precioAntesIva,
-          iva
+          iva,
+          precioTotal: precio
         });
 
         const savedLiquidacionServicio = await queryRunner.manager.save(LiquidacionServicioOrdenServicio, liquidacionServicio);
@@ -315,6 +313,8 @@ export class LiquidacionesService {
         idGrupoLiquidacion: idGrupoLiquidacion,
         aniomes_liquidacion: `${anio}${mes}`
       })
+      
+      await queryRunner.manager.save(Liquidacione, liquidacionOrden);
 
       for (const tarifa of ordenServicioLiquidar.tarifas ?? []) {
       
@@ -346,7 +346,8 @@ export class LiquidacionesService {
           costosDirectosSeguroVida,
           aui,
           precioAntesIva,
-          iva
+          iva,
+          precioTotal: precio
         });
 
         const savedLiquidacionServicio = await queryRunner.manager.save(LiquidacionServicioOrdenServicio, liquidacionServicio);
@@ -369,134 +370,8 @@ export class LiquidacionesService {
 
   }
 
-  // === hija: CREA la liquidación usando el manager existente (SIN abrir transacción nueva) ===
-  // private async crearLiquidacionParaMesTx(
-  //   manager: EntityManager,
-  //   ordenId: number,
-  //   anio: number,
-  //   mes1a12: number,
-  //   idGrupoLiquidacion: number,
-  // ) {
-
-  //   // 1) trae orden con manager
-  //   const ordenRepo = manager.getRepository(OrdenServicio);
-  //   const liqRepo = manager.getRepository(Liquidacione);
-  //   const liquidacionServicioOrdenServicioRepo = manager.getRepository(LiquidacionServicioOrdenServicio)
-
-  //   const orden = await this.ordenRepo
-  //     .createQueryBuilder('os')
-  //     .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
-  //     .where('os.idOrdenServicio = :id', { id: ordenId })
-  //     .andWhere('estado.nombre <> :estado', { estado: 'ANULADA' })
-  //     .leftJoinAndSelect('os.tarifas', 'ost')
-  //     .leftJoinAndSelect('ost.idTarifa', 't')
-  //     .leftJoinAndSelect('t.idTipoTarifa', 'tt')
-  //     .leftJoinAndSelect('t.idServicio', 's')
-  //     .leftJoinAndSelect('t.idPeriodo', 'p')
-  //     .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
-  //     .andWhere('t.estado = 1')
-  //     .andWhere('(p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin))')
-  //     .orderBy('ost.idOrdenServicioTarifa', 'ASC')
-  //     .distinct(true)
-  //     .getOne()
-
-  //   if (!orden) throw new BadRequestException('Orden no encontrada');
-
-  //   if (orden.fechaFin !== null) {
-
-  //     const total = Number(orden.precioTotal ?? 0);
-  //     const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
-  //     const start = toUTCDateOnly(orden.fechaInicio);
-  //     const end = orden.fechaFin ? toUTCDateOnly(orden.fechaFin) : null;
-  //     const mesFin = endOfMonth(mesIni);
-  //     const desde = maxDate(start, mesIni);
-  //     const hasta = end ? minDate(end, mesFin) : mesFin;
-  //     if (!isFinite(total) || total <= 0) throw new BadRequestException('PrecioTotal inválido');
-
-  //     // 2) calcula monto (usa tus helpers reales)
-
-  //     if (hasta < desde) throw new BadRequestException('La orden no tiene días en el mes solicitado');
-
-  //     const totalDiasOrden = end ? diffDaysInclusive(start, end) : diffDaysInclusive(start, hasta);
-  //     const diasEnEsteMes = diffDaysInclusive(desde, hasta);
-
-  //     const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
-  //     const endSameMonth = end ? (end.getUTCFullYear() === anio && end.getUTCMonth() === (mes1a12 - 1)) : false;
-  //     const ordenCompletaDentroDelMes = startSameMonth && endSameMonth;
-
-  //     const monto = ordenCompletaDentroDelMes
-  //       ? round2(total)
-  //       : round2((total * diasEnEsteMes) / totalDiasOrden);
-
-  //     // 3) inserta liquidación con FK del grupo
-  //     const entity = liqRepo.create({
-  //       idOrdenServicio: orden.idOrdenServicio,
-  //       idGrupoLiquidacion,
-  //       valor_liquidacion: monto,
-  //       aniomes_liquidacion: `${anio}${mes1a12}`,
-  //     });
-
-  //     return this.withRetry(() => liqRepo.save(entity));
-
-  //   } else if (!orden.fechaFin) {
-
-  //     const start = toUTCDateOnly(orden.fechaInicio);
-  //     const end = null; // indefinida
-
-  //     const mesIni = new Date(Date.UTC(anio, mes1a12 - 1, 1));
-  //     const mesFin = endOfMonth(mesIni);
-
-  //     // Validación de solapamiento con el mes
-  //     if (mesFin < start) throw new BadRequestException('La orden no tiene días en el mes solicitado');
-
-  //     const desde = maxDate(start, mesIni);
-  //     const hasta = mesFin;
-
-  //     const totalDiasOrden = diffDaysInclusive(start, hasta);
-  //     const diasEnEsteMes = diffDaysInclusive(desde, hasta);
-
-  //     const startSameMonth = start.getUTCFullYear() === anio && start.getUTCMonth() === (mes1a12 - 1);
-  //     const ordenCompletaDentroDelMes = startSameMonth;
-
-  //     //lógica de orden indefinida.
-  //     let totalTarifas = 0;
-
-  //     for (const tarifa of orden.tarifas ?? []) {
-      
-  //       const precioOrden: PrecioOrdenDto = {
-  //         idTarifa: tarifa.idTarifa.idTarifa,
-  //         horaInicio: tarifa.horaInicio,
-  //         horaFin: tarifa.horaFin,
-  //         fechaInicio: desde,
-  //         fechaFin: hasta,
-  //       };
-
-  //       const precioTarifa = (await this.ordenServicioService.obtenerPrecio(precioOrden)).precio;
-
-  //       totalTarifas += +precioTarifa;
-
-  //     }
-
-  //     // if (!totalTarifas || totalTarifas <= 0) throw new Error('Precio de tarifas inválido');
-
-  //     const monto = ordenCompletaDentroDelMes
-  //       ? round2(totalTarifas)
-  //       : round2((totalTarifas * diasEnEsteMes) / totalDiasOrden);
-
-  //     const entity = this.liquidacionRepo.create({
-  //       valor_liquidacion: monto,
-  //       ordenServicio: { idOrdenServicio: orden.idOrdenServicio } as any,
-  //       idGrupoLiquidacion,
-  //       aniomes_liquidacion: `${anio}${mes1a12}`,
-  //     });
-  //     return this.withRetry(() => liqRepo.save(entity));
-
-  //   }
-
-  // }
-
-
   async findByCreacionMes(anio: number, mes1a12: number) {
+
     if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
       throw new BadRequestException('Parámetros inválidos (anio, mes)');
     }
@@ -657,6 +532,7 @@ export class LiquidacionesService {
   }
 
   async actualizarCampoGrupoEstado(id: number, dto: UpdateGrupoLiquidacionEstadoDto) {
+
     const grupo = await this.grupoLiquidacionrepo.findOne({
       where: { idGrupoLiquidacion: id },
     });
@@ -664,6 +540,7 @@ export class LiquidacionesService {
     if (!grupo) throw new NotFoundException('Grupo de liquidación no encontrado');
 
     grupo[dto.campo] = dto.valor === 'true';
+
     await this.grupoLiquidacionrepo.save(grupo);
 
     return {
@@ -672,6 +549,7 @@ export class LiquidacionesService {
       campoActualizado: dto.campo,
       nuevoValor: dto.valor,
     };
+
   }
 
   async findGruposPorCampoEstado(campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo', valor: string) {
@@ -740,14 +618,16 @@ export class LiquidacionesService {
     const liquidaciones = await this.liquidacionRepo
       .createQueryBuilder('liq')
       .leftJoinAndSelect('liq.ordenServicio', 'orden')
+      .leftJoinAndSelect('liq.liquidacionServiciosOrdenServicio', 'liqsos')
+      .leftJoinAndSelect('liqsos.idTarifa', 'tarifaLiq')
+      .leftJoinAndSelect('tarifaLiq.idServicio', 'servicioLiq')
+      .leftJoinAndSelect('servicioLiq.idTipoServicio', 'tipoServicioLiq')
       .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
       .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('orden.tarifas', 'ost')
       .leftJoinAndSelect('ost.idTarifa', 'tarifa')
-      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
       .orderBy('cliente.nombre', 'ASC')
@@ -759,69 +639,82 @@ export class LiquidacionesService {
     
     // 🔹 Agrupar por cliente y servicio
     const agrupado: Record<number, ClienteAgrupado> = {};
+
+    // return liquidaciones;
     
-    // for (const liq of liquidaciones) {
+    for (const liq of liquidaciones) {
 
-    //   const cliente = liq.ordenServicio.idLocacion.idCliente;
-    //   const clienteId = cliente.idCliente;
-    //   const clienteNombre = cliente.nombre;
-    //   const clienteNit = cliente.numeroIdentificacion;
+      const cliente = liq.ordenServicio.idLocacion.idCliente;
+
+      const clienteId = cliente.idCliente;
+      const clienteNombre = cliente.nombre;
+      const clienteNit = cliente.numeroIdentificacion;
     
-    //   if (!agrupado[clienteId]) {
+      if (!agrupado[clienteId]) {
 
-    //     agrupado[clienteId] = {
-    //       cliente: clienteNombre,
-    //       numeroId: clienteNit,
-    //       servicios: {},
-    //       totalOrdenes: 0,
-    //       totalLiquidacion: 0
-    //     };
+        agrupado[clienteId] = {
+          cliente: clienteNombre,
+          numeroId: clienteNit,
+          servicios: {},
+          totalOrdenes: 0,
+          totalLiquidarAplicacion: 0,
+          totalSeguroVida: 0,
+          totalAui: 0,
+          totalTarifaAntesIva: 0,
+          totalIvaAui: 0,
+          totalTarifaConIva: 0
+        };
 
-    //   }
+      }
     
-    //   for (const tarifa of liq.ordenServicio.tarifas) {
+      for (const liquidacionServicioOrdenServicio of liq.liquidacionServiciosOrdenServicio) {
 
-    //     const servicio = tarifa.idTarifa.idServicio;
-    //     const servicioId = servicio.idServicio;
-    //     const tipoServicio = servicio.descripcion; // Puedes cambiarlo por servicio.tipo si existe
-    //     const codigoServicioSiigo = servicio.codigo; // Asumiendo que este campo existe
+        const tarifa = liquidacionServicioOrdenServicio.idTarifa; 
+        const servicio = liquidacionServicioOrdenServicio.idTarifa.idServicio;
     
-    //     if (!agrupado[clienteId].servicios[servicioId]) {
+        if (!agrupado[clienteId].servicios[tarifa.idTarifa]) {
 
-    //       agrupado[clienteId].servicios[servicioId] = {
-    //         tipoServicio,
-    //         servicioAplicacion: servicio.descripcion,
-    //         codigoServicioSiigo,
-    //         cantidadOrdenes: 0,
-    //         valorTotalLiquidacion: 0
-    //       };
+          agrupado[clienteId].servicios[tarifa.idTarifa] = {
+            tipoServicio: servicio.idTipoServicio.nombre,
+            servicioAplicacion: servicio.descripcion,
+            codigoServicioSiigo: servicio.codigo,
+            valorLiquidarAplicacion: 0,
+            seguroVida: 0,
+            aui: 0,
+            tarifaAntesIva: 0,
+            auiIVa: 0,
+            tarifaConIva: 0,
+            cantidadOrdenes: 0
+          };
 
-    //     }
+        }
     
-    //     agrupado[clienteId].servicios[servicioId].cantidadOrdenes += 1;
-    //     agrupado[clienteId].servicios[servicioId].valorTotalLiquidacion += Number(liq.valor_liquidacion);
-    
-    //     agrupado[clienteId].totalOrdenes += 1;
-    //     agrupado[clienteId].totalLiquidacion += Number(liq.valor_liquidacion);
+        agrupado[clienteId].servicios[tarifa.idTarifa].cantidadOrdenes += 1; 
 
-    //   }
+        agrupado[clienteId].servicios[tarifa.idTarifa].seguroVida += Number(liquidacionServicioOrdenServicio.seguroVida);        
+        agrupado[clienteId].servicios[tarifa.idTarifa].aui += Number(liquidacionServicioOrdenServicio.aui);                
 
-    // }
-    
-    // 🔹 Convertir a formato legible
-    const resultado = Object.values(agrupado).map(cliente => ({
-
-      cliente: cliente.cliente,
-      numeroId: cliente.numeroId,
-      servicios: Object.values(cliente.servicios),
-      totalesCliente: {
-        totalOrdenes: cliente.totalOrdenes,
-        totalLiquidacion: cliente.totalLiquidacion
       }
 
-    }));
-    
-    return resultado;
+      agrupado[clienteId].totalOrdenes += 1;
+
+    }
+
+    // 🔹 Calcular totales finales por cliente
+    for (const cliente of Object.values(agrupado)) {
+      for (const servicio of Object.values(cliente.servicios)) {
+        cliente.totalSeguroVida += servicio.seguroVida;
+        cliente.totalAui += servicio.aui;
+        cliente.totalTarifaAntesIva += servicio.tarifaAntesIva;
+        cliente.totalIvaAui += servicio.auiIVa;
+        cliente.totalTarifaConIva += servicio.tarifaConIva;
+        cliente.totalLiquidarAplicacion += servicio.valorLiquidarAplicacion;
+      }
+    }
+
+    const clientesAgrupados = Object.values(agrupado);
+
+    return clientesAgrupados;
     
   }
 
@@ -829,14 +722,94 @@ export class LiquidacionesService {
 
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
 
-    console.log(resultado);
+    const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
 
-    // const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
+    // cambiar estado a TRUE
+    await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
+      campo: 'consolidacion_orden',
+      valor: 'true'      
+    })
 
-    // return {
-    //   excelBuffer: excelBuffer,
-    //   title: `consolidacion_grupo_${idGrupoLiquidacion}`
-    // };    
+    return {
+      excelBuffer: excelBuffer,
+      title: `consolidacion_grupo_${idGrupoLiquidacion}`
+    };    
+
+  }
+
+  async sendConsolidacionExcel(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
+
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Consolidacion del grupo de liquidacion ${idGrupoLiquidacion}`;
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">CONSOLIDACION ${idGrupoLiquidacion}</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se envia EXCEL adjunto con consolidacion del <b>grupo de liquidacion ${idGrupoLiquidacion}</b> de ordenes de servicio. <br><br>
+              Por favor, revise el <b>EXCEL adjunto</b> para más detalles.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const emails = enviarCorreoDto.correos.map(correo => correo.email);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
+        {
+          filename: `consolidacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          content: excelBuffer,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+        throw new InternalServerErrorException(`Error al enviar correo con consolidacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
+    }
 
   }
 

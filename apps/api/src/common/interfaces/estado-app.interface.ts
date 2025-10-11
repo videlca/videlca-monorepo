@@ -27,10 +27,4 @@ export enum EstadoAppInterface {
     // ELIMINACION ORDEN DE SERVICIO
     ELIMINACION_ORDEN_SERVICIO = "eliminacion orden servicio",
 
-    // CREACION_CONSOLIDACION
-    CREACION_CONSOLIDACION = "creacion consolidacion",
-
-    // CREACION INTERFASE
-    CREACION_INTERFASE = "creacion interfase"
-
 }
