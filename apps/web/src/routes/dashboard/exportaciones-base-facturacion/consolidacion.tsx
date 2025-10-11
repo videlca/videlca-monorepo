@@ -4,8 +4,11 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import type { TabsExportaciones } from "../../../types";
 import { useState } from "react";
 import { OrdenesTab } from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
-import { useGetGruposLiquidacionesExportaciones } from "../../../api/queryFunctions/exportaciones/exportaciones";
-import { useCambiarEstadoExportacion } from "../../../api/queryFunctions/liquidaciones";
+import {
+  useEnviarCorreoExportacionConsolidacion,
+  useGenerarReporteConsolidacion,
+  useGetGruposLiquidacionesExportaciones,
+} from "../../../api/queryFunctions/exportaciones/exportaciones";
 
 export const Route = createFileRoute(
   "/dashboard/exportaciones-base-facturacion/consolidacion",
@@ -30,16 +33,16 @@ function RouteComponent() {
     campo: "consolidacion_orden",
     valor: value,
   });
-  const { mutate: cambiarEstadoExportacion } = useCambiarEstadoExportacion();
 
-  const handleCambiarEstadoExportacion = (idGrupoLiquidacion: number) => {
-    cambiarEstadoExportacion({
-      idGrupoLiquidacion,
-      data: {
-        campo: "consolidacion_orden",
-        valor: value === "false" ? "true" : "false",
-      },
-    });
+  // Mutaciones
+  const { mutate: generarReporteConsolidacion } =
+    useGenerarReporteConsolidacion();
+  const { mutate: enviarCorreoExportacionConsolidacion } =
+    useEnviarCorreoExportacionConsolidacion();
+
+  // Handlers
+  const handleGenerarReporteConsolidacion = (idGrupoLiquidacion: number) => {
+    generarReporteConsolidacion(idGrupoLiquidacion);
   };
 
   return (
@@ -53,15 +56,16 @@ function RouteComponent() {
         <OrdenesTab
           tipo="consolidacion_orden"
           data={groups?.data || []}
-          handleCambiarEstadoExportacion={handleCambiarEstadoExportacion}
+          handleFileAction={handleGenerarReporteConsolidacion}
+          mutationEmail={enviarCorreoExportacionConsolidacion}
         />
       )}
       {activeTab === "Archivos generados" && (
         <OrdenesTab
           tipo="consolidacion_orden"
           data={groups?.data || []}
-          restaurar={true}
-          handleCambiarEstadoExportacion={handleCambiarEstadoExportacion}
+          handleFileAction={handleGenerarReporteConsolidacion}
+          mutationEmail={enviarCorreoExportacionConsolidacion}
         />
       )}
     </Section>

@@ -5,24 +5,33 @@ import {
   EyeOff,
   FileSpreadsheetIcon,
   FileTextIcon,
-  RotateCcwIcon,
+  Mail,
 } from "lucide-react";
 import { getStatusColor } from "../../../../utils/StatusColor";
 import type { TipoDocumento } from "../../../../api/dtos/exportaciones";
-import type { GruposLiquidaciones } from "../../../../api/types";
+import type { ApiResponse, GruposLiquidaciones } from "../../../../api/types";
+import { EnvioCorreos } from "../../modals/EnvioCorreos";
+import type { UseMutateFunction } from "@tanstack/react-query";
+import type { EnviarCorreoDto } from "../../../../api/dtos/common";
 
 export function OrdenesTab({
   tipo,
   data,
-  restaurar = false,
-  handleCambiarEstadoExportacion,
+  handleFileAction,
+  mutationEmail,
 }: {
   tipo: TipoDocumento;
   data: GruposLiquidaciones[];
-  restaurar?: boolean;
-  handleCambiarEstadoExportacion: (idGrupoLiquidacion: number) => void;
+  handleFileAction: (idGrupoLiquidacion: number) => void;
+  mutationEmail: UseMutateFunction<
+    ApiResponse<any>,
+    Error,
+    { id: number; data: EnviarCorreoDto }
+  >;
 }) {
   const [hiddenGroups, setHiddenGroups] = useState<Set<number>>(new Set());
+  const [isOpenEmail, setIsOpenEmail] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number>(0);
 
   const acciones = useMemo(() => {
     return {
@@ -36,7 +45,7 @@ export function OrdenesTab({
         },
       },
       generacion_interfase: {
-        label: "Generar Archivo de Interfaz",
+        label: "Generar Archivo de Interfase",
         icon: <FileTextIcon className="mr-1 h-4 w-4" />,
         colors: {
           default: "text-green-600",
@@ -53,24 +62,13 @@ export function OrdenesTab({
           bg: "hover:bg-green-50",
         },
       },
-      restaurar: {
-        label: "Restaurar",
-        icon: <RotateCcwIcon className="mr-1 h-4 w-4" />,
-        colors: {
-          default: "text-blue-600",
-          hover: "hover:text-blue-500",
-          bg: "hover:bg-blue-50",
-        },
-      },
     };
-  }, [tipo, restaurar]);
+  }, [tipo]);
 
-  const accion = restaurar
-    ? acciones.restaurar
-    : acciones[tipo as keyof typeof acciones] || null;
+  const accion = acciones[tipo as keyof typeof acciones] || null;
 
-  const handleAction = (groupId: number) => {
-    handleCambiarEstadoExportacion(groupId);
+  const handleActionClick = (groupId: number) => {
+    handleFileAction(groupId);
   };
 
   const toggleHideOrders = (groupId: number) => {
@@ -138,7 +136,17 @@ export function OrdenesTab({
                         </button>
                         <button
                           onClick={() => {
-                            handleAction(group.idGrupoLiquidacion);
+                            setIsOpenEmail(true);
+                            setSelectedOrderId(group.idGrupoLiquidacion);
+                          }}
+                          className={`flex cursor-pointer items-center rounded-md px-3 py-1 text-sm transition-colors ${accion?.colors.default} ${accion?.colors.hover} ${accion?.colors.bg}`}
+                        >
+                          <Mail className="mr-1 h-4 w-4" />
+                          Enviar correo
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleActionClick(group.idGrupoLiquidacion);
                           }}
                           className={`flex cursor-pointer items-center rounded-md px-3 py-1 text-sm transition-colors ${accion?.colors.default} ${accion?.colors.hover} ${accion?.colors.bg}`}
                         >
@@ -192,14 +200,6 @@ export function OrdenesTab({
                         </div>
                       ))}
                     </div>
-                    {/* <div className="mt-4 flex justify-end">
-                      <span className="text-sm text-gray-600">
-                        Liquidación Total:{" "}
-                        <span className="font-medium text-green-600">
-                          {priceFormat(group.total)}
-                        </span>
-                      </span>
-                    </div> */}
                   </div>
                 )}
               </div>
@@ -207,6 +207,13 @@ export function OrdenesTab({
           </div>
         )}
       </div>
+
+      <EnvioCorreos
+        isOpen={isOpenEmail}
+        setIsOpen={setIsOpenEmail}
+        id={selectedOrderId}
+        mutationEmail={mutationEmail}
+      />
     </Section>
   );
 }

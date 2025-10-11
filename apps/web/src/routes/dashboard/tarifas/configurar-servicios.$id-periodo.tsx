@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { priceCalculate, priceFormat } from "../../../utils/PriceFormat";
 import type { Tarifa } from "../../../api/types/periodo";
 
-// Interfaz para manejar servicios configurados localmente
+// Interfase para manejar servicios configurados localmente
 interface ServicioConfigurado
   extends Omit<
     Tarifa,

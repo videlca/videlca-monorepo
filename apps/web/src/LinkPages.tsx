@@ -236,9 +236,9 @@ export const linksSideBar: LinksSideBar = {
       icon: <FileTextIcon className="h-6 w-6" />,
     },
     {
-      to: "/dashboard/exportaciones-base-facturacion/archivos-interfaz",
-      label: "Archivos de Interfaz",
-      description: "archivos-interfaz",
+      to: "/dashboard/exportaciones-base-facturacion/archivos-interfase",
+      label: "Archivos de Interfase",
+      description: "archivos-interfase",
       icon: <FileTextIcon className="h-6 w-6" />,
     },
     {

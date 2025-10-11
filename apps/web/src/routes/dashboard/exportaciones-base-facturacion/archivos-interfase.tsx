@@ -4,11 +4,14 @@ import { useState } from "react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { NavTabs } from "../../../components/ui/common/NavTabs";
 import { OrdenesTab } from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
-import { useGetGruposLiquidacionesExportaciones } from "../../../api/queryFunctions/exportaciones/exportaciones";
-import { useCambiarEstadoExportacion } from "../../../api/queryFunctions/liquidaciones";
+import {
+  useEnviarCorreoExportacionConsolidacion,
+  useGenerarReporteConsolidacion,
+  useGetGruposLiquidacionesExportaciones,
+} from "../../../api/queryFunctions/exportaciones/exportaciones";
 
 export const Route = createFileRoute(
-  "/dashboard/exportaciones-base-facturacion/archivos-interfaz",
+  "/dashboard/exportaciones-base-facturacion/archivos-interfase",
 )({
   component: RouteComponent,
 });
@@ -30,16 +33,17 @@ function RouteComponent() {
     campo: "generacion_interfase",
     valor: value,
   });
-  const { mutate: cambiarEstadoExportacion } = useCambiarEstadoExportacion();
 
-  const handleCambiarEstadoExportacion = (idGrupoLiquidacion: number) => {
-    cambiarEstadoExportacion({
-      idGrupoLiquidacion,
-      data: {
-        campo: "generacion_interfase",
-        valor: value === "false" ? "true" : "false",
-      },
-    });
+  // TODO: Cambiar POR MUTACIONES CORRECTAS
+  // Mutaciones
+  const { mutate: generarReporteConsolidacion } =
+    useGenerarReporteConsolidacion();
+  const { mutate: enviarCorreoExportacionConsolidacion } =
+    useEnviarCorreoExportacionConsolidacion();
+
+  // Handlers
+  const handleGenerarReporteConsolidacion = (idGrupoLiquidacion: number) => {
+    generarReporteConsolidacion(idGrupoLiquidacion);
   };
 
   return (
@@ -53,15 +57,16 @@ function RouteComponent() {
         <OrdenesTab
           tipo="generacion_interfase"
           data={groups?.data || []}
-          handleCambiarEstadoExportacion={handleCambiarEstadoExportacion}
+          handleFileAction={handleGenerarReporteConsolidacion}
+          mutationEmail={enviarCorreoExportacionConsolidacion}
         />
       )}
       {activeTab === "Archivos generados" && (
         <OrdenesTab
           tipo="generacion_interfase"
           data={groups?.data || []}
-          restaurar={true}
-          handleCambiarEstadoExportacion={handleCambiarEstadoExportacion}
+          handleFileAction={handleGenerarReporteConsolidacion}
+          mutationEmail={enviarCorreoExportacionConsolidacion}
         />
       )}
     </Section>

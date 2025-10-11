@@ -49,7 +49,7 @@ import { Route as DashboardPermisosRolesRouteImport } from './routes/dashboard/p
 import { Route as DashboardOrdenesServicioIdentificadoresOrdenServicioRouteImport } from './routes/dashboard/ordenes-servicio/identificadores-orden-servicio'
 import { Route as DashboardLiquidacionesHistorialRouteImport } from './routes/dashboard/liquidaciones/historial'
 import { Route as DashboardExportacionesBaseFacturacionConsolidacionRouteImport } from './routes/dashboard/exportaciones-base-facturacion/consolidacion'
-import { Route as DashboardExportacionesBaseFacturacionArchivosInterfazRouteImport } from './routes/dashboard/exportaciones-base-facturacion/archivos-interfaz'
+import { Route as DashboardExportacionesBaseFacturacionArchivosInterfaseRouteImport } from './routes/dashboard/exportaciones-base-facturacion/archivos-interfase'
 import { Route as DashboardExportacionesBaseFacturacionAnexoFacturacionRouteImport } from './routes/dashboard/exportaciones-base-facturacion/anexo-facturacion'
 import { Route as DashboardConfiguracionUbicacionRouteImport } from './routes/dashboard/configuracion/ubicacion'
 import { Route as DashboardConfiguracionTiposNovedadRouteImport } from './routes/dashboard/configuracion/tipos-novedad'
@@ -280,10 +280,10 @@ const DashboardExportacionesBaseFacturacionConsolidacionRoute =
     path: '/consolidacion',
     getParentRoute: () => DashboardExportacionesBaseFacturacionRoute,
   } as any)
-const DashboardExportacionesBaseFacturacionArchivosInterfazRoute =
-  DashboardExportacionesBaseFacturacionArchivosInterfazRouteImport.update({
-    id: '/archivos-interfaz',
-    path: '/archivos-interfaz',
+const DashboardExportacionesBaseFacturacionArchivosInterfaseRoute =
+  DashboardExportacionesBaseFacturacionArchivosInterfaseRouteImport.update({
+    id: '/archivos-interfase',
+    path: '/archivos-interfase',
     getParentRoute: () => DashboardExportacionesBaseFacturacionRoute,
   } as any)
 const DashboardExportacionesBaseFacturacionAnexoFacturacionRoute =
@@ -402,7 +402,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/exportaciones-base-facturacion/anexo-facturacion': typeof DashboardExportacionesBaseFacturacionAnexoFacturacionRoute
-  '/dashboard/exportaciones-base-facturacion/archivos-interfaz': typeof DashboardExportacionesBaseFacturacionArchivosInterfazRoute
+  '/dashboard/exportaciones-base-facturacion/archivos-interfase': typeof DashboardExportacionesBaseFacturacionArchivosInterfaseRoute
   '/dashboard/exportaciones-base-facturacion/consolidacion': typeof DashboardExportacionesBaseFacturacionConsolidacionRoute
   '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
   '/dashboard/ordenes-servicio/identificadores-orden-servicio': typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
@@ -448,7 +448,7 @@ export interface FileRoutesByTo {
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/exportaciones-base-facturacion/anexo-facturacion': typeof DashboardExportacionesBaseFacturacionAnexoFacturacionRoute
-  '/dashboard/exportaciones-base-facturacion/archivos-interfaz': typeof DashboardExportacionesBaseFacturacionArchivosInterfazRoute
+  '/dashboard/exportaciones-base-facturacion/archivos-interfase': typeof DashboardExportacionesBaseFacturacionArchivosInterfaseRoute
   '/dashboard/exportaciones-base-facturacion/consolidacion': typeof DashboardExportacionesBaseFacturacionConsolidacionRoute
   '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
   '/dashboard/ordenes-servicio/identificadores-orden-servicio': typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
@@ -506,7 +506,7 @@ export interface FileRoutesById {
   '/dashboard/configuracion/tipos-novedad': typeof DashboardConfiguracionTiposNovedadRoute
   '/dashboard/configuracion/ubicacion': typeof DashboardConfiguracionUbicacionRoute
   '/dashboard/exportaciones-base-facturacion/anexo-facturacion': typeof DashboardExportacionesBaseFacturacionAnexoFacturacionRoute
-  '/dashboard/exportaciones-base-facturacion/archivos-interfaz': typeof DashboardExportacionesBaseFacturacionArchivosInterfazRoute
+  '/dashboard/exportaciones-base-facturacion/archivos-interfase': typeof DashboardExportacionesBaseFacturacionArchivosInterfaseRoute
   '/dashboard/exportaciones-base-facturacion/consolidacion': typeof DashboardExportacionesBaseFacturacionConsolidacionRoute
   '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
   '/dashboard/ordenes-servicio/identificadores-orden-servicio': typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
@@ -565,7 +565,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/exportaciones-base-facturacion/anexo-facturacion'
-    | '/dashboard/exportaciones-base-facturacion/archivos-interfaz'
+    | '/dashboard/exportaciones-base-facturacion/archivos-interfase'
     | '/dashboard/exportaciones-base-facturacion/consolidacion'
     | '/dashboard/liquidaciones/historial'
     | '/dashboard/ordenes-servicio/identificadores-orden-servicio'
@@ -611,7 +611,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/exportaciones-base-facturacion/anexo-facturacion'
-    | '/dashboard/exportaciones-base-facturacion/archivos-interfaz'
+    | '/dashboard/exportaciones-base-facturacion/archivos-interfase'
     | '/dashboard/exportaciones-base-facturacion/consolidacion'
     | '/dashboard/liquidaciones/historial'
     | '/dashboard/ordenes-servicio/identificadores-orden-servicio'
@@ -668,7 +668,7 @@ export interface FileRouteTypes {
     | '/dashboard/configuracion/tipos-novedad'
     | '/dashboard/configuracion/ubicacion'
     | '/dashboard/exportaciones-base-facturacion/anexo-facturacion'
-    | '/dashboard/exportaciones-base-facturacion/archivos-interfaz'
+    | '/dashboard/exportaciones-base-facturacion/archivos-interfase'
     | '/dashboard/exportaciones-base-facturacion/consolidacion'
     | '/dashboard/liquidaciones/historial'
     | '/dashboard/ordenes-servicio/identificadores-orden-servicio'
@@ -985,11 +985,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardExportacionesBaseFacturacionConsolidacionRouteImport
       parentRoute: typeof DashboardExportacionesBaseFacturacionRoute
     }
-    '/dashboard/exportaciones-base-facturacion/archivos-interfaz': {
-      id: '/dashboard/exportaciones-base-facturacion/archivos-interfaz'
-      path: '/archivos-interfaz'
-      fullPath: '/dashboard/exportaciones-base-facturacion/archivos-interfaz'
-      preLoaderRoute: typeof DashboardExportacionesBaseFacturacionArchivosInterfazRouteImport
+    '/dashboard/exportaciones-base-facturacion/archivos-interfase': {
+      id: '/dashboard/exportaciones-base-facturacion/archivos-interfase'
+      path: '/archivos-interfase'
+      fullPath: '/dashboard/exportaciones-base-facturacion/archivos-interfase'
+      preLoaderRoute: typeof DashboardExportacionesBaseFacturacionArchivosInterfaseRouteImport
       parentRoute: typeof DashboardExportacionesBaseFacturacionRoute
     }
     '/dashboard/exportaciones-base-facturacion/anexo-facturacion': {
@@ -1161,7 +1161,7 @@ const DashboardConfiguracionRouteWithChildren =
 
 interface DashboardExportacionesBaseFacturacionRouteChildren {
   DashboardExportacionesBaseFacturacionAnexoFacturacionRoute: typeof DashboardExportacionesBaseFacturacionAnexoFacturacionRoute
-  DashboardExportacionesBaseFacturacionArchivosInterfazRoute: typeof DashboardExportacionesBaseFacturacionArchivosInterfazRoute
+  DashboardExportacionesBaseFacturacionArchivosInterfaseRoute: typeof DashboardExportacionesBaseFacturacionArchivosInterfaseRoute
   DashboardExportacionesBaseFacturacionConsolidacionRoute: typeof DashboardExportacionesBaseFacturacionConsolidacionRoute
 }
 
@@ -1169,8 +1169,8 @@ const DashboardExportacionesBaseFacturacionRouteChildren: DashboardExportaciones
   {
     DashboardExportacionesBaseFacturacionAnexoFacturacionRoute:
       DashboardExportacionesBaseFacturacionAnexoFacturacionRoute,
-    DashboardExportacionesBaseFacturacionArchivosInterfazRoute:
-      DashboardExportacionesBaseFacturacionArchivosInterfazRoute,
+    DashboardExportacionesBaseFacturacionArchivosInterfaseRoute:
+      DashboardExportacionesBaseFacturacionArchivosInterfaseRoute,
     DashboardExportacionesBaseFacturacionConsolidacionRoute:
       DashboardExportacionesBaseFacturacionConsolidacionRoute,
   }

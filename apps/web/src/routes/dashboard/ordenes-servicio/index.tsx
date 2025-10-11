@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Table from "../../../components/common/Table";
 import { SimpleModal } from "../../../components/common/SimpleModal";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import {
   useCreateOrdenServicio,
@@ -31,7 +31,6 @@ import {
   useValidateFechasOrdenServicio,
 } from "../../../api/queryFunctions/orden-servicio";
 import type {
-  CorreosDto,
   CreateOrdenServicioDto,
   CreateOrdenServicioTarifaDto,
   UpdateOrdenServicioDto,
@@ -50,7 +49,6 @@ import { toast } from "sonner";
 import type { Servicio } from "../../../api/types/servicio";
 import { SeleccionarIdentificadorOrden } from "../../../components/common/stepsOrdenServicio/SeleccionarIdentificadorOrden";
 import { ConfigurarFechaOrdenServicio } from "../../../components/common/stepsOrdenServicio/ConfigurarFechaOrdenServicio";
-import { EmailsInput } from "../../../components/common/EmailsInput";
 import { SeleccionarServicio } from "../../../components/common/stepsOrdenServicio/SeleccionarServicio";
 import { ConfigurarHorariosServicios } from "../../../components/common/stepsOrdenServicio/ConfigurarHorariosServicios";
 import { AsignacionPersonalServicio } from "../../../components/common/stepsOrdenServicio/AsignacionPersonalServicio";
@@ -59,6 +57,7 @@ import { SeleccionarPuestoCliente } from "../../../components/common/stepsOrdenS
 import { ObservacionesOrdenServicio } from "../../../components/ui/modals/ObservacionesOrdenServicio";
 import { useGetObservacionesOrdenServicio } from "../../../api/queryFunctions/orden-servicio/observaciones";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
+import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
@@ -76,8 +75,7 @@ function RouteComponent() {
   const [isOpenDetails, setIsOpenDetails] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [isOpenObservaciones, setIsOpenObservaciones] = useState(false);
-  const [isOpenPdf, setIsOpenPdf] = useState(false);
-  const [pdfEmails, setPdfEmails] = useState<CorreosDto[]>([]);
+  const [isOpenEmail, setIsOpenEmail] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [identificador, setIdentificador] = useState<{
     prefijo: string;
@@ -540,24 +538,6 @@ function RouteComponent() {
     descargarPdf(idOrdenServicio);
   };
 
-  const handleSendPdf = (idOrdenServicio: number) => {
-    console.log("idOrdenServicio: ", idOrdenServicio);
-    enviarPdfPorCorreo(
-      {
-        id: idOrdenServicio,
-        data: {
-          correos: pdfEmails,
-        },
-      },
-      {
-        onSuccess: () => {
-          setIsOpenPdf(false);
-          setPdfEmails([]);
-        },
-      },
-    );
-  };
-
   const handleValidarEmpleadosDisponibles = async (
     idServicio: number,
     indexEmpleado: number,
@@ -700,7 +680,7 @@ function RouteComponent() {
             {
               label: "Enviar por correo",
               onClick: () => {
-                setIsOpenPdf(true);
+                setIsOpenEmail(true);
                 setSelectedOrderDetail(row.original);
               },
             },
@@ -1210,48 +1190,12 @@ function RouteComponent() {
         </div>
       </SimpleModal>
 
-      <SimpleModal
-        isOpen={isOpenPdf}
-        onClose={() => {
-          setIsOpenPdf(false);
-          setPdfEmails([]);
-        }}
-        title="Ingresar correos para enviar el PDF"
-        size="xl"
-      >
-        <div className="space-y-6">
-          <EmailsInput
-            emails={pdfEmails.map((email) => email.email)}
-            setEmails={(emails) =>
-              setPdfEmails(emails.map((email) => ({ email: email })))
-            }
-            placeholder="Ingrese un correo electrónico"
-          />
-
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-              onClick={() => {
-                setIsOpenPdf(false);
-                setPdfEmails([]);
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              disabled={pdfEmails.length === 0}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
-              onClick={() => {
-                handleSendPdf(selectedOrderDetail?.idOrdenServicio || 0);
-              }}
-            >
-              Enviar PDF
-            </button>
-          </div>
-        </div>
-      </SimpleModal>
+      <EnvioCorreos
+        isOpen={isOpenEmail}
+        setIsOpen={setIsOpenEmail}
+        id={selectedOrderDetail?.idOrdenServicio || 0}
+        mutationEmail={enviarPdfPorCorreo}
+      />
 
       <ObservacionesOrdenServicio
         isOpenObservaciones={isOpenObservaciones}
