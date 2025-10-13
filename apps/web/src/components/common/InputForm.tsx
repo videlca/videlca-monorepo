@@ -1,5 +1,5 @@
 interface InputFormProps {
-  label: string;
+  label?: string;
   placeholder: string;
   type: string;
   id: string;
@@ -7,7 +7,7 @@ interface InputFormProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   required?: boolean;
   disabled?: boolean;
-  timer?: boolean;
+  showLabel?: boolean;
 }
 
 export const InputForm = ({
@@ -19,23 +19,25 @@ export const InputForm = ({
   onChange,
   required = false,
   disabled = false,
-  timer = false,
+  showLabel = true,
 }: InputFormProps) => {
   return (
-    <div className="mb-1 flex flex-col gap-2">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700">
-        {label}
-      </label>
+    <div className="mb-1 flex w-full flex-col gap-2">
+      {showLabel && (
+        <label htmlFor={id} className="text-sm font-medium text-gray-700">
+          {label}
+        </label>
+      )}
       <div className="flex items-center gap-2">
         <input
           type={type}
           id={id}
           value={value}
+          max={type === "number" ? "99" : undefined}
+          min={type === "number" ? "0" : undefined}
           onChange={onChange}
           onInput={onChange}
           required={required}
-          min={timer ? "0" : undefined}
-          max={timer ? "23" : undefined}
           className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
           placeholder={placeholder}
           disabled={disabled}

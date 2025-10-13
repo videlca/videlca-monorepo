@@ -54,6 +54,16 @@ function RouteComponent() {
     boolean | null
   >(null);
 
+  const [codigoServicio, setCodigoServicio] = useState<{
+    parte1: string;
+    parte2: string;
+    parte3: string;
+  }>({
+    parte1: "",
+    parte2: "",
+    parte3: "",
+  });
+
   // Queries y Mutaciones
   const { data: servicios } = useServicios();
   const { data: tiposServicios } = useTipoServicios();
@@ -185,6 +195,11 @@ function RouteComponent() {
                   horasMaximas: row.original.horasMaximas,
                   estado: row.original.estado,
                 });
+                setCodigoServicio({
+                  parte1: row.original.codigo.split("-")[0],
+                  parte2: row.original.codigo.split("-")[1],
+                  parte3: row.original.codigo.split("-")[2],
+                });
                 setIsOpenEditModal(true);
                 setTipoDuracion(row.original.idTipoDuracion.descripcion);
                 setTipoHorarioDescripcion(
@@ -234,8 +249,6 @@ function RouteComponent() {
 
       <div className="flex flex-col gap-6">
         {serviciosData.map(([key, value]: [string, any]) => {
-          console.log(value.length);
-
           return (
             <div
               key={key}
@@ -261,6 +274,11 @@ function RouteComponent() {
           resetFormAgregarServicio();
           setTipoDuracion(null);
           setTipoHorarioDescripcion(null);
+          setCodigoServicio({
+            parte1: "",
+            parte2: "",
+            parte3: "",
+          });
         }}
         title="Agregar Servicio"
         size="xl"
@@ -287,12 +305,18 @@ function RouteComponent() {
                 horasMaximas: tipoHorarioDescripcion
                   ? 0
                   : Number(formAgregarServicio.horasMaximas),
+                codigo: `${codigoServicio.parte1}-${codigoServicio.parte2}-${codigoServicio.parte3}`,
               },
               {
                 onSuccess: () => {
                   setIsOpenAddModal(false);
                   resetFormAgregarServicio();
                   setTipoDuracion(null);
+                  setCodigoServicio({
+                    parte1: "",
+                    parte2: "",
+                    parte3: "",
+                  });
                 },
               },
             );
@@ -303,6 +327,11 @@ function RouteComponent() {
             resetFormAgregarServicio();
             setTipoDuracion(null);
             setTipoHorarioDescripcion(null);
+            setCodigoServicio({
+              parte1: "",
+              parte2: "",
+              parte3: "",
+            });
           }}
           updating={false}
         >
@@ -312,17 +341,61 @@ function RouteComponent() {
               description="Datos del servicio"
               Icon={FileText}
             >
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="codigo"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Código servicio (código referencia SIGO)*
+                </label>
+
+                <div className="flex flex-row items-center justify-center gap-2">
+                  <InputForm
+                    showLabel={false}
+                    placeholder="00"
+                    type="number"
+                    id="parte1"
+                    value={codigoServicio.parte1}
+                    onChange={(e) =>
+                      setCodigoServicio({
+                        ...codigoServicio,
+                        parte1: e.target.value,
+                      })
+                    }
+                    required={true}
+                  />
+                  <InputForm
+                    showLabel={false}
+                    placeholder="00"
+                    type="number"
+                    id="parte2"
+                    value={codigoServicio.parte2}
+                    onChange={(e) =>
+                      setCodigoServicio({
+                        ...codigoServicio,
+                        parte2: e.target.value,
+                      })
+                    }
+                    required={true}
+                  />
+                  <InputForm
+                    showLabel={false}
+                    placeholder="00"
+                    type="number"
+                    id="parte3"
+                    value={codigoServicio.parte3}
+                    onChange={(e) =>
+                      setCodigoServicio({
+                        ...codigoServicio,
+                        parte3: e.target.value,
+                      })
+                    }
+                    required={true}
+                  />
+                </div>
+              </div>
               <InputForm
-                label="Código"
-                placeholder="Código"
-                type="text"
-                id="codigo"
-                value={formAgregarServicio.codigo}
-                onChange={handleChangeAgregarServicio}
-                required={true}
-              />
-              <InputForm
-                label="Descripción"
+                label="Descripción (máximo 50 caracteres) *"
                 placeholder="Descripción"
                 type="text"
                 id="descripcion"
@@ -331,7 +404,7 @@ function RouteComponent() {
                 required={true}
               />
               <InputSelect
-                label="Tipo de servicio"
+                label="Tipo de servicio *"
                 placeholder="Tipo de servicio"
                 options={
                   tiposServicios?.data?.map((tipo) => ({
@@ -345,7 +418,7 @@ function RouteComponent() {
                 required={true}
               />
               <InputSelect
-                label="Tipo de horario"
+                label="Tipo de horario *"
                 placeholder="Tipo de horario"
                 options={
                   tiposHorarios?.data?.map((tipo) => ({
@@ -369,7 +442,7 @@ function RouteComponent() {
               />
               {!tipoHorarioDescripcion && (
                 <InputSelect
-                  label="Tipo de duración"
+                  label="Tipo de duración *"
                   placeholder="Tipo de duración"
                   options={
                     tiposDuraciones?.data?.map((tipo) => ({
@@ -409,7 +482,7 @@ function RouteComponent() {
               )}
               {!tipoHorarioDescripcion && tipoDuracion === "fija" && (
                 <InputForm
-                  label="Horas fijas"
+                  label="Horas fijas *"
                   placeholder="Horas fijas"
                   type="number"
                   id="horasFijas"
@@ -421,7 +494,7 @@ function RouteComponent() {
               {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
                 <>
                   <InputForm
-                    label="Horas mínimas"
+                    label="Horas mínimas *"
                     placeholder="Horas mínimas"
                     type="number"
                     id="horasMinimas"
@@ -430,7 +503,7 @@ function RouteComponent() {
                     required={true}
                   />
                   <InputForm
-                    label="Horas máximas"
+                    label="Horas máximas *"
                     placeholder="Horas máximas"
                     type="number"
                     id="horasMaximas"
@@ -452,6 +525,11 @@ function RouteComponent() {
           resetFormEditarServicio();
           setTipoDuracion(null);
           setTipoHorarioDescripcion(null);
+          setCodigoServicio({
+            parte1: "",
+            parte2: "",
+            parte3: "",
+          });
         }}
         title="Editar Servicio"
         size="xl"
@@ -483,6 +561,7 @@ function RouteComponent() {
                     formEditarServicio.idTipoHorarioDescripcion,
                   ),
                   estado: String(formEditarServicio.estado) === "true",
+                  codigo: `${codigoServicio.parte1}-${codigoServicio.parte2}-${codigoServicio.parte3}`,
                 },
               },
               {
@@ -490,6 +569,11 @@ function RouteComponent() {
                   setIsOpenEditModal(false);
                   resetFormEditarServicio();
                   setTipoDuracion(null);
+                  setCodigoServicio({
+                    parte1: "",
+                    parte2: "",
+                    parte3: "",
+                  });
                 },
               },
             );
@@ -500,6 +584,11 @@ function RouteComponent() {
             resetFormEditarServicio();
             setTipoDuracion(null);
             setTipoHorarioDescripcion(null);
+            setCodigoServicio({
+              parte1: "",
+              parte2: "",
+              parte3: "",
+            });
           }}
           updating={true}
         >
@@ -509,17 +598,58 @@ function RouteComponent() {
               description="Datos del servicio"
               Icon={FileText}
             >
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="codigo"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Código servicio (código referencia SIGO)*
+                </label>
+
+                <div className="flex flex-row items-center justify-center gap-2">
+                  <InputForm
+                    showLabel={false}
+                    placeholder="00"
+                    type="number"
+                    id="parte1"
+                    value={codigoServicio.parte1}
+                    onChange={(e) =>
+                      setCodigoServicio({
+                        ...codigoServicio,
+                        parte1: e.target.value,
+                      })
+                    }
+                  />
+                  <InputForm
+                    showLabel={false}
+                    placeholder="00"
+                    type="number"
+                    id="parte2"
+                    value={codigoServicio.parte2}
+                    onChange={(e) =>
+                      setCodigoServicio({
+                        ...codigoServicio,
+                        parte2: e.target.value,
+                      })
+                    }
+                  />
+                  <InputForm
+                    showLabel={false}
+                    placeholder="00"
+                    type="number"
+                    id="parte3"
+                    value={codigoServicio.parte3}
+                    onChange={(e) =>
+                      setCodigoServicio({
+                        ...codigoServicio,
+                        parte3: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
               <InputForm
-                label="Código"
-                placeholder="Código"
-                type="text"
-                id="codigo"
-                value={formEditarServicio.codigo || ""}
-                onChange={handleChangeEditarServicio}
-                required={true}
-              />
-              <InputForm
-                label="Descripción"
+                label="Descripción (máximo 50 caracteres) *"
                 placeholder="Descripción"
                 type="text"
                 id="descripcion"
@@ -528,7 +658,7 @@ function RouteComponent() {
                 required={true}
               />
               <InputSelect
-                label="Tipo de servicio"
+                label="Tipo de servicio *"
                 placeholder="Tipo de servicio"
                 options={
                   tiposServicios?.data?.map((tipo) => ({
@@ -542,7 +672,7 @@ function RouteComponent() {
                 required={true}
               />
               <InputSelect
-                label="Tipo de horario"
+                label="Tipo de horario *"
                 placeholder="Tipo de horario"
                 options={
                   tiposHorarios?.data?.map((tipo) => ({
@@ -568,7 +698,7 @@ function RouteComponent() {
               />
               {!tipoHorarioDescripcion && (
                 <InputSelect
-                  label="Tipo de duración"
+                  label="Tipo de duración *"
                   placeholder="Tipo de duración"
                   options={
                     tiposDuraciones?.data?.map((tipo) => ({
