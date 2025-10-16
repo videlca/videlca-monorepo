@@ -1,12 +1,34 @@
 import { Injectable, Logger} from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
+
+import { ClienteAgrupado } from '../../liquidaciones/interfaces/consolidacion.interface';
 
 @Injectable()
 export class ReporteInterfaseService {
 
   private readonly logger = new Logger('ReporteInterfaseService');
           
-  constructor(
+  constructor() {}
+
+  async generateExcel(clientesAgrupados: ClienteAgrupado[]) {
+
+    try {
+
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('interfase');
+  
+      // 👇 Generar buffer
+      const excelUint8 = await workbook.xlsx.writeBuffer();
+      const excelBuffer = Buffer.from(excelUint8); // 👈 Conversión a Node Buffer
+  
+      return excelBuffer;
       
-  ) {}
+    } catch (error) {
+
+      throw error;
+      
+    }
+
+  }
 
 }

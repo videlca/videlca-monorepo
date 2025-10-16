@@ -11,7 +11,7 @@ import { FiltroGrupoLiquidacionDto } from '../dto/filtroGrupoLiquidacion.dto';
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 
 @Controller('exportacion')
-// @AppAuth(DescriptionRoutes.EXPORTACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+@AppAuth(DescriptionRoutes.EXPORTACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class ExportacionController {
   
   constructor(
@@ -61,34 +61,62 @@ export class ExportacionController {
     return this.liquidacionesService.sendConsolidacionExcel(idGrupoLiquidacion, enviarCorreoDto);
   }
   
-  // @Get(':idGrupoLiquidacion/generar-excel-interfase')
-  // async generarReporteInterfase(
-  //   @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
-  //   @Res() res: Response
-  // ) {
+  @Get(':idGrupoLiquidacion/generar-excel-interfase')
+  async generarReporteInterfase(
+    @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
+    @Res() res: Response
+  ) {
 
-  //   const {excelBuffer, title} = await this.liquidacionesService.obtenerOrdenesPorCliente(idGrupoLiquidacion);
+    const {excelBuffer, title} = await this.liquidacionesService.downloadInterfaseExcel(idGrupoLiquidacion);
 
-  //   res.setHeader(
-  //     'Content-Type',
-  //     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  //   );
-  //   res.setHeader(
-  //     'Content-Disposition',
-  //     `attachment; filename=${title}.xlsx`,
-  //   );
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${title}.xlsx`,
+    );
 
-  //   res.end(excelBuffer);
-  // }
+    res.end(excelBuffer);
+  }
 
-  // @Get(':idGrupoLiquidacion/generar-pdf-anexo-facturacion')
-  // async generarReporteAnexoFacturacion(
-  //   @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
-  //   @Res() res: Response
-  // ) {
+  @Post(':idGrupoLiquidacion/enviar-excel-interfase')
+  enviarReporteInterfase(
+    @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
+    @Body() enviarCorreoDto: EnviarCorreoDto
+  ) {
+    return this.liquidacionesService.sendInterfaseExcel(idGrupoLiquidacion, enviarCorreoDto);
+  }
 
-  //   const {pdfDoc, title} = await this.liquidacionesService.obtenerOrdenesPorCliente(idGrupoLiquidacion);
+  @Get(':idGrupoLiquidacion/generar-excel-anexo-facturacion')
+  async generarReporteAnexoFacturacion(
+    @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
+    @Res() res: Response
+  ) {
 
-  // }
+    // const {excelBuffer, title} = await this.liquidacionesService.downloadConsolidacionExcel(idGrupoLiquidacion);
+  
+    // res.setHeader(
+    //   'Content-Type',
+    //   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    // );
+    
+    // res.setHeader(
+    //   'Content-Disposition',
+    //   `attachment; filename=${title}.xlsx`,
+    // );
+  
+    // res.end(excelBuffer);
+
+  }
+
+  @Post(':idGrupoLiquidacion/enviar-excel-anexo-facturacion')
+  enviarReporteAnexoFacturacion(
+    @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
+    @Body() enviarCorreoDto: EnviarCorreoDto
+  ) {
+    // return this.liquidacionesService.sendConsolidacionExcel(idGrupoLiquidacion, enviarCorreoDto);
+  }
 
 }

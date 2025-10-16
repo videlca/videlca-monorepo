@@ -10,7 +10,7 @@ import { toUTCDateOnly, endOfMonth, minDate, maxDate, diffDaysInclusive, round2 
 import { PrecioOrdenDto } from '../../orden-servicio/dto';
 
 import { EmailService, CorreoDefaultService } from '../../common/services';
-import { ReporteConsolidacionService } from '../../reportes/services';
+import { ReporteConsolidacionService, ReporteInterfaseService, ReporteLiquidacionService } from '../../reportes/services';
 import { OrdenServicioService } from '../../orden-servicio/services';
 
 import { OrdenServicio } from '../../orden-servicio/entities';
@@ -31,7 +31,9 @@ export class LiquidacionesService {
     @InjectRepository(OrdenServicio) 
     private readonly ordenRepo: Repository<OrdenServicio>,
     private ordenServicioService: OrdenServicioService,
-    private readonly reporteConsolidacionService: ReporteConsolidacionService, // Servicio para generar reportes
+    private readonly reporteConsolidacionService: ReporteConsolidacionService, // Servicio para generar reportes de consolidacion
+    private readonly reporteInterfaseService: ReporteInterfaseService, // Servicio para generar reportes de exportacion de interfase
+    private readonly reporteLiquidacionService: ReporteLiquidacionService, // Servicio para generar reportes de exportacion de interfase
     private readonly emailService: EmailService, // Servicio de email para envio de correos
     private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
     private readonly dataSource: DataSource,
@@ -462,43 +464,7 @@ export class LiquidacionesService {
     });
   }
 
-  // async liquidarGrupo(idGrupoLiquidacion: number) {
-
-  //   return this.withRetry(() =>
-    
-  //     this.dataSource.transaction('READ COMMITTED', async (tm) => {
-  //       const grupoRepo = tm.getRepository(GrupoLiquidacion);
-  //       const liqRepo = tm.getRepository(Liquidacione);
-
-  //       // 1. Verificar que exista el grupo
-  //       const grupo = await grupoRepo.findOne({
-  //         where: { idGrupoLiquidacion },
-  //       });
-  //       if (!grupo) throw new NotFoundException('Grupo de liquidación no encontrado');
-
-  //       // 2. Confirmar grupo (estado = true)
-  //       grupo.estado = true;
-  //       await grupoRepo.save(grupo);
-
-  //       // 3. Confirmar TODAS las liquidaciones del grupo
-  //       await liqRepo
-  //         .createQueryBuilder()
-  //         .update()
-  //         .set({ estado: true })
-  //         .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
-  //         .execute();
-
-  //       return {
-  //         ok: true,
-  //         grupoId: idGrupoLiquidacion,
-  //         mensaje: 'Grupo y liquidaciones confirmadas exitosamente',
-  //       };
-    
-  //     })
-    
-  //   );
   
-  // }
   
   async liquidarGrupo(idGrupoLiquidacion: number) {
 
@@ -548,40 +514,6 @@ export class LiquidacionesService {
     }
   
   }
-
-  // async desintegrarGrupo(idGrupoLiquidacion: number) {
-
-  //   return this.withRetry(() =>
-
-  //     this.dataSource.transaction('READ COMMITTED', async (tm) => {
-
-  //       const grupoRepo = tm.getRepository(GrupoLiquidacion);
-  //       const liqRepo = tm.getRepository(Liquidacione);
-
-  //       const grupo = await grupoRepo.findOne({ where: { idGrupoLiquidacion } });
-
-  //       if (!grupo) throw new NotFoundException('Grupo de liquidación no encontrado');
-
-  //       await liqRepo
-  //         .createQueryBuilder()
-  //         .delete()
-  //         .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
-  //         .execute();
-
-  //       await grupoRepo
-  //         .createQueryBuilder()
-  //         .delete()
-  //         .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
-  //         .execute();
-
-  //       return {
-  //         ok: true,
-  //         grupoId: idGrupoLiquidacion,
-  //         mensaje: 'Grupo de liquidación y sus liquidaciones eliminadas correctamente',
-  //       };
-  //     })
-  //   );
-  // }
 
   async desintegrarGrupo(idGrupoLiquidacion: number) {
 
@@ -855,6 +787,46 @@ export class LiquidacionesService {
     };    
 
   }
+  
+  async downloadInterfaseExcel(idGrupoLiquidacion: number){
+
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado);
+
+    const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: idGrupoLiquidacion },
+    });
+
+    if (grupoLiquidacion.generacion_interfase != true){
+
+      await this.notificarGeneracionInterfase(idGrupoLiquidacion, excelBuffer);
+      
+    }
+
+    // cambiar estado a TRUE
+    await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
+      campo: 'generacion_interfase',
+      valor: 'true'      
+    })
+
+    return {
+      excelBuffer: excelBuffer,
+      title: `exportacion_grupo_${idGrupoLiquidacion}`
+    };    
+
+  }
+  
+  async downloadLiquidacionExcel(idGrupoLiquidacion: number){
+
+    const excelBuffer = await this.reporteLiquidacionService.generateExcel();
+
+    return {
+      excelBuffer: excelBuffer,
+      title: `exportacion_grupo_${idGrupoLiquidacion}`
+    };    
+
+  }
 
   async sendConsolidacionExcel(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
 
@@ -931,6 +903,156 @@ export class LiquidacionesService {
     }
 
   }
+  
+  async sendInterfaseExcel(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
+
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado);
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Exportacion del grupo de liquidacion ${idGrupoLiquidacion}`;
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">EXPORTACION ${idGrupoLiquidacion}</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se envia EXCEL adjunto con exportacion del <b>grupo de liquidacion ${idGrupoLiquidacion}</b> de ordenes de servicio. <br><br>
+              Por favor, revise el <b>EXCEL adjunto</b> para más detalles.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const emails = enviarCorreoDto.correos.map(correo => correo.email);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
+        {
+          filename: `exportacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          content: excelBuffer,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+      throw new InternalServerErrorException(`Error al enviar correo con exportacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
+    }
+
+  }
+  
+  async sendLiquidacionExcel(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
+
+    const excelBuffer = await this.reporteLiquidacionService.generateExcel();
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Liquidacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio`;
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">LIQUIDACION del grupo de liquidacion ${idGrupoLiquidacion}</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se envia EXCEL adjunto con liquidacion del <b>grupo de liquidacion ${idGrupoLiquidacion}</b> de ordenes de servicio. <br><br>
+              Por favor, revise el <b>EXCEL adjunto</b> para más detalles.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const emails = enviarCorreoDto.correos.map(correo => correo.email);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
+        {
+          filename: `liquidacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          content: excelBuffer,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+      throw new InternalServerErrorException(`Error al enviar correo con liquidacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
+    }
+
+  }
 
   async notificarGeneracionConsolidacion(idGrupoLiquidacion: number, excelBuffer: Buffer){
   
@@ -1001,6 +1123,79 @@ export class LiquidacionesService {
   
     if (!isEmailSend){
       throw new InternalServerErrorException(`Error al enviar correo con consolidacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
+    }
+  
+  }
+  
+  async notificarGeneracionInterfase(idGrupoLiquidacion: number, excelBuffer: Buffer){
+  
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): se ha generado una Exportacion del grupo de liquidacion ${idGrupoLiquidacion}`;
+  
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">EXPORTACION ${idGrupoLiquidacion}</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se envia EXCEL adjunto con exportacion del <b>grupo de liquidacion ${idGrupoLiquidacion}</b> de ordenes de servicio. <br><br>
+              Por favor, revise el <b>EXCEL adjunto</b> para más detalles. <br><br>
+              Ya esta disponible la generacion de los anexos de facturacion para el grupo de liquidacion ${idGrupoLiquidacion}.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+  
+    const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.CREACION_INTERFASE);
+  
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
+        {
+          filename: `exportacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          content: excelBuffer,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      ],
+    }
+  
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+  
+    if (!isEmailSend){
+      throw new InternalServerErrorException(`Error al enviar correo con exportacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
     }
   
   }

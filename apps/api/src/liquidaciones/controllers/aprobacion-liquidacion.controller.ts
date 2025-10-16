@@ -17,14 +17,14 @@ export class AprobacionLiquidacionOrdenServicioController {
     return this.liquidacionesService.buscarGrupoLiquidaciones();
   }
 
-  @Post(':id/liquidar-grupo')
-  async confirmar(@Param('id', ParseIntPipe) id: number) {
-    return this.liquidacionesService.liquidarGrupo(id);
+  @Post(':idGrupoLiquidacion/liquidar-grupo')
+  async confirmar(@Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number) {
+    return this.liquidacionesService.liquidarGrupo(idGrupoLiquidacion);
   }
 
-  @Delete(':id/desintegrar-grupo')
-  async desintegrarGrupo(@Param('id', ParseIntPipe) id: number) {
-    return this.liquidacionesService.desintegrarGrupo(id);
+  @Delete(':idGrupoLiquidacion/desintegrar-grupo')
+  async desintegrarGrupo(@Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number) {
+    return this.liquidacionesService.desintegrarGrupo(idGrupoLiquidacion);
   }
 
 }

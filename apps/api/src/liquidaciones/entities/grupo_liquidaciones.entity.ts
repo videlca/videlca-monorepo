@@ -1,6 +1,6 @@
 // src/grupo-liquidaciones/entities/grupo-liquidacion.entity.ts
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Liquidacione } from 'src/liquidaciones/entities/liquidacione.entity';
+import { Liquidacione } from '../../liquidaciones/entities/liquidacione.entity';
 
 @Entity({ name: 'grupo_liquidaciones' })
 export class GrupoLiquidacion {

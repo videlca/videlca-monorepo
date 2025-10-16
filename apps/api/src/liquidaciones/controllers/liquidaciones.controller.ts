@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Body, Query, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, ParseIntPipe, DefaultValuePipe, Param, Res } from '@nestjs/common';
 import { ApiTags, ApiQuery } from '@nestjs/swagger';
+import type { Response } from 'express';
 
-import { AppAuth } from '../../auth/decorators';
+import { AppAuth, ValidateJwtAuth } from '../../auth/decorators';
 import { DescriptionRoutes } from '../../auth/interfaces';
+
+import { EnviarCorreoDto } from '../../common/dto';
 
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
 import { LiquidacionesService } from '../services/liquidaciones.service';
@@ -47,6 +50,40 @@ export class LiquidacionesController {
     @Query('mes', ParseIntPipe) mes: number,
   ) {
     return this.service.findByMesLiquidacionesAprobadas(anio, mes);
+  }
+
+  @Get(':idGrupoLiquidacion/generar-excel-liquidacion')
+  @ValidateJwtAuth()
+  async generarReporteLiquidacion(
+    @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
+    @Res() res: Response
+  ) {
+      
+    const {excelBuffer, title} = await this.service.downloadLiquidacionExcel(idGrupoLiquidacion);
+  
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${title}.xlsx`,
+    );
+  
+    res.end(excelBuffer);
+
+  }
+
+  @Post(':idGrupoLiquidacion/enviar-excel-liquidacion')
+  @ValidateJwtAuth()
+  enviarReporteLiquidacion(
+    @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
+    @Body() enviarCorreoDto: EnviarCorreoDto
+  ) {
+
+    return this.service.sendLiquidacionExcel(idGrupoLiquidacion, enviarCorreoDto);
+
   }
 
   // @Get('by-estado')

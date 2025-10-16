@@ -1,6 +1,5 @@
 import { Injectable, Logger} from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
-import { Tarifa } from '../../tarifas/entities';
 
 import { ClienteAgrupado } from '../../liquidaciones/interfaces/consolidacion.interface';
 
