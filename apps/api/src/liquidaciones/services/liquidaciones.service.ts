@@ -716,7 +716,7 @@ export class LiquidacionesService {
         if (!agrupado[clienteId].servicios[tarifa.idTarifa]) {
 
           agrupado[clienteId].servicios[tarifa.idTarifa] = {
-            tipoServicio: servicio.idTipoServicio.nombre,
+            tipoServicio: servicio.idTipoServicio.requierePersonal ? 'armado': 'monitoreo',
             servicioAplicacion: servicio.descripcion,
             codigoServicioSiigo: servicio.codigo,
             valorLiquidarAplicacion: 0,
@@ -732,8 +732,12 @@ export class LiquidacionesService {
     
         agrupado[clienteId].servicios[tarifa.idTarifa].cantidadOrdenes += 1; 
 
+        agrupado[clienteId].servicios[tarifa.idTarifa].valorLiquidarAplicacion += Number(liquidacionServicioOrdenServicio.costosDirectos);        
         agrupado[clienteId].servicios[tarifa.idTarifa].seguroVida += Number(liquidacionServicioOrdenServicio.seguroVida);        
         agrupado[clienteId].servicios[tarifa.idTarifa].aui += Number(liquidacionServicioOrdenServicio.aui);                
+        agrupado[clienteId].servicios[tarifa.idTarifa].tarifaAntesIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui));                
+        agrupado[clienteId].servicios[tarifa.idTarifa].auiIVa += (Number(liquidacionServicioOrdenServicio.aui) * 0.19);                
+        agrupado[clienteId].servicios[tarifa.idTarifa].tarifaConIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui) + (Number(liquidacionServicioOrdenServicio.aui) * 0.19));                
 
       }
 
