@@ -7,9 +7,8 @@ import {
   useDesintegrarGrupoLiquidacion,
   useGetGruposLiquidaciones,
 } from "../../../api/queryFunctions/liquidaciones";
-import { getStatusColor } from "../../../utils/StatusColor";
-import { priceFormat } from "../../../utils/PriceFormat";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
+import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard";
 
 export const Route = createFileRoute(
   "/dashboard/aprobacion-liquidaciones-ordenes/",
@@ -127,56 +126,11 @@ function RouteComponent() {
                 </div>
 
                 {!hiddenGroups.has(group.idGrupoLiquidacion) && (
-                  <div className="p-4">
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                      {group.liquidaciones.map((order) => (
-                        <div
-                          key={order.idLiquidacion}
-                          className="rounded-lg border border-gray-200 bg-white p-3 transition-shadow hover:shadow-md"
-                        >
-                          <div className="mb-2 flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-gray-900">
-                              {
-                                order.ordenServicio.ordenServicioId
-                                  .descripcionId
-                              }
-                            </h3>
-                            <span
-                              className={`rounded-full border px-2 py-1 text-xs font-medium ${getStatusColor(order.ordenServicio.idEstadoOrdenServicio?.nombre || "")}`}
-                            >
-                              {
-                                order.ordenServicio.idEstadoOrdenServicio
-                                  ?.nombre
-                              }
-                            </span>
-                          </div>
-
-                          <div className="space-y-1 text-xs text-gray-600">
-                            <div>
-                              <span className="font-medium text-gray-900">
-                                {
-                                  order.ordenServicio.idLocacion?.idCliente
-                                    .nombre
-                                }
-                              </span>
-                            </div>
-                            <div className="text-gray-500">
-                              {order.ordenServicio.idLocacion?.nombre} -{" "}
-                              {order.ordenServicio.idLocacion?.direccion}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 flex justify-end">
-                      <span className="text-sm text-gray-600">
-                        Liquidación Total:{" "}
-                        <span className="font-medium text-green-600">
-                          {priceFormat(group.total)}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
+                  <OrdenServicioCard
+                    key={group.idGrupoLiquidacion}
+                    grupoLiquidacion={group}
+                    showTotal={true}
+                  />
                 )}
               </div>
             ))}
