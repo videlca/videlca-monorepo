@@ -10,6 +10,7 @@ export const EnvioCorreos = ({
   setIsOpen,
   id,
   mutationEmail,
+  envioCorreoPending,
 }: {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -23,6 +24,7 @@ export const EnvioCorreos = ({
     },
     unknown
   >;
+  envioCorreoPending: boolean;
 }) => {
   const [emails, setEmails] = useState<CorreosDto[]>([]);
 
@@ -75,7 +77,7 @@ export const EnvioCorreos = ({
           </button>
           <button
             type="button"
-            disabled={emails.length === 0}
+            disabled={emails.length === 0 || envioCorreoPending}
             className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
             onClick={() => {
               handleSendEmail(id);

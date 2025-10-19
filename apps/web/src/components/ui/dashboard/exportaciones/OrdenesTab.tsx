@@ -19,6 +19,7 @@ export function OrdenesTab({
   data,
   handleFileAction,
   mutationEmail,
+  envioCorreoPending,
 }: {
   tipo: TipoDocumento;
   data: GruposLiquidaciones[];
@@ -28,6 +29,7 @@ export function OrdenesTab({
     Error,
     { id: number; data: EnviarCorreoDto }
   >;
+  envioCorreoPending: boolean;
 }) {
   const [hiddenGroups, setHiddenGroups] = useState<Set<number>>(new Set());
   const [isOpenEmail, setIsOpenEmail] = useState(false);
@@ -213,6 +215,7 @@ export function OrdenesTab({
         setIsOpen={setIsOpenEmail}
         id={selectedOrderId}
         mutationEmail={mutationEmail}
+        envioCorreoPending={envioCorreoPending}
       />
     </Section>
   );

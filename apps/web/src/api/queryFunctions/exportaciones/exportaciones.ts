@@ -1,7 +1,7 @@
 import { useMutation, useQuery, type UseMutationResult } from "@tanstack/react-query";
 import type { ApiResponse } from "../../types/common";
 import type { GruposLiquidaciones } from "../../types";
-import { enviarCorreoExportacionConsolidacion, generarReporteConsolidacion, getGruposLiquidacionesExportaciones } from "../../functions/exportaciones";
+import { generarArchivoExcel, getGruposLiquidacionesExportaciones, enviarCorreoArchivo, type Exportacion } from "../../functions/exportaciones";
 import type { FiltroGrupoLiquidacionDto } from "../../dtos/exportaciones";
 import { toast } from "sonner";
 import type { EnviarCorreoDto } from "../../dtos/common";
@@ -15,10 +15,10 @@ export const useGetGruposLiquidacionesExportaciones = (params: FiltroGrupoLiquid
   });
 };
 
-export const useGenerarReporteConsolidacion = (): UseMutationResult<{ blob: Blob; filename: string }, Error, number> => {
+export const useGenerarReporteArchivo = (archivo: Exportacion): UseMutationResult<{ blob: Blob; filename: string }, Error, number> => {
   return useMutation({
-    mutationKey: ["generar-reporte-consolidacion"],
-    mutationFn: (idGrupoLiquidacion) => generarReporteConsolidacion(idGrupoLiquidacion),
+    mutationKey: ["generar-reporte-exportacion"],
+    mutationFn: (idGrupoLiquidacion) => generarArchivoExcel(idGrupoLiquidacion, archivo),
     onSuccess: ({ blob, filename }) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -28,7 +28,7 @@ export const useGenerarReporteConsolidacion = (): UseMutationResult<{ blob: Blob
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast.success("Reporte consolidacion generado correctamente");
+      toast.success("Reporte generado correctamente");
       queryClient.invalidateQueries({
         queryKey: ["grupos-liquidaciones-exportaciones"],
       });
@@ -39,10 +39,10 @@ export const useGenerarReporteConsolidacion = (): UseMutationResult<{ blob: Blob
   });
 };
 
-export const useEnviarCorreoExportacionConsolidacion = (): UseMutationResult<ApiResponse<any>, Error, { id: number, data: EnviarCorreoDto }> => {
+export const useEnviarCorreoExportacion = (archivo: Exportacion): UseMutationResult<ApiResponse<any>, Error, { id: number, data: EnviarCorreoDto }> => {
   return useMutation({
     mutationKey: ["enviar-correo-exportacion"],
-    mutationFn: ({ id, data }) => enviarCorreoExportacionConsolidacion(id, data),
+    mutationFn: ({ id, data }) => enviarCorreoArchivo(id, data, archivo),
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         toast.success("Correo enviado correctamente");

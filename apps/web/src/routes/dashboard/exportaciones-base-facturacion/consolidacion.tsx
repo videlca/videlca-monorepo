@@ -5,8 +5,8 @@ import type { TabsExportaciones } from "../../../types";
 import { useState } from "react";
 import { OrdenesTab } from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
 import {
-  useEnviarCorreoExportacionConsolidacion,
-  useGenerarReporteConsolidacion,
+  useEnviarCorreoExportacion,
+  useGenerarReporteArchivo,
   useGetGruposLiquidacionesExportaciones,
 } from "../../../api/queryFunctions/exportaciones/exportaciones";
 
@@ -35,10 +35,13 @@ function RouteComponent() {
   });
 
   // Mutaciones
-  const { mutate: generarReporteConsolidacion } =
-    useGenerarReporteConsolidacion();
-  const { mutate: enviarCorreoExportacionConsolidacion } =
-    useEnviarCorreoExportacionConsolidacion();
+  const { mutate: generarReporteConsolidacion } = useGenerarReporteArchivo(
+    "generar-excel-consolidacion",
+  );
+  const {
+    mutate: enviarCorreoExportacionConsolidacion,
+    isPending: envioCorreoPending,
+  } = useEnviarCorreoExportacion("enviar-excel-consolidacion");
 
   // Handlers
   const handleGenerarReporteConsolidacion = (idGrupoLiquidacion: number) => {
@@ -58,6 +61,7 @@ function RouteComponent() {
           data={groups?.data || []}
           handleFileAction={handleGenerarReporteConsolidacion}
           mutationEmail={enviarCorreoExportacionConsolidacion}
+          envioCorreoPending={envioCorreoPending}
         />
       )}
       {activeTab === "Archivos generados" && (
@@ -66,6 +70,7 @@ function RouteComponent() {
           data={groups?.data || []}
           handleFileAction={handleGenerarReporteConsolidacion}
           mutationEmail={enviarCorreoExportacionConsolidacion}
+          envioCorreoPending={envioCorreoPending}
         />
       )}
     </Section>

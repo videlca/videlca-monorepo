@@ -5,8 +5,8 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { NavTabs } from "../../../components/ui/common/NavTabs";
 import { OrdenesTab } from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
 import {
-  useEnviarCorreoExportacionConsolidacion,
-  useGenerarReporteConsolidacion,
+  useEnviarCorreoExportacion,
+  useGenerarReporteArchivo,
   useGetGruposLiquidacionesExportaciones,
 } from "../../../api/queryFunctions/exportaciones/exportaciones";
 
@@ -36,14 +36,17 @@ function RouteComponent() {
 
   // TODO: Cambiar POR MUTACIONES CORRECTAS
   // Mutaciones
-  const { mutate: generarReporteConsolidacion } =
-    useGenerarReporteConsolidacion();
-  const { mutate: enviarCorreoExportacionConsolidacion } =
-    useEnviarCorreoExportacionConsolidacion();
+  const { mutate: generarReporteInterfase } = useGenerarReporteArchivo(
+    "generar-excel-interfase",
+  );
+  const {
+    mutate: enviarCorreoExportacionInterfase,
+    isPending: envioCorreoPending,
+  } = useEnviarCorreoExportacion("enviar-excel-interfase");
 
   // Handlers
   const handleGenerarReporteConsolidacion = (idGrupoLiquidacion: number) => {
-    generarReporteConsolidacion(idGrupoLiquidacion);
+    generarReporteInterfase(idGrupoLiquidacion);
   };
 
   return (
@@ -58,7 +61,8 @@ function RouteComponent() {
           tipo="generacion_interfase"
           data={groups?.data || []}
           handleFileAction={handleGenerarReporteConsolidacion}
-          mutationEmail={enviarCorreoExportacionConsolidacion}
+          mutationEmail={enviarCorreoExportacionInterfase}
+          envioCorreoPending={envioCorreoPending}
         />
       )}
       {activeTab === "Archivos generados" && (
@@ -66,7 +70,8 @@ function RouteComponent() {
           tipo="generacion_interfase"
           data={groups?.data || []}
           handleFileAction={handleGenerarReporteConsolidacion}
-          mutationEmail={enviarCorreoExportacionConsolidacion}
+          mutationEmail={enviarCorreoExportacionInterfase}
+          envioCorreoPending={envioCorreoPending}
         />
       )}
     </Section>

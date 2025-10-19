@@ -156,7 +156,8 @@ function RouteComponent() {
   );
 
   // Generacion de archivos
-  const { mutate: enviarPdfPorCorreo } = useEnviarPdfPorCorreo();
+  const { mutate: enviarPdfPorCorreo, isPending: enviarCorreoPending } =
+    useEnviarPdfPorCorreo();
   const { mutate: descargarPdf } = useDescargarPdf();
 
   // Formulario crear orden de servicio
@@ -1072,6 +1073,7 @@ function RouteComponent() {
         setIsOpen={setIsOpenEmail}
         id={selectedOrderDetail?.idOrdenServicio || 0}
         mutationEmail={enviarPdfPorCorreo}
+        envioCorreoPending={enviarCorreoPending}
       />
 
       <ObservacionesOrdenServicio

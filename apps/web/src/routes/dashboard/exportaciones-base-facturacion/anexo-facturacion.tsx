@@ -5,8 +5,8 @@ import { useState } from "react";
 import type { TabsExportaciones } from "../../../types";
 import { OrdenesTab } from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
 import {
-  useEnviarCorreoExportacionConsolidacion,
-  useGenerarReporteConsolidacion,
+  useEnviarCorreoExportacion,
+  useGenerarReporteArchivo,
   useGetGruposLiquidacionesExportaciones,
 } from "../../../api/queryFunctions/exportaciones/exportaciones";
 
@@ -37,14 +37,17 @@ function RouteComponent() {
   // TODO: Cambiar POR MUTACIONES CORRECTAS
 
   // Mutaciones
-  const { mutate: generarReporteConsolidacion } =
-    useGenerarReporteConsolidacion();
-  const { mutate: enviarCorreoExportacionConsolidacion } =
-    useEnviarCorreoExportacionConsolidacion();
+  const { mutate: generarReporteAnexoFacturacion } = useGenerarReporteArchivo(
+    "generar-excel-anexo-facturacion",
+  );
+  const {
+    mutate: enviarCorreoExportacionAnexoFacturacion,
+    isPending: envioCorreoPending,
+  } = useEnviarCorreoExportacion("enviar-excel-anexo-facturacion");
 
   // Handlers
-  const handleGenerarReporteConsolidacion = (idGrupoLiquidacion: number) => {
-    generarReporteConsolidacion(idGrupoLiquidacion);
+  const handlegenerarReporteAnexoFacturacion = (idGrupoLiquidacion: number) => {
+    generarReporteAnexoFacturacion(idGrupoLiquidacion);
   };
 
   return (
@@ -58,16 +61,18 @@ function RouteComponent() {
         <OrdenesTab
           tipo="generacion_anexo"
           data={groups?.data || []}
-          handleFileAction={handleGenerarReporteConsolidacion}
-          mutationEmail={enviarCorreoExportacionConsolidacion}
+          handleFileAction={handlegenerarReporteAnexoFacturacion}
+          mutationEmail={enviarCorreoExportacionAnexoFacturacion}
+          envioCorreoPending={envioCorreoPending}
         />
       )}
       {activeTab === "Archivos generados" && (
         <OrdenesTab
           tipo="generacion_anexo"
           data={groups?.data || []}
-          handleFileAction={handleGenerarReporteConsolidacion}
-          mutationEmail={enviarCorreoExportacionConsolidacion}
+          handleFileAction={handlegenerarReporteAnexoFacturacion}
+          mutationEmail={enviarCorreoExportacionAnexoFacturacion}
+          envioCorreoPending={envioCorreoPending}
         />
       )}
     </Section>
