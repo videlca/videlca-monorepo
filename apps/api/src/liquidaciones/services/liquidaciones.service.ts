@@ -6,11 +6,13 @@ import { EnviarCorreoDto } from '../../common/dto';
 import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 import { SendMailOptions } from '../../common/services/email/email.service';
 
+import { TipoServicioInterface } from '../../servicios/interfaces/tipo-servicio.interface';
+
 import { toUTCDateOnly, endOfMonth, minDate, maxDate, diffDaysInclusive, round2 } from '../../common/utils/date-helpers';
 import { PrecioOrdenDto } from '../../orden-servicio/dto';
 
 import { EmailService, CorreoDefaultService } from '../../common/services';
-import { ReporteConsolidacionService, ReporteInterfaseService, ReporteLiquidacionService } from '../../reportes/services';
+import { ReporteConsolidacionService, ReporteInterfaseService, ReporteLiquidacionService, ReporteAnexoFacturacionService } from '../../reportes/services';
 import { OrdenServicioService } from '../../orden-servicio/services';
 
 import { OrdenServicio } from '../../orden-servicio/entities';
@@ -33,7 +35,8 @@ export class LiquidacionesService {
     private ordenServicioService: OrdenServicioService,
     private readonly reporteConsolidacionService: ReporteConsolidacionService, // Servicio para generar reportes de consolidacion
     private readonly reporteInterfaseService: ReporteInterfaseService, // Servicio para generar reportes de exportacion de interfase
-    private readonly reporteLiquidacionService: ReporteLiquidacionService, // Servicio para generar reportes de exportacion de interfase
+    private readonly reporteLiquidacionService: ReporteLiquidacionService, // Servicio para generar reportes de liquidacion
+    private readonly reporteAnexoFacturacionService: ReporteAnexoFacturacionService, // Servicio para generar reportes de anexos de facturacion
     private readonly emailService: EmailService, // Servicio de email para envio de correos
     private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
     private readonly dataSource: DataSource,
@@ -716,7 +719,7 @@ export class LiquidacionesService {
         if (!agrupado[clienteId].servicios[tarifa.idTarifa]) {
 
           agrupado[clienteId].servicios[tarifa.idTarifa] = {
-            tipoServicio: servicio.idTipoServicio.requierePersonal ? 'armado': 'monitoreo',
+            tipoServicio: servicio.idTipoServicio.requierePersonal ? TipoServicioInterface.ARMADO : TipoServicioInterface.MONITOREO,
             servicioAplicacion: servicio.descripcion,
             codigoServicioSiigo: servicio.codigo,
             valorLiquidarAplicacion: 0,
@@ -796,23 +799,33 @@ export class LiquidacionesService {
 
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
 
-    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado);
-
     const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
       where: { idGrupoLiquidacion: idGrupoLiquidacion },
     });
 
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
+
+    const fechaCreacion = grupoLiquidacion.fechaCreacion;
+
+    const anioCreacion = fechaCreacion.getFullYear();       // Año completo (por ejemplo, 2025)
+    const mesCreacion = fechaCreacion.getMonth() + 1;       // Mes (0 = enero, por eso se suma 1)
+    const diaCreacion = fechaCreacion.getDate()
+
+    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado, mes, anio, mesCreacion, diaCreacion, anioCreacion);
+
     if (grupoLiquidacion.generacion_interfase != true){
 
-      await this.notificarGeneracionInterfase(idGrupoLiquidacion, excelBuffer);
+      // await this.notificarGeneracionInterfase(idGrupoLiquidacion, excelBuffer);
       
     }
 
     // cambiar estado a TRUE
-    await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
-      campo: 'generacion_interfase',
-      valor: 'true'      
-    })
+    // await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
+    //   campo: 'generacion_interfase',
+    //   valor: 'true'      
+    // })
 
     return {
       excelBuffer: excelBuffer,
@@ -828,6 +841,17 @@ export class LiquidacionesService {
     return {
       excelBuffer: excelBuffer,
       title: `exportacion_grupo_${idGrupoLiquidacion}`
+    };    
+
+  }
+  
+  async downloadAnexoZip(idGrupoLiquidacion: number){
+
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip();
+
+    return {
+      zipBuffer: zipBuffer,
+      title: `anexos_facturacion_grupo_${idGrupoLiquidacion}`
     };    
 
   }
@@ -912,7 +936,21 @@ export class LiquidacionesService {
 
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
 
-    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado);
+    const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: idGrupoLiquidacion },
+    });
+
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
+
+    const fechaCreacion = grupoLiquidacion.fechaCreacion;
+
+    const anioCreacion = fechaCreacion.getFullYear();       // Año completo (por ejemplo, 2025)
+    const mesCreacion = fechaCreacion.getMonth() + 1;       // Mes (0 = enero, por eso se suma 1)
+    const diaCreacion = fechaCreacion.getDate()
+
+    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado, mes, anio, mesCreacion, diaCreacion, anioCreacion);
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Exportacion del grupo de liquidacion ${idGrupoLiquidacion}`;
 
@@ -1054,6 +1092,80 @@ export class LiquidacionesService {
 
     if (!isEmailSend){
       throw new InternalServerErrorException(`Error al enviar correo con liquidacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
+    }
+
+  }
+
+  async sendAnexoZip(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
+
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateExcel();
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Anexos de facturacion del grupo de liquidacion ${idGrupoLiquidacion}`;
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">Anexos facturacion del grupo ${idGrupoLiquidacion}</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se envia archivo adjunto con anexos de facturacion del <b>grupo de liquidacion ${idGrupoLiquidacion}</b> de ordenes de servicio. <br><br>
+              Por favor, revise el <b>archivo adjunto</b> para más detalles.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const emails = enviarCorreoDto.correos.map(correo => correo.email);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
+        {
+          filename: `anexos-facturacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          content: zipBuffer,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+      throw new InternalServerErrorException(`Error al enviar correo con anexos de facturacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
     }
 
   }

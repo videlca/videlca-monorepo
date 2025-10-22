@@ -11,7 +11,7 @@ import { FiltroGrupoLiquidacionDto } from '../dto/filtroGrupoLiquidacion.dto';
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 
 @Controller('exportacion')
-@AppAuth(DescriptionRoutes.EXPORTACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+// @AppAuth(DescriptionRoutes.EXPORTACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class ExportacionController {
   
   constructor(
@@ -89,34 +89,34 @@ export class ExportacionController {
     return this.liquidacionesService.sendInterfaseExcel(idGrupoLiquidacion, enviarCorreoDto);
   }
 
-  @Get(':idGrupoLiquidacion/generar-excel-anexo-facturacion')
+  @Get(':idGrupoLiquidacion/generar-anexos-facturacion')
   async generarReporteAnexoFacturacion(
     @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
     @Res() res: Response
   ) {
 
-    // const {excelBuffer, title} = await this.liquidacionesService.downloadConsolidacionExcel(idGrupoLiquidacion);
+    const {zipBuffer, title} = await this.liquidacionesService.downloadAnexoZip(idGrupoLiquidacion);
   
-    // res.setHeader(
-    //   'Content-Type',
-    //   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    // );
+    res.setHeader(
+      'Content-Type',
+      'application/zip',
+    );
     
-    // res.setHeader(
-    //   'Content-Disposition',
-    //   `attachment; filename=${title}.xlsx`,
-    // );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${title}.zip`,
+    );
   
-    // res.end(excelBuffer);
+    res.end(zipBuffer);
 
   }
 
-  @Post(':idGrupoLiquidacion/enviar-excel-anexo-facturacion')
+  @Post(':idGrupoLiquidacion/enviar-anexos-facturacion')
   enviarReporteAnexoFacturacion(
     @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
     @Body() enviarCorreoDto: EnviarCorreoDto
   ) {
-    // return this.liquidacionesService.sendConsolidacionExcel(idGrupoLiquidacion, enviarCorreoDto);
+    return this.liquidacionesService.sendAnexoZip(idGrupoLiquidacion, enviarCorreoDto);
   }
 
 }
