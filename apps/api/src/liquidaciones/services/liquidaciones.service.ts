@@ -926,7 +926,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `consolidacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          filename: `consolidacion_grupo_${idGrupoLiquidacion}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1016,7 +1016,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `exportacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          filename: `exportacion_grupo_${idGrupoLiquidacion}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1092,7 +1092,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `liquidacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          filename: `liquidacion_grupo_${idGrupoLiquidacion}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1241,7 +1241,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `consolidacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          filename: `consolidacion_grupo_${idGrupoLiquidacion}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1314,7 +1314,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `exportacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          filename: `exportacion_grupo_${idGrupoLiquidacion}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
