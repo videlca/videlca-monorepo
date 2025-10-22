@@ -1,12 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getYear, subYears } from "date-fns";
 import { useState } from "react";
-import { useGetLiquidacionesPorMesHistorial } from "../../../api/queryFunctions/liquidaciones";
+import {
+  useEnviarCorreoArchivoLiquidacion,
+  useGenerarReporteArchivoLiquidacion,
+  useGetLiquidacionesPorMesHistorial,
+} from "../../../api/queryFunctions/liquidaciones";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { EyeOff, FileIcon, FileTextIcon, Search } from "lucide-react";
+import { EyeOff, FileTextIcon, Mail, Search } from "lucide-react";
 import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard";
+import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 
 export const Route = createFileRoute("/dashboard/liquidaciones/historial")({
   component: RouteComponent,
@@ -37,7 +42,8 @@ function RouteComponent() {
   const [searchMonth, setSearchMonth] = useState<string>("");
   const [searchYear, setSearchYear] = useState<string>("");
   const [isSearching, setIsSearching] = useState<boolean>(false);
-
+  const [isOpenEmail, setIsOpenEmail] = useState(false);
+  const [groupIdSelected, setGroupIdSelected] = useState<number | null>(null);
   // Queries y mutaciones
   const {
     data: liquidaciones,
@@ -49,6 +55,14 @@ function RouteComponent() {
     isSearching,
   );
 
+  // Archivos de liquidaciones
+  const { mutate: generarReporteArchivoLiquidacion } =
+    useGenerarReporteArchivoLiquidacion();
+  const {
+    mutate: enviarCorreoArchivoLiquidacion,
+    isPending: enviarCorreoArchivoLiquidacionPending,
+  } = useEnviarCorreoArchivoLiquidacion();
+
   const toggleHideOrders = (groupId: number) => {
     const newHidden = new Set(hiddenGroups);
     if (newHidden.has(groupId)) {
@@ -57,6 +71,15 @@ function RouteComponent() {
       newHidden.add(groupId);
     }
     setHiddenGroups(newHidden);
+  };
+
+  const handleGenerarReporteLiquidacion = (groupId: number) => {
+    generarReporteArchivoLiquidacion(groupId);
+  };
+
+  const handleEnviarCorreoLiquidacion = (groupId: number) => {
+    setIsOpenEmail(true);
+    setGroupIdSelected(groupId);
   };
 
   return (
@@ -139,11 +162,11 @@ function RouteComponent() {
                     <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:gap-0">
                       <div className="text-sm text-gray-600">
                         <span className="font-medium">Descripción:</span>{" "}
-                        {group.descripcion} |
-                        <span className="ml-1 font-medium">
-                          {group.liquidaciones.length} órdenes
-                        </span>{" "}
-                        |<span className="ml-1 font-medium">Creado:</span>{" "}
+                        {group.descripcion} <br />
+                        <span className="font-medium">Órdenes:</span>{" "}
+                        {group.liquidaciones.length}
+                        <br />
+                        <span className="font-medium">Creado:</span>{" "}
                         {new Date(group.fechaCreacion).toLocaleDateString(
                           "es-ES",
                         )}
@@ -166,11 +189,26 @@ function RouteComponent() {
                             : "Ocultar"}
                         </button>
                         <button
-                          onClick={() => {}}
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
+                          onClick={() =>
+                            handleGenerarReporteLiquidacion(
+                              group.idGrupoLiquidacion,
+                            )
+                          }
+                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
                         >
-                          <FileIcon className="mr-1 h-4 w-4" />
-                          Descargar detalle
+                          <FileTextIcon className="mr-1 h-4 w-4" />
+                          Generar reporte
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleEnviarCorreoLiquidacion(
+                              group.idGrupoLiquidacion,
+                            )
+                          }
+                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-800"
+                        >
+                          <Mail className="mr-1 h-4 w-4" />
+                          Enviar correo
                         </button>
                       </div>
                     </div>
@@ -188,6 +226,14 @@ function RouteComponent() {
           </div>
         </>
       ) : null}
+
+      <EnvioCorreos
+        isOpen={isOpenEmail}
+        setIsOpen={setIsOpenEmail}
+        id={groupIdSelected as number}
+        mutationEmail={enviarCorreoArchivoLiquidacion}
+        envioCorreoPending={enviarCorreoArchivoLiquidacionPending}
+      />
     </Section>
   );
 }

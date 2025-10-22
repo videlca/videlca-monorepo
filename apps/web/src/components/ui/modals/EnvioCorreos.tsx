@@ -4,6 +4,7 @@ import { SimpleModal } from "../../common/SimpleModal";
 import type { CorreosDto, EnviarCorreoDto } from "../../../api/dtos/common";
 import type { ApiResponse } from "../../../api/types";
 import type { UseMutateFunction } from "@tanstack/react-query";
+import { useCorreosDefault } from "../../../api/queryFunctions/configuracion/correos-defecto";
 
 export const EnvioCorreos = ({
   isOpen,
@@ -27,6 +28,9 @@ export const EnvioCorreos = ({
   envioCorreoPending: boolean;
 }) => {
   const [emails, setEmails] = useState<CorreosDto[]>([]);
+
+  const { data: correosDefault } = useCorreosDefault();
+  const correos = correosDefault?.data?.map((correo) => correo.email) || [];
 
   const handleSendEmail = (idOrdenServicio: number) => {
     mutationEmail(
@@ -57,6 +61,7 @@ export const EnvioCorreos = ({
     >
       <div className="space-y-6">
         <EmailsInput
+          defaultEmails={correos}
           emails={emails.map((email) => email.email)}
           setEmails={(emails) =>
             setEmails(emails.map((email) => ({ email: email })))

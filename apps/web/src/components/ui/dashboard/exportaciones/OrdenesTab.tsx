@@ -110,11 +110,11 @@ export function OrdenesTab({
                     <div className="flex w-full items-center justify-between space-x-4">
                       <div className="text-sm text-gray-600">
                         <span className="font-medium">Descripción:</span>{" "}
-                        {group.descripcion} |
-                        <span className="ml-1 font-medium">
-                          {group.liquidaciones.length} órdenes
-                        </span>{" "}
-                        |<span className="ml-1 font-medium">Creado:</span>{" "}
+                        {group.descripcion} <br />
+                        <span className="font-medium">Órdenes:</span>{" "}
+                        {group.liquidaciones.length}
+                        <br />
+                        <span className="font-medium">Creado:</span>{" "}
                         {new Date(group.fechaCreacion).toLocaleDateString(
                           "es-ES",
                         )}

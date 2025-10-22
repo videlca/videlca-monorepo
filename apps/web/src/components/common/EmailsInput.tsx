@@ -1,20 +1,21 @@
 import { X } from "lucide-react";
 import { useState, type KeyboardEvent } from "react";
+import { toast } from "sonner";
 
 interface EmailsInputProps {
   emails: string[];
+  defaultEmails: string[];
   setEmails: (emails: string[]) => void;
   placeholder?: string;
 }
 
 export const EmailsInput = ({
   emails,
+  defaultEmails,
   setEmails,
   placeholder = "Ingrese un correo y presione Enter",
 }: EmailsInputProps) => {
   const [inputValue, setInputValue] = useState("");
-  const [error, setError] = useState("");
-
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -27,26 +28,26 @@ export const EmailsInput = ({
     }
   };
 
-  const addEmail = () => {
-    const email = inputValue.trim();
+  const addEmail = (email?: string) => {
+    const emailToAdd = email || inputValue.trim();
 
-    if (!email) {
+    if (!emailToAdd) {
+      toast.error("Ingrese un correo electrónico");
       return;
     }
 
-    if (!validateEmail(email)) {
-      setError("Ingrese un correo electrónico válido");
+    if (!validateEmail(emailToAdd)) {
+      toast.error("Ingrese un correo electrónico válido");
       return;
     }
 
-    if (emails.includes(email)) {
-      setError("Este correo ya fue agregado");
+    if (emails.includes(emailToAdd)) {
+      toast.info("Este correo ya fue agregado");
       return;
     }
 
-    setEmails([...emails, email]);
+    setEmails([...emails, emailToAdd]);
     setInputValue("");
-    setError("");
   };
 
   const removeEmail = (emailToRemove: string) => {
@@ -61,7 +62,6 @@ export const EmailsInput = ({
           value={inputValue}
           onChange={(e) => {
             setInputValue(e.target.value);
-            setError("");
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -69,14 +69,31 @@ export const EmailsInput = ({
         />
         <button
           type="button"
-          onClick={addEmail}
+          onClick={() => addEmail(inputValue.trim())}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
         >
           Agregar
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex flex-col gap-2">
+        <p className="text-sm text-gray-500">
+          Seleccione alguno de los correos configurados en la sección de
+          configuración de correos predeterminados. Correos disponibles:
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {defaultEmails.map((email) => (
+          <div
+            key={email}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1.5 text-sm text-blue-700"
+            onClick={() => addEmail(email.trim())}
+          >
+            <span>{email}</span>
+          </div>
+        ))}
+      </div>
+      <hr className="my-4 border-b border-gray-200" />
 
       {emails.length > 0 && (
         <div className="flex flex-wrap gap-2">

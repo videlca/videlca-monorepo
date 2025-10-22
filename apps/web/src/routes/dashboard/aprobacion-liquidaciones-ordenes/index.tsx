@@ -1,14 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckIcon, EyeOff, FileTextIcon, TrashIcon } from "lucide-react";
+import { CheckIcon, EyeOff, FileTextIcon, Mail, TrashIcon } from "lucide-react";
 import { useState } from "react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import {
   useAprobarGrupoLiquidacion,
   useDesintegrarGrupoLiquidacion,
+  useEnviarCorreoArchivoLiquidacion,
+  useGenerarReporteArchivoLiquidacion,
   useGetGruposLiquidaciones,
 } from "../../../api/queryFunctions/liquidaciones";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard";
+import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 
 export const Route = createFileRoute(
   "/dashboard/aprobacion-liquidaciones-ordenes/",
@@ -20,12 +23,20 @@ function RouteComponent() {
   const [hiddenGroups, setHiddenGroups] = useState<Set<number>>(new Set());
   const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
   const [groupIdSelected, setGroupIdSelected] = useState<number | null>(null);
-
+  const [isOpenEmail, setIsOpenEmail] = useState(false);
   // Queries y mutaciones
   const { data: groups } = useGetGruposLiquidaciones();
   const { mutate: aprobarGrupoLiquidacion } = useAprobarGrupoLiquidacion();
   const { mutate: desintegrarGrupoLiquidacion } =
     useDesintegrarGrupoLiquidacion();
+
+  // Archivos de liquidaciones
+  const { mutate: generarReporteArchivoLiquidacion } =
+    useGenerarReporteArchivoLiquidacion();
+  const {
+    mutate: enviarCorreoArchivoLiquidacion,
+    isPending: enviarCorreoArchivoLiquidacionPending,
+  } = useEnviarCorreoArchivoLiquidacion();
 
   const toggleHideOrders = (groupId: number) => {
     const newHidden = new Set(hiddenGroups);
@@ -46,6 +57,14 @@ function RouteComponent() {
     setIsOpenDeleteModal(true);
   };
 
+  const handleGenerarReporteLiquidacion = (groupId: number) => {
+    generarReporteArchivoLiquidacion(groupId);
+  };
+
+  const handleEnviarCorreoLiquidacion = (groupId: number) => {
+    setIsOpenEmail(true);
+    setGroupIdSelected(groupId);
+  };
   return (
     <Section>
       <div className="flex flex-col gap-8">
@@ -76,11 +95,11 @@ function RouteComponent() {
                     <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:gap-0">
                       <div className="text-sm text-gray-600">
                         <span className="font-medium">Descripción:</span>{" "}
-                        {group.descripcion} |
-                        <span className="ml-1 font-medium">
-                          {group.liquidaciones.length} órdenes
-                        </span>{" "}
-                        |<span className="ml-1 font-medium">Creado:</span>{" "}
+                        {group.descripcion} <br />
+                        <span className="font-medium">Órdenes:</span>{" "}
+                        {group.liquidaciones.length}
+                        <br />
+                        <span className="font-medium">Creado:</span>{" "}
                         {new Date(group.fechaCreacion).toLocaleDateString(
                           "es-ES",
                         )}
@@ -101,6 +120,28 @@ function RouteComponent() {
                           {hiddenGroups.has(group.idGrupoLiquidacion)
                             ? "Mostrar"
                             : "Ocultar"}
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleGenerarReporteLiquidacion(
+                              group.idGrupoLiquidacion,
+                            )
+                          }
+                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
+                        >
+                          <FileTextIcon className="mr-1 h-4 w-4" />
+                          Generar reporte
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleEnviarCorreoLiquidacion(
+                              group.idGrupoLiquidacion,
+                            )
+                          }
+                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-800"
+                        >
+                          <Mail className="mr-1 h-4 w-4" />
+                          Enviar correo
                         </button>
                         <button
                           onClick={() =>
@@ -137,6 +178,15 @@ function RouteComponent() {
           </div>
         )}
       </div>
+
+      <EnvioCorreos
+        isOpen={isOpenEmail}
+        setIsOpen={setIsOpenEmail}
+        id={groupIdSelected as number}
+        mutationEmail={enviarCorreoArchivoLiquidacion}
+        envioCorreoPending={enviarCorreoArchivoLiquidacionPending}
+      />
+
       <ConfirmarDelete
         isOpenDelete={isOpenDeleteModal}
         text="¿Estás seguro de querer desintegrar este grupo de liquidación?"

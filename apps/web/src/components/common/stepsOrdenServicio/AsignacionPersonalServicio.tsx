@@ -53,8 +53,6 @@ export const AsignacionPersonalServicio = ({
     return serviceConfig.personal[index];
   };
 
-  console.log(configuracionServicioTarifa);
-
   const getHorasServicio = (serviceId: number) => {
     const serviceConfig = getCurrentServiceConfig(serviceId);
     if (!serviceConfig) {

@@ -32,14 +32,14 @@ import { useMemo, useState } from "react";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { useForm } from "../../../hooks/useForm";
-import type { CorreosDto, UpdateTarifaDto } from "../../../api/dtos";
+import type { UpdateTarifaDto } from "../../../api/dtos";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputPrice } from "../../../components/common/InputPrice";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { priceCalculate, priceFormat } from "../../../utils/PriceFormat";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
-import { EmailsInput } from "../../../components/common/EmailsInput";
+import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 
 export const Route = createFileRoute(
   "/dashboard/tarifas/ver-tarifas/$id-periodo",
@@ -59,7 +59,6 @@ function RouteComponent() {
   const [isOpenDeleteTarifa, setIsOpenDeleteTarifa] = useState(false);
   const [tarifaSelected, setTarifaSelected] = useState<Tarifa | null>(null);
   const [isOpenSendExcel, setIsOpenSendExcel] = useState(false);
-  const [excelEmails, setExcelEmails] = useState<CorreosDto[]>([]);
 
   // Queries y Mutaciones
   const { data: tarifas } = useTarifas(Number(idPeriodoParam));
@@ -69,7 +68,10 @@ function RouteComponent() {
     useActualizarTarifa();
 
   // Generacion de archivos
-  const { mutate: enviarExcelPorCorreo } = useEnviarExcelPorCorreo();
+  const {
+    mutate: enviarExcelPorCorreo,
+    isPending: isLoadingEnviarExcelPorCorreo,
+  } = useEnviarExcelPorCorreo();
   const { mutate: descargarExcel } = useDescargarExcel();
   // Formularios
   const {
@@ -120,24 +122,7 @@ function RouteComponent() {
   };
 
   const handleDownloadExcel = (idPeriodo: number) => {
-    console.log("idPeriodo: ", idPeriodo);
     descargarExcel(idPeriodo);
-  };
-
-  const handleSendExcel = (idPeriodo: number) => {
-    console.log("idPeriodo: ", idPeriodo);
-    enviarExcelPorCorreo(
-      {
-        id: idPeriodo,
-        data: { correos: excelEmails },
-      },
-      {
-        onSuccess: () => {
-          setIsOpenSendExcel(false);
-          setExcelEmails([]);
-        },
-      },
-    );
   };
 
   const columns: ColumnDef<Tarifa>[] = [
@@ -671,48 +656,13 @@ function RouteComponent() {
         </FormsModal>
       </SimpleModal>
 
-      <SimpleModal
+      <EnvioCorreos
         isOpen={isOpenSendExcel}
-        onClose={() => {
-          setIsOpenSendExcel(false);
-          setExcelEmails([]);
-        }}
-        title="Ingresar correos para enviar el Excel"
-        size="xl"
-      >
-        <div className="space-y-6">
-          <EmailsInput
-            emails={excelEmails.map((email) => email.email)}
-            setEmails={(emails) =>
-              setExcelEmails(emails.map((email) => ({ email: email })))
-            }
-            placeholder="Ingrese un correo electrónico"
-          />
-
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-              onClick={() => {
-                setIsOpenSendExcel(false);
-                setExcelEmails([]);
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              disabled={excelEmails.length === 0}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
-              onClick={() => {
-                handleSendExcel(Number(idPeriodoParam));
-              }}
-            >
-              Enviar Excel
-            </button>
-          </div>
-        </div>
-      </SimpleModal>
+        setIsOpen={setIsOpenSendExcel}
+        id={Number(idPeriodoParam)}
+        mutationEmail={enviarExcelPorCorreo}
+        envioCorreoPending={isLoadingEnviarExcelPorCorreo}
+      />
 
       <ConfirmarDelete
         isOpenDelete={isOpenDeleteTarifa}

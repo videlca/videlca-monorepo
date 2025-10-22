@@ -150,7 +150,6 @@ export const useValidarIdOrdenServicio = (): UseMutationResult<ApiResponse<Orden
   return useMutation({
     mutationFn: validarIdOrdenServicio,
     onSuccess: (data) => {
-      console.log(data);
       if (data.status === 200 || data.status === 201) {
         toast.success("Identificador de orden de servicio validado correctamente");
         queryClient.invalidateQueries({

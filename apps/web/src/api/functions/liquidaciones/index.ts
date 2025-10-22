@@ -1,9 +1,10 @@
-import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
+import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
 import type { OrdenServicio } from "../../types/orden-servicio";
 import type { ApiResponse } from "../../types/common";
 import type { GruposLiquidaciones } from "../../types/liquidaciones";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
+import type { EnviarCorreoDto } from "../../dtos";
 
 export const getLiquidacionesPorMes = async (anio: number, mes: number): Promise<ApiResponse<OrdenServicio[]>> => {
   return await apiGet<OrdenServicio[]>(`/liquidaciones/ordenes-por-mes?anio=${anio}&mes=${mes}`);
@@ -33,4 +34,26 @@ export const desintegrarGrupoLiquidacion = async (idGrupoLiquidacion: number): P
 
 export const cambiarEstadoExportacion = async (idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto): Promise<ApiResponse<GruposLiquidaciones>> => {
   return await apiPatch<GruposLiquidaciones>(`/liquidaciones/${idGrupoLiquidacion}/cambiar-estado`, data);
+};
+
+// Archivos de liquidaciones
+export const generarArchivoExcelLiquidacion = async (idGrupoLiquidacion: number): Promise<{ blob: Blob; filename: string }> => {
+  const response = await axiosClient.get(`/liquidaciones/${idGrupoLiquidacion}/generar-excel-liquidacion`, {
+    responseType: 'blob',
+  });
+
+  const contentDisposition = response.headers['content-disposition'];
+  let filename = `liquidacion-${idGrupoLiquidacion}.xlsx`;
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1].replace(/['"]/g, '');
+    }
+  }
+  
+  return { blob: response.data, filename };
+};
+
+export const enviarCorreoArchivoLiquidacion = async (idGrupoLiquidacion: number, data: EnviarCorreoDto): Promise<ApiResponse<any>> => {
+  return await apiPost<any>(`/liquidaciones/${idGrupoLiquidacion}/enviar-excel-liquidacion`, data);
 };

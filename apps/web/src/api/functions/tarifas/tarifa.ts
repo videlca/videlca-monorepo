@@ -60,7 +60,6 @@ export const descargarExcel = async (id: number): Promise<{ blob: Blob; filename
   let filename = `tarifas-${id}.xlsx`;
   if (contentDisposition) {
     const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-    console.log("filenameMatch: ", filenameMatch[1]);
     if (filenameMatch && filenameMatch[1]) {
       filename = filenameMatch[1].replace(/['"]/g, '');
     }

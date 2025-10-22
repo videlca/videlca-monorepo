@@ -9,8 +9,8 @@ export type Exportacion =
   "enviar-excel-consolidacion" |
   "generar-excel-interfase" |
   "enviar-excel-interfase" |
-  "generar-excel-anexo-facturacion" |
-  "enviar-excel-anexo-facturacion"
+  "generar-anexos-facturacion" |
+  "enviar-anexos-facturacion"
 
 export const getGruposLiquidacionesExportaciones = async (params: FiltroGrupoLiquidacionDto): Promise<ApiResponse<GruposLiquidaciones[]>> => {
   return await apiGet<GruposLiquidaciones[]>(`/exportacion/buscar-por-campo?campo=${params.campo}&valor=${params.valor}`);
@@ -25,7 +25,6 @@ export const generarArchivoExcel = async (idGrupoLiquidacion: number, archivo: E
   let filename = `exportacion-${archivo}-${idGrupoLiquidacion}.xlsx`;
   if (contentDisposition) {
     const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-    console.log("filenameMatch: ", filenameMatch[1]);
     if (filenameMatch && filenameMatch[1]) {
       filename = filenameMatch[1].replace(/['"]/g, '');
     }

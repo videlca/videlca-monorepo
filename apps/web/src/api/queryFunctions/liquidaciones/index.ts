@@ -1,4 +1,4 @@
-import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial } from "../../functions/liquidaciones"
+import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, enviarCorreoArchivoLiquidacion, generarArchivoExcelLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial } from "../../functions/liquidaciones"
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import type { ApiResponse } from "../../types/common";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
@@ -7,6 +7,7 @@ import { queryClient } from "../../../App";
 import type { OrdenServicio } from "../../types/orden-servicio";
 import type { GruposLiquidaciones } from "../../types";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
+import type { EnviarCorreoDto } from "../../dtos/common";
 
 export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<OrdenServicio[]>, Error> => {
   return useQuery({
@@ -98,6 +99,51 @@ export const useCambiarEstadoExportacion = (): UseMutationResult<ApiResponse<Gru
     },
     onError: (error) => {
       toast.error(error.message || "Error al cambiar el estado de exportación");
+    },
+  });
+};
+
+// Archivos de liquidaciones
+export const useGenerarReporteArchivoLiquidacion = (): UseMutationResult<{ blob: Blob; filename: string }, Error, number> => {
+  return useMutation({
+    mutationKey: ["generar-reporte-liquidacion"],
+    mutationFn: (idGrupoLiquidacion) => generarArchivoExcelLiquidacion(idGrupoLiquidacion),
+    onSuccess: ({ blob, filename }) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Reporte generado correctamente");
+      queryClient.invalidateQueries({
+        queryKey: ["grupos-liquidaciones"],
+      });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al generar el reporte consolidacion");
+    },
+  });
+};
+
+export const useEnviarCorreoArchivoLiquidacion = (): UseMutationResult<ApiResponse<any>, Error, { id: number, data: EnviarCorreoDto }> => {
+  return useMutation({
+    mutationKey: ["enviar-correo-liquidacion"],
+    mutationFn: ({ id, data }) => enviarCorreoArchivoLiquidacion(id, data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Correo enviado correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["enviar-correo-liquidacion"],
+        });
+      } else {
+        throw new Error(data.message || "Error al enviar el correo de liquidacion");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al enviar el correo de liquidacion");
     },
   });
 };

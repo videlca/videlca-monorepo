@@ -3,14 +3,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import type { Personal } from "../../../api/types/personal";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
-import {
-  BriefcaseIcon,
-  EyeIcon,
-  PencilIcon,
-  PlusIcon,
-  TrashIcon,
-  UserIcon,
-} from "lucide-react";
+import { BriefcaseIcon, PlusIcon, UserIcon } from "lucide-react";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import Table from "../../../components/common/Table";
 import {
@@ -86,7 +79,6 @@ function RouteComponent() {
     form: formAddPersonal,
     handleChange: handleChangeAddPersonal,
     resetForm: resetFormAddPersonal,
-    setForm: setFormAddPersonal,
   } = useForm<CreatePersonalDto>({
     primerNombre: "",
     segundoNombre: "",
@@ -486,7 +478,6 @@ function RouteComponent() {
                 value={formAddPersonal.idTipoContrato}
                 onChange={(e) => {
                   handleChangeAddPersonal(e);
-                  console.log(e.target.selectedOptions[0].text);
                   if (e.target.selectedOptions[0].text.includes("Indefinido")) {
                     formAddPersonal.fechaFinContrato = null;
                   } else {
@@ -699,7 +690,6 @@ function RouteComponent() {
                 value={formEditPersonal.idTipoContrato || 0}
                 onChange={(e) => {
                   handleChangeEditPersonal(e);
-                  console.log(e.target.selectedOptions[0].text);
                   if (e.target.selectedOptions[0].text.includes("Indefinido")) {
                     formEditPersonal.fechaFinContrato = null;
                   } else {

@@ -38,12 +38,12 @@ function RouteComponent() {
 
   // Mutaciones
   const { mutate: generarReporteAnexoFacturacion } = useGenerarReporteArchivo(
-    "generar-excel-anexo-facturacion",
+    "generar-anexos-facturacion",
   );
   const {
     mutate: enviarCorreoExportacionAnexoFacturacion,
     isPending: envioCorreoPending,
-  } = useEnviarCorreoExportacion("enviar-excel-anexo-facturacion");
+  } = useEnviarCorreoExportacion("enviar-anexos-facturacion");
 
   // Handlers
   const handlegenerarReporteAnexoFacturacion = (idGrupoLiquidacion: number) => {

@@ -2,14 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import {
-  Calendar,
-  Check,
-  CheckCircle2,
-  FileText,
-  MapPin,
-  PlusIcon,
-} from "lucide-react";
+import { Check, PlusIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
@@ -521,22 +514,16 @@ function RouteComponent() {
       })) || [],
     );
 
-    console.log(
-      "ordenServicioById?.data?.tarifas: ",
-      ordenServicioById?.data?.tarifas,
-    );
     setSelectedServices(
       ordenServicioById?.data?.tarifas.map((servicio) => ({
         ...servicio.idTarifa.idServicio,
       })) || [],
     );
 
-    console.log("ordenServicioByIdQuery?.data: ", ordenServicioById?.data);
     setIsIndefinite(ordenServicioById?.data?.fechaFin === null);
   };
 
   const handleDownloadPdf = (idOrdenServicio: number) => {
-    console.log("idOrdenServicio: ", idOrdenServicio);
     descargarPdf(idOrdenServicio);
   };
 
