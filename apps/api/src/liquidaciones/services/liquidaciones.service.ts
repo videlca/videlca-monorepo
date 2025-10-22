@@ -817,15 +817,15 @@ export class LiquidacionesService {
 
     if (grupoLiquidacion.generacion_interfase != true){
 
-      // await this.notificarGeneracionInterfase(idGrupoLiquidacion, excelBuffer);
+      await this.notificarGeneracionInterfase(idGrupoLiquidacion, excelBuffer);
       
     }
 
     // cambiar estado a TRUE
-    // await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
-    //   campo: 'generacion_interfase',
-    //   valor: 'true'      
-    // })
+    await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
+      campo: 'generacion_interfase',
+      valor: 'true'      
+    })
 
     return {
       excelBuffer: excelBuffer,

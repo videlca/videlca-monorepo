@@ -88,22 +88,24 @@ export class ReporteConsolidacionService {
   
         // 🔹 Filas de servicios
         for (const servicio of Object.values(servicios)) {
+
+          const codigoProducto = servicio.codigoServicioSiigo.split("-");
   
           const row = sheet.addRow([
             cliente,
-            numeroId,
+            Number(numeroId), // 2
             numeroCliente,
             servicio.tipoServicio,
             servicio.servicioAplicacion,
-            servicio.codigoServicioSiigo,
+            Number(`${codigoProducto[0]}${codigoProducto[1]}${codigoProducto[2]}`),
             "",
             servicio.cantidadOrdenes,
-            servicio.valorLiquidarAplicacion,
-            servicio.seguroVida,
-            servicio.aui,
-            servicio.tarifaAntesIva,
-            servicio.auiIVa,
-            servicio.tarifaConIva
+            servicio.valorLiquidarAplicacion, // 9
+            servicio.seguroVida, // 10
+            servicio.aui, // 11
+            servicio.tarifaAntesIva, // 12
+            servicio.auiIVa, // 13
+            servicio.tarifaConIva // 14
           ]);
   
           // 🔹 Alinear columnas específicas
@@ -114,6 +116,22 @@ export class ReporteConsolidacionService {
           row.getCell(5).alignment = { horizontal: 'left' };   // E
           row.getCell(6).alignment = { horizontal: 'center' }; // F
           row.getCell(8).alignment = { horizontal: 'center' }; // H
+
+          row.eachCell((cell, colNumber) => {
+
+            const columnasTotales = [9, 10, 11, 12, 13, 14];
+
+            const columnaId = [2];
+
+            if (columnasTotales.includes(colNumber)) {
+              cell.numFmt = '#,##0.00'; // separador de miles y dos decimales
+              cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            } else if (columnaId.includes(colNumber)){
+              cell.numFmt = '#,##0';
+              cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            }
+
+          });
   
           currentRow++;
         }
@@ -137,13 +155,21 @@ export class ReporteConsolidacionService {
         ]);
   
         totalRow.font = { bold: true };
-        totalRow.eachCell((cell) => {
+        totalRow.eachCell((cell, colNumber) => {
           cell.border = {
             top: { style: 'thin' },
             left: { style: 'thin' },
             bottom: { style: 'thin' },
             right: { style: 'thin' },
           };
+
+          const columnasTotales = [9, 10, 11, 12, 13, 14];
+
+          if (columnasTotales.includes(colNumber)) {
+            cell.numFmt = '#,##0.00'; // separador de miles y dos decimales
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          }
+          
         });
         currentRow++;
       }

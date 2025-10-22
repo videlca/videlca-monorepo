@@ -11,7 +11,7 @@ import { FiltroGrupoLiquidacionDto } from '../dto/filtroGrupoLiquidacion.dto';
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 
 @Controller('exportacion')
-// @AppAuth(DescriptionRoutes.EXPORTACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+@AppAuth(DescriptionRoutes.EXPORTACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class ExportacionController {
   
   constructor(

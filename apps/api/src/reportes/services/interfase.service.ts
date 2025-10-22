@@ -266,7 +266,7 @@ export class ReporteInterfaseService {
             numeroPedido,
             tipoServicio,
             10,
-            numeroId,
+            Number(numeroId), // 16
             0,
             servicio.servicioAplicacion,
             '                    ',
@@ -286,18 +286,18 @@ export class ReporteInterfaseService {
             0,
             19, // Porcentaje cargo 3 // columna 34
             servicio.auiIVa, // valor cargo 3
-            codigoProducto[0],
-            codigoProducto[1],
-            codigoProducto[2],
-            `${servicio.cantidadOrdenes},00000`,
+            Number(codigoProducto[0]),
+            Number(codigoProducto[1]),
+            Number(codigoProducto[2]),
+            servicio.cantidadOrdenes, // 39 
             servicio.tarifaAntesIva,
             1,
             0,
-            '0.00000',
+            0, // 43
             0,
-            '0.00000',
-            '0.00000',
-            '0.00000',
+            0,
+            0,
+            0,
             0, // 48
             '',
             ''
@@ -310,8 +310,23 @@ export class ReporteInterfaseService {
             // columnas con 2 decimales
             const columnas2Dec = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 48];
 
+            const columnas5Dec = [39, 43, 45, 46, 47];
+
+            const columnasTotales = [35, 40];
+
+            const columnaId = [16];
+
             if (columnas2Dec.includes(colNumber)) {
               cell.numFmt = '0.00';
+              cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            } else if (columnas5Dec.includes(colNumber)) {
+              cell.numFmt = '0.00000';
+              cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            } else if (columnasTotales.includes(colNumber)) {
+              cell.numFmt = '#,##0.00'; // separador de miles y dos decimales
+              cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            }else if (columnaId.includes(colNumber)){
+              cell.numFmt = '#,##0';
               cell.alignment = { horizontal: 'right', vertical: 'middle' };
             }
 
