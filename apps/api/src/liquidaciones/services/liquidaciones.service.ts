@@ -786,7 +786,7 @@ export class LiquidacionesService {
     await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
       campo: 'consolidacion_orden',
       valor: 'true'      
-    })
+    });
 
     return {
       excelBuffer: excelBuffer,
@@ -836,18 +836,28 @@ export class LiquidacionesService {
   
   async downloadLiquidacionExcel(idGrupoLiquidacion: number){
 
-    const excelBuffer = await this.reporteLiquidacionService.generateExcel();
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    const excelBuffer = await this.reporteLiquidacionService.generateExcel(resultado);
 
     return {
       excelBuffer: excelBuffer,
-      title: `exportacion_grupo_${idGrupoLiquidacion}`
+      title: `liquidacion_grupo_${idGrupoLiquidacion}`
     };    
 
   }
   
   async downloadAnexoZip(idGrupoLiquidacion: number){
 
-    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip();
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado);
+
+    // cambiar estado a TRUE
+    await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
+      campo: 'generacion_anexo',
+      valor: 'true'      
+    })
 
     return {
       zipBuffer: zipBuffer,
@@ -1024,7 +1034,9 @@ export class LiquidacionesService {
   
   async sendLiquidacionExcel(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
 
-    const excelBuffer = await this.reporteLiquidacionService.generateExcel();
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    const excelBuffer = await this.reporteLiquidacionService.generateExcel(resultado);
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Liquidacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio`;
 
@@ -1098,7 +1110,9 @@ export class LiquidacionesService {
 
   async sendAnexoZip(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
 
-    const zipBuffer = await this.reporteAnexoFacturacionService.generateExcel();
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado);
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Anexos de facturacion del grupo de liquidacion ${idGrupoLiquidacion}`;
 
@@ -1154,9 +1168,9 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `anexos-facturacion-grupo-${idGrupoLiquidacion}.xlsx`,
+          filename: `anexos_facturacion_grupo_${idGrupoLiquidacion}.zip`,
           content: zipBuffer,
-          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          contentType: 'application/zip',
         },
       ],
     }

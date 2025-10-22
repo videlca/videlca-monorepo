@@ -1,6 +1,8 @@
 import { Injectable, Logger} from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 
+import { ClienteAgrupado } from '../../liquidaciones/interfaces/consolidacion.interface';
+
 @Injectable()
 export class ReporteLiquidacionService {
 
@@ -8,7 +10,7 @@ export class ReporteLiquidacionService {
           
   constructor() {}
 
-  async generateExcel() {
+  async generateExcel(clientesAgrupados: ClienteAgrupado[]) {
 
     try {
 
