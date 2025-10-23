@@ -195,7 +195,11 @@ export class ReporteAnexoFacturacionService {
 
   }
 
-  async generateZip(clientesAgrupados: ClienteAgrupado[]): Promise<Buffer> {
+  async generateZip(
+    clientesAgrupados: ClienteAgrupado[], 
+    mesLiq: string = "1", 
+    anioLiq: string = "2025"
+  ): Promise<Buffer> {
     
     return new Promise(async (resolve, reject) => {
       
@@ -215,7 +219,7 @@ export class ReporteAnexoFacturacionService {
         for (const cliente of clientesAgrupados) {
           
           const excelBuffer = await this.generateExcel(cliente);
-          archive.append(excelBuffer, { name: `${cliente.cliente}.xlsx` });
+          archive.append(excelBuffer, { name: `${cliente.cliente}_mes_${mesLiq}_año_${anioLiq}.xlsx` });
         
         }
 

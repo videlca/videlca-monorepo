@@ -776,6 +776,10 @@ export class LiquidacionesService {
       where: { idGrupoLiquidacion: idGrupoLiquidacion },
     });
 
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
+
     if (grupoLiquidacion.consolidacion_orden != true){
 
       await this.notificarGeneracionConsolidacion(idGrupoLiquidacion, excelBuffer);
@@ -790,7 +794,7 @@ export class LiquidacionesService {
 
     return {
       excelBuffer: excelBuffer,
-      title: `consolidacion_grupo_${idGrupoLiquidacion}`
+      title: `consolidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}`
     };    
 
   }
@@ -829,7 +833,7 @@ export class LiquidacionesService {
 
     return {
       excelBuffer: excelBuffer,
-      title: `exportacion_grupo_${idGrupoLiquidacion}`
+      title: `exportacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}`
     };    
 
   }
@@ -840,9 +844,17 @@ export class LiquidacionesService {
 
     const excelBuffer = await this.reporteLiquidacionService.generateExcel(resultado);
 
+    const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: idGrupoLiquidacion },
+    });
+
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
+
     return {
       excelBuffer: excelBuffer,
-      title: `liquidacion_grupo_${idGrupoLiquidacion}`
+      title: `liquidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_${anio}`
     };    
 
   }
@@ -850,8 +862,16 @@ export class LiquidacionesService {
   async downloadAnexoZip(idGrupoLiquidacion: number){
 
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+    
+    const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: idGrupoLiquidacion },
+    });
 
-    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado);
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
+
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, mes, anio);
 
     // cambiar estado a TRUE
     await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
@@ -861,7 +881,7 @@ export class LiquidacionesService {
 
     return {
       zipBuffer: zipBuffer,
-      title: `anexos_facturacion_grupo_${idGrupoLiquidacion}`
+      title: `anexos_facturacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}`
     };    
 
   }
@@ -871,6 +891,14 @@ export class LiquidacionesService {
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
 
     const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
+
+    const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: idGrupoLiquidacion },
+    });
+
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Consolidacion del grupo de liquidacion ${idGrupoLiquidacion}`;
 
@@ -926,7 +954,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `consolidacion_grupo_${idGrupoLiquidacion}.xlsx`,
+          filename: `consolidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1016,7 +1044,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `exportacion_grupo_${idGrupoLiquidacion}.xlsx`,
+          filename: `exportacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1037,6 +1065,14 @@ export class LiquidacionesService {
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
 
     const excelBuffer = await this.reporteLiquidacionService.generateExcel(resultado);
+
+    const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: idGrupoLiquidacion },
+    });
+
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Liquidacion del grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio`;
 
@@ -1092,7 +1128,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `liquidacion_grupo_${idGrupoLiquidacion}.xlsx`,
+          filename: `liquidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1112,7 +1148,15 @@ export class LiquidacionesService {
 
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
 
-    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado);
+    const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: idGrupoLiquidacion },
+    });
+
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
+
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, mes, anio);
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Anexos de facturacion del grupo de liquidacion ${idGrupoLiquidacion}`;
 
@@ -1168,7 +1212,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `anexos_facturacion_grupo_${idGrupoLiquidacion}.zip`,
+          filename: `anexos_facturacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}.zip`,
           content: zipBuffer,
           contentType: 'application/zip',
         },
