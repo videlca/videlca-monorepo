@@ -219,7 +219,7 @@ export class ReporteAnexoFacturacionService {
         for (const cliente of clientesAgrupados) {
           
           const excelBuffer = await this.generateExcel(cliente);
-          archive.append(excelBuffer, { name: `${cliente.cliente}_mes_${mesLiq}_año_${anioLiq}.xlsx` });
+          archive.append(excelBuffer, { name: `${cliente.cliente}_mes_${mesLiq}_anio_${anioLiq}.xlsx` });
         
         }
 

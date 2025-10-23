@@ -794,7 +794,7 @@ export class LiquidacionesService {
 
     return {
       excelBuffer: excelBuffer,
-      title: `consolidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}`
+      title: `consolidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}`
     };    
 
   }
@@ -833,7 +833,7 @@ export class LiquidacionesService {
 
     return {
       excelBuffer: excelBuffer,
-      title: `exportacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}`
+      title: `exportacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}`
     };    
 
   }
@@ -854,7 +854,7 @@ export class LiquidacionesService {
 
     return {
       excelBuffer: excelBuffer,
-      title: `liquidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_${anio}`
+      title: `liquidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}`
     };    
 
   }
@@ -881,7 +881,7 @@ export class LiquidacionesService {
 
     return {
       zipBuffer: zipBuffer,
-      title: `anexos_facturacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}`
+      title: `anexos_facturacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}`
     };    
 
   }
@@ -954,7 +954,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `consolidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}.xlsx`,
+          filename: `consolidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1044,7 +1044,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `exportacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}.xlsx`,
+          filename: `exportacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1128,7 +1128,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `liquidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}.xlsx`,
+          filename: `liquidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1212,7 +1212,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `anexos_facturacion_grupo_${idGrupoLiquidacion}_mes_${mes}_año_${anio}.zip`,
+          filename: `anexos_facturacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}.zip`,
           content: zipBuffer,
           contentType: 'application/zip',
         },
@@ -1275,6 +1275,14 @@ export class LiquidacionesService {
         </div>
       </div>
       `;
+
+    const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: idGrupoLiquidacion },
+    });
+
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
   
     const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.CREACION_CONSOLIDACION);
   
@@ -1285,7 +1293,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `consolidacion_grupo_${idGrupoLiquidacion}.xlsx`,
+          filename: `consolidacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
@@ -1348,6 +1356,14 @@ export class LiquidacionesService {
         </div>
       </div>
       `;
+
+    const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
+      where: { idGrupoLiquidacion: idGrupoLiquidacion },
+    });
+
+    const fecha = grupoLiquidacion.descripcion.split("_");
+    const mes = fecha[1]; // "10"
+    const anio = fecha[2]; // "2025"
   
     const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.CREACION_INTERFASE);
   
@@ -1358,7 +1374,7 @@ export class LiquidacionesService {
       htmlBody: html,
       attachments: [
         {
-          filename: `exportacion_grupo_${idGrupoLiquidacion}.xlsx`,
+          filename: `exportacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}.xlsx`,
           content: excelBuffer,
           contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         },
