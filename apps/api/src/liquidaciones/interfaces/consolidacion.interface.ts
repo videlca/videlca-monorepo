@@ -12,6 +12,7 @@ export type ServicioAgrupado = {
 };
 
 export type ClienteAgrupado = {
+  id: number;
   cliente: string;
   numeroId: string;
   servicios: Record<number, ServicioAgrupado>;

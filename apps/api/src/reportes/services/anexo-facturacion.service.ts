@@ -13,7 +13,7 @@ export class ReporteAnexoFacturacionService {
           
   constructor() {}
 
-  async generateExcel(clienteAgrupado: ClienteAgrupado) {
+  async generateExcel(clienteAgrupado: ClienteAgrupado, numeroCliente: number) {
 
     try {
 
@@ -38,8 +38,6 @@ export class ReporteAnexoFacturacionService {
       // #################
   
       let currentRow = 1;
-  
-      let numeroCliente = 0;
   
       // 🔹 Cabecera de columnas
       const consolidacionHeader = [
@@ -81,15 +79,13 @@ export class ReporteAnexoFacturacionService {
       // 🔹 Filas de servicios
       for (const servicio of Object.values(servicios)) {
 
-        const codigoProducto = servicio.codigoServicioSiigo.split("-");
-
         const row = consolidacionSheet.addRow([
           cliente,
           Number(numeroId), // 2
           numeroCliente,
           servicio.tipoServicio,
           servicio.servicioAplicacion,
-          Number(`${codigoProducto[0]}${codigoProducto[1]}${codigoProducto[2]}`),
+          servicio.codigoServicioSiigo,
           "",
           servicio.cantidadOrdenes,
           servicio.valorLiquidarAplicacion, // 9
@@ -198,7 +194,8 @@ export class ReporteAnexoFacturacionService {
   async generateZip(
     clientesAgrupados: ClienteAgrupado[], 
     mesLiq: string = "1", 
-    anioLiq: string = "2025"
+    anioLiq: string = "2025",
+    numeroPedido: number = 0
   ): Promise<Buffer> {
     
     return new Promise(async (resolve, reject) => {
@@ -215,11 +212,15 @@ export class ReporteAnexoFacturacionService {
 
         archive.pipe(outputStream);
 
+        let numeroCliente = numeroPedido - 1;
+
         // Generar Excels uno por uno y agregarlos al ZIP
         for (const cliente of clientesAgrupados) {
+
+          numeroCliente += 1;
           
-          const excelBuffer = await this.generateExcel(cliente);
-          archive.append(excelBuffer, { name: `${cliente.cliente}_mes_${mesLiq}_anio_${anioLiq}.xlsx` });
+          const excelBuffer = await this.generateExcel(cliente, numeroCliente);
+          archive.append(excelBuffer, { name: `PED-${numeroCliente} ${cliente.cliente}_mes_${mesLiq}_anio_${anioLiq}.xlsx` });
         
         }
 

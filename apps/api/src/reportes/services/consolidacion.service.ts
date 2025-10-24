@@ -11,7 +11,7 @@ export class ReporteConsolidacionService {
           
   constructor() {}
 
-  async generateExcel(clientesAgrupados: ClienteAgrupado[]) {
+  async generateExcel(clientesAgrupados: ClienteAgrupado[], numeroPedido: number = 0) {
 
     try {
 
@@ -23,7 +23,7 @@ export class ReporteConsolidacionService {
   
       let currentRow = 1;
   
-      let numeroCliente = 0;
+      let numeroCliente = numeroPedido - 1;
   
       for (const clienteData of clientesAgrupados) {
   
@@ -88,8 +88,6 @@ export class ReporteConsolidacionService {
   
         // 🔹 Filas de servicios
         for (const servicio of Object.values(servicios)) {
-
-          const codigoProducto = servicio.codigoServicioSiigo.split("-");
   
           const row = sheet.addRow([
             cliente,
@@ -97,7 +95,7 @@ export class ReporteConsolidacionService {
             numeroCliente,
             servicio.tipoServicio,
             servicio.servicioAplicacion,
-            Number(`${codigoProducto[0]}${codigoProducto[1]}${codigoProducto[2]}`),
+            servicio.codigoServicioSiigo,
             "",
             servicio.cantidadOrdenes,
             servicio.valorLiquidarAplicacion, // 9

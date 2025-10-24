@@ -14,9 +14,10 @@ import { PrecioOrdenDto } from '../../orden-servicio/dto';
 import { EmailService, CorreoDefaultService } from '../../common/services';
 import { ReporteConsolidacionService, ReporteInterfaseService, ReporteLiquidacionService, ReporteAnexoFacturacionService } from '../../reportes/services';
 import { OrdenServicioService } from '../../orden-servicio/services';
+import { ClientesService } from '../../clientes/services';
 
 import { OrdenServicio } from '../../orden-servicio/entities';
-import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion } from '../entities';
+import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion, NumeroPedido } from '../entities';
 
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
@@ -32,7 +33,10 @@ export class LiquidacionesService {
     private readonly grupoLiquidacionrepo: Repository<GrupoLiquidacion>,
     @InjectRepository(OrdenServicio) 
     private readonly ordenRepo: Repository<OrdenServicio>,
+    @InjectRepository(NumeroPedido) 
+    private readonly numeroPedidoRepository: Repository<NumeroPedido>,
     private ordenServicioService: OrdenServicioService,
+    private readonly clienteService: ClientesService,
     private readonly reporteConsolidacionService: ReporteConsolidacionService, // Servicio para generar reportes de consolidacion
     private readonly reporteInterfaseService: ReporteInterfaseService, // Servicio para generar reportes de exportacion de interfase
     private readonly reporteLiquidacionService: ReporteLiquidacionService, // Servicio para generar reportes de liquidacion
@@ -697,6 +701,7 @@ export class LiquidacionesService {
       if (!agrupado[clienteId]) {
 
         agrupado[clienteId] = {
+          id: clienteId,
           cliente: clienteNombre,
           numeroId: clienteNit,
           servicios: {},
@@ -768,13 +773,39 @@ export class LiquidacionesService {
 
   async downloadConsolidacionExcel(idGrupoLiquidacion: number){
 
-    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
-
-    const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
-
     const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
       where: { idGrupoLiquidacion: idGrupoLiquidacion },
     });
+
+    const numerosPedido = await this.numeroPedidoRepository
+      .createQueryBuilder('np')
+      .where('np.idGrupoLiquidacion = :idGrupoLiquidacion', { idGrupoLiquidacion })
+      .orderBy('np.idNumeroPedido', 'ASC')
+      .getMany();
+
+    let numeroPedido: number;
+
+    if (numerosPedido.length > 0){
+
+      // Tomar el primer número (suponiendo que tiene un campo 'numero')
+      numeroPedido = numerosPedido[0].idNumeroPedido;      
+
+    } else {
+
+      const ultimo = await this.numeroPedidoRepository.findOne({
+        where: {},
+        order: { 
+          idNumeroPedido: 'DESC' 
+        },
+      });
+
+      numeroPedido = ultimo ? ultimo.idNumeroPedido + 1 : 1;
+
+    }
+
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado, numeroPedido);
 
     const fecha = grupoLiquidacion.descripcion.split("_");
     const mes = fecha[1]; // "10"
@@ -782,7 +813,53 @@ export class LiquidacionesService {
 
     if (grupoLiquidacion.consolidacion_orden != true){
 
-      await this.notificarGeneracionConsolidacion(idGrupoLiquidacion, excelBuffer);
+      // guardamos los id
+
+      // Crear QueryRunner para manejar la transacción
+      const queryRunner = this.dataSource.createQueryRunner();
+      
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+     
+      try {
+
+        const numerosPedidoToCreate: NumeroPedido[] = [];
+       
+        for (const clienteData of resultado){
+        
+          const cliente = await this.clienteService.findOne(clienteData.id);
+  
+          // Crear la entidad numero pedido
+          const numeroPedidoCliente = queryRunner.manager.create(NumeroPedido, {
+            idGrupoLiquidacion: grupoLiquidacion,
+            idCliente: cliente 
+          });
+
+          numerosPedidoToCreate.push(numeroPedidoCliente);
+
+        }
+
+        const savedNumerosPedido = await queryRunner.manager.save(NumeroPedido, numerosPedidoToCreate);
+
+        // notificamos
+        await this.notificarGeneracionConsolidacion(idGrupoLiquidacion, excelBuffer);
+
+        // Confirmar la transacción
+        await queryRunner.commitTransaction();
+
+      } catch (error) {
+        
+        // Rollback en caso de error
+        await queryRunner.rollbackTransaction();
+
+        throw error;
+
+      } finally {
+
+        // Liberar el QueryRunner
+        await queryRunner.release();
+
+      }
       
     }
 
@@ -807,6 +884,15 @@ export class LiquidacionesService {
       where: { idGrupoLiquidacion: idGrupoLiquidacion },
     });
 
+    const numerosPedido = await this.numeroPedidoRepository
+      .createQueryBuilder('np')
+      .where('np.idGrupoLiquidacion = :idGrupoLiquidacion', { idGrupoLiquidacion })
+      .orderBy('np.idNumeroPedido', 'ASC')
+      .getMany();
+
+    // Tomar el primer número (suponiendo que tiene un campo 'numero')
+    const numeroPedido = numerosPedido[0].idNumeroPedido;  
+
     const fecha = grupoLiquidacion.descripcion.split("_");
     const mes = fecha[1]; // "10"
     const anio = fecha[2]; // "2025"
@@ -817,7 +903,7 @@ export class LiquidacionesService {
     const mesCreacion = fechaCreacion.getMonth() + 1;       // Mes (0 = enero, por eso se suma 1)
     const diaCreacion = fechaCreacion.getDate()
 
-    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado, mes, anio, mesCreacion, diaCreacion, anioCreacion);
+    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado, mes, anio, mesCreacion, diaCreacion, anioCreacion, numeroPedido);
 
     if (grupoLiquidacion.generacion_interfase != true){
 
@@ -867,11 +953,20 @@ export class LiquidacionesService {
       where: { idGrupoLiquidacion: idGrupoLiquidacion },
     });
 
+    const numerosPedido = await this.numeroPedidoRepository
+      .createQueryBuilder('np')
+      .where('np.idGrupoLiquidacion = :idGrupoLiquidacion', { idGrupoLiquidacion })
+      .orderBy('np.idNumeroPedido', 'ASC')
+      .getMany();
+
+    // Tomar el primer número (suponiendo que tiene un campo 'numero')
+    const numeroPedido = numerosPedido[0].idNumeroPedido;  
+
     const fecha = grupoLiquidacion.descripcion.split("_");
     const mes = fecha[1]; // "10"
     const anio = fecha[2]; // "2025"
 
-    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, mes, anio);
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, mes, anio, numeroPedido);
 
     // cambiar estado a TRUE
     await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
@@ -888,17 +983,92 @@ export class LiquidacionesService {
 
   async sendConsolidacionExcel(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
 
-    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
-
-    const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado);
-
     const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
       where: { idGrupoLiquidacion: idGrupoLiquidacion },
     });
 
+    const numerosPedido = await this.numeroPedidoRepository
+      .createQueryBuilder('np')
+      .where('np.idGrupoLiquidacion = :idGrupoLiquidacion', { idGrupoLiquidacion })
+      .orderBy('np.idNumeroPedido', 'ASC')
+      .getMany();
+
+    let numeroPedido: number;
+
+    if (numerosPedido.length > 0){
+
+      // Tomar el primer número (suponiendo que tiene un campo 'numero')
+      numeroPedido = numerosPedido[0].idNumeroPedido;      
+
+    } else {
+
+      const ultimo = await this.numeroPedidoRepository.findOne({
+        where: {},
+        order: { 
+          idNumeroPedido: 'DESC' 
+        },
+      });
+
+      numeroPedido = ultimo ? ultimo.idNumeroPedido + 1 : 1;
+
+    }
+
+    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    const excelBuffer = await this.reporteConsolidacionService.generateExcel(resultado, numeroPedido);
+
     const fecha = grupoLiquidacion.descripcion.split("_");
     const mes = fecha[1]; // "10"
     const anio = fecha[2]; // "2025"
+
+    if (grupoLiquidacion.consolidacion_orden != true){
+
+      // guardamos los id
+
+      // Crear QueryRunner para manejar la transacción
+      const queryRunner = this.dataSource.createQueryRunner();
+      
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+     
+      try {
+
+        const numerosPedidoToCreate: NumeroPedido[] = [];
+       
+        for (const clienteData of resultado){
+        
+          const cliente = await this.clienteService.findOne(clienteData.id);
+  
+          // Crear la entidad numero pedido
+          const numeroPedidoCliente = queryRunner.manager.create(NumeroPedido, {
+            idGrupoLiquidacion: grupoLiquidacion,
+            idCliente: cliente 
+          });
+
+          numerosPedidoToCreate.push(numeroPedidoCliente);
+
+        }
+
+        const savedNumerosPedido = await queryRunner.manager.save(NumeroPedido, numerosPedidoToCreate);
+        
+        // Confirmar la transacción
+        await queryRunner.commitTransaction();
+
+      } catch (error) {
+        
+        // Rollback en caso de error
+        await queryRunner.rollbackTransaction();
+
+        throw error;
+
+      } finally {
+
+        // Liberar el QueryRunner
+        await queryRunner.release();
+
+      }
+      
+    }
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Consolidacion del grupo de liquidacion ${idGrupoLiquidacion}`;
 
@@ -978,6 +1148,15 @@ export class LiquidacionesService {
       where: { idGrupoLiquidacion: idGrupoLiquidacion },
     });
 
+    const numerosPedido = await this.numeroPedidoRepository
+      .createQueryBuilder('np')
+      .where('np.idGrupoLiquidacion = :idGrupoLiquidacion', { idGrupoLiquidacion })
+      .orderBy('np.idNumeroPedido', 'ASC')
+      .getMany();
+
+    // Tomar el primer número (suponiendo que tiene un campo 'numero')
+    const numeroPedido = numerosPedido[0].idNumeroPedido;  
+
     const fecha = grupoLiquidacion.descripcion.split("_");
     const mes = fecha[1]; // "10"
     const anio = fecha[2]; // "2025"
@@ -988,7 +1167,7 @@ export class LiquidacionesService {
     const mesCreacion = fechaCreacion.getMonth() + 1;       // Mes (0 = enero, por eso se suma 1)
     const diaCreacion = fechaCreacion.getDate()
 
-    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado, mes, anio, mesCreacion, diaCreacion, anioCreacion);
+    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado, mes, anio, mesCreacion, diaCreacion, anioCreacion, numeroPedido);
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Exportacion del grupo de liquidacion ${idGrupoLiquidacion}`;
 
@@ -1152,11 +1331,20 @@ export class LiquidacionesService {
       where: { idGrupoLiquidacion: idGrupoLiquidacion },
     });
 
+    const numerosPedido = await this.numeroPedidoRepository
+      .createQueryBuilder('np')
+      .where('np.idGrupoLiquidacion = :idGrupoLiquidacion', { idGrupoLiquidacion })
+      .orderBy('np.idNumeroPedido', 'ASC')
+      .getMany();
+
+    // Tomar el primer número (suponiendo que tiene un campo 'numero')
+    const numeroPedido = numerosPedido[0].idNumeroPedido;  
+
     const fecha = grupoLiquidacion.descripcion.split("_");
     const mes = fecha[1]; // "10"
     const anio = fecha[2]; // "2025"
 
-    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, mes, anio);
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, mes, anio, numeroPedido);
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Anexos de facturacion del grupo de liquidacion ${idGrupoLiquidacion}`;
 

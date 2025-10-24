@@ -31,7 +31,8 @@ export class ReporteInterfaseService {
     anioLiq: string = "2025", 
     mesCreacion: number = 1, 
     diaCreacion: number = 20,
-    anioCreacion: number = 2025
+    anioCreacion: number = 2025,
+    numeroPedido: number = 0
   ) {
 
     try {
@@ -216,7 +217,7 @@ export class ReporteInterfaseService {
       worksheet.getRow(3).height = 18;
       worksheet.getRow(5).height = 18;
 
-      let numeroCliente = 0;
+      let numeroCliente = numeroPedido - 1;
       let currentRow = 6;
 
       for (const clienteData of clientesAgrupados) {
