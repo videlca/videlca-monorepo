@@ -9,7 +9,8 @@ import { ReportesModule } from '../reportes/reportes.module';
 import { 
   Liquidacione,
   GrupoLiquidacion,
-  LiquidacionServicioOrdenServicio
+  LiquidacionServicioOrdenServicio,
+  NumeroPedido
 } from './entities';
 
 import { LiquidacionesService } from './services/liquidaciones.service';
@@ -25,7 +26,8 @@ import {
     TypeOrmModule.forFeature([
       Liquidacione, 
       GrupoLiquidacion,
-      LiquidacionServicioOrdenServicio
+      LiquidacionServicioOrdenServicio,
+      NumeroPedido
     ]),
     forwardRef(() => OrdenServicioModule), // usa forwardRef si hay circularidad
     CommonModule,

@@ -1,6 +1,7 @@
 // src/grupo-liquidaciones/entities/grupo-liquidacion.entity.ts
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Liquidacione } from '../../liquidaciones/entities/liquidacione.entity';
+import { NumeroPedido } from '../../liquidaciones/entities/numero_pedido.entity';
 
 @Entity({ name: 'grupo_liquidaciones' })
 export class GrupoLiquidacion {
@@ -60,4 +61,11 @@ export class GrupoLiquidacion {
     (liquidacion) => liquidacion.grupo
   )
   liquidaciones: Liquidacione[];
+  
+  @OneToMany(
+    () => NumeroPedido, 
+    (numeroPedido) => numeroPedido.idGrupoLiquidacion
+  )
+  numerosPedido: NumeroPedido[];
+  
 }

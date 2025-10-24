@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 import { TipoIdentificacion, TipoCliente } from "../../common/entities";
 import { SubSegmentacion, Locacion } from ".";
+import { NumeroPedido } from "../../liquidaciones/entities";
 
 @Entity({name: 'cliente'})
 export class Cliente {
@@ -76,5 +77,15 @@ export class Cliente {
         }
     )
     locaciones: Locacion[];
+    
+    // numeros pedido -> relacion
+    @OneToMany(
+        () => NumeroPedido,
+        (numeroPedido) => numeroPedido.idCliente,
+        { 
+            cascade: true, 
+        }
+    )
+    numerosPedido: NumeroPedido[];
 
 }

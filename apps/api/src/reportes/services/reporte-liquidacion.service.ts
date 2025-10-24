@@ -16,6 +16,8 @@ export class ReporteLiquidacionService {
 
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet('liquidacion');
+
+      
   
       // 👇 Generar buffer
       const excelUint8 = await workbook.xlsx.writeBuffer();
