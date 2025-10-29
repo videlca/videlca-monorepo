@@ -22,6 +22,7 @@ import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion, Numer
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
 import { ClienteAgrupado } from '../interfaces/consolidacion.interface';
+import { LiquidacionClienteAgrupado } from '../interfaces/liquidacion.interface';
 
 @Injectable()
 export class LiquidacionesService {
@@ -770,6 +771,125 @@ export class LiquidacionesService {
     return clientesAgrupados;
     
   }
+  
+  async obtenerServiciosDeCliente(idGrupoLiquidacion: number) {
+
+    const grupoId = Number(idGrupoLiquidacion);
+    
+    if (!grupoId || Number.isNaN(grupoId)) {
+      throw new BadRequestException('idGrupoLiquidacion inválido');
+    }
+
+    const grupo = await this.grupoLiquidacionrepo.findOne({
+      where: { 
+        idGrupoLiquidacion: grupoId 
+      },
+    });
+
+    if (!grupo) {
+      throw new NotFoundException('Grupo de liquidación no encontrado');
+    }
+
+    const liquidaciones = await this.liquidacionRepo
+      .createQueryBuilder('liq')
+      .leftJoinAndSelect('liq.ordenServicio', 'orden')
+      .leftJoinAndSelect('liq.liquidacionServiciosOrdenServicio', 'liqsos')
+      .leftJoinAndSelect('liqsos.idTarifa', 'tarifaLiq')
+      .leftJoinAndSelect('tarifaLiq.idServicio', 'servicioLiq')
+      .leftJoinAndSelect('servicioLiq.idTipoServicio', 'tipoServicioLiq')
+      .leftJoinAndSelect('servicioLiq.idTipoHorarioDescripcion', 'tipoHorario') // 🆕 nuevo join
+      .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
+      .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
+      .leftJoinAndSelect('orden.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.idCiudad', 'ciudad') // 🆕 nuevo join
+      .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('cliente.idSubSegmentacion', 'subsegmentacion') // 🆕 nuevo join
+      .leftJoinAndSelect('orden.tarifas', 'ost')
+      .leftJoinAndSelect('ost.idTarifa', 'tarifa')
+      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
+      .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
+      .orderBy('cliente.nombre', 'ASC')
+      .addOrderBy('orden.idOrdenServicio', 'ASC')
+      .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
+      .getMany();
+
+    console.log(`Liquidaciones encontradas para el grupo ${grupoId}: ${liquidaciones.length}`);
+    
+    // 🔹 Agrupar por cliente y servicio
+    const agrupado: Record<number, LiquidacionClienteAgrupado> = {};
+
+    // return liquidaciones;
+    
+    for (const liq of liquidaciones) {
+
+      const cliente = liq.ordenServicio.idLocacion.idCliente;
+
+      const clienteId = cliente.idCliente;
+      const clienteNombre = cliente.nombre;
+      const clienteNit = cliente.numeroIdentificacion;
+    
+      if (!agrupado[clienteId]) {
+
+        agrupado[clienteId] = {
+          id: clienteId,
+          cliente: clienteNombre,
+          numeroId: clienteNit,
+          totalLiquidarAplicacion: 0,
+          totalSeguroVida: 0,
+          totalAui: 0,
+          totalTarifaAntesIva: 0,
+          totalIvaAui: 0,
+          totalTarifaConIva: 0,
+          servicios: [],
+        };
+
+      }
+
+      for (const liquidacionServicioOrdenServicio of liq.liquidacionServiciosOrdenServicio) {
+
+        const servicio = liquidacionServicioOrdenServicio.idTarifa.idServicio;
+
+        agrupado[clienteId].servicios.push({
+          ordenServicio: liq.ordenServicio.ordenServicioId.descripcionId,
+          sector: liq.ordenServicio.idLocacion.idCliente.idSubSegmentacion.descripcion,
+          ciudad: liq.ordenServicio.idLocacion.idCiudad.descripcion,
+          puesto: liq.ordenServicio.idLocacion.nombre,
+          descripcionServicio: servicio.descripcion,
+          tipoServicio: servicio.idTipoServicio.requierePersonal ? TipoServicioInterface.ARMADO : TipoServicioInterface.MONITOREO,
+          codigoServicioSiigo: servicio.codigo,
+          horarioServicio: servicio.idTipoHorarioDescripcion.nombre,
+
+          horasTotalesServicio: 0,
+          tarifaCostosDirectos: 0,
+          valorHora: 0,
+          cantidadHorasPrestadas: 0,
+          valorLiquidadoVidelca: 0,
+
+          cantidadOrdenesFacturar: 1,
+          valorLiquidarAplicacion: Number(liquidacionServicioOrdenServicio.costosDirectos),        
+          seguroVida: Number(liquidacionServicioOrdenServicio.seguroVida),        
+          aui: Number(liquidacionServicioOrdenServicio.aui),                
+          tarifaAntesIva: (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui)),                
+          auiIVa: (Number(liquidacionServicioOrdenServicio.aui) * 0.19),                
+          tarifaConIva: (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui) + (Number(liquidacionServicioOrdenServicio.aui) * 0.19)),
+        });
+
+        agrupado[clienteId].totalLiquidarAplicacion += Number(liquidacionServicioOrdenServicio.costosDirectos);        
+        agrupado[clienteId].totalSeguroVida += Number(liquidacionServicioOrdenServicio.seguroVida);        
+        agrupado[clienteId].totalAui += Number(liquidacionServicioOrdenServicio.aui);                
+        agrupado[clienteId].totalTarifaAntesIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui));                
+        agrupado[clienteId].totalIvaAui += (Number(liquidacionServicioOrdenServicio.aui) * 0.19);                
+        agrupado[clienteId].totalTarifaConIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui) + (Number(liquidacionServicioOrdenServicio.aui) * 0.19));
+
+      }
+
+    }
+
+    const clientesAgrupados = Object.values(agrupado);
+
+    return clientesAgrupados;
+    
+  }
 
   async downloadConsolidacionExcel(idGrupoLiquidacion: number){
 
@@ -926,7 +1046,7 @@ export class LiquidacionesService {
   
   async downloadLiquidacionExcel(idGrupoLiquidacion: number){
 
-    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+    const resultado = await this.obtenerServiciosDeCliente(idGrupoLiquidacion);
 
     const excelBuffer = await this.reporteLiquidacionService.generateExcel(resultado);
 
@@ -947,6 +1067,8 @@ export class LiquidacionesService {
   
   async downloadAnexoZip(idGrupoLiquidacion: number){
 
+    const resultadoLiquidacion = await this.obtenerServiciosDeCliente(idGrupoLiquidacion);
+
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
     
     const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
@@ -966,13 +1088,13 @@ export class LiquidacionesService {
     const mes = fecha[1]; // "10"
     const anio = fecha[2]; // "2025"
 
-    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, mes, anio, numeroPedido);
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, resultadoLiquidacion, mes, anio, numeroPedido);
 
     // cambiar estado a TRUE
-    await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
-      campo: 'generacion_anexo',
-      valor: 'true'      
-    })
+    // await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
+    //   campo: 'generacion_anexo',
+    //   valor: 'true'      
+    // })
 
     return {
       zipBuffer: zipBuffer,
@@ -1241,7 +1363,7 @@ export class LiquidacionesService {
   
   async sendLiquidacionExcel(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
 
-    const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+    const resultado = await this.obtenerServiciosDeCliente(idGrupoLiquidacion);
 
     const excelBuffer = await this.reporteLiquidacionService.generateExcel(resultado);
 
@@ -1325,6 +1447,8 @@ export class LiquidacionesService {
 
   async sendAnexoZip(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
 
+    const resultadoLiquidacion = await this.obtenerServiciosDeCliente(idGrupoLiquidacion);
+
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
 
     const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
@@ -1344,7 +1468,7 @@ export class LiquidacionesService {
     const mes = fecha[1]; // "10"
     const anio = fecha[2]; // "2025"
 
-    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, mes, anio, numeroPedido);
+    const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, resultadoLiquidacion, mes, anio, numeroPedido);
 
     const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Anexos de facturacion del grupo de liquidacion ${idGrupoLiquidacion}`;
 

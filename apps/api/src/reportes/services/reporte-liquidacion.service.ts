@@ -22,14 +22,14 @@ export class ReporteLiquidacionService {
   
       // --- Fila 2 ---
       // Unir las columnas solicitadas
-      sheet.mergeCells('A2:L2'); // Bloque 1
-      sheet.mergeCells('N2:R2'); // Bloque 2
-      sheet.mergeCells('T2:Z2'); // Bloque 3
+      sheet.mergeCells('A2:J2'); // Bloque 1
+      sheet.mergeCells('L2:P2'); // Bloque 2
+      sheet.mergeCells('R2:Y2'); // Bloque 3
   
       // Asignar valores a las celdas unidas
       sheet.getCell('A2').value = 'PARTE 1 A MOSTRAR EN EL ANEXO';
-      sheet.getCell('N2').value = 'CALCULO DE LA LIQUIDACION';
-      sheet.getCell('T2').value = 'PARTE 2 A MOSTRAR EN EL ANEXO';
+      sheet.getCell('L2').value = 'CALCULO DE LA LIQUIDACION';
+      sheet.getCell('R2').value = 'PARTE 2 A MOSTRAR EN EL ANEXO';
   
       // Definir estilo común
       const estiloVerde = {
@@ -134,10 +134,7 @@ export class ReporteLiquidacionService {
         headerRow.font = { bold: true };
         headerRow.alignment = { horizontal: 'center' };
         headerRow.eachCell((cell) => {
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-          };
+          cell.font = { bold: true }; // 👈 texto en negrita
           cell.border = {
             bottom: { style: 'thin' },
           };
@@ -201,6 +198,10 @@ export class ReporteLiquidacionService {
 
           row.eachCell((cell, colNumber) => {
 
+            cell.border = {
+              bottom: { style: 'thin' },
+            };
+
             const columnasTotales = [19, 20, 21, 22, 23, 24];
 
             const columnaId = [2];
@@ -257,10 +258,7 @@ export class ReporteLiquidacionService {
   
         totalRow.font = { bold: true };
         totalRow.eachCell((cell, colNumber) => {
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-          };
+          cell.font = { bold: true }; // 👈 texto en negrita
           cell.border = {
             bottom: { style: 'thin' },
           };
