@@ -35,148 +35,11 @@ export const OrdenDetalles = ({
       size="3xl"
     >
       <div className="space-y-6 p-6">
-        {/* Información Básica de la Orden */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <div className="mb-3 flex items-center space-x-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Información de la Orden
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-600">ID Orden</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idOrdenServicio}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Descripción ID
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.ordenServicioId?.descripcionId || "N/A"}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Precio Total</p>
-              <p className="text-base font-semibold text-green-700">
-                {priceFormat(selectedOrderDetail.precioTotal)}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Fecha de Creación
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.fechaCreacion}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Fecha de Actualización
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.fechaActualizacion}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Anulado</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.ordenServicioId?.anulado ? "Sí" : "No"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Usuario Creador */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <div className="mb-3 flex items-center space-x-2">
-            <User className="h-5 w-5 text-purple-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Usuario Creador
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Nombre Completo
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idUsuarioCreacion?.primerNombre}{" "}
-                {selectedOrderDetail.idUsuarioCreacion?.segundoNombre || ""}{" "}
-                {selectedOrderDetail.idUsuarioCreacion?.primerApellido}{" "}
-                {selectedOrderDetail.idUsuarioCreacion?.segundoApellido || ""}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Email</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idUsuarioCreacion?.email || "N/A"}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Identificación
-              </p>
-              <p className="text-base text-gray-900">
-                {
-                  selectedOrderDetail.idUsuarioCreacion?.idTipoIdentificacion
-                    ?.descripcion
-                }
-                : {selectedOrderDetail.idUsuarioCreacion?.numeroIdentificacion}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Rol</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idUsuarioCreacion?.idRol?.nombreRol ||
-                  "N/A"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Estado de la Orden */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <div className="mb-3 flex items-center space-x-2">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Estado de la Orden de Servicio
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Estado</p>
-              <span className="inline-block rounded-full border border-gray-300 px-3 py-1 text-sm font-medium text-green-800">
-                {selectedOrderDetail.idEstadoOrdenServicio?.nombre || "N/A"}
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Programable</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idEstadoOrdenServicio?.programable
-                  ? "Sí"
-                  : "No"}
-              </p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-sm font-medium text-gray-600">Descripción</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idEstadoOrdenServicio?.descripcion ||
-                  "N/A"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Localización */}
+        {/* Puesto */}
         <div className="rounded-lg border border-gray-200 p-4">
           <div className="mb-3 flex items-center space-x-2">
             <MapPin className="h-5 w-5 text-orange-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Localización
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900">Puesto</h3>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
@@ -278,6 +141,134 @@ export const OrdenDetalles = ({
           </div>
         </div>
 
+        {/* Información Básica de la Orden */}
+        <div className="rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center space-x-2">
+            <FileText className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Información de la Orden
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-600">ID Orden</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idOrdenServicio}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Descripción ID
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.ordenServicioId?.descripcionId || "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Precio Total</p>
+              <p className="text-base font-semibold text-green-700">
+                {priceFormat(selectedOrderDetail.precioTotal)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Fecha de Creación
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.fechaCreacion}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Fecha de Actualización
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.fechaActualizacion}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Anulado</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.ordenServicioId?.anulado ? "Sí" : "No"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Usuario Creador */}
+        <div className="rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center space-x-2">
+            <User className="h-5 w-5 text-purple-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Usuario Creador
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Nombre Completo
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idUsuarioCreacion?.primerNombre}{" "}
+                {selectedOrderDetail.idUsuarioCreacion?.segundoNombre || ""}{" "}
+                {selectedOrderDetail.idUsuarioCreacion?.primerApellido}{" "}
+                {selectedOrderDetail.idUsuarioCreacion?.segundoApellido || ""}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Email</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idUsuarioCreacion?.email || "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Identificación
+              </p>
+              <p className="text-base text-gray-900">
+                {
+                  selectedOrderDetail.idUsuarioCreacion?.idTipoIdentificacion
+                    ?.descripcion
+                }
+                : {selectedOrderDetail.idUsuarioCreacion?.numeroIdentificacion}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Estado de la Orden */}
+        <div className="rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center space-x-2">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Estado de la Orden de Servicio
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Estado</p>
+              <span className="inline-block rounded-full border border-gray-300 px-3 py-1 text-sm font-medium text-green-800">
+                {selectedOrderDetail.idEstadoOrdenServicio?.nombre || "N/A"}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Programable</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idEstadoOrdenServicio?.programable
+                  ? "Sí"
+                  : "No"}
+              </p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-sm font-medium text-gray-600">Descripción</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idEstadoOrdenServicio?.descripcion ||
+                  "N/A"}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Fechas de la Orden */}
         <div className="rounded-lg border border-gray-200 p-4">
           <div className="mb-3 flex items-center space-x-2">
@@ -301,9 +292,10 @@ export const OrdenDetalles = ({
                 {selectedOrderDetail.fechaFin}
               </p>
             </div>
+            {/* Fecha Ordenes son las que se actualizan */}
             <div>
               <p className="text-sm font-medium text-gray-600">
-                Fecha Inicio Orden
+                Fecha Inicio Orden (Actualizada)
               </p>
               <p className="text-base text-gray-900">
                 {selectedOrderDetail.fechaInicioOrden}
@@ -311,7 +303,7 @@ export const OrdenDetalles = ({
             </div>
             <div>
               <p className="text-sm font-medium text-gray-600">
-                Fecha Fin Orden
+                Fecha Fin Orden (Actualizada)
               </p>
               <p className="text-base text-gray-900">
                 {selectedOrderDetail.fechaFinOrden}
