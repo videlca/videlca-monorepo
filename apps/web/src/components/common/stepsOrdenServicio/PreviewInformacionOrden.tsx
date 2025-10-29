@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { priceFormat } from "../../../utils/PriceFormat";
 import type { Puesto } from "../../../types";
-import type { Tarifa } from "../../../api/types/periodo";
 import type {
   CreateOrdenServicioDto,
   UpdateOrdenServicioDto,
@@ -20,7 +19,6 @@ import type { CreateOrdenServicioTarifaDto } from "../../../api/dtos";
 export const PreviewInformacionOrden = ({
   isEditing = false,
   selectedPuesto,
-  selectedTarifa,
   formOrdenServicio,
   configuracionServicioTarifa,
   mensajeRespuesta,
@@ -28,7 +26,6 @@ export const PreviewInformacionOrden = ({
 }: {
   isEditing?: boolean;
   selectedPuesto: Puesto | null;
-  selectedTarifa: Tarifa | null;
   formOrdenServicio: CreateOrdenServicioDto | UpdateOrdenServicioDto;
   configuracionServicioTarifa:
     | CreateOrdenServicioTarifaDto[]
@@ -36,6 +33,7 @@ export const PreviewInformacionOrden = ({
   mensajeRespuesta: string;
   isIndefinite: boolean;
 }) => {
+  console.log("configuracionServicioTarifa: ", configuracionServicioTarifa);
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center">
@@ -108,13 +106,13 @@ export const PreviewInformacionOrden = ({
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Código:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idServicio.codigo}
+                  {/* {selectedTarifa?.idServicio.codigo} */}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Descripción:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idServicio.descripcion}
+                  {/* {selectedTarifa?.idServicio.descripcion} */}
                 </span>
               </p>
               <p className="text-sm">
@@ -122,7 +120,7 @@ export const PreviewInformacionOrden = ({
                   Tipo de Servicio:
                 </span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idServicio.idTipoServicio.descripcion}
+                  {/* {selectedTarifa?.idServicio.idTipoServicio.descripcion} */}
                 </span>
               </p>
               <p className="text-sm">
@@ -130,9 +128,9 @@ export const PreviewInformacionOrden = ({
                   Requiere Personal:
                 </span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idServicio.idTipoServicio.requierePersonal
-                    ? "Sí"
-                    : "No"}
+                  {/* {selectedTarifa?.idServicio.idTipoServicio.requierePersonal
+                      ? "Sí"
+                      : "No"} */}
                 </span>
               </p>
             </div>
@@ -149,7 +147,7 @@ export const PreviewInformacionOrden = ({
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Horas Fijas:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idServicio.horasFijas} horas
+                  {/* {selectedTarifa?.idServicio.horasFijas} horas */}
                 </span>
               </p>
               <p className="text-sm">
@@ -157,7 +155,7 @@ export const PreviewInformacionOrden = ({
                   Horas Máximas:
                 </span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idServicio.horasMaximas} horas
+                  {/* {selectedTarifa?.idServicio.horasMaximas} horas */}
                 </span>
               </p>
               <p className="text-sm">
@@ -165,7 +163,7 @@ export const PreviewInformacionOrden = ({
                   Horas Mínimas:
                 </span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idServicio.horasMinimas} horas
+                  {/* {selectedTarifa?.idServicio.horasMinimas} horas */}
                 </span>
               </p>
             </div>
@@ -207,17 +205,17 @@ export const PreviewInformacionOrden = ({
                   Hora de Inicio:
                 </span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idServicio.horasFijas === 24
+                  {/* {selectedTarifa?.idServicio.horasFijas === 24
                     ? "00:00:00 (24 horas)"
-                    : "00:00:00"}
+                    : "00:00:00"} */}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Hora de Fin:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idServicio.horasFijas === 24
+                  {/* {selectedTarifa?.idServicio.horasFijas === 24
                     ? "00:00:00 (24 horas)"
-                    : "00:00:00"}
+                    : "00:00:00"} */}
                 </span>
               </p>
             </div>
@@ -226,7 +224,8 @@ export const PreviewInformacionOrden = ({
 
         {/* Información del Personal */}
         {/* TODO: Revisar información de personal */}
-        {selectedTarifa?.idServicio.idTipoServicio.requierePersonal && (
+        {/* {selectedTarifa?.idServicio.idTipoServicio.requierePersonal && ( */}
+        {true && (
           <div className="rounded-lg border border-gray-200 p-4">
             <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
               <Users className="h-6 w-6 text-orange-600" />
@@ -268,7 +267,7 @@ export const PreviewInformacionOrden = ({
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Período:</span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idPeriodo.nombre}
+                  {/* {selectedTarifa?.idPeriodo.nombre} */}
                 </span>
               </p>
               <p className="text-sm">
@@ -276,7 +275,7 @@ export const PreviewInformacionOrden = ({
                   Tipo de Tarifa:
                 </span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idTipoTarifa.nombre}
+                  {/* {selectedTarifa?.idTipoTarifa.nombre} */}
                 </span>
               </p>
               <p className="text-sm">
@@ -284,8 +283,8 @@ export const PreviewInformacionOrden = ({
                   Unidad de Tiempo:
                 </span>{" "}
                 <span className="text-gray-600">
-                  {selectedTarifa?.idTipoTarifa?.idTipoUnidadTiempo
-                    ?.descripcion || "No especificada"}
+                  {/* {selectedTarifa?.idTipoTarifa?.idTipoUnidadTiempo
+                    ?.descripcion || "No especificada"} */}
                 </span>
               </p>
             </div>
@@ -295,13 +294,13 @@ export const PreviewInformacionOrden = ({
                   Precio sin IVA:
                 </span>{" "}
                 <span className="text-gray-600">
-                  {priceFormat(selectedTarifa?.precioAntesIva || 0)}
+                  {/* {priceFormat(selectedTarifa?.precioAntesIva || 0)} */}
                 </span>
               </p>
               <p className="text-sm">
                 <span className="font-medium text-gray-700">IVA:</span>{" "}
                 <span className="text-gray-600">
-                  {priceFormat(selectedTarifa?.iva || 0)}
+                  {/* {priceFormat(selectedTarifa?.iva || 0)} */}
                 </span>
               </p>
               <p className="text-sm">
@@ -309,7 +308,7 @@ export const PreviewInformacionOrden = ({
                   Precio Total Base:
                 </span>{" "}
                 <span className="font-semibold text-green-600">
-                  {priceFormat(selectedTarifa?.precioTotal || 0)}
+                  {/* {priceFormat(selectedTarifa?.precioTotal || 0)} */}
                 </span>
               </p>
             </div>
