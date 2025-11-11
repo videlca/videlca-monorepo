@@ -233,12 +233,13 @@ export class OrdenServicioService {
 
         }
 
+        // TODO!: FEATURE PERSONAL
         // Validar si el servicio requiere personal
-        if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.personal.length <= 0){
+        // if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.personal.length <= 0){
           
-          throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
+        //   throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
 
-        }
+        // }
 
         // Crear el servicio para la orden
         const servicioOrden = queryRunner.manager.create(OrdenServicioTarifa, {
