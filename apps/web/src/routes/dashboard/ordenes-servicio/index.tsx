@@ -262,6 +262,8 @@ function RouteComponent() {
     }
 
     if (currentStep === 5) {
+      let precioTotal = 0;
+      let allValidated = true;
       const campoHorario = configuracionServicioTarifa.some(
         (service) => service.horaInicio === "" && service.horaFin === "",
       );
@@ -273,7 +275,7 @@ function RouteComponent() {
       // Va a recorrer todos los servicios seleccionados y va a utilizar el endpoint de
 
       try {
-        const response = await Promise.allSettled(
+        const responseHorarioServicio = await Promise.allSettled(
           configuracionServicioTarifa.map(async (servicio) => {
             return validarHorarioServicioOrdenServicio({
               idTarifa: servicio.idTarifa || 0,
@@ -283,30 +285,6 @@ function RouteComponent() {
                 servicio.horaFin === ""
                   ? "00:00:00"
                   : timeFormat(servicio.horaFin),
-            });
-          }),
-        );
-        const success = response.every((r) => r.status === "fulfilled");
-        if (success) {
-          setCurrentStep(6);
-          toast.success("Horarios validados correctamente");
-        }
-      } catch (error) {
-        console.log(error);
-      }
-      return;
-    }
-
-    if (currentStep === 6) {
-      let allValidated = true;
-      let precioTotal = 0;
-      try {
-        const responseRangoHorarioValidacion = await Promise.allSettled(
-          configuracionServicioTarifa.map(async (servicio) => {
-            return validarRangoHorarioPersonalOrdenServicio({
-              horaInicio: servicio.horaInicio,
-              horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
-              personal: servicio.personal,
             });
           }),
         );
@@ -332,34 +310,93 @@ function RouteComponent() {
         );
 
         allValidated =
-          responseRangoHorarioValidacion.every(
-            (r) => r.status === "fulfilled",
-          ) &&
+          responseHorarioServicio.every((r) => r.status === "fulfilled") &&
           responsePrecioOrdenServicio.every((r) => r.status === "fulfilled");
+
+        if (allValidated) {
+          setFormOrdenServicio({
+            ...formOrdenServicio,
+            precioTotal: precioTotal,
+          });
+          toast.success(
+            "Rango horario personal y precio de orden de servicio validados correctamente",
+          );
+          setCurrentStep(6);
+        }
       } catch (error) {
         console.log(error);
-      }
-
-      if (allValidated) {
-        setFormOrdenServicio({
-          ...formOrdenServicio,
-          precioTotal: precioTotal,
-        });
-        toast.success(
-          "Rango horario personal y precio de orden de servicio validados correctamente",
+        toast.error(
+          "Error al validar el rango horario personal y el precio de la orden de servicio",
         );
-        setCurrentStep(7);
       }
       return;
     }
 
-    if (currentStep < 7) {
+    // if (currentStep === 6) {
+    //   let allValidated = true;
+    //   let precioTotal = 0;
+    //   try {
+    //     const responseRangoHorarioValidacion = await Promise.allSettled(
+    //       configuracionServicioTarifa.map(async (servicio) => {
+    //         return validarRangoHorarioPersonalOrdenServicio({
+    //           horaInicio: servicio.horaInicio,
+    //           horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+    //           personal: servicio.personal,
+    //         });
+    //       }),
+    //     );
+
+    //     const responsePrecioOrdenServicio = await Promise.allSettled(
+    //       configuracionServicioTarifa.map(async (servicio) => {
+    //         const response = await getPrecioOrdenServicio({
+    //           horaInicio: servicio.horaInicio,
+    //           horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+    //           fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
+    //           fechaInicio: formOrdenServicio.fechaInicio,
+    //           idTarifa: servicio.idTarifa || 0,
+    //           idServicio: servicio.idServicio || 0,
+    //         });
+
+    //         if (response.status === 201) {
+    //           servicio.precio = response.data.precio;
+    //           precioTotal += response.data.precio;
+    //           setMensajeRespuesta(response.data.message);
+    //         }
+    //         return response;
+    //       }),
+    //     );
+
+    //     allValidated =
+    //       responseRangoHorarioValidacion.every(
+    //         (r) => r.status === "fulfilled",
+    //       ) &&
+    //       responsePrecioOrdenServicio.every((r) => r.status === "fulfilled");
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+
+    //   if (allValidated) {
+    //     setFormOrdenServicio({
+    //       ...formOrdenServicio,
+    //       precioTotal: precioTotal,
+    //     });
+    //     toast.success(
+    //       "Rango horario personal y precio de orden de servicio validados correctamente",
+    //     );
+    //     setCurrentStep(7);
+    //   }
+    //   return;
+    // }
+
+    if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handleNextEdit = async () => {
     if (currentStep === 1) {
+      let precioTotal = 0;
+
       updateValidateFechasOrdenServicio(
         {
           id: selectedOrderDetail?.idOrdenServicio || 0,
@@ -369,29 +406,14 @@ function RouteComponent() {
             fechaActualizacion: new Date().toISOString(),
           },
         },
-        {
-          onSuccess: () => {
-            setCurrentStep(2);
-          },
-        },
+        // {
+        //   onSuccess: () => {
+        //     setCurrentStep(2);
+        //   },
+        // },
       );
-      return;
-    }
 
-    if (currentStep === 2) {
-      let allValidated = true;
-      let precioTotal = 0;
       try {
-        const responseRangoHorarioValidacion = await Promise.allSettled(
-          configuracionServicioTarifaEdit.map(async (servicio) => {
-            return validarRangoHorarioPersonalOrdenServicio({
-              horaInicio: servicio.horaInicio,
-              horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
-              personal: servicio.personal,
-            });
-          }),
-        );
-
         const responsePrecioOrdenServicio = await Promise.allSettled(
           configuracionServicioTarifaEdit.map(async (servicio) => {
             const response = await getPrecioOrdenServicio({
@@ -412,29 +434,83 @@ function RouteComponent() {
           }),
         );
 
-        allValidated =
-          responseRangoHorarioValidacion.every(
-            (r) => r.status === "fulfilled",
-          ) &&
-          responsePrecioOrdenServicio.every((r) => r.status === "fulfilled");
+        const allValidated = responsePrecioOrdenServicio.every(
+          (r) => r.status === "fulfilled",
+        );
+
+        if (allValidated) {
+          setFormOrdenServicioEdit({
+            ...formOrdenServicioEdit,
+            precioTotal: precioTotal,
+          });
+          toast.success("Precio de orden de servicio validados correctamente");
+          setCurrentStep(2);
+        }
       } catch (error) {
         console.log(error);
+        toast.error("Error al validar el precio de la orden de servicio");
       }
 
-      if (allValidated) {
-        setFormOrdenServicioEdit({
-          ...formOrdenServicioEdit,
-          precioTotal: precioTotal,
-        });
-        toast.success(
-          "Rango horario personal y precio de orden de servicio validados correctamente",
-        );
-        setCurrentStep(3);
-      }
       return;
     }
 
-    if (currentStep < 3) {
+    // if (currentStep === 2) {
+    //   let allValidated = true;
+    //   let precioTotal = 0;
+    //   try {
+    //     const responseRangoHorarioValidacion = await Promise.allSettled(
+    //       configuracionServicioTarifaEdit.map(async (servicio) => {
+    //         return validarRangoHorarioPersonalOrdenServicio({
+    //           horaInicio: servicio.horaInicio,
+    //           horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+    //           personal: servicio.personal,
+    //         });
+    //       }),
+    //     );
+
+    //     const responsePrecioOrdenServicio = await Promise.allSettled(
+    //       configuracionServicioTarifaEdit.map(async (servicio) => {
+    //         const response = await getPrecioOrdenServicio({
+    //           horaInicio: servicio.horaInicio,
+    //           horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+    //           fechaFin: isIndefinite ? null : formOrdenServicioEdit.fechaFin,
+    //           fechaInicio: formOrdenServicioEdit.fechaInicio,
+    //           idTarifa: servicio.idTarifa || 0,
+    //           idServicio: servicio.idServicio || 0,
+    //         });
+
+    //         if (response.status === 201) {
+    //           servicio.precio = response.data.precio;
+    //           precioTotal += response.data.precio;
+    //           setMensajeRespuesta(response.data.message);
+    //         }
+    //         return response;
+    //       }),
+    //     );
+
+    //     allValidated =
+    //       responseRangoHorarioValidacion.every(
+    //         (r) => r.status === "fulfilled",
+    //       ) &&
+    //       responsePrecioOrdenServicio.every((r) => r.status === "fulfilled");
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+
+    //   if (allValidated) {
+    //     setFormOrdenServicioEdit({
+    //       ...formOrdenServicioEdit,
+    //       precioTotal: precioTotal,
+    //     });
+    //     toast.success(
+    //       "Rango horario personal y precio de orden de servicio validados correctamente",
+    //     );
+    //     setCurrentStep(2);
+    //   }
+    //   return;
+    // }
+
+    if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -740,24 +816,24 @@ function RouteComponent() {
           />
         );
 
-      case 6:
-        return (
-          <AsignacionPersonalServicio
-            selectedServices={selectedServices}
-            configuracionServicioTarifa={configuracionServicioTarifa}
-            setConfiguracionServicioTarifa={setConfiguracionServicioTarifa}
-            handleValidarEmpleadosDisponibles={
-              handleValidarEmpleadosDisponibles
-            }
-            validarEmpleadosDisponiblesData={
-              validarEmpleadosDisponiblesData?.data || []
-            }
-            isValidarEmpleadosDisponiblesPending={
-              isValidarEmpleadosDisponiblesPending
-            }
-          />
-        );
-      case 7:
+      // case 6: // Asignacion de personal
+      //   return (
+      //     <AsignacionPersonalServicio
+      //       selectedServices={selectedServices}
+      //       configuracionServicioTarifa={configuracionServicioTarifa}
+      //       setConfiguracionServicioTarifa={setConfiguracionServicioTarifa}
+      //       handleValidarEmpleadosDisponibles={
+      //         handleValidarEmpleadosDisponibles
+      //       }
+      //       validarEmpleadosDisponiblesData={
+      //         validarEmpleadosDisponiblesData?.data || []
+      //       }
+      //       isValidarEmpleadosDisponiblesPending={
+      //         isValidarEmpleadosDisponiblesPending
+      //       }
+      //     />
+      //   );
+      case 6: // antes paso 7
         return (
           <PreviewInformacionOrden
             selectedPuesto={selectedPuesto}
@@ -787,29 +863,29 @@ function RouteComponent() {
           />
         );
 
-      case 2:
-        return (
-          <AsignacionPersonalServicio
-            selectedServices={selectedServices}
-            configuracionServicioTarifa={configuracionServicioTarifaEdit}
-            setConfiguracionServicioTarifa={(configuracionServicioTarifa) =>
-              setConfiguracionServicioTarifaEdit(
-                configuracionServicioTarifa as UpdateOrdenServicioTarifaDtoInternal[],
-              )
-            }
-            handleValidarEmpleadosDisponibles={
-              handleValidarEmpleadosDisponibles
-            }
-            isValidarEmpleadosDisponiblesPending={
-              isValidarEmpleadosDisponiblesPending
-            }
-            validarEmpleadosDisponiblesData={
-              validarEmpleadosDisponiblesData?.data || []
-            }
-          />
-        );
+      // case 2:
+      //   return (
+      //     <AsignacionPersonalServicio
+      //       selectedServices={selectedServices}
+      //       configuracionServicioTarifa={configuracionServicioTarifaEdit}
+      //       setConfiguracionServicioTarifa={(configuracionServicioTarifa) =>
+      //         setConfiguracionServicioTarifaEdit(
+      //           configuracionServicioTarifa as UpdateOrdenServicioTarifaDtoInternal[],
+      //         )
+      //       }
+      //       handleValidarEmpleadosDisponibles={
+      //         handleValidarEmpleadosDisponibles
+      //       }
+      //       isValidarEmpleadosDisponiblesPending={
+      //         isValidarEmpleadosDisponiblesPending
+      //       }
+      //       validarEmpleadosDisponiblesData={
+      //         validarEmpleadosDisponiblesData?.data || []
+      //       }
+      //     />
+      //   );
 
-      case 3:
+      case 2: // antes paso 3
         return (
           <PreviewInformacionOrden
             isEditing={isEditing}
@@ -859,7 +935,7 @@ function RouteComponent() {
         <>
           {/* Step Indicator */}
           <div className="flex items-center justify-center px-6 py-6">
-            {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+            {[1, 2, 3, 4, 5, 6].map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
@@ -872,7 +948,7 @@ function RouteComponent() {
                 >
                   {step < currentStep ? <Check className="h-4 w-4" /> : step}
                 </div>
-                {step < 7 && (
+                {step < 6 && (
                   <div
                     className={`mx-2 h-0.5 w-16 ${step < currentStep ? `bg-green-500` : `bg-gray-200`}`}
                   />
@@ -889,7 +965,7 @@ function RouteComponent() {
           {/* Footer */}
           <div className="flex items-center justify-between border-t border-gray-200 px-6 pt-6 pb-4">
             <div className="text-sm text-gray-500">
-              Paso {currentStep} de {7}
+              Paso {currentStep} de {6}
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -912,7 +988,7 @@ function RouteComponent() {
               )}
               <button
                 type="button"
-                onClick={currentStep < 7 ? handleNext : handleSaveOrder}
+                onClick={currentStep < 6 ? handleNext : handleSaveOrder}
                 disabled={
                   isValidateFechasOrdenServicioPending ||
                   isGetPrecioOrdenPending ||
@@ -930,7 +1006,7 @@ function RouteComponent() {
                   // TODO: Revisar validaciones de los pasos
                 }
                 className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
-                  currentStep < 7
+                  currentStep < 6
                     ? "bg-blue-600 hover:bg-blue-700"
                     : "bg-green-600 hover:bg-green-700"
                 } ${isCrearOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
@@ -940,7 +1016,7 @@ function RouteComponent() {
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                     Creando...
                   </div>
-                ) : currentStep < 7 ? (
+                ) : currentStep < 6 ? (
                   "Siguiente"
                 ) : (
                   "Crear Orden"
@@ -963,7 +1039,7 @@ function RouteComponent() {
         <>
           {/* Step Indicator */}
           <div className="flex items-center justify-center px-6 py-6">
-            {[1, 2, 3].map((step) => (
+            {[1, 2].map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
@@ -976,7 +1052,7 @@ function RouteComponent() {
                 >
                   {step < currentStep ? <Check className="h-4 w-4" /> : step}
                 </div>
-                {step < 3 && (
+                {step < 2 && (
                   <div
                     className={`mx-2 h-0.5 w-16 ${step < currentStep ? `bg-green-500` : `bg-gray-200`}`}
                   />
@@ -993,7 +1069,7 @@ function RouteComponent() {
           {/* Footer */}
           <div className="flex items-center justify-between border-t border-gray-200 px-6 pt-6 pb-4">
             <div className="text-sm text-gray-500">
-              Paso {currentStep} de {3}
+              Paso {currentStep} de {2}
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -1016,7 +1092,7 @@ function RouteComponent() {
               )}
               <button
                 type="button"
-                onClick={currentStep < 3 ? handleNextEdit : handleUpdateOrder}
+                onClick={currentStep < 2 ? handleNextEdit : handleUpdateOrder}
                 // disabled={
                 //   isValidateFechasOrdenServicioPending ||
                 //   isGetPrecioOrdenPending ||
@@ -1027,7 +1103,7 @@ function RouteComponent() {
                 //   // TODO: Revisar validaciones de los pasos
                 // }
                 className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
-                  currentStep < 3
+                  currentStep < 2
                     ? "bg-blue-600 hover:bg-blue-700"
                     : "bg-green-600 hover:bg-green-700"
                 } ${isActualizarOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
@@ -1037,7 +1113,7 @@ function RouteComponent() {
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                     Actualizando...
                   </div>
-                ) : currentStep < 3 ? (
+                ) : currentStep < 2 ? (
                   "Siguiente"
                 ) : (
                   "Actualizar Orden"

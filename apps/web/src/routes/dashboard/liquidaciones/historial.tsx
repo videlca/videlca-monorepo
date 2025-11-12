@@ -9,9 +9,17 @@ import {
 import { Section } from "../../../components/ui/dashboard/Section";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { EyeOff, FileTextIcon, Mail, Search } from "lucide-react";
+import {
+  EyeOff,
+  FileTextIcon,
+  Mail,
+  MessageSquareTextIcon,
+  Search,
+} from "lucide-react";
 import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard";
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
+import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/ObservacionesGrupoOrdenes";
+import type { GruposLiquidaciones } from "../../../api/types/liquidaciones";
 
 export const Route = createFileRoute("/dashboard/liquidaciones/historial")({
   component: RouteComponent,
@@ -44,6 +52,10 @@ function RouteComponent() {
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isOpenEmail, setIsOpenEmail] = useState(false);
   const [groupIdSelected, setGroupIdSelected] = useState<number | null>(null);
+  const [isOpenObservacionesModal, setIsOpenObservacionesModal] =
+    useState(false);
+  const [groupLiquidacionSelected, setGroupLiquidacionSelected] =
+    useState<GruposLiquidaciones | null>(null);
   // Queries y mutaciones
   const {
     data: liquidaciones,
@@ -189,6 +201,16 @@ function RouteComponent() {
                             : "Ocultar"}
                         </button>
                         <button
+                          onClick={() => {
+                            setIsOpenObservacionesModal(true);
+                            setGroupLiquidacionSelected(group);
+                          }}
+                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-green-600 transition-colors hover:bg-green-50 hover:text-green-800"
+                        >
+                          <MessageSquareTextIcon className="mr-1 h-4 w-4" />
+                          Observaciones
+                        </button>
+                        <button
                           onClick={() =>
                             handleGenerarReporteLiquidacion(
                               group.idGrupoLiquidacion,
@@ -226,6 +248,21 @@ function RouteComponent() {
           </div>
         </>
       ) : null}
+
+      <ObservacionesGrupoOrdenes
+        isOpenObservaciones={isOpenObservacionesModal}
+        setIsOpenObservaciones={(isOpen) => {
+          setIsOpenObservacionesModal(isOpen);
+          if (!isOpen) {
+            setGroupIdSelected(null);
+          }
+        }}
+        selectedOrderDetail={
+          groupLiquidacionSelected || ({} as GruposLiquidaciones)
+        }
+        setSelectedOrderDetail={setGroupLiquidacionSelected}
+        observacionesQueryData={[]}
+      />
 
       <EnvioCorreos
         isOpen={isOpenEmail}

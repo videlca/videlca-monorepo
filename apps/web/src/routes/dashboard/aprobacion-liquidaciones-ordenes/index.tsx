@@ -1,5 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CheckIcon, EyeOff, FileTextIcon, Mail, TrashIcon } from "lucide-react";
+import {
+  CheckIcon,
+  EyeOff,
+  FileTextIcon,
+  Mail,
+  MessageSquareTextIcon,
+  TrashIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import {
@@ -12,6 +19,10 @@ import {
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard";
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
+import { ObservacionesOrdenServicio } from "../../../components/ui/modals/ObservacionesOrdenServicio";
+import type { OrdenServicio } from "../../../api/types/orden-servicio";
+import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/ObservacionesGrupoOrdenes";
+import type { GruposLiquidaciones } from "../../../api/types";
 
 export const Route = createFileRoute(
   "/dashboard/aprobacion-liquidaciones-ordenes/",
@@ -24,6 +35,9 @@ function RouteComponent() {
   const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
   const [groupIdSelected, setGroupIdSelected] = useState<number | null>(null);
   const [isOpenEmail, setIsOpenEmail] = useState(false);
+  const [isOpenObservaciones, setIsOpenObservaciones] = useState(false);
+  const [selectedGroupOrder, setSelectedGroupOrder] =
+    useState<GruposLiquidaciones | null>(null);
   // Queries y mutaciones
   const { data: groups } = useGetGruposLiquidaciones();
   const { mutate: aprobarGrupoLiquidacion } = useAprobarGrupoLiquidacion();
@@ -122,6 +136,16 @@ function RouteComponent() {
                             : "Ocultar"}
                         </button>
                         <button
+                          onClick={() => {
+                            setIsOpenObservaciones(true);
+                            setSelectedGroupOrder(group);
+                          }}
+                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-green-600 transition-colors hover:bg-green-50 hover:text-green-800"
+                        >
+                          <MessageSquareTextIcon className="mr-1 h-4 w-4" />
+                          Observaciones
+                        </button>
+                        <button
                           onClick={() =>
                             handleGenerarReporteLiquidacion(
                               group.idGrupoLiquidacion,
@@ -178,6 +202,19 @@ function RouteComponent() {
           </div>
         )}
       </div>
+
+      <ObservacionesGrupoOrdenes
+        isOpenObservaciones={isOpenObservaciones}
+        setIsOpenObservaciones={(isOpen) => {
+          setIsOpenObservaciones(isOpen);
+          if (!isOpen) {
+            setGroupIdSelected(null);
+          }
+        }}
+        selectedOrderDetail={selectedGroupOrder || ({} as GruposLiquidaciones)}
+        setSelectedOrderDetail={setSelectedGroupOrder}
+        observacionesQueryData={[]}
+      />
 
       <EnvioCorreos
         isOpen={isOpenEmail}
