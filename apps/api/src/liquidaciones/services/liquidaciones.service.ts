@@ -113,8 +113,8 @@ export class LiquidacionesService {
     if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    if (today.getMonth() + 1 === mes && today.getDate() < 20)
-    throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
+    // if (today.getMonth() + 1 === mes && today.getDate() < 20)
+    // throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
 
     // Crear QueryRunner para manejar la transacción
     const queryRunner = this.dataSource.createQueryRunner();
@@ -392,8 +392,8 @@ export class LiquidacionesService {
     }
 
     const today = new Date();
-    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
-      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+    // if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
+    //   throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
     // Rango del mes objetivo: [inicioMes, finMes)
     const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
