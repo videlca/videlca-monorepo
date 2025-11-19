@@ -2,6 +2,7 @@
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Liquidacione } from '../../liquidaciones/entities/liquidacione.entity';
 import { NumeroPedido } from '../../liquidaciones/entities/numero_pedido.entity';
+import { ObservacionGrupoOrdenServicio } from '../../liquidaciones/entities/observacion-grupo-orden-servicio.entity';
 
 @Entity({ name: 'grupo_liquidaciones' })
 export class GrupoLiquidacion {
@@ -67,5 +68,12 @@ export class GrupoLiquidacion {
     (numeroPedido) => numeroPedido.idGrupoLiquidacion
   )
   numerosPedido: NumeroPedido[];
+
+  @OneToMany(
+    () => ObservacionGrupoOrdenServicio,
+    (observacionGrupoOrdenServicio) => observacionGrupoOrdenServicio.idGrupoOrdenServicio,
+    {cascade: true}
+  )
+  observacionesGrupoOrdenServicio: ObservacionGrupoOrdenServicio[];
   
 }

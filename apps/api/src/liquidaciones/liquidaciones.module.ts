@@ -11,15 +11,20 @@ import {
   Liquidacione,
   GrupoLiquidacion,
   LiquidacionServicioOrdenServicio,
-  NumeroPedido
+  NumeroPedido,
+  ObservacionGrupoOrdenServicio
 } from './entities';
 
-import { LiquidacionesService } from './services/liquidaciones.service';
+import { 
+  LiquidacionesService,
+  ObservacionesGrupoOrdenServicioService
+} from './services';
 
 import { 
   LiquidacionesController, 
   AprobacionLiquidacionOrdenServicioController, 
-  ExportacionController 
+  ExportacionController,
+  ObservacionesGrupoOrdenServicioController
 } from './controllers';
 
 @Module({
@@ -28,7 +33,8 @@ import {
       Liquidacione, 
       GrupoLiquidacion,
       LiquidacionServicioOrdenServicio,
-      NumeroPedido
+      NumeroPedido,
+      ObservacionGrupoOrdenServicio
     ]),
     forwardRef(() => OrdenServicioModule), // usa forwardRef si hay circularidad
     CommonModule,
@@ -40,13 +46,16 @@ import {
   controllers: [
     LiquidacionesController, 
     AprobacionLiquidacionOrdenServicioController, 
-    ExportacionController
+    ExportacionController,
+    ObservacionesGrupoOrdenServicioController
   ],
   providers: [
     LiquidacionesService,
+    ObservacionesGrupoOrdenServicioService
   ],
   exports: [
-    LiquidacionesService
+    LiquidacionesService,
+    ObservacionesGrupoOrdenServicioService
   ],
 })
 export class LiquidacionesModule {}
