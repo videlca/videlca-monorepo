@@ -6,7 +6,7 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { PaginationDto } from '../../common/dto';
 
 import { LocacionService } from '../services';
-import { CreateLocacionDto, UpdateLocacionDto } from '../dto';
+import { CreateLocacionDto, UpdateLocacionDto, LocacionSearchDto } from '../dto';
 
 @Controller('locaciones')
 @AppAuth(DescriptionRoutes.CLIENTE) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -29,6 +29,13 @@ export class LocacionController {
     @ValidateJwtAuth()
     findAllActivas(@Query() paginationDto: PaginationDto) {
         return this.locacionService.findAllActives(paginationDto, paginationDto.pagination);
+    }
+    
+    // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODAS LAS LOCACIONES POR BUSQUEDA DE TEXTO
+    @Get('search')
+    @ValidateJwtAuth()
+    findAllActivasSeacrh(@Query() locacionSearch: LocacionSearchDto) {
+        return this.locacionService.findAllActivesSearch(locacionSearch);
     }
 
     @Get(':id')

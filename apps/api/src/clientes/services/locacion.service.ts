@@ -12,7 +12,7 @@ import { PaginationDto } from '../../common/dto';
 import { Locacion, Correo } from '../entities';
 import { ClientesService } from '../services';
 
-import { CreateLocacionDto, UpdateLocacionDto, CreateCorreoDto } from '../dto';
+import { CreateLocacionDto, UpdateLocacionDto, CreateCorreoDto, LocacionSearchDto } from '../dto';
 
 @Injectable()
 export class LocacionService {
@@ -311,6 +311,42 @@ export class LocacionService {
                 nombre: 'ASC'
             }
         });
+    }
+    
+    // Obtener todas las locaciones POR BSUQUEDA
+    async findAllActivesSearch(locacionSearch: LocacionSearchDto) {
+
+        const { column, text } = locacionSearch;
+
+        const search = `%${text.toLowerCase()}%`;
+
+        const qb = this.locacionRepository
+            .createQueryBuilder('loc')
+            .leftJoinAndSelect('loc.idCliente', 'cliente')
+            .leftJoinAndSelect('loc.idCiudad', 'ciudad')   // NUEVO JOIN
+            .where('loc.estado = :estado', { estado: true });  // FILTRO GLOBAL
+    
+        switch (column) {
+
+            case 'nombre':
+                qb.andWhere(`LOWER(loc.nombre) LIKE :search`, { search });
+                break;
+        
+            case 'direccion':
+                qb.andWhere(`LOWER(loc.direccion) LIKE :search`, { search });
+                break;
+        
+            case 'cliente':
+                qb.andWhere(`LOWER(cliente.nombre) LIKE :search`, { search });
+                break;
+        
+            default:
+                throw new BadRequestException('Columna inválida');
+
+        }
+    
+        return qb.getMany();
+
     }
 
     // Obtener una locación por ID
