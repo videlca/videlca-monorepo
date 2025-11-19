@@ -21,3 +21,6 @@ export { UpdateObservacionOrdenServicioDto } from "./observacion-orden-servicio/
 
 // ORDEN SERVICIO ID
 export { UpdateOrdenServicioIdDto } from "./orden-servicio/update-id-orden-servicio.dto";
+
+// INICIO
+export { GetReporteInicioDto } from "./inicio/inicio.dto";

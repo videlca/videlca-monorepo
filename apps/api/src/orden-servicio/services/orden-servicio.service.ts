@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
+import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
+
 import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
 import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
@@ -47,7 +49,10 @@ import {
   UpdateValidarFechaOrdenServicioDto,
 
   // ANULAR ORDEN
-  AnularIdOrdenServicioDto 
+  AnularIdOrdenServicioDto,
+
+  // INICIO
+  GetReporteInicioDto
 } from '../dto';
 
 @Injectable()
@@ -1619,6 +1624,117 @@ export class OrdenServicioService {
     if (!isEmailSend){
         throw new InternalServerErrorException(`Error al enviar correo con PDF orden de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
     }
+
+  }
+
+  async reportesInicio(months: number){
+
+    const now = new Date();
+    let from: Date;
+    let to: Date = endOfMonth(now);
+
+    if (months === 0) {
+      // Mes actual
+      from = startOfMonth(now);
+    } else {
+      from = subMonths(now, months);
+    }
+
+    // === 1. TRAER LAS ÓRDENES DEL RANGO ===
+    const ordenes = await this.ordenServicioRepository
+      .createQueryBuilder('o')
+      .leftJoinAndSelect('o.idEstadoOrdenServicio', 'estado')
+      .leftJoinAndSelect('o.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('o.tarifas', 'tarifas')
+      .leftJoinAndSelect('tarifas.idTarifa', 'tarifa')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .where('o.fechaInicio BETWEEN :from AND :to', { from, to })
+      .getMany();
+
+    // === 2. CÁLCULOS DE REPORTES ===
+
+    // Total de órdenes
+    const totalOrdenes = ordenes.length;
+
+    // Total en estado TERMINADO
+    const ordenesTerminadas = ordenes.filter(
+      o => o.idEstadoOrdenServicio?.nombre === EstadoOrdenServicio.TERMINADO
+    ).length;
+
+    // Distribución por estado
+    const distribucionEstados = ordenes.reduce((acc, o) => {
+      const estado = o.idEstadoOrdenServicio?.nombre;
+      acc[estado] = (acc[estado] || 0) + 1;
+      return acc;
+    }, {});
+    
+    // Ordenes por mes + distribución por estado
+    const mesesMap = {};
+    const mesesLabels = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    
+    for (const o of ordenes) {
+      const fecha = new Date(o.fechaInicio);
+      const mes = mesesLabels[fecha.getMonth()];
+    
+      if (!mesesMap[mes]) mesesMap[mes] = {};
+    
+      const estado = o.idEstadoOrdenServicio?.nombre;
+      mesesMap[mes][estado] = (mesesMap[mes][estado] || 0) + 1;
+    }
+
+    // TOP 10 SERVICIOS MÁS UTILIZADOS
+    const serviciosCount: Record<string, number> = {};
+    
+    for (const o of ordenes) {
+      for (const t of o.tarifas) {
+        const servicio = t.idTarifa.idServicio;
+        if (!servicio) continue;
+    
+        const key = `${servicio.codigo} - ${servicio.descripcion}`;
+        serviciosCount[key] = (serviciosCount[key] || 0) + 1;
+      }
+    }
+    
+    const topServicios = Object.entries(serviciosCount)
+      .map(([nombre, total]) => ({ nombre, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+
+    // TOP 10 CLIENTES
+    const clientesCount: Record<string, number> = {};
+    
+    for (const o of ordenes) {
+      const cliente = o.idLocacion?.idCliente;
+      if (!cliente) continue;
+    
+      clientesCount[cliente.nombre] = (clientesCount[cliente.nombre] || 0) + 1;
+    }
+    
+    const topClientes = Object.entries(clientesCount)
+      .map(([nombre, total]) => ({ nombre, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+
+    // === 3. RETORNO ===
+    return {
+      rango: { from, to },
+
+      totales: {
+        totalOrdenes,
+        ordenesTerminadas,
+      },
+
+      distribucionEstados,
+
+      ordenesPorMes: mesesMap,
+
+      topServicios,
+      topClientes,
+    };
 
   }
 

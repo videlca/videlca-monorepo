@@ -20,6 +20,7 @@ import {
   UpdateValidarFechaOrdenServicioDto,
   CreateOrdenServicioDto,
   UpdateOrdenServicioDto,
+  GetReporteInicioDto
 } from '../dto';
 
 import { ApiQuery } from '@nestjs/swagger';
@@ -45,6 +46,12 @@ export class OrdenServicioController {
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.ordenServicioService.findAll(paginationDto, paginationDto.pagination);
+  }
+
+  @Get('inicio')
+  @ValidateJwtAuth()
+  async getReportes(@Query() query: GetReporteInicioDto) {
+    return this.ordenServicioService.reportesInicio(query.months);
   }
 
   @Post('validacion-id')
