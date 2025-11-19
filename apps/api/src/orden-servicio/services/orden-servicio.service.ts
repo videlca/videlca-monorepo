@@ -1116,7 +1116,7 @@ export class OrdenServicioService {
 
   async updateOrdenServicio(id: number, updateOrdenServicioDto: UpdateOrdenServicioDto){
 
-    const { fechaInicio, fechaFin, fechaActualizacion, servicios } = updateOrdenServicioDto;
+    const { fechaInicio, fechaFin, fechaActualizacion } = updateOrdenServicioDto;
 
     // Usar QueryRunner para transacción manual
     const queryRunner = this.dataSource.createQueryRunner();
@@ -1210,41 +1210,41 @@ export class OrdenServicioService {
 
       const savedOrdenServicio = await queryRunner.manager.save(OrdenServicio, ordenServicio);
 
-      const nombreServicios = []
-
-      if (servicios.length != ordenServicio.tarifas.length){
-
-        throw new BadRequestException(`No se puede actualizar la cantidad de servicios existentes para esta orden`);          
-
-      }
+      const servicios = ordenServicio.tarifas; 
 
       // eliminar tarifas asociadas a la orden
       await queryRunner.manager.delete(OrdenServicioTarifa, { idOrdenServicio: id });
 
       for (const servicio of servicios) {
+
+        // OBTENER PRECIO
+        let precio = 0
               
         // OBTENER TARIFA
-        const tarifa = await this.tarifasService.findOne(servicio.idTarifa);
-
-        nombreServicios.push(tarifa.idServicio.descripcion);
+        const tarifa = await this.tarifasService.findOne(servicio.idTarifa.idTarifa);
         
         // Validar si se debe enviar el precio del servicio
         if (fechaFinOrden != null) {
   
-          if (servicio.precio == null || servicio.precio == 0){
-  
-            throw new BadRequestException(`se debe enviar el precio del servicio ${tarifa.idServicio.descripcion} al ser una orden definida`);          
-  
-          }
+          // calcular precio
+          const resultado = await this.obtenerPrecio({
+            idTarifa: tarifa.idTarifa,
+            horaInicio: servicio.horaInicio,
+            horaFin: servicio.horaFin,
+            fechaInicio: fechaInicioOrden,
+            fechaFin: fechaFinOrden
+          })
+
+          precio = resultado.precio;
 
         }
 
         // Validar si el servicio requiere personal
-        if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.personal.length <= 0){
+        // if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.programaciones.length <= 0){
           
-          throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
+        //   throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
 
-        }
+        // }
 
         // Crear el servicio para la orden
         const servicioOrden = queryRunner.manager.create(OrdenServicioTarifa, {
@@ -1253,30 +1253,30 @@ export class OrdenServicioService {
             cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
             horaInicio: servicio.horaInicio,
             horaFin: servicio.horaFin,
-            precio: servicio.precio ? servicio.precio : 0
+            precio: precio
         });
 
         const savedServicio = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
 
         // agregar el personal si es necesario
-        const personalServicio = servicio.personal;
+        // const personalServicio = servicio.personal;
 
-        for (const personalAsignado of personalServicio){
+        // for (const personalAsignado of personalServicio){
 
-          // OBTENER PERSONAL
-          const personal = await this.personalService.findOne(personalAsignado.idPersonal);
+        //   // OBTENER PERSONAL
+        //   const personal = await this.personalService.findOne(personalAsignado.idPersonal);
 
-          // asignar personal para el servicio
-          const asignarPersonal = queryRunner.manager.create(ProgramacionPersonal, {
-              idOrdenServicioTarifa: savedServicio,
-              idPersonal: personal,
-              horaInicio: personalAsignado.horaInicio,
-              horaFin: personalAsignado.horaFin
-          });
+        //   // asignar personal para el servicio
+        //   const asignarPersonal = queryRunner.manager.create(ProgramacionPersonal, {
+        //       idOrdenServicioTarifa: savedServicio,
+        //       idPersonal: personal,
+        //       horaInicio: personalAsignado.horaInicio,
+        //       horaFin: personalAsignado.horaFin
+        //   });
 
-          const savedPersonal = await queryRunner.manager.save(ProgramacionPersonal, asignarPersonal);
+        //   const savedPersonal = await queryRunner.manager.save(ProgramacionPersonal, asignarPersonal);
 
-        }        
+        // }        
 
       }
 

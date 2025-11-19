@@ -108,27 +108,27 @@ export class UpdateOrdenServicioDto {
     fechaActualizacion: Date;
 
     // Array de servicios para una orden (mínimo 1)
-    @ApiProperty({ 
-        description: 'Lista de servicios de la orden', 
-        type: [UpdateOrdenServicioTarifaDto],
-        required: true,
-        example: [
-            {
-                idTarifa: 1,
-                cantidadPersonal: 2,
-                horaInicio: '06:00:00',
-                horaFin: '18:00:00',
-                personal: [
-                    { idPersonal: 1, horaInicio: '06:00:00', horaFin: '18:00:00'},
-                    { idPersonal: 2, horaInicio: '06:00:00', horaFin: '18:00:00' }
-                ]
-            }
-        ]
-    })
-    @IsArray()
-    @ArrayMinSize(1, { message: 'La orden de servicio debe tener al menos un servicio' })
-    @ValidateNested({ each: true })
-    @Type(() => UpdateOrdenServicioTarifaDto)
-    servicios: UpdateOrdenServicioTarifaDto[];
+    // @ApiProperty({ 
+    //     description: 'Lista de servicios de la orden', 
+    //     type: [UpdateOrdenServicioTarifaDto],
+    //     required: true,
+    //     example: [
+    //         {
+    //             idTarifa: 1,
+    //             cantidadPersonal: 2,
+    //             horaInicio: '06:00:00',
+    //             horaFin: '18:00:00',
+    //             personal: [
+    //                 { idPersonal: 1, horaInicio: '06:00:00', horaFin: '18:00:00'},
+    //                 { idPersonal: 2, horaInicio: '06:00:00', horaFin: '18:00:00' }
+    //             ]
+    //         }
+    //     ]
+    // })
+    // @IsArray()
+    // @ArrayMinSize(1, { message: 'La orden de servicio debe tener al menos un servicio' })
+    // @ValidateNested({ each: true })
+    // @Type(() => UpdateOrdenServicioTarifaDto)
+    // servicios: UpdateOrdenServicioTarifaDto[];
 
 }
