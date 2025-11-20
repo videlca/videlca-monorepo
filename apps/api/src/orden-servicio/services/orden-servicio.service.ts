@@ -293,7 +293,7 @@ export class OrdenServicioService {
       const emails = [...emailsLocacion, ...emailsApp];
 
       await this.notificationEmail(
-        savedOrdenServicio,
+        savedOrdenServicio.idOrdenServicio,
         nombreResponsable, 
         locacion.nombre,
         emails
@@ -320,11 +320,13 @@ export class OrdenServicioService {
 
   // ENVIAR CORREO PARA INFORMAR CREACION DE ORDEN DE SERVICIO
   private async notificationEmail(
-    ordenServicio: OrdenServicio,
+    idOrdenServicio: number,
     nombreResponsable: string,
     locacion: string,
     emails: string[]
   ) {        
+
+    const ordenServicio = await this.findOneOrdenRelations(idOrdenServicio);
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -432,6 +434,25 @@ export class OrdenServicioService {
 
     return ordenServicio;
 
+  }
+
+  async findOneOrdenRelations(id: number) {
+
+    const ordenServicio = await this.ordenServicioRepository.findOne({
+      where: { idOrdenServicio: id },
+      relations: {
+        idLocacion: {
+          correos: true,
+          idCliente: true,
+          idCiudad: true,
+        },
+      },
+    });
+  
+    if (!ordenServicio)
+      throw new NotFoundException(`Orden de servicio con id "${id}" no se ha encontrado`);
+  
+    return ordenServicio;
   }
 
   async validacionFechas(validarFechasOrdenDto: ValidarFechasOrdenServicioDto){
@@ -1300,7 +1321,7 @@ export class OrdenServicioService {
         const emails = [...emailsLocacion, ...emailsApp];
   
         await this.notificationUpdateEmail(
-          savedOrdenServicio,
+          savedOrdenServicio.idOrdenServicio,
           nombreResponsable, 
           ordenServicio.idLocacion.nombre,
           emails
@@ -1328,11 +1349,13 @@ export class OrdenServicioService {
 
   // ENVIAR CORREO PARA INFORMAR ACTUALIZACION DE ORDEN DE SERVICIO
   private async notificationUpdateEmail(
-    ordenServicio: OrdenServicio,
+    idOrdenServicio: number,
     nombreResponsable: string,
     locacion: string,
     emails: string[]
   ) {        
+
+    const ordenServicio = await this.findOneOrdenRelations(idOrdenServicio);
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -1436,7 +1459,7 @@ export class OrdenServicioService {
       const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.ELIMINACION_ORDEN_SERVICIO);
 
       await this.notificationDeleteEmail(
-        ordenServicio,
+        id,
         nombreResponsable, 
         ordenServicio.idLocacion.nombre,
         emails
@@ -1464,11 +1487,13 @@ export class OrdenServicioService {
 
   // ENVIAR CORREO PARA INFORMAR ELIMINACION DE ORDEN DE SERVICIO
   private async notificationDeleteEmail(
-    ordenServicio: OrdenServicio,
+    idOrdenServicio: number,
     nombreResponsable: string,
     locacion: string,
     emails: string[]
   ) {        
+
+    const ordenServicio = await this.findOneOrdenRelations(idOrdenServicio);
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -1542,7 +1567,7 @@ export class OrdenServicioService {
 
   async downloadOrdenServicioPdf(id: number){
 
-    const ordenServicio = await this.findOne(id);
+    const ordenServicio = await this.findOneOrdenRelations(id);
 
     return {
       pdfDoc: this.reporteOrdenServicioService.getReporteOrdenServicio(ordenServicio),
@@ -1553,7 +1578,7 @@ export class OrdenServicioService {
   
   async sendOrdenServicioPdf(id: number, enviarCorreoDto: EnviarCorreoDto){
 
-    const ordenServicio = await this.findOne(id);
+    const ordenServicio = await this.findOneOrdenRelations(id);
 
     const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicio);
 

@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { ConfigModule } from '@nestjs/config';
 import { CommonModule } from '../common/common.module';
 import { AuthModule } from '../auth/auth.module';
 import { OrdenServicioModule } from '../orden-servicio/orden-servicio.module';
@@ -37,6 +38,7 @@ import {
       ObservacionGrupoOrdenServicio
     ]),
     forwardRef(() => OrdenServicioModule), // usa forwardRef si hay circularidad
+    ConfigModule,
     CommonModule,
     ReportesModule,
     ClientesModule,
