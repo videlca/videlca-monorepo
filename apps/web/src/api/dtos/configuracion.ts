@@ -69,3 +69,12 @@ export interface CreateCorreoDefaultDto {
 export interface CorreoDefaultDto {
   correos: CreateCorreoDefaultDto[]
 }
+
+// Puestos
+
+export type ColumnaPuesto = 'nombre' | 'direccion' | 'cliente';
+
+export interface SearchPuestosDto {
+  column: ColumnaPuesto
+  text: string
+}

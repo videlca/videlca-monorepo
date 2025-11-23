@@ -1,5 +1,6 @@
 import type { Puesto } from "../../../types";
-import { axiosClient } from "../../config";
+import { apiGet, axiosClient } from "../../config";
+import type { SearchPuestosDto } from "../../dtos";
 import type { CreatePuestoDto, UpdatePuestoDto } from "../../dtos/clientes";
 import type { PaginationDto } from "../../dtos/common";
 import type { ApiResponse } from "../../types";
@@ -48,6 +49,10 @@ export const getPuestoById = async (id: number): Promise<ApiResponse<Puesto | nu
     };
   });
   return response;
+};
+
+export const searchPuestos = async (query: SearchPuestosDto): Promise<ApiResponse<Puesto[]>> => {
+  return await apiGet<Puesto[]>(`/locaciones/search?column=${query.column}&text=${query.text}`);
 };
 
 export const getPuestosActivo = async (pagination: PaginationDto): Promise<ApiResponse<Puesto[]>> => {

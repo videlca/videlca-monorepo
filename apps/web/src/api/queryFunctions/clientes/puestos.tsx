@@ -11,13 +11,18 @@ import {
   getPuestos,
   getPuestosActivo,
   getPuestosByCliente,
+  searchPuestos,
   updatePuesto,
 } from "../../functions/clientes/puestos";
 import type { ApiResponse } from "../../types";
 import type { Puesto } from "../../../types";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
-import type { CreatePuestoDto, UpdatePuestoDto } from "../../dtos";
+import type {
+  CreatePuestoDto,
+  SearchPuestosDto,
+  UpdatePuestoDto,
+} from "../../dtos";
 
 export const usePuestos = (): UseQueryResult<ApiResponse<Puesto[]>, Error> => {
   return useQuery({
@@ -64,6 +69,16 @@ export const usePuestosActivo = (): UseQueryResult<
   return useQuery({
     queryKey: ["puestos-activo"],
     queryFn: () => getPuestosActivo({ pagination: false }),
+  });
+};
+
+export const useSearchPuestos = (
+  query: SearchPuestosDto,
+): UseQueryResult<ApiResponse<Puesto[]>, Error> => {
+  return useQuery({
+    queryKey: ["puestos-search", query.column, query.text],
+    queryFn: () => searchPuestos(query),
+    enabled: !!query.text && query.text.trim().length > 0,
   });
 };
 

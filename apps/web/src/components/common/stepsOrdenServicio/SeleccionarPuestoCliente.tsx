@@ -9,12 +9,13 @@ import {
   XIcon,
 } from "lucide-react";
 import type { Puesto } from "../../../types";
-import { usePuestosActivo } from "../../../api/queryFunctions/clientes";
+import { useSearchPuestos } from "../../../api/queryFunctions/clientes";
 import type { CreateOrdenServicioDto } from "../../../api/dtos/orden-servicio";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SimpleModal } from "../SimpleModal";
 import { ButtonAction } from "../ButtonAction";
 import { useNavigate } from "@tanstack/react-router";
+import type { ColumnaPuesto } from "../../../api/dtos";
 
 export const SeleccionarPuestoCliente = ({
   formOrdenServicio,
@@ -26,7 +27,22 @@ export const SeleccionarPuestoCliente = ({
   setSelectedPuesto: (puesto: Puesto) => void;
 }) => {
   const [isOpenCreatePuesto, setIsOpenCreatePuesto] = useState(false);
-  const { data: puestosQuery } = usePuestosActivo();
+  const [searchText, setSearchText] = useState("");
+  const [debouncedSearchText, setDebouncedSearchText] = useState("");
+  const [searchColumn, setSearchColumn] = useState<ColumnaPuesto>("nombre");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchText(searchText);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
+  const { data: puestosSearchQuery } = useSearchPuestos({
+    column: searchColumn,
+    text: debouncedSearchText,
+  });
   const navigate = useNavigate();
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -45,15 +61,16 @@ export const SeleccionarPuestoCliente = ({
         <div className="flex-1">
           <select
             id="search"
-            value={""}
-            onChange={() => {}}
+            value={searchColumn}
+            onChange={(e) => setSearchColumn(e.target.value as ColumnaPuesto)}
             className="w-full rounded-md border border-gray-300 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            required={false}
-            disabled={false}
           >
-            <option value="" disabled defaultValue={""}>
-              Seleccionar filtro
+            <option value="" disabled>
+              Seleccionar columna
             </option>
+            <option value="nombre">Nombre</option>
+            <option value="direccion">Dirección</option>
+            <option value="cliente">Cliente</option>
           </select>
         </div>
         <div className="relative flex-2">
@@ -62,13 +79,15 @@ export const SeleccionarPuestoCliente = ({
             type="text"
             placeholder="Buscar por nombre del cliente, puesto o dirección..."
             className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
           />
         </div>
       </div>
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-700">
-          Puestos encontrados ({puestosQuery?.data?.length})
+          Puestos encontrados ({puestosSearchQuery?.data?.length || 0})
         </p>
         <div className="justify-end">
           <button
@@ -81,8 +100,8 @@ export const SeleccionarPuestoCliente = ({
         </div>
       </div>
 
-      <div className="max-h-80 space-y-3 overflow-y-auto">
-        {puestosQuery?.data?.map((puesto) => (
+      <div className="max-h-80 min-h-40 space-y-3 overflow-y-auto">
+        {puestosSearchQuery?.data?.map((puesto) => (
           <div
             key={puesto.idLocacion}
             className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
@@ -136,6 +155,16 @@ export const SeleccionarPuestoCliente = ({
             </div>
           </div>
         ))}
+        {puestosSearchQuery?.data?.length === 0 && (
+          <p className="text-center text-sm text-gray-500">
+            No se encontraron puestos.
+          </p>
+        )}
+        {puestosSearchQuery?.data === undefined && (
+          <p className="text-center text-sm text-gray-500">
+            Seleccione una columna y un texto para buscar puestos.
+          </p>
+        )}
       </div>
 
       <SimpleModal
