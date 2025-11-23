@@ -10,6 +10,7 @@ import {
 } from "../../../api/queryFunctions/orden-servicio/observaciones";
 import { format } from "date-fns";
 import { usePermissions } from "../../../context/PermissionsContext";
+import { Loader, TrashIcon } from "lucide-react";
 
 export const ObservacionesOrdenServicio = ({
   isOpenObservaciones,
@@ -29,10 +30,14 @@ export const ObservacionesOrdenServicio = ({
   const { currentUser } = usePermissions();
 
   // Mutaciones y queries
-  const { mutate: createObservacionMutation } =
-    useCreateObservacionOrdenServicio();
-  const { mutate: deleteObservacionMutation } =
-    useDeleteObservacionOrdenServicio();
+  const {
+    mutate: createObservacionMutation,
+    isPending: createObservacionMutationPending,
+  } = useCreateObservacionOrdenServicio();
+  const {
+    mutate: deleteObservacionMutation,
+    isPending: deleteObservacionMutationPending,
+  } = useDeleteObservacionOrdenServicio();
 
   if (!isOpenObservaciones) return null;
 
@@ -100,22 +105,15 @@ export const ObservacionesOrdenServicio = ({
                         idOrdenServicio: selectedOrderDetail.idOrdenServicio,
                       })
                     }
-                    className="cursor-pointer p-1 text-red-400 transition-colors hover:text-red-600"
+                    disabled={deleteObservacionMutationPending}
+                    className="cursor-pointer p-1 text-red-400 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                     title="Eliminar observación"
                   >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
+                    {deleteObservacionMutationPending ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <TrashIcon className="h-4 w-4" />
+                    )}
                   </button>
                 )}
               </div>
@@ -162,10 +160,18 @@ export const ObservacionesOrdenServicio = ({
                     },
                   );
                 }}
-                disabled={!newObservacion.trim() || newObservacion.length > 500}
+                disabled={
+                  !newObservacion.trim() ||
+                  newObservacion.length > 500 ||
+                  createObservacionMutationPending
+                }
                 className="rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Agregar Observación
+                {createObservacionMutationPending ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  "Agregar Observación"
+                )}
               </button>
             </div>
           </div>

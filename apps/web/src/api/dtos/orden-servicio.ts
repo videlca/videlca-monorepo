@@ -117,3 +117,13 @@ export interface CreateObservacionOrdenServicioDto {
 export interface UpdateObservacionOrdenServicioDto {
   descripcion: string;
 }
+
+// observaciones grupo orden servicio
+export interface CreateObservacionGrupoOrdenServicioDto {
+  descripcion: string;
+  idGrupoOrdenServicio: number;
+}
+
+export interface UpdateObservacionGrupoOrdenServicioDto {
+  descripcion: string;
+}

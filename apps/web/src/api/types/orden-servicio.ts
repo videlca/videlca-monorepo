@@ -1,4 +1,5 @@
 import type { EstadoOrden, Puesto, Usuario } from "../../types";
+import type { GruposLiquidaciones } from "./liquidaciones";
 import type { Tarifa } from "./periodo";
 import type { PersonalAsignado } from "./programacion-personal";
 
@@ -62,5 +63,14 @@ export interface ObservacionOrdenServicio {
   descripcion: string;
   idUsuario: Usuario;
   idOrdenServicio: OrdenServicio;
+  fechaCreacion: string;
+}
+
+// observaciones grupo orden servicio
+export interface ObservacionGrupoOrdenServicio {
+  idObservacionGrupoOrdenServicio: number;
+  descripcion: string;
+  idUsuario: Usuario;
+  idGrupoLiquidacion: GruposLiquidaciones;
   fechaCreacion: string;
 }
