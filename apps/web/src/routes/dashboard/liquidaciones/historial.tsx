@@ -20,6 +20,8 @@ import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard"
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/ObservacionesGrupoOrdenes";
 import type { GruposLiquidaciones } from "../../../api/types/liquidaciones";
+import ButtonOrdenes from "../../../components/common/ButtonOrdenes";
+import { useGetObservacionesGrupoOrdenServicio } from "../../../api/queryFunctions/orden-servicio/observaciones-grupo";
 
 export const Route = createFileRoute("/dashboard/liquidaciones/historial")({
   component: RouteComponent,
@@ -56,6 +58,10 @@ function RouteComponent() {
     useState(false);
   const [groupLiquidacionSelected, setGroupLiquidacionSelected] =
     useState<GruposLiquidaciones | null>(null);
+  const { data: observacionesQueryData } =
+    useGetObservacionesGrupoOrdenServicio(
+      groupLiquidacionSelected?.idGrupoLiquidacion as number,
+    );
   // Queries y mutaciones
   const {
     data: liquidaciones,
@@ -183,12 +189,12 @@ function RouteComponent() {
                           "es-ES",
                         )}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button
+                      <div className="flex flex-wrap items-center gap-0 md:gap-4">
+                        <ButtonOrdenes
                           onClick={() =>
                             toggleHideOrders(group.idGrupoLiquidacion)
                           }
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
+                          color="gray"
                           title={
                             hiddenGroups.has(group.idGrupoLiquidacion)
                               ? "Mostrar órdenes"
@@ -199,39 +205,39 @@ function RouteComponent() {
                           {hiddenGroups.has(group.idGrupoLiquidacion)
                             ? "Mostrar"
                             : "Ocultar"}
-                        </button>
-                        <button
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
                           onClick={() => {
                             setIsOpenObservacionesModal(true);
                             setGroupLiquidacionSelected(group);
                           }}
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-green-600 transition-colors hover:bg-green-50 hover:text-green-800"
+                          color="green"
                         >
                           <MessageSquareTextIcon className="mr-1 h-4 w-4" />
                           Observaciones
-                        </button>
-                        <button
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
                           onClick={() =>
                             handleGenerarReporteLiquidacion(
                               group.idGrupoLiquidacion,
                             )
                           }
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
+                          color="blue"
                         >
                           <FileTextIcon className="mr-1 h-4 w-4" />
                           Generar reporte
-                        </button>
-                        <button
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
                           onClick={() =>
                             handleEnviarCorreoLiquidacion(
                               group.idGrupoLiquidacion,
                             )
                           }
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-800"
+                          color="amber"
                         >
                           <Mail className="mr-1 h-4 w-4" />
                           Enviar correo
-                        </button>
+                        </ButtonOrdenes>
                       </div>
                     </div>
                   </div>
@@ -261,7 +267,7 @@ function RouteComponent() {
           groupLiquidacionSelected || ({} as GruposLiquidaciones)
         }
         setSelectedOrderDetail={setGroupLiquidacionSelected}
-        observacionesQueryData={[]}
+        observacionesQueryData={observacionesQueryData?.data || []}
       />
 
       <EnvioCorreos

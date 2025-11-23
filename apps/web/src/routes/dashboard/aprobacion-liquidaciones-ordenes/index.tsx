@@ -19,10 +19,10 @@ import {
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard";
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
-import { ObservacionesOrdenServicio } from "../../../components/ui/modals/ObservacionesOrdenServicio";
-import type { OrdenServicio } from "../../../api/types/orden-servicio";
 import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/ObservacionesGrupoOrdenes";
 import type { GruposLiquidaciones } from "../../../api/types";
+import { useGetObservacionesGrupoOrdenServicio } from "../../../api/queryFunctions/orden-servicio/observaciones-grupo";
+import ButtonOrdenes from "../../../components/common/ButtonOrdenes";
 
 export const Route = createFileRoute(
   "/dashboard/aprobacion-liquidaciones-ordenes/",
@@ -40,6 +40,10 @@ function RouteComponent() {
     useState<GruposLiquidaciones | null>(null);
   // Queries y mutaciones
   const { data: groups } = useGetGruposLiquidaciones();
+  const { data: observacionesQueryData } =
+    useGetObservacionesGrupoOrdenServicio(
+      (selectedGroupOrder?.idGrupoLiquidacion as number) || 0,
+    );
   const { mutate: aprobarGrupoLiquidacion } = useAprobarGrupoLiquidacion();
   const { mutate: desintegrarGrupoLiquidacion } =
     useDesintegrarGrupoLiquidacion();
@@ -118,12 +122,12 @@ function RouteComponent() {
                           "es-ES",
                         )}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <button
+                      <div className="flex flex-wrap items-center gap-0 md:gap-4">
+                        <ButtonOrdenes
                           onClick={() =>
                             toggleHideOrders(group.idGrupoLiquidacion)
                           }
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
+                          color="gray"
                           title={
                             hiddenGroups.has(group.idGrupoLiquidacion)
                               ? "Mostrar órdenes"
@@ -134,57 +138,57 @@ function RouteComponent() {
                           {hiddenGroups.has(group.idGrupoLiquidacion)
                             ? "Mostrar"
                             : "Ocultar"}
-                        </button>
-                        <button
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
                           onClick={() => {
                             setIsOpenObservaciones(true);
                             setSelectedGroupOrder(group);
                           }}
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-green-600 transition-colors hover:bg-green-50 hover:text-green-800"
+                          color="green"
                         >
                           <MessageSquareTextIcon className="mr-1 h-4 w-4" />
                           Observaciones
-                        </button>
-                        <button
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
                           onClick={() =>
                             handleGenerarReporteLiquidacion(
                               group.idGrupoLiquidacion,
                             )
                           }
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
+                          color="blue"
                         >
                           <FileTextIcon className="mr-1 h-4 w-4" />
                           Generar reporte
-                        </button>
-                        <button
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
                           onClick={() =>
                             handleEnviarCorreoLiquidacion(
                               group.idGrupoLiquidacion,
                             )
                           }
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm whitespace-nowrap text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-800"
+                          color="amber"
                         >
                           <Mail className="mr-1 h-4 w-4" />
                           Enviar correo
-                        </button>
-                        <button
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
                           onClick={() =>
                             handleAprobar(group.idGrupoLiquidacion)
                           }
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm text-green-600 transition-colors hover:bg-green-50 hover:text-green-800"
+                          color="green"
                         >
                           <CheckIcon className="mr-1 h-4 w-4" />
                           Aprobar
-                        </button>
-                        <button
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
                           onClick={() =>
                             handleDesintegrar(group.idGrupoLiquidacion)
                           }
-                          className="flex cursor-pointer items-center rounded-md px-3 py-1 text-sm text-red-600 transition-colors hover:bg-red-50 hover:text-red-800"
+                          color="red"
                         >
                           <TrashIcon className="mr-1 h-4 w-4" />
                           Desintegrar
-                        </button>
+                        </ButtonOrdenes>
                       </div>
                     </div>
                   </div>
@@ -213,7 +217,7 @@ function RouteComponent() {
         }}
         selectedOrderDetail={selectedGroupOrder || ({} as GruposLiquidaciones)}
         setSelectedOrderDetail={setSelectedGroupOrder}
-        observacionesQueryData={[]}
+        observacionesQueryData={observacionesQueryData?.data || []}
       />
 
       <EnvioCorreos
