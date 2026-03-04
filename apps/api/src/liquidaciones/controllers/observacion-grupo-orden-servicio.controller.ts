@@ -7,11 +7,11 @@ import { User } from '../../users/entities/user.entity';
 
 import { PaginationDto } from '../../common/dto';
 
-import { ObservacionesGrupoOrdenServicioService } from '../services';
+import { ObservacionesGrupoOrdenServicioService } from '../services/observacion-grupo-orden-servicio.service';
 import { CreateObservacionGrupoOrdenServicioDto, UpdateObservacionGrupoOrdenServicioDto } from '../dto';
 
 @Controller('observaciones-grupo-orden-servicio')
-@ValidateJwtAuth() // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+@AppAuth(DescriptionRoutes.LIQUIDACIONES)// RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class ObservacionesGrupoOrdenServicioController {
 
   constructor(private readonly observacionesGrupoOrdenServicioService: ObservacionesGrupoOrdenServicioService) {}

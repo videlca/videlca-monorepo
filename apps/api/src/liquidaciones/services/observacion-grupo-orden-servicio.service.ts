@@ -13,11 +13,10 @@ import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface
 import { SendMailOptions } from '../../common/services/email/email.service';
 import { EmailService, CorreoDefaultService } from '../../common/services';
 
-import { ObservacionGrupoOrdenServicio, GrupoLiquidacion } from '../entities';
+import { GrupoLiquidacion } from '../entities';
 import { CreateObservacionGrupoOrdenServicioDto, UpdateObservacionGrupoOrdenServicioDto } from '../dto';
+import { ObservacionGrupoOrdenServicio } from '../entities/observacion-grupo-orden-servicio.entity';
 
-
-@Injectable()
 export class ObservacionesGrupoOrdenServicioService {
 
     private readonly logger = new Logger('ObservacionesGrupoOrdenServicioService');
