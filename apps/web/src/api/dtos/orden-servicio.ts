@@ -127,3 +127,11 @@ export interface CreateObservacionGrupoOrdenServicioDto {
 export interface UpdateObservacionGrupoOrdenServicioDto {
   descripcion: string;
 }
+
+// dashboard
+
+export type MonthsAvailable = 0 | 3 | 6 | 12;
+
+export interface GetDashboardInicioDto  {
+  months: MonthsAvailable;
+}
