@@ -1,7 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Transporter } from "nodemailer";
-import * as nodemailer from 'nodemailer';
 import { promises as dns } from "dns";
 
 // Opciones requeridas para enviar un email
@@ -19,30 +17,24 @@ export interface SendMailOptions {
 @Injectable()
 export class EmailService {
     
-    private transporter: Transporter;
+    private readonly username: string;
+    private readonly password: string;
+    private readonly tenantId: string;
+    private readonly clientId: string;
+    private readonly clientSecret: string;
+    private readonly scope: string;
 
     constructor(
       private readonly configService: ConfigService,
     ){
-      
       // INICIALIZAR VARIABLES CON LOS VALORES ESTABLECIDOS EN EL ARCHIVO .env
-      // estas variables son de configuracion para el envio de emails
-      const mailerService = this.configService.get<string>('mailerService');
-      const mailerEmail = this.configService.get<string>('mailerEmail');
-      const senderEmailKey = this.configService.get<string>('mailerSecretKey');
-      const emailHostService = this.configService.get<string>('emailHostService');
-      
-      this.transporter = nodemailer.createTransport({
-          service: mailerService,
-          host: emailHostService,
-          auth: {
-            user: mailerEmail,
-            pass: senderEmailKey,
-          },
-          connectionTimeout: 10_000,
-          socketTimeout: 20_000,
-      });
-
+      // Utilizando los nombres requeridos o las versiones en mayúsculas como fallback
+      this.username = this.configService.get<string>('GRAPH_USERNAME') || this.configService.get<string>('username');
+      this.password = this.configService.get<string>('password') || this.configService.get<string>('GRAPH_PASSWORD');
+      this.tenantId = this.configService.get<string>('tenantId') || this.configService.get<string>('GRAPH_TENANT_ID');
+      this.clientId = this.configService.get<string>('clientId') || this.configService.get<string>('GRAPH_CLIENT_ID');
+      this.clientSecret = this.configService.get<string>('clientSecret') || this.configService.get<string>('GRAPH_CLIENT_SECRET');
+      this.scope = this.configService.get<string>('scope') || this.configService.get<string>('GRAPH_SCOPE') || 'https://graph.microsoft.com/.default';
     }
 
     // ✅ Validar si el dominio del correo tiene MX
@@ -60,7 +52,34 @@ export class EmailService {
       }
     }
     
-    
+    // Obtener token de Microsoft Graph API
+    private async getToken(): Promise<string> {
+      const response = await fetch(
+        `https://login.microsoftonline.com/${this.tenantId}/oauth2/v2.0/token`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            client_id: this.clientId,
+            client_secret: this.clientSecret,
+            scope: this.scope,
+            grant_type: "client_credentials",
+            // username: this.username,
+            // password: this.password,
+          }),
+        }
+      );
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(`Error obteniendo token: ${JSON.stringify(data)}`);
+      }
+
+      return data.access_token;
+    }
+
     // ENVIAR EMAIL
     async sendEmail( options: SendMailOptions ): Promise<boolean> {
 
@@ -76,19 +95,69 @@ export class EmailService {
         }
     
         try {
-    
-          const sentInformation = await this.transporter.sendMail({
-            to: to,
-            subject: subject,
-            html: htmlBody,
-            attachments: attachments,
+          // Obtener token de acceso
+          const accessToken = await this.getToken();
+
+          // Formatear destinatarios
+          const toRecipients = Array.isArray(to) 
+            ? to.map(email => ({ emailAddress: { address: email } })) 
+            : [{ emailAddress: { address: to } }];
+          
+          // Formatear adjuntos
+          let formattedAttachments = [];
+          if (attachments && attachments.length > 0) {
+              formattedAttachments = attachments.map(att => {
+                  let contentBytes = "";
+                  if (Buffer.isBuffer(att.content)) {
+                      contentBytes = att.content.toString("base64");
+                  } else {
+                      // Si es un string, lo convertimos a base64 (Graph API lo requiere en base64)
+                      contentBytes = Buffer.from(att.content).toString("base64");
+                  }
+                  
+                  return {
+                      "@odata.type": "#microsoft.graph.fileAttachment",
+                      name: att.filename,
+                      contentType: att.contentType || "application/octet-stream",
+                      contentBytes: contentBytes
+                  };
+              });
+          }
+
+
+          const emailSender = this.username;
+          // Enviar correo usando Microsoft Graph
+          const response = await fetch(`https://graph.microsoft.com/v1.0/users/${emailSender}/sendMail`, {
+              method: "POST",
+              headers: {
+                  "Authorization": `Bearer ${accessToken}`,
+                  "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                  message: {
+                      subject: subject,
+                      body: {
+                          contentType: "HTML",
+                          content: htmlBody
+                      },
+                      toRecipients: toRecipients,
+                      attachments: formattedAttachments.length > 0 ? formattedAttachments : undefined
+                  },
+                  // saveToSentItems: "true"
+              })
           });
+
+          if (!response.ok) {
+              const errorData = await response.json();
+              console.error("Error al enviar email via Graph API:", errorData);
+              return false;
+          }
           
           // Si se envia el correo con exito
           return true;
     
         } catch ( error ) {
-          
+          console.error("Excepción al enviar email:", error);
           // Si ocurre un error al enviar el correo 
           return false;
     
