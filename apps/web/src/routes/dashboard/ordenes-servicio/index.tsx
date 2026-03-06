@@ -122,11 +122,11 @@ function RouteComponent() {
     mutate: validarIdOrdenServicio,
     isPending: isValidarIdOrdenServicioPending,
   } = useValidarIdOrdenServicio();
-  const {
-    mutateAsync: validarEmpleadosDisponibles,
-    data: validarEmpleadosDisponiblesData,
-    isPending: isValidarEmpleadosDisponiblesPending,
-  } = useValidarEmpleadosDisponibles();
+  // const {
+  //   mutateAsync: validarEmpleadosDisponibles,
+  //   data: validarEmpleadosDisponiblesData,
+  //   isPending: isValidarEmpleadosDisponiblesPending,
+  // } = useValidarEmpleadosDisponibles();
 
   const {
     mutateAsync: validarRangoHorarioPersonalOrdenServicio,
@@ -603,37 +603,37 @@ function RouteComponent() {
     descargarPdf(idOrdenServicio);
   };
 
-  const handleValidarEmpleadosDisponibles = async (
-    idServicio: number,
-    indexEmpleado: number,
-  ) => {
-    const servicio = isEditing
-      ? configuracionServicioTarifaEdit.find((s) => s.idServicio === idServicio)
-      : configuracionServicioTarifa.find((s) => s.idServicio === idServicio);
+  // const handleValidarEmpleadosDisponibles = async (
+  //   idServicio: number,
+  //   indexEmpleado: number,
+  // ) => {
+  //   const servicio = isEditing
+  //     ? configuracionServicioTarifaEdit.find((s) => s.idServicio === idServicio)
+  //     : configuracionServicioTarifa.find((s) => s.idServicio === idServicio);
 
-    if (!servicio?.personal || !servicio.personal[indexEmpleado]) {
-      console.warn("Personal data not found for validation");
-      return;
-    }
+  //   if (!servicio?.personal || !servicio.personal[indexEmpleado]) {
+  //     console.warn("Personal data not found for validation");
+  //     return;
+  //   }
 
-    const fechaInicio = isEditing
-      ? formOrdenServicioEdit.fechaInicio
-      : formOrdenServicio.fechaInicio;
-    const fechaFin = isEditing
-      ? isIndefinite
-        ? null
-        : formOrdenServicioEdit.fechaFin
-      : isIndefinite
-        ? null
-        : formOrdenServicio.fechaFin;
+  //   const fechaInicio = isEditing
+  //     ? formOrdenServicioEdit.fechaInicio
+  //     : formOrdenServicio.fechaInicio;
+  //   const fechaFin = isEditing
+  //     ? isIndefinite
+  //       ? null
+  //       : formOrdenServicioEdit.fechaFin
+  //     : isIndefinite
+  //       ? null
+  //       : formOrdenServicio.fechaFin;
 
-    await validarEmpleadosDisponibles({
-      fechaInicio,
-      fechaFin,
-      horaInicio: servicio.personal[indexEmpleado].horaInicio || "00:00:00",
-      horaFin: servicio.personal[indexEmpleado].horaFin || "00:00:00",
-    });
-  };
+  //   await validarEmpleadosDisponibles({
+  //     fechaInicio,
+  //     fechaFin,
+  //     horaInicio: servicio.personal[indexEmpleado].horaInicio || "00:00:00",
+  //     horaFin: servicio.personal[indexEmpleado].horaFin || "00:00:00",
+  //   });
+  // };
 
   const handleSelectedServices = (servicio: Servicio) => {
     if (!selectedServices.includes(servicio)) {
