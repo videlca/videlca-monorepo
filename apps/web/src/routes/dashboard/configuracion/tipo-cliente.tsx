@@ -3,7 +3,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { StateLabel } from "../../../components/common/StateLabel";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import type { TipoCliente } from "../../../types";
 import {
@@ -17,7 +17,7 @@ import type {
   ActualizarTipoCliente,
   CreateTipoCliente,
 } from "../../../api/types";
-import { useForm } from "../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { InputForm } from "../../../components/common/InputForm";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
@@ -48,50 +48,44 @@ function RouteComponent() {
   const { mutate: eliminarTipoCliente } = useEliminarTipoCliente();
 
   // Formularios
+  const { register: registerCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } =
+    useForm<CreateTipoCliente>({
+      defaultValues: { descripcion: "" },
+    });
+
   const {
-    form: formCrear,
-    resetForm: resetFormCrear,
-    handleChange: handleChangeCrear,
-  } = useForm<CreateTipoCliente>({
-    descripcion: "",
-  });
-  const {
-    form: formEditar,
-    handleChange: handleChangeEditar,
-    setForm: setFormEditar,
-    resetForm: resetFormEditar,
+    register: registerEditar,
+    handleSubmit: handleSubmitEditar,
+    reset: resetEditar,
   } = useForm<ActualizarTipoCliente>({
-    descripcion: "",
-    estado: false,
+    defaultValues: { descripcion: "", estado: false },
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    crearTipoCliente(formCrear);
+  const onSubmitCrear = (data: CreateTipoCliente) => {
+    crearTipoCliente(data);
     setIsModalOpen(false);
-    resetFormCrear();
+    resetCrear();
   };
 
   const handleShowModalEditar = (row: TipoCliente) => {
     setIsModalOpenEditar(true);
-    setFormEditar({
+    resetEditar({
       estado: row.estado,
       descripcion: row.descripcion,
     });
     setSelectIdRow(row.idTipoCliente);
   };
 
-  const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmitEditar = (data: ActualizarTipoCliente) => {
     actualizarTipoCliente({
       id: selectIdRow as number,
       data: {
-        estado: String(formEditar.estado) === "true",
-        descripcion: formEditar.descripcion,
+        estado: String(data.estado) === "true",
+        descripcion: data.descripcion,
       },
     });
     setIsModalOpenEditar(false);
-    resetFormEditar();
+    resetEditar();
   };
 
   const columns: ColumnDef<TipoCliente>[] = [
@@ -160,15 +154,15 @@ function RouteComponent() {
         size="md"
         onClose={() => {
           setIsModalOpen(false);
-          resetFormCrear();
+          resetCrear();
         }}
       >
         <FormsModal
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitCrear(onSubmitCrear)}
           isLoading={isCreatingTipoCliente}
           onCancel={() => {
             setIsModalOpen(false);
-            resetFormCrear();
+            resetCrear();
           }}
           updating={false}
         >
@@ -178,9 +172,8 @@ function RouteComponent() {
               placeholder="Descripción"
               id="descripcion"
               required
-              value={formCrear.descripcion || ""}
-              onChange={handleChangeCrear}
               type="text"
+              {...registerCrear("descripcion")}
             />
           </div>
         </FormsModal>
@@ -191,15 +184,15 @@ function RouteComponent() {
         size="md"
         onClose={() => {
           setIsModalOpenEditar(false);
-          resetFormEditar();
+          resetEditar();
         }}
       >
         <FormsModal
-          onSubmit={handleSubmitEditar}
+          onSubmit={handleSubmitEditar(onSubmitEditar)}
           isLoading={isActualizandoTipoCliente}
           onCancel={() => {
             setIsModalOpenEditar(false);
-            resetFormEditar();
+            resetEditar();
           }}
           updating={true}
         >
@@ -209,16 +202,14 @@ function RouteComponent() {
               placeholder="Descripción"
               id="descripcion"
               required
-              value={formEditar.descripcion || ""}
-              onChange={handleChangeEditar}
               type="text"
+              {...registerEditar("descripcion")}
             />
             <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
               id="estado"
-              value={formEditar.estado?.toString() || ""}
-              onChange={handleChangeEditar}
+              {...registerEditar("estado")}
             />
           </div>
         </FormsModal>

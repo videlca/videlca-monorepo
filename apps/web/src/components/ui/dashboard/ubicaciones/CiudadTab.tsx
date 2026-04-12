@@ -16,7 +16,7 @@ import type {
   CreateCiudadDto,
   UpdateCiudadDto,
 } from "../../../../api/dtos/configuracion";
-import { useForm } from "../../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import { InputForm } from "../../../common/InputForm";
 import { InputSelect } from "../../../common/InputSelect";
 import { InputSelectStateBoolean } from "../../../common/InputSelectState";
@@ -42,36 +42,29 @@ export const CiudadTab = () => {
   const { mutate: eliminarCiudad } = useEliminarCiudad();
 
   // Formularios
-  const { form, resetForm, handleChange } = useForm<CreateCiudadDto>({
-    descripcion: "",
-    departamento: 0,
-    codigoCiudad: "",
+  const { register: registerCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } = useForm<CreateCiudadDto>({
+    defaultValues: { descripcion: "", departamento: 0, codigoCiudad: "" },
   });
   const {
-    form: formEditar,
-    handleChange: handleChangeEditar,
-    setForm: setFormEditar,
-    resetForm: resetFormEditar,
+    register: registerEditar,
+    handleSubmit: handleSubmitEditar,
+    reset: resetEditar,
   } = useForm<UpdateCiudadDto>({
-    descripcion: "",
-    departamento: 0,
-    codigoCiudad: "",
-    estado: false,
+    defaultValues: { descripcion: "", departamento: 0, codigoCiudad: "", estado: false },
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmitCrear = (data: CreateCiudadDto) => {
     crearCiudad({
-      ...form,
-      departamento: Number(form.departamento),
+      ...data,
+      departamento: Number(data.departamento),
     });
     setIsModalOpen(false);
-    resetForm();
+    resetCrear();
   };
 
   const handleShowModalEditar = (row: Ciudad) => {
     setIsModalOpenEditar(true);
-    setFormEditar({
+    resetEditar({
       estado: row.estado,
       descripcion: row.descripcion,
       departamento: row.departamento.idDepartamento,
@@ -80,19 +73,18 @@ export const CiudadTab = () => {
     setSelectIdRow(row.idCiudad);
   };
 
-  const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmitEditar = (data: UpdateCiudadDto) => {
     actualizarCiudad({
       id: selectIdRow as number,
       data: {
-        estado: String(formEditar.estado) === "true",
-        descripcion: formEditar.descripcion || "",
-        departamento: formEditar.departamento || 0,
-        codigoCiudad: formEditar.codigoCiudad || "",
+        estado: String(data.estado) === "true",
+        descripcion: data.descripcion || "",
+        departamento: data.departamento || 0,
+        codigoCiudad: data.codigoCiudad || "",
       },
     });
     setIsModalOpenEditar(false);
-    resetFormEditar();
+    resetEditar();
   };
   const columnsCiudades: ColumnDef<Ciudad>[] = [
     {
@@ -176,15 +168,15 @@ export const CiudadTab = () => {
         size="md"
         onClose={() => {
           setIsModalOpen(false);
-          resetForm();
+          resetCrear();
         }}
         children={
           <FormsModal
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmitCrear(onSubmitCrear)}
             isLoading={isLoadingCrearCiudad}
             onCancel={() => {
               setIsModalOpen(false);
-              resetForm();
+              resetCrear();
             }}
             updating={false}
           >
@@ -194,27 +186,24 @@ export const CiudadTab = () => {
                 placeholder="Descripción"
                 id="descripcion"
                 required
-                value={form.descripcion || ""}
-                onChange={handleChange}
                 type="text"
+                {...registerCrear("descripcion")}
               />
               <InputSelect
                 label="Departamento"
                 placeholder="Departamento"
                 id="departamento"
-                value={form.departamento || ""}
-                onChange={handleChange}
                 options={departamentosOptions || []}
                 required
+                {...registerCrear("departamento", { valueAsNumber: true })}
               />
               <InputForm
                 label="Código de ciudad"
                 placeholder="Código de ciudad"
                 id="codigoCiudad"
                 required
-                value={form.codigoCiudad || ""}
-                onChange={handleChange}
                 type="text"
+                {...registerCrear("codigoCiudad")}
               />
             </div>
           </FormsModal>
@@ -226,15 +215,15 @@ export const CiudadTab = () => {
         size="md"
         onClose={() => {
           setIsModalOpenEditar(false);
-          resetFormEditar();
+          resetEditar();
         }}
         children={
           <FormsModal
-            onSubmit={handleSubmitEditar}
+            onSubmit={handleSubmitEditar(onSubmitEditar)}
             isLoading={isLoadingActualizarCiudad}
             onCancel={() => {
               setIsModalOpenEditar(false);
-              resetFormEditar();
+              resetEditar();
             }}
             updating={true}
           >
@@ -244,33 +233,29 @@ export const CiudadTab = () => {
                 placeholder="Descripción"
                 id="descripcion"
                 required
-                value={formEditar.descripcion || ""}
-                onChange={handleChangeEditar}
                 type="text"
+                {...registerEditar("descripcion")}
               />
               <InputSelect
                 label="Departamento"
                 placeholder="Departamento"
                 id="departamento"
-                value={formEditar.departamento || ""}
-                onChange={handleChangeEditar}
                 options={departamentosOptions || []}
+                {...registerEditar("departamento", { valueAsNumber: true })}
               />
               <InputForm
                 label="Código de ciudad"
                 placeholder="Código de ciudad"
                 id="codigoCiudad"
                 required
-                value={formEditar.codigoCiudad || ""}
-                onChange={handleChangeEditar}
                 type="text"
+                {...registerEditar("codigoCiudad")}
               />
               <InputSelectStateBoolean
                 label="Estado"
                 placeholder="Estado"
                 id="estado"
-                value={formEditar.estado?.toString() || ""}
-                onChange={handleChangeEditar}
+                {...registerEditar("estado")}
               />
             </div>
           </FormsModal>

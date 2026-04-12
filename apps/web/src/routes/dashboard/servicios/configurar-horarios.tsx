@@ -14,7 +14,7 @@ import {
   useUpdateTipoHorario,
 } from "../../../api/queryFunctions/servicios";
 import { SimpleModal } from "../../../components/common/SimpleModal";
-import { useForm } from "../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import type {
   CreateTipoHorarioDto,
   UpdateTipoHorarioDto,
@@ -55,29 +55,117 @@ function RouteComponent() {
 
   // Formularios
   const {
-    form: formAddTipoHorario,
-    handleChange: handleChangeAddTipoHorario,
-    handleChangeTime: handleChangeTimeAddTipoHorario,
-    resetForm: resetFormAddTipoHorario,
+    register: registerCrear,
+    handleSubmit: handleSubmitCrear,
+    reset: resetCrear,
+    setValue: setValueCrear,
   } = useForm<CreateTipoHorarioDto>({
-    idTipoHorarioDescripcion: 0,
-    horaInicio: "",
-    horaFin: "",
-    fechaVigenciaInicio: "",
-    fechaVigenciaFin: "",
+    defaultValues: {
+      idTipoHorarioDescripcion: 0,
+      horaInicio: "",
+      horaFin: "",
+      fechaVigenciaInicio: "",
+      fechaVigenciaFin: "",
+    },
   });
+
   const {
-    form: formEditTipoHorario,
-    handleChange: handleChangeEditTipoHorario,
-    handleChangeTime: handleChangeTimeEditTipoHorario,
-    resetForm: resetFormEditTipoHorario,
+    register: registerEditar,
+    handleSubmit: handleSubmitEditar,
+    reset: resetEditar,
   } = useForm<UpdateTipoHorarioDto>({
-    idTipoHorarioDescripcion: 0,
-    horaInicio: "",
-    horaFin: "",
-    fechaVigenciaInicio: "",
-    fechaVigenciaFin: "",
+    defaultValues: {
+      idTipoHorarioDescripcion: 0,
+      horaInicio: "",
+      horaFin: "",
+      fechaVigenciaInicio: "",
+      fechaVigenciaFin: "",
+    },
   });
+
+  const onSubmitCrear = (data: CreateTipoHorarioDto) => {
+    if (data.fechaVigenciaFin === "" && !isIndefinido) {
+      toast.error("La fecha de vigencia de fin es requerida");
+      return;
+    }
+
+    if (data.fechaVigenciaInicio === "") {
+      toast.error("La fecha de vigencia de inicio es requerida");
+      return;
+    }
+
+    const formattedData = {
+      ...data,
+      idTipoHorarioDescripcion: Number(data.idTipoHorarioDescripcion),
+      horaInicio:
+        data.horaInicio.includes(":") &&
+        data.horaInicio.split(":").length === 2
+          ? `${data.horaInicio}:00`
+          : data.horaInicio,
+      horaFin:
+        data.horaFin.includes(":") &&
+        data.horaFin.split(":").length === 2
+          ? `${data.horaFin}:00`
+          : data.horaFin,
+      fechaVigenciaInicio: new Date(
+        data.fechaVigenciaInicio,
+      ).toISOString(),
+      fechaVigenciaFin: isIndefinido
+        ? null
+        : new Date(
+            data.fechaVigenciaFin || "",
+          ).toISOString(),
+    };
+
+    crearTipoHorario(formattedData, {
+      onSuccess: () => {
+        setIsOpenAddTipoHorario(false);
+        resetCrear();
+      },
+    });
+  };
+
+  const onSubmitEditar = (data: UpdateTipoHorarioDto) => {
+    if (
+      data.fechaVigenciaFin === null &&
+      !isIndefinido
+    ) {
+      toast.error("La fecha de vigencia de fin es requerida");
+      return;
+    }
+
+    if (data.fechaVigenciaInicio === "") {
+      toast.error("La fecha de vigencia de inicio es requerida");
+      return;
+    }
+    const formattedData = {
+      ...data,
+      idTipoHorarioDescripcion: Number(data.idTipoHorarioDescripcion),
+      horaInicio: timeFormat(data.horaInicio || ""),
+      horaFin: timeFormat(data.horaFin || ""),
+      fechaVigenciaInicio: new Date(
+        data.fechaVigenciaInicio || "",
+      ).toISOString(),
+      fechaVigenciaFin: isIndefinido
+        ? null
+        : new Date(
+            data.fechaVigenciaFin || "",
+          ).toISOString(),
+    };
+
+    editarTipoHorario(
+      {
+        id: idTipoHorario,
+        data: formattedData,
+      },
+      {
+        onSuccess: () => {
+          setIsOpenEditTipoHorario(false);
+          resetEditar();
+        },
+      },
+    );
+  };
 
   const columns: ColumnDef<TipoHorario>[] = [
     {
@@ -107,13 +195,6 @@ function RouteComponent() {
         return <span>{row.original.fechaVigenciaFin || "Vigente"}</span>;
       },
     },
-    // {
-    //   header: "Estado",
-    //   accessorKey: "estado",
-    //   cell: ({ row }) => {
-    //     return <StateLabel state={row.original.estado} />;
-    //   },
-    // },
     {
       header: "Acciones",
       cell: ({ row }) => (
@@ -126,14 +207,14 @@ function RouteComponent() {
                 setIsOpenEditTipoHorario(true);
                 setIsIndefinido(row.original.fechaVigenciaFin === null);
                 setIdTipoHorario(row.original.idTipoHorario);
-                formEditTipoHorario.idTipoHorarioDescripcion =
-                  row.original.idTipoHorarioDescripcion.idTipoHorarioDescripcion;
-                formEditTipoHorario.horaInicio = row.original.horaInicio;
-                formEditTipoHorario.horaFin = row.original.horaFin;
-                formEditTipoHorario.fechaVigenciaInicio =
-                  row.original.fechaVigenciaInicio;
-                formEditTipoHorario.fechaVigenciaFin =
-                  row.original.fechaVigenciaFin || null;
+                resetEditar({
+                  idTipoHorarioDescripcion:
+                    row.original.idTipoHorarioDescripcion.idTipoHorarioDescripcion,
+                  horaInicio: row.original.horaInicio,
+                  horaFin: row.original.horaFin,
+                  fechaVigenciaInicio: row.original.fechaVigenciaInicio,
+                  fechaVigenciaFin: row.original.fechaVigenciaFin || null,
+                });
               },
             },
             {
@@ -179,51 +260,11 @@ function RouteComponent() {
         title="Agregar Horario"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (formAddTipoHorario.fechaVigenciaFin === "") {
-              toast.error("La fecha de vigencia de fin es requerida");
-              return;
-            }
-
-            if (formAddTipoHorario.fechaVigenciaInicio === "") {
-              toast.error("La fecha de vigencia de inicio es requerida");
-              return;
-            }
-
-            const formattedData = {
-              ...formAddTipoHorario,
-              horaInicio:
-                formAddTipoHorario.horaInicio.includes(":") &&
-                formAddTipoHorario.horaInicio.split(":").length === 2
-                  ? `${formAddTipoHorario.horaInicio}:00`
-                  : formAddTipoHorario.horaInicio,
-              horaFin:
-                formAddTipoHorario.horaFin.includes(":") &&
-                formAddTipoHorario.horaFin.split(":").length === 2
-                  ? `${formAddTipoHorario.horaFin}:00`
-                  : formAddTipoHorario.horaFin,
-              fechaVigenciaInicio: new Date(
-                formAddTipoHorario.fechaVigenciaInicio,
-              ).toISOString(),
-              fechaVigenciaFin: isIndefinido
-                ? null
-                : new Date(
-                    formAddTipoHorario.fechaVigenciaFin || "",
-                  ).toISOString(),
-            };
-
-            crearTipoHorario(formattedData, {
-              onSuccess: () => {
-                setIsOpenAddTipoHorario(false);
-                resetFormAddTipoHorario();
-              },
-            });
-          }}
+          onSubmit={handleSubmitCrear(onSubmitCrear)}
           isLoading={isLoadingCrearTipoHorario}
           onCancel={() => {
             setIsOpenAddTipoHorario(false);
-            resetFormAddTipoHorario();
+            resetCrear();
           }}
           updating={false}
         >
@@ -238,46 +279,39 @@ function RouteComponent() {
                   descripcion: tipo.nombre,
                 })) || []
               }
-              value={formAddTipoHorario.idTipoHorarioDescripcion}
-              onChange={handleChangeAddTipoHorario}
               required={true}
+              {...registerCrear("idTipoHorarioDescripcion", { valueAsNumber: true })}
             />
             <InputTime24H
               label="Hora de inicio"
               placeholder="Selecciona una hora de inicio"
               id="horaInicio"
-              name="horaInicio"
-              value={formAddTipoHorario.horaInicio || ""}
-              onChange={handleChangeTimeAddTipoHorario}
               required={true}
+              {...registerCrear("horaInicio")}
             />
             <InputTime24H
               label="Hora de fin"
               placeholder="Selecciona una hora de fin"
               id="horaFin"
-              name="horaFin"
-              value={formAddTipoHorario.horaFin || ""}
-              onChange={handleChangeTimeAddTipoHorario}
               required={true}
+              {...registerCrear("horaFin")}
             />
             <InputForm
               label="Fecha de vigencia de inicio"
               placeholder="Selecciona una fecha de vigencia de inicio"
               id="fechaVigenciaInicio"
-              value={formAddTipoHorario.fechaVigenciaInicio}
-              onChange={handleChangeAddTipoHorario}
               required={true}
               type="date"
+              {...registerCrear("fechaVigenciaInicio")}
             />
             <InputForm
               label="Fecha de vigencia de fin"
               placeholder="Selecciona una fecha de vigencia de fin"
               id="fechaVigenciaFin"
-              value={formAddTipoHorario.fechaVigenciaFin || ""}
-              onChange={handleChangeAddTipoHorario}
               required={false}
               disabled={isIndefinido}
               type="date"
+              {...registerCrear("fechaVigenciaFin")}
             />
             <CheckboxForm
               label="Indefinido (sin fecha de vigencia de fin)"
@@ -286,8 +320,7 @@ function RouteComponent() {
               onChange={(e) => {
                 setIsIndefinido(e.target.checked);
                 if (e.target.checked) {
-                  setIsIndefinido(true);
-                  formAddTipoHorario.fechaVigenciaFin = null;
+                  setValueCrear("fechaVigenciaFin", null as any);
                 }
               }}
             />
@@ -304,51 +337,11 @@ function RouteComponent() {
         title="Editar Horario"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (
-              formEditTipoHorario.fechaVigenciaFin === null &&
-              !isIndefinido
-            ) {
-              toast.error("La fecha de vigencia de fin es requerida");
-              return;
-            }
-
-            if (formEditTipoHorario.fechaVigenciaInicio === "") {
-              toast.error("La fecha de vigencia de inicio es requerida");
-              return;
-            }
-            const formattedData = {
-              ...formEditTipoHorario,
-              horaInicio: timeFormat(formEditTipoHorario.horaInicio || ""),
-              horaFin: timeFormat(formEditTipoHorario.horaFin || ""),
-              fechaVigenciaInicio: new Date(
-                formEditTipoHorario.fechaVigenciaInicio || "",
-              ).toISOString(),
-              fechaVigenciaFin: isIndefinido
-                ? null
-                : new Date(
-                    formEditTipoHorario.fechaVigenciaFin || "",
-                  ).toISOString(),
-            };
-
-            editarTipoHorario(
-              {
-                id: idTipoHorario,
-                data: formattedData,
-              },
-              {
-                onSuccess: () => {
-                  setIsOpenEditTipoHorario(false);
-                  resetFormEditTipoHorario();
-                },
-              },
-            );
-          }}
+          onSubmit={handleSubmitEditar(onSubmitEditar)}
           isLoading={isLoadingEditarTipoHorario}
           onCancel={() => {
             setIsOpenEditTipoHorario(false);
-            resetFormEditTipoHorario();
+            resetEditar();
           }}
           updating={true}
         >
@@ -363,46 +356,39 @@ function RouteComponent() {
                   descripcion: tipo.nombre,
                 })) || []
               }
-              value={formEditTipoHorario.idTipoHorarioDescripcion || 0}
-              onChange={handleChangeEditTipoHorario}
               required={true}
+              {...registerEditar("idTipoHorarioDescripcion", { valueAsNumber: true })}
             />
             <InputTime24H
               label="Hora de inicio"
               placeholder="Selecciona una hora de inicio"
               id="horaInicio"
-              name="horaInicio"
-              value={formEditTipoHorario.horaInicio || ""}
-              onChange={handleChangeTimeEditTipoHorario}
               required={true}
+              {...registerEditar("horaInicio")}
             />
             <InputTime24H
               label="Hora de fin"
               placeholder="Selecciona una hora de fin"
               id="horaFin"
-              name="horaFin"
-              value={formEditTipoHorario.horaFin || ""}
-              onChange={handleChangeTimeEditTipoHorario}
               required={true}
+              {...registerEditar("horaFin")}
             />
             <InputForm
               label="Fecha de vigencia de inicio"
               placeholder="Selecciona una fecha de vigencia de inicio"
               id="fechaVigenciaInicio"
-              value={formEditTipoHorario.fechaVigenciaInicio || ""}
-              onChange={handleChangeEditTipoHorario}
               required={true}
               type="date"
+              {...registerEditar("fechaVigenciaInicio")}
             />
             <InputForm
               label="Fecha de vigencia de fin"
               placeholder="Selecciona una fecha de vigencia de fin"
               id="fechaVigenciaFin"
-              value={formEditTipoHorario.fechaVigenciaFin || ""}
-              onChange={handleChangeEditTipoHorario}
               required={false}
               disabled={isIndefinido}
               type="date"
+              {...registerEditar("fechaVigenciaFin")}
             />
             <CheckboxForm
               label="Indefinido (sin fecha de vigencia de fin)"
@@ -410,10 +396,6 @@ function RouteComponent() {
               checked={isIndefinido}
               onChange={(e) => {
                 setIsIndefinido(e.target.checked);
-                if (e.target.checked) {
-                  setIsIndefinido(true);
-                  formEditTipoHorario.fechaVigenciaFin = null;
-                }
               }}
             />
           </div>

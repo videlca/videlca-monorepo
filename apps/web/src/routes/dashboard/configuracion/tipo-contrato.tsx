@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { Section } from "../../../components/ui/dashboard/Section";
 import Table from "../../../components/common/Table";
@@ -7,7 +7,7 @@ import type { TipoContrato } from "../../../api/types/configuracion";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
 import { StateLabel } from "../../../components/common/StateLabel";
-import { useForm } from "../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import type {
   ActualizarTipoContrato,
   CreateTipoContrato,
@@ -44,24 +44,17 @@ function RouteComponent() {
   const { mutate: eliminarTipoContrato } = useEliminarTipoContrato();
 
   // Formularios
-  const {
-    form: formCrear,
-    handleChange: handleChangeCrear,
-    resetForm: resetFormCrear,
-  } = useForm<CreateTipoContrato>({
-    descripcion: "",
-    indefinido: false,
-  });
+  const { register: registerCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } =
+    useForm<CreateTipoContrato>({
+      defaultValues: { descripcion: "", indefinido: false },
+    });
 
   const {
-    form: formEditar,
-    handleChange: handleChangeEditar,
-    resetForm: resetFormEditar,
-    setForm: setFormEditar,
+    register: registerEditar,
+    handleSubmit: handleSubmitEditar,
+    reset: resetEditar,
   } = useForm<ActualizarTipoContrato>({
-    descripcion: "",
-    indefinido: false,
-    estado: false,
+    defaultValues: { descripcion: "", indefinido: false, estado: false },
   });
 
   const columns: ColumnDef<TipoContrato>[] = [
@@ -95,7 +88,7 @@ function RouteComponent() {
               onClick: () => {
                 setIsModalOpenEditar(true);
                 setIdContrato(row.original.idTipoContrato);
-                setFormEditar({
+                resetEditar({
                   descripcion: row.original.descripcion,
                   indefinido: row.original.indefinido || false,
                   estado: row.original.estado,
@@ -143,23 +136,22 @@ function RouteComponent() {
         size="md"
         onClose={() => {
           setIsModalOpen(false);
-          resetFormCrear();
+          resetCrear();
         }}
         children={
           <FormsModal
-            onSubmit={(e) => {
-              e.preventDefault();
-              crearTipoContrato(formCrear, {
+            onSubmit={handleSubmitCrear((data) => {
+              crearTipoContrato(data, {
                 onSuccess: () => {
                   setIsModalOpen(false);
-                  resetFormCrear();
+                  resetCrear();
                 },
               });
-            }}
+            })}
             isLoading={false}
             onCancel={() => {
               setIsModalOpen(false);
-              resetFormCrear();
+              resetCrear();
             }}
             updating={false}
           >
@@ -169,15 +161,13 @@ function RouteComponent() {
                 placeholder="Descripción"
                 id="descripcion"
                 required
-                value={formCrear.descripcion || ""}
-                onChange={handleChangeCrear}
                 type="text"
+                {...registerCrear("descripcion")}
               />
               <CheckboxForm
                 label="Tipo de contrato indefinido (sin fecha de fin)?"
                 id="indefinido"
-                checked={formCrear.indefinido}
-                onChange={handleChangeCrear}
+                {...registerCrear("indefinido")}
               />
             </div>
           </FormsModal>
@@ -190,34 +180,33 @@ function RouteComponent() {
         size="md"
         onClose={() => {
           setIsModalOpenEditar(false);
-          resetFormEditar();
+          resetEditar();
         }}
         children={
           <FormsModal
-            onSubmit={(e) => {
-              e.preventDefault();
+            onSubmit={handleSubmitEditar((data) => {
               actualizarTipoContrato(
                 {
                   id: idContrato as number,
                   data: {
-                    descripcion: formEditar.descripcion,
-                    indefinido: formEditar.indefinido || false,
-                    estado: String(formEditar.estado) === "true",
+                    descripcion: data.descripcion,
+                    indefinido: data.indefinido || false,
+                    estado: String(data.estado) === "true",
                   },
                 },
                 {
                   onSuccess: () => {
                     setIsModalOpenEditar(false);
                     setIdContrato(null);
-                    resetFormEditar();
+                    resetEditar();
                   },
                 },
               );
-            }}
+            })}
             isLoading={false}
             onCancel={() => {
               setIsModalOpenEditar(false);
-              resetFormEditar();
+              resetEditar();
             }}
             updating={true}
           >
@@ -227,22 +216,19 @@ function RouteComponent() {
                 placeholder="Descripción"
                 id="descripcion"
                 required
-                value={formEditar.descripcion || ""}
-                onChange={handleChangeEditar}
                 type="text"
+                {...registerEditar("descripcion")}
               />
               <InputSelectStateBoolean
                 label="Estado"
                 placeholder="Estado"
                 id="estado"
-                value={formEditar.estado?.toString() || ""}
-                onChange={handleChangeEditar}
+                {...registerEditar("estado")}
               />
               <CheckboxForm
                 label="Tipo de contrato indefinido (sin fecha de fin)?"
                 id="indefinido"
-                checked={formEditar.indefinido || false}
-                onChange={handleChangeEditar}
+                {...registerEditar("indefinido")}
               />
             </div>
           </FormsModal>

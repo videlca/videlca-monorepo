@@ -18,7 +18,7 @@ import { useState } from "react";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
-import { useForm } from "../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import type { UpdateNovedadDto } from "../../../api/dtos/personal";
 import { useTipoNovedad } from "../../../api/queryFunctions/configuracion";
 import { useGetPersonalNovedad } from "../../../api/queryFunctions/personal";
@@ -56,19 +56,40 @@ function RouteComponent() {
 
   // Formularios
   const {
-    form: formEditNovedad,
-    handleChange: handleChangeEditNovedad,
-    handleChangeTime: handleChangeTimeEditNovedad,
-    setForm: setFormEditNovedad,
-    resetForm: resetFormEditNovedad,
+    register,
+    handleSubmit,
+    reset,
   } = useForm<UpdateNovedadDto>({
-    descripcion: "",
-    fechaInicio: "",
-    horaInicio: "",
-    fechaFin: "",
-    horaFin: "",
-    idTipoNovedad: 0,
+    defaultValues: {
+      descripcion: "",
+      fechaInicio: "",
+      horaInicio: "",
+      fechaFin: "",
+      horaFin: "",
+      idTipoNovedad: 0,
+    },
   });
+
+  const onSubmitEditar = (data: UpdateNovedadDto) => {
+    updateNovedad(
+      {
+        id: novedad?.idNovedad || 0,
+        data: {
+          ...data,
+          idTipoNovedad: Number(data.idTipoNovedad),
+          horaFin: timeFormat(data.horaFin || ""),
+          horaInicio: timeFormat(data.horaInicio || ""),
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsOpenEditModal(false);
+          reset();
+          setNovedad(null);
+        },
+      },
+    );
+  };
 
   const columns: ColumnDef<Novedad>[] = [
     {
@@ -125,7 +146,7 @@ function RouteComponent() {
               onClick: () => {
                 setIsOpenEditModal(true);
                 setNovedad(row.original);
-                setFormEditNovedad({
+                reset({
                   descripcion: row.original.descripcion,
                   fechaInicio: row.original.fechaInicio,
                   horaInicio: row.original.horaInicio,
@@ -181,29 +202,10 @@ function RouteComponent() {
         size="lg"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
-            updateNovedad(
-              {
-                id: novedad?.idNovedad || 0,
-                data: {
-                  ...formEditNovedad,
-                  horaFin: timeFormat(formEditNovedad.horaFin || ""),
-                  horaInicio: timeFormat(formEditNovedad.horaInicio || ""),
-                },
-              },
-              {
-                onSuccess: () => {
-                  setIsOpenEditModal(false);
-                  resetFormEditNovedad();
-                  setNovedad(null);
-                },
-              },
-            );
-          }}
+          onSubmit={handleSubmit(onSubmitEditar)}
           onCancel={() => {
             setIsOpenEditModal(false);
-            resetFormEditNovedad();
+            reset();
             setNovedad(null);
           }}
           updating={true}
@@ -214,56 +216,48 @@ function RouteComponent() {
               label="Tipo de novedad"
               placeholder="Tipo de novedad"
               id="idTipoNovedad"
-              value={formEditNovedad.idTipoNovedad?.toString() || ""}
-              onChange={handleChangeEditNovedad}
               options={
                 tiposNovedades?.data?.map((tipo) => ({
                   id: tipo.idTipoNovedad,
                   descripcion: tipo.descripcion,
                 })) || []
               }
+              {...register("idTipoNovedad", { valueAsNumber: true })}
             />
             <InputForm
               label="Descripción"
               placeholder="Descripción"
               id="descripcion"
-              value={formEditNovedad.descripcion || ""}
-              onChange={handleChangeEditNovedad}
               type="text"
+              {...register("descripcion")}
             />
             <InputForm
               label="Fecha de inicio"
               placeholder="Fecha de inicio"
               id="fechaInicio"
-              value={formEditNovedad.fechaInicio || ""}
-              onChange={handleChangeEditNovedad}
               type="date"
+              {...register("fechaInicio")}
             />
             <InputTime24H
               label="Hora de inicio"
               placeholder="Selecciona una hora de inicio"
-              name="horaInicio"
               id="horaInicio"
-              value={formEditNovedad.horaInicio || ""}
-              onChange={handleChangeTimeEditNovedad}
               required={true}
+              {...register("horaInicio")}
             />
             <InputForm
               label="Fecha de fin"
               placeholder="Fecha de fin"
               id="fechaFin"
-              value={formEditNovedad.fechaFin || ""}
-              onChange={handleChangeEditNovedad}
               type="date"
+              {...register("fechaFin")}
             />
             <InputTime24H
               label="Hora de fin"
               placeholder="Selecciona una hora de fin"
-              name="horaFin"
               id="horaFin"
-              value={formEditNovedad.horaFin || ""}
-              onChange={handleChangeTimeEditNovedad}
               required={true}
+              {...register("horaFin")}
             />
           </div>
         </FormsModal>

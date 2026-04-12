@@ -13,7 +13,7 @@ import {
   useUpdateUsuario,
 } from "../../../api/queryFunctions/usuarios";
 import type { CreateUserDto, UpdateUserStatusDto } from "../../../api/dtos";
-import { useForm } from "../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
 import { InputForm } from "../../../components/common/InputForm";
@@ -46,61 +46,66 @@ function RouteComponent() {
   const { data: roles } = useActiveRoles();
   const { data: tiposIdentificacion } = useTipoIdentificacionActivo();
 
-  // Formulario
+  // Formularios
   const {
-    form: formUsuario,
-    handleChange: handleChangeUsuario,
-    handleNumericChange: handleNumericChangeUsuario,
-
-    resetForm: resetFormUsuario,
+    register: registerCrear,
+    handleSubmit: handleSubmitCrear,
+    reset: resetCrear,
   } = useForm<CreateUserDto>({
-    primerNombre: "",
-    segundoNombre: "",
-    primerApellido: "",
-    segundoApellido: "",
-    email: "",
-    clave: "",
-    numeroIdentificacion: "",
-    idTipoIdentificacion: 0,
-    idRol: 0,
+    defaultValues: {
+      primerNombre: "",
+      segundoNombre: "",
+      primerApellido: "",
+      segundoApellido: "",
+      email: "",
+      clave: "",
+      numeroIdentificacion: "",
+      idTipoIdentificacion: 0,
+      idRol: 0,
+    },
   });
 
   const {
-    form: formUsuarioEdit,
-    handleNumericChange: handleNumericChangeUsuarioEdit,
-    handleBooleanChange: handleBooleanChangeUsuarioEdit,
-    setForm: setFormUsuarioEdit,
-    resetForm: resetFormUsuarioEdit,
+    register: registerEditar,
+    handleSubmit: handleSubmitEditar,
+    reset: resetEditar,
   } = useForm<UpdateUserStatusDto>({
-    estado: false,
-    idRol: 0,
+    defaultValues: {
+      estado: false,
+      idRol: 0,
+    },
   });
 
   // Handlers
-  const handleSubmitCreateUsuario = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    crearUsuario(formUsuario, {
-      onSuccess: () => {
-        setIsModalOpenUsuario(false);
-        resetFormUsuario();
+  const onSubmitCreate = (data: CreateUserDto) => {
+    crearUsuario(
+      {
+        ...data,
+        idTipoIdentificacion: Number(data.idTipoIdentificacion),
+        idRol: Number(data.idRol),
       },
-    });
+      {
+        onSuccess: () => {
+          setIsModalOpenUsuario(false);
+          resetCrear();
+        },
+      },
+    );
   };
 
-  const handleSubmitEditUsuario = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmitEdit = (data: UpdateUserStatusDto) => {
     editarUsuario(
       {
         id: idSelectedUsuario,
         data: {
-          estado: String(formUsuarioEdit.estado) === "true",
-          idRol: formUsuarioEdit.idRol,
+          estado: String(data.estado) === "true",
+          idRol: Number(data.idRol),
         },
       },
       {
         onSuccess: () => {
           setIsModalEditUsuario(false);
-          resetFormUsuarioEdit();
+          resetEditar();
         },
       },
     );
@@ -158,7 +163,7 @@ function RouteComponent() {
               onClick: () => {
                 setIdSelectedUsuario(row.original.idUser);
                 setIsModalEditUsuario(true);
-                setFormUsuarioEdit({
+                resetEditar({
                   idRol: row.original.idRol?.id || 0,
                   estado: row.original.estado || false,
                 });
@@ -204,17 +209,17 @@ function RouteComponent() {
         isOpen={isModalOpenUsuario}
         onClose={() => {
           setIsModalOpenUsuario(false);
-          resetFormUsuario();
+          resetCrear();
         }}
         title="Agregar usuario"
         size="xl"
       >
         <FormsModal
-          onSubmit={handleSubmitCreateUsuario}
+          onSubmit={handleSubmitCrear(onSubmitCreate)}
           isLoading={isCreatingUsuario}
           onCancel={() => {
             setIsModalOpenUsuario(false);
-            resetFormUsuario();
+            resetCrear();
           }}
           updating={false}
         >
@@ -224,95 +229,82 @@ function RouteComponent() {
               placeholder="Nombre"
               type="text"
               id="primerNombre"
-              value={formUsuario.primerNombre}
-              onChange={handleChangeUsuario}
               required
+              {...registerCrear("primerNombre")}
             />
             <InputForm
               label="Segundo nombre"
               placeholder="Segundo nombre"
               type="text"
               id="segundoNombre"
-              value={formUsuario.segundoNombre}
-              onChange={handleChangeUsuario}
               required
+              {...registerCrear("segundoNombre")}
             />
             <InputForm
               label="Primer apellido"
               placeholder="Primer apellido"
               type="text"
               id="primerApellido"
-              value={formUsuario.primerApellido}
-              onChange={handleChangeUsuario}
               required
+              {...registerCrear("primerApellido")}
             />
             <InputForm
               label="Segundo apellido"
               placeholder="Segundo apellido"
               type="text"
               id="segundoApellido"
-              value={formUsuario.segundoApellido}
-              onChange={handleChangeUsuario}
               required
+              {...registerCrear("segundoApellido")}
             />
             <InputForm
               label="Email"
               placeholder="Email"
               type="email"
               id="email"
-              value={formUsuario.email}
-              onChange={handleChangeUsuario}
               required
+              {...registerCrear("email")}
             />
             <InputForm
               label="Contraseña"
               placeholder="Contraseña"
               type="password"
               id="clave"
-              value={formUsuario.clave || ""}
-              onChange={handleChangeUsuario}
               required
+              {...registerCrear("clave")}
             />
             <InputSelect
               label="Tipo de identificación"
               placeholder="Tipo de identificación"
               id="idTipoIdentificacion"
-              value={
-                formUsuario.idTipoIdentificacion === 0
-                  ? ""
-                  : formUsuario.idTipoIdentificacion
-              }
               options={
                 tiposIdentificacion?.data?.map((tipo) => ({
                   id: tipo.idTipoIdentificacion,
                   descripcion: tipo.descripcion,
                 })) || []
               }
-              onChange={handleNumericChangeUsuario}
               required
+              {...registerCrear("idTipoIdentificacion", { valueAsNumber: true })}
             />
             <InputForm
               label="Número de identificación"
               placeholder="Número de identificación"
               type="text"
               id="numeroIdentificacion"
-              value={formUsuario.numeroIdentificacion}
-              onChange={handleChangeUsuario}
               required
+              {...registerCrear("numeroIdentificacion")}
             />
             <InputSelect
               label="Rol"
               placeholder="Rol"
               id="idRol"
-              value={formUsuario.idRol === 0 ? "" : formUsuario.idRol}
               options={
                 roles?.data?.map((role) => ({
                   id: role.id,
                   descripcion: role.nombreRol,
                 })) || []
               }
-              onChange={handleNumericChangeUsuario}
               required
+              {...registerCrear("idRol", { valueAsNumber: true })}
             />
           </div>
         </FormsModal>
@@ -322,17 +314,17 @@ function RouteComponent() {
         isOpen={isModalEditUsuario}
         onClose={() => {
           setIsModalEditUsuario(false);
-          resetFormUsuarioEdit();
+          resetEditar();
         }}
         title="Editar usuario"
         size="xl"
       >
         <FormsModal
-          onSubmit={handleSubmitEditUsuario}
+          onSubmit={handleSubmitEditar(onSubmitEdit)}
           isLoading={isEditingUsuario}
           onCancel={() => {
             setIsModalEditUsuario(false);
-            resetFormUsuarioEdit();
+            resetEditar();
           }}
           updating={true}
         >
@@ -341,22 +333,20 @@ function RouteComponent() {
               label="Estado"
               placeholder="Estado"
               id="estado"
-              value={formUsuarioEdit.estado?.toString() || ""}
-              onChange={handleBooleanChangeUsuarioEdit}
+              {...registerEditar("estado")}
             />
             <InputSelect
               label="Rol"
               placeholder="Rol"
               id="idRol"
-              value={formUsuarioEdit.idRol?.toString() || ""}
               options={
                 roles?.data?.map((role) => ({
                   id: role.id,
                   descripcion: role.nombreRol,
                 })) || []
               }
-              onChange={handleNumericChangeUsuarioEdit}
               required
+              {...registerEditar("idRol", { valueAsNumber: true })}
             />
           </div>
         </FormsModal>

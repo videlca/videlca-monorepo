@@ -9,8 +9,7 @@ import { AuthLayout } from "../components/layout/AuthLayout";
 import { Lock } from "lucide-react";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
-import { useState } from "react";
-import { useForm } from "../hooks/useForm";
+import { useForm } from "react-hook-form";
 import { useUpdatePassword } from "../api/queryFunctions/auth";
 
 export const Route = createFileRoute("/actualizar/$id")({
@@ -22,34 +21,33 @@ export const Route = createFileRoute("/actualizar/$id")({
   },
 });
 
+interface UpdatePasswordForm {
+  clave: string;
+  confirmarClave: string;
+}
+
 function RouteComponent() {
   const { id } = useParams({ from: "/actualizar/$id" });
   const navigate = useNavigate();
-  const { form, handleChange } = useForm({
-    clave: "",
-    confirmarClave: "",
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<UpdatePasswordForm>({
+    defaultValues: {
+      clave: "",
+      confirmarClave: "",
+    },
   });
   const mutation = useUpdatePassword();
-  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (form.clave !== form.confirmarClave) {
-      setError("Las contraseñas no coinciden");
-      return;
-    }
-
-    if (form.clave.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres");
-      return;
-    }
+  const onSubmit = (data: UpdatePasswordForm) => {
     mutation.mutate({
       token: id as string,
       data: {
-        clave: form.clave,
-        confirmarClave: form.confirmarClave,
+        clave: data.clave,
+        confirmarClave: data.confirmarClave,
       },
     });
   };
@@ -65,22 +63,22 @@ function RouteComponent() {
         </p>
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      )}
-
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <Input
           label="Contraseña"
           placeholder="Ingrese su nueva contraseña"
           icon={Lock}
           type="password"
           id="clave"
-          value={form.clave}
-          onChange={handleChange}
           required
+          {...register("clave", {
+            required: "La contraseña es requerida",
+            minLength: {
+              value: 6,
+              message: "La contraseña debe tener al menos 6 caracteres",
+            },
+          })}
+          error={errors.clave?.message}
         />
         <Input
           label="Confirmar Contraseña"
@@ -88,9 +86,13 @@ function RouteComponent() {
           icon={Lock}
           type="password"
           id="confirmarClave"
-          value={form.confirmarClave}
-          onChange={handleChange}
           required
+          {...register("confirmarClave", {
+            required: "Confirmar contraseña es requerido",
+            validate: (value) =>
+              value === watch("clave") || "Las contraseñas no coinciden",
+          })}
+          error={errors.confirmarClave?.message}
         />
         <Button type="submit">Actualizar Contraseña</Button>
       </form>

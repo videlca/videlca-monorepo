@@ -6,7 +6,7 @@ import {
   useGetUsuarioByCookie,
   useUpdateUsuarioPerfil,
 } from "../../api/queryFunctions/usuarios";
-import { useForm } from "../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import type { UpdateUserDto } from "../../api/dtos";
 import { InputSelect } from "../../components/common/InputSelect";
 import { useTipoIdentificacion } from "../../api/queryFunctions/configuracion";
@@ -27,25 +27,22 @@ function RouteComponent() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Form
-  const {
-    form: formData,
-    handleChange: handleChangeData,
-    handleNumericChange: handleNumericChangeData,
-    setForm: setFormData,
-  } = useForm<UpdateUserDto>({
-    email: "",
-    numeroIdentificacion: "",
-    idTipoIdentificacion: 0,
-    primerNombre: "",
-    primerApellido: "",
-    segundoApellido: "",
-    segundoNombre: "",
+  const { register, handleSubmit, reset } = useForm<UpdateUserDto>({
+    defaultValues: {
+      email: "",
+      numeroIdentificacion: "",
+      idTipoIdentificacion: 0,
+      primerNombre: "",
+      primerApellido: "",
+      segundoApellido: "",
+      segundoNombre: "",
+    },
   });
 
   // Actualizar formulario cuando se cargan los datos del usuario
   useEffect(() => {
     if (usuario?.data) {
-      setFormData({
+      reset({
         email: usuario.data.email || "",
         numeroIdentificacion: usuario.data.numeroIdentificacion || "",
         idTipoIdentificacion:
@@ -56,11 +53,11 @@ function RouteComponent() {
         segundoNombre: usuario.data.segundoNombre || "",
       });
     }
-  }, [usuario?.data, setFormData]);
+  }, [usuario?.data, reset]);
 
   // Handlers
-  const handleSave = () => {
-    updateUsuarioPerfil(formData);
+  const onSubmit = (data: UpdateUserDto) => {
+    updateUsuarioPerfil(data);
     setIsEditing(false);
   };
 
@@ -95,7 +92,7 @@ function RouteComponent() {
           ) : (
             <div className="flex space-x-2">
               <button
-                onClick={handleSave}
+                onClick={handleSubmit(onSubmit)}
                 className="flex items-center space-x-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
               >
                 {isUpdatingUsuario ? (
@@ -131,10 +128,9 @@ function RouteComponent() {
                 label="Primer Nombre"
                 type="text"
                 placeholder="Ingresa tu nombre"
-                value={formData.primerNombre || ""}
-                onChange={handleChangeData}
                 disabled={!isEditing}
                 required={true}
+                {...register("primerNombre")}
               />
 
               <InputForm
@@ -142,10 +138,9 @@ function RouteComponent() {
                 label="Segundo Nombre"
                 type="text"
                 placeholder="Ingresa tu segundo nombre"
-                value={formData.segundoNombre || ""}
-                onChange={handleChangeData}
                 disabled={!isEditing}
                 required={true}
+                {...register("segundoNombre")}
               />
 
               <InputForm
@@ -153,10 +148,9 @@ function RouteComponent() {
                 label="Primer Apellido"
                 type="text"
                 placeholder="Ingresa tu apellido"
-                value={formData.primerApellido || ""}
-                onChange={handleChangeData}
                 disabled={!isEditing}
                 required={true}
+                {...register("primerApellido")}
               />
 
               <InputForm
@@ -164,10 +158,9 @@ function RouteComponent() {
                 label="Segundo Apellido"
                 type="text"
                 placeholder="Ingresa tu segundo apellido"
-                value={formData.segundoApellido || ""}
-                onChange={handleChangeData}
                 disabled={!isEditing}
                 required={true}
+                {...register("segundoApellido")}
               />
 
               <InputForm
@@ -175,25 +168,23 @@ function RouteComponent() {
                 label="Correo Electrónico"
                 type="email"
                 placeholder="correo@ejemplo.com"
-                value={formData.email || ""}
-                onChange={handleChangeData}
                 disabled={!isEditing}
                 required={true}
+                {...register("email")}
               />
 
               <InputSelect
                 label="Tipo de identificación"
                 placeholder="Tipo de identificación"
                 id="idTipoIdentificacion"
-                value={formData.idTipoIdentificacion || 0}
                 options={
                   tiposIdentificacion?.data?.map((tipo) => ({
                     id: tipo.idTipoIdentificacion,
                     descripcion: tipo.descripcion,
                   })) || []
                 }
-                onChange={handleNumericChangeData}
                 disabled={!isEditing}
+                {...register("idTipoIdentificacion", { valueAsNumber: true })}
               />
 
               <div className="md:col-span-2">
@@ -202,10 +193,9 @@ function RouteComponent() {
                   label="Número de Identificación"
                   type="text"
                   placeholder="1234567890"
-                  value={formData.numeroIdentificacion || ""}
-                  onChange={handleChangeData}
                   disabled={!isEditing}
                   required={false}
+                  {...register("numeroIdentificacion")}
                 />
               </div>
             </div>

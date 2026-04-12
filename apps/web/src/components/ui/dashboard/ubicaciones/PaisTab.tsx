@@ -10,7 +10,7 @@ import {
   useCrearPais,
   usePais,
 } from "../../../../api/queryFunctions/configuracion";
-import { useForm } from "../../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import type {
   CreatePaisDto,
   // UpdatePaisDto,
@@ -26,8 +26,8 @@ export const PaisTab = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   // const [isModalOpenEditar, setIsModalOpenEditar] = useState(false);
   // const [editingRow, setEditingRow] = useState<Pais | null>(null);
-  const { form, resetForm, handleChange } = useForm<CreatePaisDto>({
-    descripcion: "",
+  const { register, handleSubmit, reset } = useForm<CreatePaisDto>({
+    defaultValues: { descripcion: "" },
   });
   // const {
   //   form: formEditar,
@@ -38,13 +38,10 @@ export const PaisTab = () => {
   //   descripcion: "",
   // });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    crearPais({
-      ...form,
-    });
+  const onSubmitCreate = (data: CreatePaisDto) => {
+    crearPais({ ...data });
     setIsModalOpen(false);
-    resetForm();
+    reset();
   };
 
   // const handleShowModalEditar = (row: Pais) => {
@@ -102,15 +99,15 @@ export const PaisTab = () => {
         size="md"
         onClose={() => {
           setIsModalOpen(false);
-          resetForm();
+          reset();
         }}
         children={
           <FormsModal
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmit(onSubmitCreate)}
             isLoading={isLoading}
             onCancel={() => {
               setIsModalOpen(false);
-              resetForm();
+              reset();
             }}
             updating={false}
           >
@@ -119,9 +116,8 @@ export const PaisTab = () => {
               placeholder="Descripción"
               id="descripcion"
               required
-              value={form.descripcion || ""}
-              onChange={handleChange}
               type="text"
+              {...register("descripcion")}
             />
           </FormsModal>
         }

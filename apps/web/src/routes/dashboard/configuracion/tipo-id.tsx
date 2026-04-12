@@ -3,7 +3,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import type { TipoIdentificacion } from "../../../types";
 import type {
@@ -17,10 +17,9 @@ import {
   useEliminarTipoIdentificacion,
   useTipoIdentificacion,
 } from "../../../api/queryFunctions/configuracion/tipo-identificacion";
-import { useForm } from "../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { InputForm } from "../../../components/common/InputForm";
-import Button from "../../../components/common/Button";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
@@ -39,7 +38,7 @@ function RouteComponent() {
   const [isModalOpenEditar, setIsModalOpenEditar] = useState(false);
 
   // Queries y mutaciones
-  const { data: tipoIdentificacion, isLoading } = useTipoIdentificacion();
+  const { data: tipoIdentificacion } = useTipoIdentificacion();
   const {
     mutate: crearTipoIdentificacion,
     isPending: isCreatingTipoIdentificacion,
@@ -53,50 +52,46 @@ function RouteComponent() {
 
   // Formularios
   const {
-    form: formCrear,
-    setForm: setFormCrear,
-    resetForm: resetFormCrear,
-    handleChange: handleChangeCrear,
+    register: registerCrear,
+    handleSubmit: handleSubmitCrear,
+    reset: resetCrear,
   } = useForm<CreateTipoIdentificacion>({
-    descripcion: "",
-  });
-  const {
-    form: formEditar,
-    handleChange: handleChangeEditar,
-    setForm: setFormEditar,
-    resetForm: resetFormEditar,
-  } = useForm<ActualizarTipoIdentificacion>({
-    descripcion: "",
-    estado: false,
+    defaultValues: { descripcion: "" },
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    crearTipoIdentificacion(formCrear);
+  const {
+    register: registerEditar,
+    handleSubmit: handleSubmitEditarForm,
+    reset: resetEditar,
+  } = useForm<ActualizarTipoIdentificacion>({
+    defaultValues: { descripcion: "", estado: false },
+  });
+
+  const onSubmitCrear = (data: CreateTipoIdentificacion) => {
+    crearTipoIdentificacion(data);
     setIsModalOpen(false);
-    resetFormCrear();
+    resetCrear();
   };
 
   const handleShowModalEditar = (row: TipoIdentificacion) => {
     setIsModalOpenEditar(true);
-    setFormEditar({
+    resetEditar({
       estado: row.estado,
       descripcion: row.descripcion,
     });
     setSelectIdRow(row.idTipoIdentificacion);
   };
 
-  const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmitEditar = (data: ActualizarTipoIdentificacion) => {
     actualizarTipoIdentificacion({
       id: selectIdRow as number,
       data: {
-        descripcion: formEditar.descripcion,
-        estado: String(formEditar.estado) === "true",
+        descripcion: data.descripcion,
+        estado: String(data.estado) === "true",
       },
     });
     setIsModalOpenEditar(false);
-    resetFormEditar();
+    resetEditar();
   };
 
   const columns: ColumnDef<TipoIdentificacion>[] = [
@@ -166,15 +161,15 @@ function RouteComponent() {
         size="md"
         onClose={() => {
           setIsModalOpen(false);
-          resetFormCrear();
+          resetCrear();
         }}
         children={
           <FormsModal
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmitCrear(onSubmitCrear)}
             isLoading={isCreatingTipoIdentificacion}
             onCancel={() => {
               setIsModalOpen(false);
-              resetFormCrear();
+              resetCrear();
             }}
             updating={false}
           >
@@ -184,9 +179,8 @@ function RouteComponent() {
                 placeholder="Descripción"
                 id="descripcion"
                 required
-                value={formCrear.descripcion || ""}
-                onChange={handleChangeCrear}
                 type="text"
+                {...registerCrear("descripcion")}
               />
             </div>
           </FormsModal>
@@ -198,15 +192,15 @@ function RouteComponent() {
         size="md"
         onClose={() => {
           setIsModalOpenEditar(false);
-          resetFormEditar();
+          resetEditar();
         }}
       >
         <FormsModal
-          onSubmit={handleSubmitEditar}
+          onSubmit={handleSubmitEditarForm(onSubmitEditar)}
           isLoading={isActualizandoTipoIdentificacion}
           onCancel={() => {
             setIsModalOpenEditar(false);
-            resetFormEditar();
+            resetEditar();
           }}
           updating={true}
         >
@@ -216,16 +210,14 @@ function RouteComponent() {
               placeholder="Descripción"
               id="descripcion"
               required
-              value={formEditar.descripcion || ""}
-              onChange={handleChangeEditar}
               type="text"
+              {...registerEditar("descripcion")}
             />
             <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
               id="estado"
-              value={formEditar.estado?.toString() || ""}
-              onChange={handleChangeEditar}
+              {...registerEditar("estado")}
             />
           </div>
         </FormsModal>

@@ -16,7 +16,7 @@ import {
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { InputForm } from "../../../components/common/InputForm";
-import { useForm } from "../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import type { CreateRoleDto, UpdateRoleDto } from "../../../api/dtos";
 import { useGetModulos } from "../../../api/queryFunctions/permisos/modulos";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
@@ -33,6 +33,8 @@ function RouteComponent() {
   const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
   const [isConfirmarDeleteOpen, setIsConfirmarDeleteOpen] = useState(false);
   const [idSelectedRole, setIdSelectedRole] = useState<number | null>(null);
+  // Permissions state managed separately since it's an array toggle
+  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
 
   // Queries y mutaciones
   const { data: roles } = useRoles();
@@ -44,24 +46,51 @@ function RouteComponent() {
 
   // Formularios
   const {
-    form: formCreateRole,
-    resetForm: resetFormCreateRole,
-    handleChange: handleChangeCreateRole,
-    setForm: setFormCreateRole,
-  } = useForm<CreateRoleDto>({
-    descripcion: "",
-    permissionsIds: [],
+    register: registerCrear,
+    handleSubmit: handleSubmitCrear,
+    reset: resetCrear,
+  } = useForm<Omit<CreateRoleDto, "permissionsIds">>({
+    defaultValues: { descripcion: "" },
   });
 
   const {
-    form: formUpdateRole,
-    resetForm: resetFormUpdateRole,
-    handleChange: handleChangeUpdateRole,
-    setForm: setFormUpdateRole,
+    register: registerEditar,
+    handleSubmit: handleSubmitEditar,
+    reset: resetEditar,
   } = useForm<UpdateRoleDto>({
-    descripcion: "",
-    estado: false,
+    defaultValues: { descripcion: "", estado: false },
   });
+
+  const onSubmitCreate = (data: Omit<CreateRoleDto, "permissionsIds">) => {
+    createRole(
+      { ...data, permissionsIds: selectedPermissions },
+      {
+        onSuccess: () => {
+          setIsModalOpen(false);
+          resetCrear();
+          setSelectedPermissions([]);
+        },
+      },
+    );
+  };
+
+  const onSubmitUpdate = (data: UpdateRoleDto) => {
+    updateRole(
+      {
+        id: idSelectedRole as number,
+        data: {
+          ...data,
+          estado: String(data.estado) === "true",
+        },
+      },
+      {
+        onSuccess: () => {
+          setIsModalUpdateOpen(false);
+          resetEditar();
+        },
+      },
+    );
+  };
 
   const columns: ColumnDef<Rol>[] = [
     {
@@ -87,7 +116,7 @@ function RouteComponent() {
               onClick: () => {
                 setIsModalUpdateOpen(true);
                 setIdSelectedRole(row.original.id);
-                setFormUpdateRole({
+                resetEditar({
                   descripcion: row.original.descripcion,
                   estado: row.original.estado,
                 });
@@ -132,24 +161,18 @@ function RouteComponent() {
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          resetFormCreateRole();
+          resetCrear();
+          setSelectedPermissions([]);
         }}
         title="Agregar rol"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
-            createRole(formCreateRole, {
-              onSuccess: () => {
-                setIsModalOpen(false);
-                resetFormCreateRole();
-              },
-            });
-          }}
+          onSubmit={handleSubmitCrear(onSubmitCreate)}
           isLoading={isCreatingRole}
           onCancel={() => {
             setIsModalOpen(false);
-            resetFormCreateRole();
+            resetCrear();
+            setSelectedPermissions([]);
           }}
           updating={false}
         >
@@ -159,8 +182,7 @@ function RouteComponent() {
               placeholder="Descripción"
               type="text"
               id="descripcion"
-              value={formCreateRole.descripcion}
-              onChange={handleChangeCreateRole}
+              {...registerCrear("descripcion")}
             />
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium text-gray-900">
@@ -172,26 +194,15 @@ function RouteComponent() {
               {modulos?.data && (
                 <div className="grid grid-cols-2 gap-2">
                   {modulos.data.map((modulo) => {
-                    const isSelected = formCreateRole.permissionsIds.includes(
-                      modulo.id,
-                    );
+                    const isSelected = selectedPermissions.includes(modulo.id);
 
                     const toggleSelection = () => {
                       if (!isSelected) {
-                        setFormCreateRole({
-                          ...formCreateRole,
-                          permissionsIds: [
-                            ...formCreateRole.permissionsIds,
-                            modulo.id,
-                          ],
-                        });
+                        setSelectedPermissions((prev) => [...prev, modulo.id]);
                       } else {
-                        setFormCreateRole({
-                          ...formCreateRole,
-                          permissionsIds: formCreateRole.permissionsIds.filter(
-                            (id) => id !== modulo.id,
-                          ),
-                        });
+                        setSelectedPermissions((prev) =>
+                          prev.filter((id) => id !== modulo.id),
+                        );
                       }
                     };
 
@@ -226,25 +237,7 @@ function RouteComponent() {
                           type="checkbox"
                           id={modulo.id.toString()}
                           checked={isSelected}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormCreateRole({
-                                ...formCreateRole,
-                                permissionsIds: [
-                                  ...formCreateRole.permissionsIds,
-                                  modulo.id,
-                                ],
-                              });
-                            } else {
-                              setFormCreateRole({
-                                ...formCreateRole,
-                                permissionsIds:
-                                  formCreateRole.permissionsIds.filter(
-                                    (id) => id !== modulo.id,
-                                  ),
-                              });
-                            }
-                          }}
+                          onChange={toggleSelection}
                           className="hidden"
                         />
                       </label>
@@ -261,33 +254,16 @@ function RouteComponent() {
         isOpen={isModalUpdateOpen}
         onClose={() => {
           setIsModalUpdateOpen(false);
-          resetFormUpdateRole();
+          resetEditar();
         }}
         title="Editar rol"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
-            updateRole(
-              {
-                id: idSelectedRole as number,
-                data: {
-                  ...formUpdateRole,
-                  estado: String(formUpdateRole.estado) === "true",
-                },
-              },
-              {
-                onSuccess: () => {
-                  setIsModalUpdateOpen(false);
-                  resetFormUpdateRole();
-                },
-              },
-            );
-          }}
+          onSubmit={handleSubmitEditar(onSubmitUpdate)}
           isLoading={isUpdatingRole}
           onCancel={() => {
             setIsModalUpdateOpen(false);
-            resetFormUpdateRole();
+            resetEditar();
           }}
           updating={false}
         >
@@ -297,15 +273,13 @@ function RouteComponent() {
               placeholder="Descripción"
               type="text"
               id="descripcion"
-              value={formUpdateRole.descripcion || ""}
-              onChange={handleChangeUpdateRole}
+              {...registerEditar("descripcion")}
             />
             <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
               id="estado"
-              value={formUpdateRole.estado?.toString() || ""}
-              onChange={handleChangeUpdateRole}
+              {...registerEditar("estado")}
             />
           </div>
         </FormsModal>

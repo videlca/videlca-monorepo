@@ -3,7 +3,7 @@ import { AuthLayout } from "../components/layout/AuthLayout";
 import { User } from "lucide-react";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
-import { useForm } from "../hooks/useForm";
+import { useForm } from "react-hook-form";
 import { useRecoverPassword } from "../api/queryFunctions/auth";
 
 export const Route = createFileRoute("/recuperar")({
@@ -15,17 +15,22 @@ export const Route = createFileRoute("/recuperar")({
   },
 });
 
+interface RecoverForm {
+  numeroIdentificacion: string;
+}
+
 function RouteComponent() {
-  const { form, handleChange } = useForm({
-    numeroIdentificacion: "",
+  const { register, handleSubmit } = useForm<RecoverForm>({
+    defaultValues: {
+      numeroIdentificacion: "",
+    },
   });
 
   const mutation = useRecoverPassword();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = (data: RecoverForm) => {
     mutation.mutate({
-      numeroIdentificacion: form.numeroIdentificacion,
+      numeroIdentificacion: data.numeroIdentificacion,
     });
   };
 
@@ -40,19 +45,17 @@ function RouteComponent() {
         </p>
       </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <Input
           label="Número de identificación"
           placeholder="Ingrese su número de identificación"
           icon={User}
           type="text"
-          onChange={handleChange}
           id="numeroIdentificacion"
+          {...register("numeroIdentificacion")}
         />
 
-        <Button type="submit" onClick={() => {}}>
-          Recuperar
-        </Button>
+        <Button type="submit">Recuperar</Button>
       </form>
 
       <div className="text-center">

@@ -1,46 +1,53 @@
-interface InputSelectProps {
+import React from "react";
+
+interface InputSelectProps
+  extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
   placeholder: string;
-  id: string;
-  value: string | number;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   options: { id: number; descripcion: string }[];
-  required?: boolean;
-  disabled?: boolean;
+  error?: string;
 }
 
-export const InputSelect = ({
-  label,
-  placeholder,
-  id,
-  value,
-  onChange,
-  options,
-  required = false,
-  disabled = false,
-}: InputSelectProps) => {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700">
-        {label}
-      </label>
-      <select
-        id={id}
-        value={value === 0 ? "" : value.toString()}
-        onChange={onChange}
-        className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-        required={required}
-        disabled={disabled}
-      >
-        <option value="" disabled defaultValue={value}>
-          {placeholder}
-        </option>
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.descripcion}
+export const InputSelect = React.forwardRef<HTMLSelectElement, InputSelectProps>(
+  (
+    {
+      label,
+      placeholder,
+      id,
+      options,
+      required = false,
+      disabled = false,
+      error,
+      ...rest
+    },
+    ref,
+  ) => {
+    return (
+      <div className="flex flex-col gap-1">
+        <label htmlFor={id} className="text-sm font-medium text-gray-700">
+          {label}
+        </label>
+        <select
+          ref={ref}
+          id={id}
+          className={`w-full rounded-md border ${error ? "border-red-500" : "border-gray-300"} px-4 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-100`}
+          required={required}
+          disabled={disabled}
+          {...rest}
+        >
+          <option value="" disabled>
+            {placeholder}
           </option>
-        ))}
-      </select>
-    </div>
-  );
-};
+          {options.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.descripcion}
+            </option>
+          ))}
+        </select>
+        {error && <p className="text-sm text-red-500">{error}</p>}
+      </div>
+    );
+  },
+);
+
+InputSelect.displayName = "InputSelect";

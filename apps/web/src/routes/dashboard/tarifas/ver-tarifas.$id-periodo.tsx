@@ -31,7 +31,7 @@ import { StateLabel } from "../../../components/common/StateLabel";
 import { useMemo, useState } from "react";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
-import { useForm } from "../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import type { UpdateTarifaDto } from "../../../api/dtos";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputPrice } from "../../../components/common/InputPrice";
@@ -73,43 +73,46 @@ function RouteComponent() {
     isPending: isLoadingEnviarExcelPorCorreo,
   } = useEnviarExcelPorCorreo();
   const { mutate: descargarExcel } = useDescargarExcel();
+
   // Formularios
   const {
-    form: updateTarifaForm,
-    handleChange: handleChangeUpdateTarifa,
-    setForm: setUpdateTarifaForm,
+    register,
+    handleSubmit,
+    reset,
   } = useForm<UpdateTarifaDto>({
-    idPeriodo: Number(idPeriodoParam),
-    idServicio: 0,
-    idTipoTarifa: 0,
-    precioAntesIva: 0,
-    aui: 0,
-    costosDirectos: 0,
-    seguroVida: 0,
-    costosDirectosSeguroVida: 0,
-    iva: 0,
-    precioTotal: 0,
-    estado: false,
+    defaultValues: {
+      idPeriodo: Number(idPeriodoParam),
+      idServicio: 0,
+      idTipoTarifa: 0,
+      precioAntesIva: 0,
+      aui: 0,
+      costosDirectos: 0,
+      seguroVida: 0,
+      costosDirectosSeguroVida: 0,
+      iva: 0,
+      precioTotal: 0,
+      estado: false,
+    },
   });
 
-  const handleSubmitUpdateTarifa = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmitUpdate = (data: UpdateTarifaDto) => {
     const { iva, precioTotal, precioAntesIva, costosDirectosSeguroVida } =
       priceCalculate(
-        Number(updateTarifaForm.costosDirectos),
-        Number(updateTarifaForm.seguroVida),
-        Number(updateTarifaForm.aui),
+        Number(data.costosDirectos),
+        Number(data.seguroVida),
+        Number(data.aui),
       );
     actualizarTarifa(
       {
         id: tarifaSelected?.idTarifa || 0,
         data: {
-          ...updateTarifaForm,
+          ...data,
+          idTipoTarifa: Number(data.idTipoTarifa),
           iva,
           precioTotal,
           precioAntesIva,
           costosDirectosSeguroVida,
-          estado: String(updateTarifaForm.estado) === "true",
+          estado: String(data.estado) === "true",
         },
       },
       {
@@ -269,7 +272,7 @@ function RouteComponent() {
                 onClick: () => {
                   setIsOpenEditTarifa(true);
                   setTarifaSelected(row.original);
-                  setUpdateTarifaForm({
+                  reset({
                     idPeriodo: row.original.idPeriodo.idPeriodo,
                     idServicio: row.original.idServicio.idServicio,
                     idTipoTarifa: row.original.idTipoTarifa.idTipoTarifa,
@@ -593,7 +596,7 @@ function RouteComponent() {
             setTarifaSelected(null);
           }}
           isLoading={isLoadingActualizarTarifa}
-          onSubmit={handleSubmitUpdateTarifa}
+          onSubmit={handleSubmit(onSubmitUpdate)}
         >
           <div className="flex-1 overflow-y-auto">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -612,15 +615,13 @@ function RouteComponent() {
                   }
                   placeholder="Seleccione un tipo de tarifa"
                   id="idTipoTarifa"
-                  value={updateTarifaForm.idTipoTarifa?.toString() || ""}
-                  onChange={handleChangeUpdateTarifa}
+                  {...register("idTipoTarifa", { valueAsNumber: true })}
                 />
                 <InputSelectStateBoolean
                   label="Estado"
                   id="estado"
-                  value={updateTarifaForm.estado?.toString() || ""}
-                  onChange={handleChangeUpdateTarifa}
                   placeholder="Seleccione un estado"
+                  {...register("estado")}
                 />
               </div>
 
@@ -633,22 +634,19 @@ function RouteComponent() {
                   size="full"
                   label="Costos Directos:"
                   id="costosDirectos"
-                  value={updateTarifaForm.costosDirectos?.toString() || ""}
-                  onChange={(e) => handleChangeUpdateTarifa(e)}
+                  {...register("costosDirectos")}
                 />
                 <InputPrice
                   size="full"
                   label="Seguro de Vida:"
                   id="seguroVida"
-                  value={updateTarifaForm.seguroVida?.toString() || ""}
-                  onChange={(e) => handleChangeUpdateTarifa(e)}
+                  {...register("seguroVida")}
                 />
                 <InputPrice
                   size="full"
                   label="AUI:"
                   id="aui"
-                  value={updateTarifaForm.aui?.toString() || ""}
-                  onChange={(e) => handleChangeUpdateTarifa(e)}
+                  {...register("aui")}
                 />
               </div>
             </div>

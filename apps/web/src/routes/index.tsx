@@ -4,7 +4,7 @@ import { Lock, User } from "lucide-react";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import { useLogin } from "../api/queryFunctions/auth";
-import { useForm } from "../hooks/useForm";
+import { useForm } from "react-hook-form";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -15,18 +15,24 @@ export const Route = createFileRoute("/")({
   },
 });
 
+interface LoginForm {
+  email: string;
+  clave: string;
+}
+
 function Index() {
   const mutation = useLogin();
-  const { form, handleChange } = useForm({
-    email: "",
-    clave: "",
+  const { register, handleSubmit } = useForm<LoginForm>({
+    defaultValues: {
+      email: "",
+      clave: "",
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = (data: LoginForm) => {
     mutation.mutate({
-      email: form.email,
-      clave: form.clave,
+      email: data.email,
+      clave: data.clave,
     });
   };
 
@@ -38,15 +44,14 @@ function Index() {
           Ingrese sus credenciales para acceder al sistema
         </p>
       </div>
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <Input
           label="Usuario"
           placeholder="Ingrese su nombre de usuario"
           icon={User}
           type="text"
           id="email"
-          value={form.email}
-          onChange={handleChange}
+          {...register("email")}
         />
 
         <Input
@@ -55,8 +60,7 @@ function Index() {
           icon={Lock}
           type="password"
           id="clave"
-          value={form.clave}
-          onChange={handleChange}
+          {...register("clave")}
         />
         <div className="text-right">
           <Link

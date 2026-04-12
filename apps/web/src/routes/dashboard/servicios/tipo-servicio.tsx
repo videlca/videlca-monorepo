@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { TipoServicio } from "../../../api/types/servicio";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import Table from "../../../components/common/Table";
 import {
@@ -17,7 +17,7 @@ import type {
   CreateTipoServicioDto,
   UpdateTipoServicioDto,
 } from "../../../api/dtos";
-import { useForm } from "../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { InputForm } from "../../../components/common/InputForm";
@@ -47,29 +47,31 @@ function RouteComponent() {
   const { mutate: eliminarTipoServicio } = useDeleteTipoServicio();
 
   // Formularios
-
   const {
-    form: formAddTipoServicio,
-    handleChange: handleChangeAddTipoServicio,
-    resetForm: resetFormAddTipoServicio,
+    register: registerCrear,
+    handleSubmit: handleSubmitCrear,
+    reset: resetCrear,
   } = useForm<CreateTipoServicioDto>({
-    nombre: "",
-    descripcion: "",
-    prefijo: "",
-    requierePersonal: false,
+    defaultValues: {
+      nombre: "",
+      descripcion: "",
+      prefijo: "",
+      requierePersonal: false,
+    },
   });
 
   const {
-    form: formEditTipoServicio,
-    handleChange: handleChangeEditTipoServicio,
-    resetForm: resetFormEditTipoServicio,
-    handleBooleanChange: handleBooleanChangeEditTipoServicio,
+    register: registerEditar,
+    handleSubmit: handleSubmitEditar,
+    reset: resetEditar,
   } = useForm<UpdateTipoServicioDto>({
-    nombre: "",
-    descripcion: "",
-    prefijo: "",
-    requierePersonal: false,
-    estado: false,
+    defaultValues: {
+      nombre: "",
+      descripcion: "",
+      prefijo: "",
+      requierePersonal: false,
+      estado: false,
+    },
   });
 
   const columns: ColumnDef<TipoServicio>[] = [
@@ -115,12 +117,13 @@ function RouteComponent() {
               onClick: () => {
                 setIsOpenEditTipoServicio(true);
                 setIdTipoServicio(row.original.idTipoServicio);
-                formEditTipoServicio.nombre = row.original.nombre;
-                formEditTipoServicio.descripcion = row.original.descripcion;
-                formEditTipoServicio.prefijo = row.original.prefijo;
-                formEditTipoServicio.requierePersonal =
-                  row.original.requierePersonal;
-                formEditTipoServicio.estado = row.original.estado;
+                resetEditar({
+                  nombre: row.original.nombre,
+                  descripcion: row.original.descripcion,
+                  prefijo: row.original.prefijo,
+                  requierePersonal: row.original.requierePersonal,
+                  estado: row.original.estado,
+                });
               },
             },
             {
@@ -158,24 +161,23 @@ function RouteComponent() {
         isOpen={isOpenAddTipoServicio}
         onClose={() => {
           setIsOpenAddTipoServicio(false);
-          resetFormAddTipoServicio();
+          resetCrear();
         }}
         title="Agregar Tipo de Servicio"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
-            crearTipoServicio(formAddTipoServicio, {
+          onSubmit={handleSubmitCrear((data) => {
+            crearTipoServicio(data, {
               onSuccess: () => {
                 setIsOpenAddTipoServicio(false);
-                resetFormAddTipoServicio();
+                resetCrear();
               },
             });
-          }}
+          })}
           isLoading={isLoadingCrearTipoServicio}
           onCancel={() => {
             setIsOpenAddTipoServicio(false);
-            resetFormAddTipoServicio();
+            resetCrear();
           }}
           updating={false}
         >
@@ -186,8 +188,7 @@ function RouteComponent() {
               type="text"
               required
               placeholder="Nombre"
-              value={formAddTipoServicio.nombre}
-              onChange={handleChangeAddTipoServicio}
+              {...registerCrear("nombre")}
             />
             <InputForm
               label="Descripción"
@@ -195,8 +196,7 @@ function RouteComponent() {
               type="text"
               required
               placeholder="Descripción"
-              value={formAddTipoServicio.descripcion}
-              onChange={handleChangeAddTipoServicio}
+              {...registerCrear("descripcion")}
             />
             <InputForm
               label="Prefijo"
@@ -204,15 +204,13 @@ function RouteComponent() {
               type="text"
               required
               placeholder="Prefijo"
-              value={formAddTipoServicio.prefijo}
-              onChange={handleChangeAddTipoServicio}
+              {...registerCrear("prefijo")}
             />
             <CheckboxForm
               label="Requiere personal"
               id="requierePersonal"
               required={false}
-              checked={formAddTipoServicio.requierePersonal}
-              onChange={handleChangeAddTipoServicio}
+              {...registerCrear("requierePersonal")}
             />
           </div>
         </FormsModal>
@@ -224,25 +222,27 @@ function RouteComponent() {
         title="Editar Tipo de Servicio"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={handleSubmitEditar((data) => {
             editarTipoServicio(
               {
                 id: idTipoServicio,
-                data: formEditTipoServicio,
+                data: {
+                  ...data,
+                  estado: String(data.estado) === "true",
+                },
               },
               {
                 onSuccess: () => {
                   setIsOpenEditTipoServicio(false);
-                  resetFormEditTipoServicio();
+                  resetEditar();
                 },
               },
             );
-          }}
+          })}
           isLoading={isLoadingEditarTipoServicio}
           onCancel={() => {
             setIsOpenEditTipoServicio(false);
-            resetFormEditTipoServicio();
+            resetEditar();
           }}
           updating={true}
         >
@@ -253,8 +253,7 @@ function RouteComponent() {
               type="text"
               required={false}
               placeholder="Nombre"
-              value={formEditTipoServicio.nombre || ""}
-              onChange={handleChangeEditTipoServicio}
+              {...registerEditar("nombre")}
             />
             <InputForm
               label="Descripción"
@@ -262,8 +261,7 @@ function RouteComponent() {
               type="text"
               required={false}
               placeholder="Descripción"
-              value={formEditTipoServicio.descripcion || ""}
-              onChange={handleChangeEditTipoServicio}
+              {...registerEditar("descripcion")}
             />
             <InputForm
               label="Prefijo"
@@ -271,22 +269,19 @@ function RouteComponent() {
               type="text"
               required={false}
               placeholder="Prefijo"
-              value={formEditTipoServicio.prefijo || ""}
-              onChange={handleChangeEditTipoServicio}
+              {...registerEditar("prefijo")}
             />
             <InputSelectStateBoolean
               label="Estado"
               id="estado"
               placeholder="Estado"
-              value={formEditTipoServicio.estado?.toString() || ""}
-              onChange={handleBooleanChangeEditTipoServicio}
+              {...registerEditar("estado")}
             />
             <CheckboxForm
               label="Requiere personal"
               id="requierePersonal"
               required={false}
-              checked={formEditTipoServicio.requierePersonal ?? false}
-              onChange={handleChangeEditTipoServicio}
+              {...registerEditar("requierePersonal")}
             />
           </div>
         </FormsModal>

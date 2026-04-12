@@ -12,7 +12,7 @@ import {
   useEliminarDepartamento,
   usePais,
 } from "../../../../api/queryFunctions/configuracion/ubicaciones";
-import { useForm } from "../../../../hooks/useForm";
+import { useForm } from "react-hook-form";
 import type {
   CreateDepartamentoDto,
   UpdateDepartamentoDto,
@@ -42,35 +42,25 @@ export const DepartamentoTab = () => {
   } = useActualizarDepartamento();
   const { mutate: eliminarDepartamento } = useEliminarDepartamento();
   // Formularios
-  const { form, resetForm, handleChange } = useForm<CreateDepartamentoDto>({
-    descripcion: "",
-    pais: 0,
-    codigoDepartamento: "",
+  const { register: registerCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } = useForm<CreateDepartamentoDto>({
+    defaultValues: { descripcion: "", pais: 0, codigoDepartamento: "" },
   });
-  const {
-    form: formEditar,
-    handleChange: handleChangeEditar,
-    setForm: setFormEditar,
-    resetForm: resetFormEditar,
-  } = useForm<UpdateDepartamentoDto>({
-    descripcion: "",
-    pais: 0,
-    codigoDepartamento: "",
+  const { register: registerEditar, handleSubmit: handleSubmitEditar, reset: resetEditar } = useForm<UpdateDepartamentoDto>({
+    defaultValues: { descripcion: "", pais: 0, codigoDepartamento: "" },
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmitCrear = (data: CreateDepartamentoDto) => {
     crearDepartamento({
-      ...form,
-      pais: Number(form.pais),
+      ...data,
+      pais: Number(data.pais),
     });
     setIsModalOpen(false);
-    resetForm();
+    resetCrear();
   };
 
   const handleShowModalEditar = (row: Departamento) => {
     setIsModalOpenEditar(true);
-    setFormEditar({
+    resetEditar({
       descripcion: row.descripcion,
       pais: row.pais.idPais,
       codigoDepartamento: row.codigoDepartamento,
@@ -78,18 +68,17 @@ export const DepartamentoTab = () => {
     setSelectIdRow(row.idDepartamento);
   };
 
-  const handleSubmitEditar = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmitEditar = (data: UpdateDepartamentoDto) => {
     actualizarDepartamento({
       id: selectIdRow as number,
       data: {
-        descripcion: formEditar.descripcion || "",
-        pais: formEditar.pais || 0,
-        codigoDepartamento: formEditar.codigoDepartamento || "",
+        descripcion: data.descripcion || "",
+        pais: data.pais || 0,
+        codigoDepartamento: data.codigoDepartamento || "",
       },
     });
     setIsModalOpenEditar(false);
-    resetFormEditar();
+    resetEditar();
   };
 
   const columnsDepartamentos: ColumnDef<Departamento>[] = [
@@ -167,15 +156,15 @@ export const DepartamentoTab = () => {
         size="md"
         onClose={() => {
           setIsModalOpen(false);
-          resetForm();
+          resetCrear();
         }}
         children={
           <FormsModal
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmitCrear(onSubmitCrear)}
             isLoading={isLoadingCrearDepartamento}
             onCancel={() => {
               setIsModalOpen(false);
-              resetForm();
+              resetCrear();
             }}
             updating={false}
           >
@@ -185,18 +174,16 @@ export const DepartamentoTab = () => {
                 placeholder="Descripción"
                 id="descripcion"
                 required
-                value={form.descripcion || ""}
-                onChange={handleChange}
                 type="text"
+                {...registerCrear("descripcion")}
               />
               <InputSelect
                 label="Pais"
                 placeholder="Pais"
                 id="pais"
-                value={form.pais || ""}
-                onChange={handleChange}
                 options={paisOptions}
                 required
+                {...registerCrear("pais", { valueAsNumber: true })}
               />
               <InputForm
                 label="Código de departamento"
@@ -204,9 +191,8 @@ export const DepartamentoTab = () => {
                 id="codigoDepartamento"
                 required
                 maxLength={2}
-                value={form.codigoDepartamento || ""}
-                onChange={handleChange}
                 type="text"
+                {...registerCrear("codigoDepartamento")}
               />
             </div>
           </FormsModal>
@@ -218,15 +204,15 @@ export const DepartamentoTab = () => {
         size="md"
         onClose={() => {
           setIsModalOpenEditar(false);
-          resetFormEditar();
+          resetEditar();
         }}
         children={
           <FormsModal
-            onSubmit={handleSubmitEditar}
+            onSubmit={handleSubmitEditar(onSubmitEditar)}
             isLoading={isLoadingActualizarDepartamento}
             onCancel={() => {
               setIsModalOpenEditar(false);
-              resetFormEditar();
+              resetEditar();
             }}
             updating={true}
           >
@@ -236,26 +222,23 @@ export const DepartamentoTab = () => {
                 placeholder="Descripción"
                 id="descripcion"
                 required
-                value={formEditar.descripcion || ""}
-                onChange={handleChangeEditar}
                 type="text"
+                {...registerEditar("descripcion")}
               />
               <InputSelect
                 label="Pais"
                 placeholder="Pais"
                 id="pais"
-                value={formEditar.pais || ""}
-                onChange={handleChangeEditar}
                 options={paisOptions}
+                {...registerEditar("pais", { valueAsNumber: true })}
               />
               <InputForm
                 label="Código de departamento"
                 placeholder="Código de departamento"
                 id="codigoDepartamento"
                 required
-                value={formEditar.codigoDepartamento || ""}
-                onChange={handleChangeEditar}
                 type="text"
+                {...registerEditar("codigoDepartamento")}
               />
             </div>
           </FormsModal>
