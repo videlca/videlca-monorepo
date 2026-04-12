@@ -224,7 +224,7 @@ export function RouteComponent() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between">
-        <h1 className="text-2xl font-bold">Puestos de por cliente</h1>
+        <h1 className="text-2xl font-bold">Puestos cliente</h1>
         <ButtonAction
           Icon={ArrowLeftIcon}
           label="Volver"

@@ -346,6 +346,7 @@ export function PuestosTab() {
                   value={formEditPuesto.latitud?.toString() || ""}
                   onChange={handleChangeEditPuesto}
                   required
+                  allowNegative={true}
                 />
                 <InputForm
                   label="Longitud*"
@@ -355,6 +356,7 @@ export function PuestosTab() {
                   value={formEditPuesto.longitud?.toString() || ""}
                   onChange={handleChangeEditPuesto}
                   required
+                  allowNegative={true}
                 />
               </div>
             </FormSection>
@@ -385,7 +387,7 @@ export function PuestosTab() {
               <InputForm
                 label="Teléfono*"
                 placeholder="Teléfono"
-                type="number"
+                type="text"
                 id="telefono"
                 value={formEditPuesto.telefono || ""}
                 onChange={handleChangeEditPuesto}
@@ -394,7 +396,7 @@ export function PuestosTab() {
               <InputForm
                 label="Teléfono 2"
                 placeholder="Teléfono 2"
-                type="number"
+                type="text"
                 id="segundoTelefono"
                 value={formEditPuesto.segundoTelefono || ""}
                 onChange={handleChangeEditPuesto}

@@ -5,6 +5,7 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 import {
+  confirmarCuenta,
   login,
   logout,
   recoverPassword,
@@ -124,3 +125,31 @@ export const useUpdatePassword = (): UseMutationResult<
     },
   });
 };
+
+export const useConfirmarCuenta = (): UseMutationResult<
+  ApiResponse,
+  Error,
+  { token: string; data: { clave: string; confirmarClave: string } }
+> => {
+  const navigate = useNavigate();
+  return useMutation({
+    mutationFn: (payload: {
+      token: string;
+      data: { clave: string; confirmarClave: string };
+    }) => confirmarCuenta(payload.token, payload.data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Cuenta confirmada exitosamente", {
+          description: "Por favor, inicie sesión con su contraseña",
+        });
+        navigate({ to: "/", replace: true });
+      } else {
+        throw new Error(data.message || "Error al confirmar cuenta");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al confirmar cuenta");
+    },
+  });
+};
+

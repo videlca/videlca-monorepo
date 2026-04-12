@@ -30,9 +30,8 @@ export const InputPrice = ({
           $
         </span>
         <input
-          type="number"
+          type="text"
           id={id}
-          min={1}
           value={value}
           onChange={onChange}
           placeholder="0.00"

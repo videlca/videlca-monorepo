@@ -95,7 +95,7 @@ function RouteComponent() {
         <div className="flex justify-end">
           <ButtonAction
             Icon={PlusIcon}
-            label="Agregar correo por defecto"
+            label="Agregar/Editar correos por defecto"
             onClick={() => {
               handleAddCorreoDefault();
             }}

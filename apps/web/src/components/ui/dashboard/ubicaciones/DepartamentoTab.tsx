@@ -203,6 +203,7 @@ export const DepartamentoTab = () => {
                 placeholder="Código de departamento"
                 id="codigoDepartamento"
                 required
+                maxLength={2}
                 value={form.codigoDepartamento || ""}
                 onChange={handleChange}
                 type="text"

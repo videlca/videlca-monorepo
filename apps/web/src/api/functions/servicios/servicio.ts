@@ -5,7 +5,7 @@ import type { ApiResponse } from "../../types/common";
 import type { Servicio } from "../../types/servicio";
 
 export const getServicios = async (pagination: PaginationDto): Promise<ApiResponse<Servicio[]>> => {
-  return await apiGet<Servicio[]>("/servicios", pagination);
+  return await apiGet<Servicio[]>(`/servicios`, pagination);
 };
 
 export const getServiciosByPeriodo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<Servicio[]>> => {

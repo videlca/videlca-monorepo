@@ -294,7 +294,7 @@ export function ClientesTab() {
               id="numeroIdentificacion"
               value={formCreateCliente.numeroIdentificacion}
               onChange={handleChangeCreateCliente}
-              type="number"
+              type="text"
               required
             />
             <InputForm
@@ -396,7 +396,7 @@ export function ClientesTab() {
               id="numeroIdentificacion"
               value={formEditCliente.numeroIdentificacion || ""}
               onChange={handleChangeEditCliente}
-              type="number"
+              type="text"
               required
             />
             <InputForm
@@ -547,6 +547,7 @@ export function ClientesTab() {
                   value={formAddPuesto.latitud?.toString()}
                   onChange={handleChangeAddPuesto}
                   required
+                  allowNegative={true}
                 />
                 <InputForm
                   label="Longitud*"
@@ -556,6 +557,7 @@ export function ClientesTab() {
                   value={formAddPuesto.longitud?.toString()}
                   onChange={handleChangeAddPuesto}
                   required
+                  allowNegative={true}
                 />
               </div>
             </FormSection>
@@ -585,7 +587,7 @@ export function ClientesTab() {
               <InputForm
                 label="Teléfono*"
                 placeholder="Teléfono"
-                type="number"
+                type="text"
                 id="telefono"
                 value={formAddPuesto.telefono}
                 onChange={handleChangeAddPuesto}
@@ -594,7 +596,7 @@ export function ClientesTab() {
               <InputForm
                 label="Teléfono 2"
                 placeholder="Teléfono 2"
-                type="number"
+                type="text"
                 id="segundoTelefono"
                 value={formAddPuesto.segundoTelefono || ""}
                 onChange={handleChangeAddPuesto}
