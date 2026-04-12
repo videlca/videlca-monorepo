@@ -292,6 +292,8 @@ export class OrdenServicioService {
 
       const emails = [...emailsLocacion, ...emailsApp];
 
+      await queryRunner.commitTransaction();
+
       await this.notificationEmail(
         savedOrdenServicio.idOrdenServicio,
         nombreResponsable, 
@@ -299,13 +301,13 @@ export class OrdenServicioService {
         emails
       );
       
-      await queryRunner.commitTransaction();
-      
       return savedOrdenServicio;
       
     } catch (error) {
 
-      await queryRunner.rollbackTransaction();
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
 
       throw error;
       
@@ -441,9 +443,19 @@ export class OrdenServicioService {
     const ordenServicio = await this.ordenServicioRepository.findOne({
       where: { idOrdenServicio: id },
       relations: {
+        ordenServicioId: true,
+        idUsuarioCreacion: true,
+        idEstadoOrdenServicio: true,
+        tarifas: {
+          idTarifa: {
+            idServicio: true
+          }
+        },
         idLocacion: {
           correos: true,
-          idCliente: true,
+          idCliente: {
+            idTipoCliente: true
+          },
           idCiudad: true,
         },
       },
@@ -1306,6 +1318,8 @@ export class OrdenServicioService {
 
       }
 
+      await queryRunner.commitTransaction();
+
       if (cambioEstadoOrden){
 
         // envio de correos que se tengan registrados en la locacion
@@ -1329,13 +1343,13 @@ export class OrdenServicioService {
         
       }
       
-      await queryRunner.commitTransaction();
-      
       return savedOrdenServicio;
       
     } catch (error) {
 
-      await queryRunner.rollbackTransaction();
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
 
       throw error;
       
@@ -1470,7 +1484,9 @@ export class OrdenServicioService {
       return { message: `Orden de servicio ${id} eliminada correctamente` };
   
     } catch (error) {
-      await queryRunner.rollbackTransaction();
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
       this.logger.error(error);
   
       if (error.errno == 1451) {
