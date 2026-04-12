@@ -10,20 +10,20 @@ import {
 } from "lucide-react";
 import type { Puesto } from "../../../types";
 import { useSearchPuestos } from "../../../api/queryFunctions/clientes";
-import type { CreateOrdenServicioDto } from "../../../api/dtos/orden-servicio";
 import { useEffect, useState } from "react";
 import { SimpleModal } from "../SimpleModal";
 import { ButtonAction } from "../ButtonAction";
 import { useNavigate } from "@tanstack/react-router";
 import type { ColumnaPuesto } from "../../../api/dtos";
+import type { UseFormSetValue } from "react-hook-form";
 
 export const SeleccionarPuestoCliente = ({
-  formOrdenServicio,
-  setFormOrdenServicio,
+  idLocacion,
+  setValue,
   setSelectedPuesto,
 }: {
-  formOrdenServicio: CreateOrdenServicioDto;
-  setFormOrdenServicio: (formOrdenServicio: CreateOrdenServicioDto) => void;
+  idLocacion: number;
+  setValue: UseFormSetValue<any>;
   setSelectedPuesto: (puesto: Puesto) => void;
 }) => {
   const [isOpenCreatePuesto, setIsOpenCreatePuesto] = useState(false);
@@ -51,7 +51,7 @@ export const SeleccionarPuestoCliente = ({
           Seleccionar Puesto
         </h3>
         <p className="text-sm text-gray-600">
-          Busque y seleccione el cliente y el puesto donde se prestará el
+          Busque y seleccione el cliente y el puesto donde se prestada el
           servicio
         </p>
       </div>
@@ -105,15 +105,12 @@ export const SeleccionarPuestoCliente = ({
           <div
             key={puesto.idLocacion}
             className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-              formOrdenServicio.idLocacion === puesto.idLocacion
+              idLocacion === puesto.idLocacion
                 ? "border-blue-500 bg-blue-50 shadow-sm"
                 : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
             }`}
             onClick={() => {
-              setFormOrdenServicio({
-                ...formOrdenServicio,
-                idLocacion: puesto.idLocacion,
-              });
+              setValue("idLocacion", puesto.idLocacion);
               setSelectedPuesto(puesto);
             }}
           >
@@ -122,7 +119,7 @@ export const SeleccionarPuestoCliente = ({
                 <div className="mb-1 flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-blue-600" />
                   <h4 className="font-medium text-gray-900">{puesto.nombre}</h4>
-                  {formOrdenServicio.idLocacion === puesto.idLocacion && (
+                  {idLocacion === puesto.idLocacion && (
                     <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-blue-600">
                       <Check className="h-4 w-4 text-white" />
                     </div>

@@ -50,7 +50,7 @@ export const InputTime24H = React.forwardRef<
             {placeholder}
           </option>
           {hours.map((hour) => (
-            <option key={hour} value={hour}>
+            <option key={hour} value={`${hour}:00:00`}>
               {hour}:00
             </option>
           ))}

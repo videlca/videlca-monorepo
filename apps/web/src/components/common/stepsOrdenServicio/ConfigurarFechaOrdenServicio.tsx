@@ -1,18 +1,13 @@
-import type {
-  CreateOrdenServicioDto,
-  UpdateOrdenServicioDto,
-} from "../../../api/dtos/orden-servicio";
+import type { UseFormRegister, UseFormSetValue } from "react-hook-form";
 
 export const ConfigurarFechaOrdenServicio = ({
-  formOrdenServicio,
-  setFormOrdenServicio,
+  register,
+  setValue,
   isIndefinite,
   setIsIndefinite,
 }: {
-  formOrdenServicio: CreateOrdenServicioDto | UpdateOrdenServicioDto;
-  setFormOrdenServicio: (
-    formOrdenServicio: CreateOrdenServicioDto | UpdateOrdenServicioDto,
-  ) => void;
+  register: UseFormRegister<any>;
+  setValue: UseFormSetValue<any>;
   isIndefinite: boolean;
   setIsIndefinite: (isIndefinite: boolean) => void;
 }) => {
@@ -35,13 +30,7 @@ export const ConfigurarFechaOrdenServicio = ({
             </label>
             <input
               type="date"
-              value={formOrdenServicio.fechaInicio || ""}
-              onChange={(e) =>
-                setFormOrdenServicio({
-                  ...formOrdenServicio,
-                  fechaInicio: e.target.value,
-                })
-              }
+              {...register("fechaInicio")}
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
@@ -51,13 +40,7 @@ export const ConfigurarFechaOrdenServicio = ({
             </label>
             <input
               type="date"
-              value={formOrdenServicio.fechaFin || ""}
-              onChange={(e) =>
-                setFormOrdenServicio({
-                  ...formOrdenServicio,
-                  fechaFin: e.target.value,
-                })
-              }
+              {...register("fechaFin")}
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100"
               disabled={isIndefinite}
             />
@@ -76,10 +59,7 @@ export const ConfigurarFechaOrdenServicio = ({
               onChange={(e) => {
                 setIsIndefinite(e.target.checked);
                 if (e.target.checked) {
-                  setFormOrdenServicio({
-                    ...formOrdenServicio,
-                    fechaFin: null,
-                  });
+                  setValue("fechaFin", null);
                 }
               }}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
