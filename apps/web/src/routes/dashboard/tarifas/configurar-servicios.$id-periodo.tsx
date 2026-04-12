@@ -39,15 +39,18 @@ interface ServicioConfigurado
     | "estado"
     | "fechaCreacion"
     | "fechaActualizacion"
+    | "costosDirectos"
+    | "seguroVida"
+    | "aui"
   > {
   idTipoTarifa: number | null;
   precioAntesIva: number;
   iva: number;
   precioTotal: number;
-  costosDirectos: number;
-  seguroVida: number;
+  costosDirectos: number | string;
+  seguroVida: number | string;
   costosDirectosSeguroVida: number;
-  aui: number;
+  aui: number | string;
 }
 
 export const Route = createFileRoute(
@@ -102,7 +105,7 @@ function RouteComponent() {
   const actualizarServicioConfigurado = (
     servicio: Servicio,
     campo: keyof Omit<ServicioConfigurado, "idServicio">,
-    valor: number | null,
+    valor: number | string | null,
   ) => {
     setServiciosConfigurados((prev) => {
       const existeIndex = prev.findIndex(
@@ -127,9 +130,9 @@ function RouteComponent() {
 
           const { iva, precioTotal, precioAntesIva, costosDirectosSeguroVida } =
             priceCalculate(
-              updatedServicio.costosDirectos,
-              updatedServicio.seguroVida,
-              updatedServicio.aui,
+              Number(String(updatedServicio.costosDirectos).replace(/,/g, "")),
+              Number(String(updatedServicio.seguroVida).replace(/,/g, "")),
+              Number(String(updatedServicio.aui).replace(/,/g, "")),
             );
           updated[existeIndex] = {
             ...updatedServicio,
@@ -202,10 +205,10 @@ function RouteComponent() {
       idServicio: sc.idServicio.idServicio,
       idTipoTarifa: sc.idTipoTarifa!,
       precioAntesIva: sc.precioAntesIva,
-      costosDirectos: sc.costosDirectos,
-      seguroVida: sc.seguroVida,
+      costosDirectos: Number(String(sc.costosDirectos).replace(/,/g, "")),
+      seguroVida: Number(String(sc.seguroVida).replace(/,/g, "")),
       costosDirectosSeguroVida: sc.costosDirectosSeguroVida,
-      aui: sc.aui,
+      aui: Number(String(sc.aui).replace(/,/g, "")),
       iva: sc.iva,
       precioTotal: sc.precioTotal,
     }));
@@ -505,15 +508,14 @@ function RouteComponent() {
                                 <InputPrice
                                   label="Costos Directos:"
                                   size="full"
-                                  value={
-                                    servicioConfig?.costosDirectos.toString() ||
-                                    ""
-                                  }
+                                  value={servicioConfig?.costosDirectos ?? ""}
                                   onChange={(e) => {
+                                    const val = e.target.value.replace(/,/g, "");
+                                    const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                                     actualizarServicioConfigurado(
                                       item,
                                       "costosDirectos",
-                                      Number(e.target.value),
+                                      formatted,
                                     );
                                   }}
                                 />
@@ -522,26 +524,28 @@ function RouteComponent() {
                                 <InputPrice
                                   label="Seguro de Vida:"
                                   size="full"
-                                  value={
-                                    servicioConfig?.seguroVida?.toString() || ""
-                                  }
+                                  value={servicioConfig?.seguroVida ?? ""}
                                   onChange={(e) => {
+                                    const val = e.target.value.replace(/,/g, "");
+                                    const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                                     actualizarServicioConfigurado(
                                       item,
                                       "seguroVida",
-                                      Number(e.target.value),
+                                      formatted,
                                     );
                                   }}
                                 />
                                 <InputPrice
                                   label="AUI:"
                                   size="full"
-                                  value={servicioConfig?.aui?.toString() || ""}
+                                  value={servicioConfig?.aui ?? ""}
                                   onChange={(e) => {
+                                    const val = e.target.value.replace(/,/g, "");
+                                    const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                                     actualizarServicioConfigurado(
                                       item,
                                       "aui",
-                                      Number(e.target.value),
+                                      formatted,
                                     );
                                   }}
                                 />
