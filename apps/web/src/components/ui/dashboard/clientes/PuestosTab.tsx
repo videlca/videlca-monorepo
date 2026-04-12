@@ -22,7 +22,7 @@ import {
   usePuestos,
   useUpdatePuesto,
 } from "../../../../api/queryFunctions/clientes";
-import { useForm } from "../../../../hooks/useForm";
+
 import type { CreateCorreoDto, UpdatePuestoDto } from "../../../../api/dtos";
 import {
   useCiudad,
@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { FormsModal } from "../../modals/FormsModal";
 import { FormSection } from "../../../common/FormSection";
 import { MoreActionsButton } from "../../common/MoreActionsButton";
+import { useForm } from "react-hook-form";
 
 export function PuestosTab() {
   // Estados
@@ -63,29 +64,26 @@ export function PuestosTab() {
   const { mutate: getPuestoById } = usePuestoById();
   const { mutate: deletePuesto } = useDeletePuesto();
 
-  // Formularios
-
-  // TODO: Agregar correos
-
+  // Formulario con react-hook-form
   const {
-    form: formEditPuesto,
-    handleChange: handleChangeEditPuesto,
-    handleNumericChange: handleNumericChangeEditPuesto,
-    setForm: setFormEditPuesto,
-    resetForm: resetFormEditPuesto,
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
   } = useForm<UpdatePuestoDto>({
-    idCliente: 0,
-    nombre: "",
-    idCiudad: 0,
-    direccion: "",
-    latitud: 0,
-    longitud: 0,
-    primerNombreResponsable: "",
-    primerApellidoResponsable: "",
-    telefono: "",
-    diasAnticipaticionNotificacion: 0,
-    correos: [],
-    estado: true,
+    defaultValues: {
+      idCliente: 0,
+      nombre: "",
+      idCiudad: 0,
+      direccion: "",
+      latitud: 0,
+      longitud: 0,
+      primerNombreResponsable: "",
+      primerApellidoResponsable: "",
+      telefono: "",
+      diasAnticipaticionNotificacion: 0,
+      correos: [],
+      estado: true,
+    },
   });
 
   // Handlers
@@ -94,7 +92,7 @@ export function PuestosTab() {
     getPuestoById(row.original.idLocacion, {
       onSuccess: (data) => {
         if (data.data) {
-          setFormEditPuesto({
+          resetEdit({
             idCliente: data.data.idCliente.idCliente,
             nombre: data.data.nombre,
             idCiudad: data.data.idCiudad.idCiudad,
@@ -215,7 +213,7 @@ export function PuestosTab() {
 
   const handleCloseEditPuesto = () => {
     setIsEditModalOpen(false);
-    resetFormEditPuesto();
+    resetEdit();
     setCorreos([]);
     setCorreoInput({
       nombre: "",
@@ -255,13 +253,14 @@ export function PuestosTab() {
             handleCloseEditPuesto();
           }}
           updating={true}
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={handleSubmitEdit((data) => {
             updatePuesto(
               {
                 id: idPuestoSelected as number,
                 data: {
-                  ...formEditPuesto,
+                  ...data,
+                  idCliente: Number(data.idCliente),
+                  idCiudad: Number(data.idCiudad),
                   correos: correos,
                 },
               },
@@ -271,7 +270,7 @@ export function PuestosTab() {
                 },
               },
             );
-          }}
+          })}
         >
           <div className="flex flex-col gap-4">
             <FormSection
@@ -284,16 +283,13 @@ export function PuestosTab() {
                 placeholder="Nombre"
                 type="text"
                 id="nombre"
-                value={formEditPuesto.nombre || ""}
-                onChange={handleChangeEditPuesto}
                 required
+                {...registerEdit("nombre")}
               />
               <InputSelect
                 label="Cliente*"
                 placeholder="Cliente"
                 id="idCliente"
-                value={formEditPuesto.idCliente || 0}
-                onChange={handleNumericChangeEditPuesto}
                 options={
                   clientes?.data?.map((cliente) => ({
                     id: cliente.idCliente,
@@ -301,13 +297,12 @@ export function PuestosTab() {
                   })) || []
                 }
                 required
+                {...registerEdit("idCliente")}
               />
               <InputSelect
                 label="Ciudad*"
                 placeholder="Ciudad"
                 id="idCiudad"
-                value={formEditPuesto.idCiudad || 0}
-                onChange={handleNumericChangeEditPuesto}
                 options={
                   ciudades?.data?.map((ciudad) => ({
                     id: ciudad.idCiudad,
@@ -315,27 +310,23 @@ export function PuestosTab() {
                   })) || []
                 }
                 required
+                {...registerEdit("idCiudad")}
               />
               <InputForm
                 label="Dirección*"
                 placeholder="Dirección"
                 type="text"
                 id="direccion"
-                value={formEditPuesto.direccion || ""}
-                onChange={handleChangeEditPuesto}
                 required
+                {...registerEdit("direccion")}
               />
               <InputForm
                 label="Días de anticipación de notificación*"
                 placeholder="Días de anticipación de notificación"
                 type="number"
                 id="diasAnticipaticionNotificacion"
-                value={
-                  formEditPuesto.diasAnticipaticionNotificacion?.toString() ||
-                  "0"
-                }
-                onChange={handleChangeEditPuesto}
                 required
+                {...registerEdit("diasAnticipaticionNotificacion")}
               />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InputForm
@@ -343,20 +334,18 @@ export function PuestosTab() {
                   placeholder="Latitud"
                   type="number"
                   id="latitud"
-                  value={formEditPuesto.latitud?.toString() || ""}
-                  onChange={handleChangeEditPuesto}
                   required
                   allowNegative={true}
+                  {...registerEdit("latitud")}
                 />
                 <InputForm
                   label="Longitud*"
                   placeholder="Longitud"
                   type="number"
                   id="longitud"
-                  value={formEditPuesto.longitud?.toString() || ""}
-                  onChange={handleChangeEditPuesto}
                   required
                   allowNegative={true}
+                  {...registerEdit("longitud")}
                 />
               </div>
             </FormSection>
@@ -371,36 +360,32 @@ export function PuestosTab() {
                 placeholder="Primer nombre responsable"
                 type="text"
                 id="primerNombreResponsable"
-                value={formEditPuesto.primerNombreResponsable || ""}
-                onChange={handleChangeEditPuesto}
                 required
+                {...registerEdit("primerNombreResponsable")}
               />
               <InputForm
                 label="Primer apellido responsable*"
                 placeholder="Primer apellido responsable"
                 type="text"
                 id="primerApellidoResponsable"
-                value={formEditPuesto.primerApellidoResponsable || ""}
-                onChange={handleChangeEditPuesto}
                 required
+                {...registerEdit("primerApellidoResponsable")}
               />
               <InputForm
                 label="Teléfono*"
                 placeholder="Teléfono"
                 type="text"
                 id="telefono"
-                value={formEditPuesto.telefono || ""}
-                onChange={handleChangeEditPuesto}
                 required
+                {...registerEdit("telefono")}
               />
               <InputForm
                 label="Teléfono 2"
                 placeholder="Teléfono 2"
                 type="text"
                 id="segundoTelefono"
-                value={formEditPuesto.segundoTelefono || ""}
-                onChange={handleChangeEditPuesto}
                 required={false}
+                {...registerEdit("segundoTelefono")}
               />
             </FormSection>
 
@@ -419,7 +404,7 @@ export function PuestosTab() {
                   <div className="flex flex-col items-center gap-2">
                     <input
                       type="text"
-                      id="nombre"
+                      id="correo-nombre"
                       placeholder="Nombre"
                       className="w-full rounded-md border border-gray-300 p-2"
                       value={correoInput.nombre}
@@ -432,7 +417,7 @@ export function PuestosTab() {
                     />
                     <input
                       type="text"
-                      id="apellido"
+                      id="correo-apellido"
                       placeholder="Apellido"
                       className="w-full rounded-md border border-gray-300 p-2"
                       value={correoInput.apellido}
@@ -445,7 +430,7 @@ export function PuestosTab() {
                     />
                     <input
                       type="email"
-                      id="correo"
+                      id="correo-email"
                       placeholder="Correo"
                       className="w-full rounded-md border border-gray-300 p-2"
                       value={correoInput.correo}

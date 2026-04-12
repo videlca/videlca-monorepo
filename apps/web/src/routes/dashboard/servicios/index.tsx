@@ -29,7 +29,7 @@ import { useMemo, useState } from "react";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import Button from "../../../components/common/Button";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
-import { useForm } from "../../../hooks/useForm";
+
 import type { CreateServicioDto, UpdateServicioDto } from "../../../api/dtos";
 import { InputForm } from "../../../components/common/InputForm";
 import { InputSelect } from "../../../components/common/InputSelect";
@@ -37,6 +37,7 @@ import { InputSelectStateBoolean } from "../../../components/common/InputSelectS
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
+import { useForm } from "react-hook-form";
 
 export const Route = createFileRoute("/dashboard/servicios/")({
   component: RouteComponent,
@@ -77,37 +78,40 @@ function RouteComponent() {
   const { mutate: eliminarServicio } = useDeleteServicio();
   const { data: servicio, mutate: obtenerServicioById } = useServicioById();
 
-  // Formularios
+  // Formularios con react-hook-form
   const {
-    form: formAgregarServicio,
-    handleChange: handleChangeAgregarServicio,
-    resetForm: resetFormAgregarServicio,
+    register: registerAgregar,
+    handleSubmit: handleSubmitAgregar,
+    reset: resetAgregar,
   } = useForm<CreateServicioDto>({
-    codigo: "",
-    descripcion: "",
-    idTipoServicio: 0,
-    idTipoDuracion: 0,
-    idTipoHorarioDescripcion: 0,
-    horasFijas: 0,
-    horasMinimas: 0,
-    horasMaximas: 0,
+    defaultValues: {
+      codigo: "",
+      descripcion: "",
+      idTipoServicio: 0,
+      idTipoDuracion: 0,
+      idTipoHorarioDescripcion: 0,
+      horasFijas: 0,
+      horasMinimas: 0,
+      horasMaximas: 0,
+    },
   });
 
   const {
-    form: formEditarServicio,
-    handleChange: handleChangeEditarServicio,
-    setForm: setFormEditarServicio,
-    resetForm: resetFormEditarServicio,
+    register: registerEditar,
+    handleSubmit: handleSubmitEditar,
+    reset: resetEditar,
   } = useForm<UpdateServicioDto>({
-    codigo: "",
-    descripcion: "",
-    idTipoServicio: 0,
-    idTipoDuracion: 0,
-    idTipoHorarioDescripcion: 0,
-    horasFijas: 0,
-    horasMinimas: 0,
-    horasMaximas: 0,
-    estado: true,
+    defaultValues: {
+      codigo: "",
+      descripcion: "",
+      idTipoServicio: 0,
+      idTipoDuracion: 0,
+      idTipoHorarioDescripcion: 0,
+      horasFijas: 0,
+      horasMinimas: 0,
+      horasMaximas: 0,
+      estado: true,
+    },
   });
 
   const columns: ColumnDef<Servicio>[] = [
@@ -182,7 +186,7 @@ function RouteComponent() {
               label: "Editar",
               onClick: () => {
                 setServicioId(row.original.idServicio);
-                setFormEditarServicio({
+                resetEditar({
                   codigo: row.original.codigo,
                   descripcion: row.original.descripcion,
                   idTipoServicio: row.original.idTipoServicio.idTipoServicio,
@@ -271,7 +275,7 @@ function RouteComponent() {
         isOpen={isOpenAddModal}
         onClose={() => {
           setIsOpenAddModal(false);
-          resetFormAgregarServicio();
+          resetAgregar();
           setTipoDuracion(null);
           setTipoHorarioDescripcion(null);
           setCodigoServicio({
@@ -284,33 +288,32 @@ function RouteComponent() {
         size="xl"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={handleSubmitAgregar((data) => {
             agregarServicio(
               {
-                ...formAgregarServicio,
-                idTipoServicio: Number(formAgregarServicio.idTipoServicio),
+                ...data,
+                idTipoServicio: Number(data.idTipoServicio),
                 idTipoDuracion: tipoHorarioDescripcion
                   ? 0
-                  : Number(formAgregarServicio.idTipoDuracion),
+                  : Number(data.idTipoDuracion),
                 idTipoHorarioDescripcion: Number(
-                  formAgregarServicio.idTipoHorarioDescripcion,
+                  data.idTipoHorarioDescripcion,
                 ),
                 horasFijas: tipoHorarioDescripcion
                   ? 0
-                  : Number(formAgregarServicio.horasFijas),
+                  : Number(data.horasFijas),
                 horasMinimas: tipoHorarioDescripcion
                   ? 0
-                  : Number(formAgregarServicio.horasMinimas),
+                  : Number(data.horasMinimas),
                 horasMaximas: tipoHorarioDescripcion
                   ? 0
-                  : Number(formAgregarServicio.horasMaximas),
+                  : Number(data.horasMaximas),
                 codigo: `${codigoServicio.parte1}-${codigoServicio.parte2}-${codigoServicio.parte3}`,
               },
               {
                 onSuccess: () => {
                   setIsOpenAddModal(false);
-                  resetFormAgregarServicio();
+                  resetAgregar();
                   setTipoDuracion(null);
                   setCodigoServicio({
                     parte1: "",
@@ -320,11 +323,11 @@ function RouteComponent() {
                 },
               },
             );
-          }}
+          })}
           isLoading={isLoadingAgregarServicio}
           onCancel={() => {
             setIsOpenAddModal(false);
-            resetFormAgregarServicio();
+            resetAgregar();
             setTipoDuracion(null);
             setTipoHorarioDescripcion(null);
             setCodigoServicio({
@@ -399,9 +402,8 @@ function RouteComponent() {
                 placeholder="Descripción"
                 type="text"
                 id="descripcion"
-                value={formAgregarServicio.descripcion}
-                onChange={handleChangeAgregarServicio}
                 required={true}
+                {...registerAgregar("descripcion")}
               />
               <InputSelect
                 label="Tipo de servicio *"
@@ -413,9 +415,8 @@ function RouteComponent() {
                   })) || []
                 }
                 id="idTipoServicio"
-                value={formAgregarServicio.idTipoServicio}
-                onChange={handleChangeAgregarServicio}
                 required={true}
+                {...registerAgregar("idTipoServicio")}
               />
               <InputSelect
                 label="Tipo de horario *"
@@ -427,18 +428,18 @@ function RouteComponent() {
                   })) || []
                 }
                 id="idTipoHorarioDescripcion"
-                value={formAgregarServicio.idTipoHorarioDescripcion}
-                onChange={(e) => {
-                  handleChangeAgregarServicio(e);
-                  if (
-                    e.target.selectedOptions[0].text.includes("dia completo")
-                  ) {
-                    setTipoHorarioDescripcion(true);
-                  } else {
-                    setTipoHorarioDescripcion(false);
-                  }
-                }}
                 required={true}
+                {...registerAgregar("idTipoHorarioDescripcion", {
+                  onChange: (e) => {
+                    if (
+                      e.target.selectedOptions[0].text.includes("dia completo")
+                    ) {
+                      setTipoHorarioDescripcion(true);
+                    } else {
+                      setTipoHorarioDescripcion(false);
+                    }
+                  },
+                })}
               />
               {!tipoHorarioDescripcion && (
                 <InputSelect
@@ -451,21 +452,21 @@ function RouteComponent() {
                     })) || []
                   }
                   id="idTipoDuracion"
-                  value={formAgregarServicio.idTipoDuracion}
-                  onChange={(e) => {
-                    handleChangeAgregarServicio(e);
-                    if (
-                      tiposDuraciones?.data?.find(
-                        (tipo) =>
-                          tipo.idTipoDuracion === Number(e.target.value),
-                      )?.descripcion === "flexible"
-                    ) {
-                      setTipoDuracion("flexible");
-                    } else {
-                      setTipoDuracion("fija");
-                    }
-                  }}
                   required={true}
+                  {...registerAgregar("idTipoDuracion", {
+                    onChange: (e) => {
+                      if (
+                        tiposDuraciones?.data?.find(
+                          (tipo) =>
+                            tipo.idTipoDuracion === Number(e.target.value),
+                        )?.descripcion === "flexible"
+                      ) {
+                        setTipoDuracion("flexible");
+                      } else {
+                        setTipoDuracion("fija");
+                      }
+                    },
+                  })}
                 />
               )}
             </FormSection>
@@ -486,9 +487,8 @@ function RouteComponent() {
                   placeholder="Horas fijas"
                   type="number"
                   id="horasFijas"
-                  value={formAgregarServicio.horasFijas?.toString() || ""}
-                  onChange={handleChangeAgregarServicio}
                   required={true}
+                  {...registerAgregar("horasFijas")}
                 />
               )}
               {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
@@ -498,18 +498,16 @@ function RouteComponent() {
                     placeholder="Horas mínimas"
                     type="number"
                     id="horasMinimas"
-                    value={formAgregarServicio.horasMinimas?.toString() || ""}
-                    onChange={handleChangeAgregarServicio}
                     required={true}
+                    {...registerAgregar("horasMinimas")}
                   />
                   <InputForm
                     label="Horas máximas *"
                     placeholder="Horas máximas"
                     type="number"
                     id="horasMaximas"
-                    value={formAgregarServicio.horasMaximas?.toString() || ""}
-                    onChange={handleChangeAgregarServicio}
                     required={true}
+                    {...registerAgregar("horasMaximas")}
                   />
                 </>
               )}
@@ -522,7 +520,7 @@ function RouteComponent() {
         isOpen={isOpenEditModal}
         onClose={() => {
           setIsOpenEditModal(false);
-          resetFormEditarServicio();
+          resetEditar();
           setTipoDuracion(null);
           setTipoHorarioDescripcion(null);
           setCodigoServicio({
@@ -535,39 +533,37 @@ function RouteComponent() {
         size="xl"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (tipoDuracion === "fija") {
-              formEditarServicio.horasMinimas = 0;
-              formEditarServicio.horasMaximas = 0;
-            } else {
-              formEditarServicio.horasFijas = 0;
-            }
-            if (tipoHorarioDescripcion) {
-              formEditarServicio.horasFijas = 0;
-              formEditarServicio.horasMinimas = 0;
-              formEditarServicio.horasMaximas = 0;
-            }
+          onSubmit={handleSubmitEditar((data) => {
+            const horasFijas =
+              tipoDuracion === "fija" ? Number(data.horasFijas) : 0;
+            const horasMinimas =
+              tipoDuracion === "flexible" ? Number(data.horasMinimas) : 0;
+            const horasMaximas =
+              tipoDuracion === "flexible" ? Number(data.horasMaximas) : 0;
+
             actualizarServicio(
               {
                 id: servicioId || 0,
                 data: {
-                  ...formEditarServicio,
-                  idTipoServicio: Number(formEditarServicio.idTipoServicio),
+                  ...data,
+                  idTipoServicio: Number(data.idTipoServicio),
                   idTipoDuracion: tipoHorarioDescripcion
                     ? 0
-                    : Number(formEditarServicio.idTipoDuracion),
+                    : Number(data.idTipoDuracion),
                   idTipoHorarioDescripcion: Number(
-                    formEditarServicio.idTipoHorarioDescripcion,
+                    data.idTipoHorarioDescripcion,
                   ),
-                  estado: String(formEditarServicio.estado) === "true",
+                  estado: String(data.estado) === "true",
                   codigo: `${codigoServicio.parte1}-${codigoServicio.parte2}-${codigoServicio.parte3}`,
+                  horasFijas: tipoHorarioDescripcion ? 0 : horasFijas,
+                  horasMinimas: tipoHorarioDescripcion ? 0 : horasMinimas,
+                  horasMaximas: tipoHorarioDescripcion ? 0 : horasMaximas,
                 },
               },
               {
                 onSuccess: () => {
                   setIsOpenEditModal(false);
-                  resetFormEditarServicio();
+                  resetEditar();
                   setTipoDuracion(null);
                   setCodigoServicio({
                     parte1: "",
@@ -577,11 +573,11 @@ function RouteComponent() {
                 },
               },
             );
-          }}
+          })}
           isLoading={isLoadingActualizarServicio}
           onCancel={() => {
             setIsOpenEditModal(false);
-            resetFormEditarServicio();
+            resetEditar();
             setTipoDuracion(null);
             setTipoHorarioDescripcion(null);
             setCodigoServicio({
@@ -653,9 +649,8 @@ function RouteComponent() {
                 placeholder="Descripción"
                 type="text"
                 id="descripcion"
-                value={formEditarServicio.descripcion || ""}
-                onChange={handleChangeEditarServicio}
                 required={true}
+                {...registerEditar("descripcion")}
               />
               <InputSelect
                 label="Tipo de servicio *"
@@ -667,9 +662,8 @@ function RouteComponent() {
                   })) || []
                 }
                 id="idTipoServicio"
-                value={formEditarServicio.idTipoServicio?.toString() || ""}
-                onChange={handleChangeEditarServicio}
                 required={true}
+                {...registerEditar("idTipoServicio")}
               />
               <InputSelect
                 label="Tipo de horario *"
@@ -681,20 +675,18 @@ function RouteComponent() {
                   })) || []
                 }
                 id="idTipoHorarioDescripcion"
-                value={
-                  formEditarServicio.idTipoHorarioDescripcion?.toString() || ""
-                }
-                onChange={(e) => {
-                  handleChangeEditarServicio(e);
-                  if (
-                    e.target.selectedOptions[0].text.includes("dia completo")
-                  ) {
-                    setTipoHorarioDescripcion(true);
-                  } else {
-                    setTipoHorarioDescripcion(false);
-                  }
-                }}
                 required={true}
+                {...registerEditar("idTipoHorarioDescripcion", {
+                  onChange: (e) => {
+                    if (
+                      e.target.selectedOptions[0].text.includes("dia completo")
+                    ) {
+                      setTipoHorarioDescripcion(true);
+                    } else {
+                      setTipoHorarioDescripcion(false);
+                    }
+                  },
+                })}
               />
               {!tipoHorarioDescripcion && (
                 <InputSelect
@@ -707,29 +699,28 @@ function RouteComponent() {
                     })) || []
                   }
                   id="idTipoDuracion"
-                  value={formEditarServicio.idTipoDuracion?.toString() || ""}
-                  onChange={(e) => {
-                    handleChangeEditarServicio(e);
-                    if (
-                      tiposDuraciones?.data?.find(
-                        (tipo) =>
-                          tipo.idTipoDuracion === Number(e.target.value),
-                      )?.descripcion === "flexible"
-                    ) {
-                      setTipoDuracion("flexible");
-                    } else {
-                      setTipoDuracion("fija");
-                    }
-                  }}
                   required={true}
+                  {...registerEditar("idTipoDuracion", {
+                    onChange: (e) => {
+                      if (
+                        tiposDuraciones?.data?.find(
+                          (tipo) =>
+                            tipo.idTipoDuracion === Number(e.target.value),
+                        )?.descripcion === "flexible"
+                      ) {
+                        setTipoDuracion("flexible");
+                      } else {
+                        setTipoDuracion("fija");
+                      }
+                    },
+                  })}
                 />
               )}
               <InputSelectStateBoolean
                 label="Estado"
                 placeholder="Estado"
                 id="estado"
-                value={formEditarServicio.estado?.toString() || ""}
-                onChange={handleChangeEditarServicio}
+                {...registerEditar("estado")}
               />
             </FormSection>
             <FormSection
@@ -749,9 +740,8 @@ function RouteComponent() {
                   placeholder="Horas fijas"
                   type="number"
                   id="horasFijas"
-                  value={formEditarServicio.horasFijas?.toString() || ""}
-                  onChange={handleChangeEditarServicio}
                   required={true}
+                  {...registerEditar("horasFijas")}
                 />
               )}
               {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
@@ -761,18 +751,16 @@ function RouteComponent() {
                     placeholder="Horas mínimas"
                     type="number"
                     id="horasMinimas"
-                    value={formEditarServicio.horasMinimas?.toString() || ""}
-                    onChange={handleChangeEditarServicio}
                     required={true}
+                    {...registerEditar("horasMinimas")}
                   />
                   <InputForm
                     label="Horas máximas"
                     placeholder="Horas máximas"
                     type="number"
                     id="horasMaximas"
-                    value={formEditarServicio.horasMaximas?.toString() || ""}
-                    onChange={handleChangeEditarServicio}
                     required={true}
+                    {...registerEditar("horasMaximas")}
                   />
                 </>
               )}

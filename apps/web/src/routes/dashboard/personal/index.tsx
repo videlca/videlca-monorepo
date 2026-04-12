@@ -24,7 +24,7 @@ import {
   useTipoNovedad,
   useTipoPersonalActivo,
 } from "../../../api/queryFunctions/configuracion";
-import { useForm } from "../../../hooks/useForm";
+
 import type {
   CreateNovedadDto,
   CreatePersonalDto,
@@ -39,6 +39,7 @@ import { FormSection } from "../../../components/common/FormSection";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { InputTime24H } from "../../../components/common/InputTime24H";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
+import { useForm } from "react-hook-form";
 
 export const Route = createFileRoute("/dashboard/personal/")({
   component: RouteComponent,
@@ -74,105 +75,82 @@ function RouteComponent() {
   const { mutate: createNovedad, isPending: isLoadingCreateNovedad } =
     useCreatePersonalNovedad();
 
-  // Formularios
+  // Formularios con react-hook-form
   const {
-    form: formAddPersonal,
-    handleChange: handleChangeAddPersonal,
-    resetForm: resetFormAddPersonal,
+    register: registerAdd,
+    handleSubmit: handleSubmitAdd,
+    reset: resetAdd,
+    watch: watchAdd,
+    setValue: setValueAdd,
   } = useForm<CreatePersonalDto>({
-    primerNombre: "",
-    segundoNombre: "",
-    primerApellido: "",
-    segundoApellido: "",
-    numeroIdentificacion: "",
-    fechaActual: "",
-    fechaInicioContrato: "",
-    fechaFinContrato: "",
-    fechaNacimiento: "",
-    direccionResidencia: "",
-    telefono: "",
-    arma: false,
-    idTipoIdentificacion: 0,
-    idCiudad: 0,
-    idTipoGenero: 0,
-    idTipoPersonal: 0,
-    idTipoContrato: 0,
+    defaultValues: {
+      primerNombre: "",
+      segundoNombre: "",
+      primerApellido: "",
+      segundoApellido: "",
+      numeroIdentificacion: "",
+      fechaActual: "",
+      fechaInicioContrato: "",
+      fechaFinContrato: "",
+      fechaNacimiento: "",
+      direccionResidencia: "",
+      telefono: "",
+      arma: false,
+      idTipoIdentificacion: 0,
+      idCiudad: 0,
+      idTipoGenero: 0,
+      idTipoPersonal: 0,
+      idTipoContrato: 0,
+    },
   });
 
+  const fechaFinContratoAdd = watchAdd("fechaFinContrato");
+
   const {
-    form: formEditPersonal,
-    handleChange: handleChangeEditPersonal,
-    setForm: setFormEditPersonal,
-    resetForm: resetFormEditPersonal,
+    register: registerEditPersonal,
+    handleSubmit: handleSubmitEditPersonal,
+    reset: resetEditPersonal,
+    watch: watchEdit,
+    setValue: setValueEdit,
   } = useForm<UpdatePersonalDto>({
-    primerNombre: "",
-    segundoNombre: "",
-    primerApellido: "",
-    segundoApellido: "",
-    numeroIdentificacion: "",
-    fechaActual: "",
-    fechaInicioContrato: "",
-    fechaFinContrato: "",
-    fechaNacimiento: "",
-    direccionResidencia: "",
-    telefono: "",
-    arma: false,
-    idTipoIdentificacion: 0,
-    idCiudad: 0,
-    idTipoGenero: 0,
-    idTipoPersonal: 0,
-    idTipoContrato: 0,
-    laborando: false,
+    defaultValues: {
+      primerNombre: "",
+      segundoNombre: "",
+      primerApellido: "",
+      segundoApellido: "",
+      numeroIdentificacion: "",
+      fechaActual: "",
+      fechaInicioContrato: "",
+      fechaFinContrato: "",
+      fechaNacimiento: "",
+      direccionResidencia: "",
+      telefono: "",
+      arma: false,
+      idTipoIdentificacion: 0,
+      idCiudad: 0,
+      idTipoGenero: 0,
+      idTipoPersonal: 0,
+      idTipoContrato: 0,
+      laborando: false,
+    },
   });
+
+  const fechaFinContratoEdit = watchEdit("fechaFinContrato");
 
   const {
-    form: formAddNovedad,
-    handleChange: handleChangeAddNovedad,
-    handleChangeTime: handleChangeTimeAddNovedad,
-    resetForm: resetFormAddNovedad,
+    register: registerNovedad,
+    handleSubmit: handleSubmitNovedad,
+    reset: resetNovedad,
   } = useForm<CreateNovedadDto>({
-    descripcion: "",
-    fechaInicio: "",
-    horaInicio: "",
-    fechaFin: "",
-    horaFin: "",
-    idTipoNovedad: 0,
+    defaultValues: {
+      descripcion: "",
+      fechaInicio: "",
+      horaInicio: "",
+      fechaFin: "",
+      horaFin: "",
+      idTipoNovedad: 0,
+    },
   });
-
-  const handleSubmitAddPersonal = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    createPersonal(
-      {
-        ...formAddPersonal,
-        fechaActual: new Date().toISOString(),
-      },
-      {
-        onSuccess: () => {
-          setIsOpenAddModal(false);
-          resetFormAddPersonal();
-        },
-      },
-    );
-  };
-
-  const handleSubmitEditPersonal = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    updatePersonal(
-      {
-        id: selectedPersonal?.idPersonal || 0,
-        data: {
-          ...formEditPersonal,
-          fechaActual: new Date().toISOString(),
-        },
-      },
-      {
-        onSuccess: () => {
-          setIsOpenEditModal(false);
-          resetFormEditPersonal();
-        },
-      },
-    );
-  };
 
   const columns: ColumnDef<Personal>[] = [
     {
@@ -259,7 +237,7 @@ function RouteComponent() {
                 setIsOpenEditModal(true);
                 getPersonalById(row.original.idPersonal, {
                   onSuccess: (data) => {
-                    setFormEditPersonal({
+                    resetEditPersonal({
                       primerNombre: data.data?.primerNombre || "",
                       segundoNombre: data.data?.segundoNombre || "",
                       primerApellido: data.data?.primerApellido || "",
@@ -324,17 +302,35 @@ function RouteComponent() {
         isOpen={isOpenAddModal}
         onClose={() => {
           setIsOpenAddModal(false);
-          resetFormAddPersonal();
+          resetAdd();
         }}
         title="Agregar personal"
         size="2xl"
       >
         <FormsModal
-          onSubmit={handleSubmitAddPersonal}
+          onSubmit={handleSubmitAdd((data) => {
+            createPersonal(
+              {
+                ...data,
+                fechaActual: new Date().toISOString(),
+                idTipoIdentificacion: Number(data.idTipoIdentificacion),
+                idCiudad: Number(data.idCiudad),
+                idTipoGenero: Number(data.idTipoGenero),
+                idTipoPersonal: Number(data.idTipoPersonal),
+                idTipoContrato: Number(data.idTipoContrato),
+              },
+              {
+                onSuccess: () => {
+                  setIsOpenAddModal(false);
+                  resetAdd();
+                },
+              },
+            );
+          })}
           isLoading={isCreatingPersonal}
           onCancel={() => {
             setIsOpenAddModal(false);
-            resetFormAddPersonal();
+            resetAdd();
           }}
           updating={false}
         >
@@ -350,8 +346,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Primer nombre"
                 required
-                value={formAddPersonal.primerNombre}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("primerNombre")}
               />
               <InputForm
                 label="Segundo nombre"
@@ -359,8 +354,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Segundo nombre"
                 required
-                value={formAddPersonal.segundoNombre}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("segundoNombre")}
               />
               <InputForm
                 label="Primer apellido"
@@ -368,8 +362,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Primer apellido"
                 required
-                value={formAddPersonal.primerApellido}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("primerApellido")}
               />
               <InputForm
                 label="Segundo apellido"
@@ -377,8 +370,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Segundo apellido"
                 required
-                value={formAddPersonal.segundoApellido}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("segundoApellido")}
               />
               <InputSelect
                 label="Género"
@@ -391,8 +383,7 @@ function RouteComponent() {
                     descripcion: genero.descripcion,
                   })) || []
                 }
-                value={formAddPersonal.idTipoGenero}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("idTipoGenero")}
               />
               <InputSelect
                 label="Tipo de identificación"
@@ -405,8 +396,7 @@ function RouteComponent() {
                     descripcion: tipo.descripcion,
                   })) || []
                 }
-                value={formAddPersonal.idTipoIdentificacion}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("idTipoIdentificacion")}
               />
               <InputForm
                 label="Número de identificación"
@@ -414,8 +404,7 @@ function RouteComponent() {
                 type="number"
                 placeholder="Número de identificación"
                 required
-                value={formAddPersonal.numeroIdentificacion}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("numeroIdentificacion")}
               />
               <InputForm
                 label="Teléfono"
@@ -423,8 +412,7 @@ function RouteComponent() {
                 type="number"
                 placeholder="Teléfono"
                 required
-                value={formAddPersonal.telefono}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("telefono")}
               />
               <InputForm
                 label="Fecha de nacimiento"
@@ -432,8 +420,7 @@ function RouteComponent() {
                 type="date"
                 placeholder="Fecha de nacimiento"
                 required
-                value={formAddPersonal.fechaNacimiento}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("fechaNacimiento")}
               />
               <InputSelect
                 label="Ciudad"
@@ -446,8 +433,7 @@ function RouteComponent() {
                     descripcion: ciudad.descripcion,
                   })) || []
                 }
-                value={formAddPersonal.idCiudad}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("idCiudad")}
               />
               <InputForm
                 label="Dirección de residencia"
@@ -455,8 +441,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Dirección de residencia"
                 required
-                value={formAddPersonal.direccionResidencia}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("direccionResidencia")}
               />
             </FormSection>
             <FormSection
@@ -475,15 +460,15 @@ function RouteComponent() {
                     descripcion: contrato.descripcion,
                   })) || []
                 }
-                value={formAddPersonal.idTipoContrato}
-                onChange={(e) => {
-                  handleChangeAddPersonal(e);
-                  if (e.target.selectedOptions[0].text.includes("Indefinido")) {
-                    formAddPersonal.fechaFinContrato = null;
-                  } else {
-                    formAddPersonal.fechaFinContrato = "";
-                  }
-                }}
+                {...registerAdd("idTipoContrato", {
+                  onChange: (e) => {
+                    if (e.target.selectedOptions[0].text.includes("Indefinido")) {
+                      setValueAdd("fechaFinContrato", null);
+                    } else {
+                      setValueAdd("fechaFinContrato", "");
+                    }
+                  },
+                })}
               />
               <InputForm
                 label="Fecha de inicio de contrato"
@@ -491,18 +476,17 @@ function RouteComponent() {
                 type="date"
                 placeholder="Fecha de inicio de contrato"
                 required
-                value={formAddPersonal.fechaInicioContrato}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("fechaInicioContrato")}
               />
               <InputForm
                 label="Fecha de fin de contrato"
                 id="fechaFinContrato"
                 type="date"
                 placeholder="Fecha de fin de contrato"
-                disabled={formAddPersonal.fechaFinContrato === null}
+                disabled={fechaFinContratoAdd === null}
                 required
-                value={formAddPersonal.fechaFinContrato || ""}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("fechaFinContrato")}
+                value={fechaFinContratoAdd || ""}
               />
 
               <InputSelect
@@ -516,14 +500,12 @@ function RouteComponent() {
                     descripcion: personal.descripcion,
                   })) || []
                 }
-                value={formAddPersonal.idTipoPersonal}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("idTipoPersonal")}
               />
               <CheckboxForm
                 label="¿Tiene arma?"
                 id="arma"
-                checked={formAddPersonal.arma}
-                onChange={handleChangeAddPersonal}
+                {...registerAdd("arma")}
               />
             </FormSection>
           </div>
@@ -535,18 +517,39 @@ function RouteComponent() {
         onClose={() => {
           setIsOpenEditModal(false);
           setSelectedPersonal(null);
-          resetFormEditPersonal();
+          resetEditPersonal();
         }}
         title="Editar personal"
         size="2xl"
       >
         <FormsModal
-          onSubmit={handleSubmitEditPersonal}
+          onSubmit={handleSubmitEditPersonal((data) => {
+            updatePersonal(
+              {
+                id: selectedPersonal?.idPersonal || 0,
+                data: {
+                  ...data,
+                  fechaActual: new Date().toISOString(),
+                  idTipoIdentificacion: Number(data.idTipoIdentificacion),
+                  idCiudad: Number(data.idCiudad),
+                  idTipoGenero: Number(data.idTipoGenero),
+                  idTipoPersonal: Number(data.idTipoPersonal),
+                  idTipoContrato: Number(data.idTipoContrato),
+                },
+              },
+              {
+                onSuccess: () => {
+                  setIsOpenEditModal(false);
+                  resetEditPersonal();
+                },
+              },
+            );
+          })}
           isLoading={isUpdatingPersonal}
           onCancel={() => {
             setIsOpenEditModal(false);
             setSelectedPersonal(null);
-            resetFormEditPersonal();
+            resetEditPersonal();
           }}
           updating={true}
         >
@@ -562,8 +565,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Primer nombre"
                 required
-                value={formEditPersonal.primerNombre || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("primerNombre")}
               />
               <InputForm
                 label="Segundo nombre"
@@ -571,8 +573,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Segundo nombre"
                 required
-                value={formEditPersonal.segundoNombre || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("segundoNombre")}
               />
               <InputForm
                 label="Primer apellido"
@@ -580,8 +581,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Primer apellido"
                 required
-                value={formEditPersonal.primerApellido || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("primerApellido")}
               />
               <InputForm
                 label="Segundo apellido"
@@ -589,8 +589,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Segundo apellido"
                 required
-                value={formEditPersonal.segundoApellido || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("segundoApellido")}
               />
               <InputSelect
                 label="Género"
@@ -603,8 +602,7 @@ function RouteComponent() {
                     descripcion: genero.descripcion,
                   })) || []
                 }
-                value={formEditPersonal.idTipoGenero || 0}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("idTipoGenero")}
               />
               <InputSelect
                 label="Tipo de identificación"
@@ -617,8 +615,7 @@ function RouteComponent() {
                     descripcion: tipo.descripcion,
                   })) || []
                 }
-                value={formEditPersonal.idTipoIdentificacion || 0}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("idTipoIdentificacion")}
               />
               <InputForm
                 label="Número de identificación"
@@ -626,8 +623,7 @@ function RouteComponent() {
                 type="number"
                 placeholder="Número de identificación"
                 required
-                value={formEditPersonal.numeroIdentificacion || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("numeroIdentificacion")}
               />
               <InputForm
                 label="Teléfono"
@@ -635,8 +631,7 @@ function RouteComponent() {
                 type="number"
                 placeholder="Teléfono"
                 required
-                value={formEditPersonal.telefono || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("telefono")}
               />
               <InputForm
                 label="Fecha de nacimiento"
@@ -644,8 +639,7 @@ function RouteComponent() {
                 type="date"
                 placeholder="Fecha de nacimiento"
                 required
-                value={formEditPersonal.fechaNacimiento || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("fechaNacimiento")}
               />
               <InputSelect
                 label="Ciudad"
@@ -658,8 +652,7 @@ function RouteComponent() {
                     descripcion: ciudad.descripcion,
                   })) || []
                 }
-                value={formEditPersonal.idCiudad || 0}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("idCiudad")}
               />
               <InputForm
                 label="Dirección de residencia"
@@ -667,8 +660,7 @@ function RouteComponent() {
                 type="text"
                 placeholder="Dirección de residencia"
                 required
-                value={formEditPersonal.direccionResidencia || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("direccionResidencia")}
               />
             </FormSection>
             <FormSection
@@ -687,15 +679,15 @@ function RouteComponent() {
                     descripcion: contrato.descripcion,
                   })) || []
                 }
-                value={formEditPersonal.idTipoContrato || 0}
-                onChange={(e) => {
-                  handleChangeEditPersonal(e);
-                  if (e.target.selectedOptions[0].text.includes("Indefinido")) {
-                    formEditPersonal.fechaFinContrato = null;
-                  } else {
-                    formEditPersonal.fechaFinContrato = "";
-                  }
-                }}
+                {...registerEditPersonal("idTipoContrato", {
+                  onChange: (e) => {
+                    if (e.target.selectedOptions[0].text.includes("Indefinido")) {
+                      setValueEdit("fechaFinContrato", null);
+                    } else {
+                      setValueEdit("fechaFinContrato", "");
+                    }
+                  },
+                })}
               />
               <InputForm
                 label="Fecha de inicio de contrato"
@@ -703,18 +695,17 @@ function RouteComponent() {
                 type="date"
                 placeholder="Fecha de inicio de contrato"
                 required
-                value={formEditPersonal.fechaInicioContrato || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("fechaInicioContrato")}
               />
               <InputForm
                 label="Fecha de fin de contrato"
                 id="fechaFinContrato"
                 type="date"
                 placeholder="Fecha de fin de contrato"
-                disabled={formEditPersonal.fechaFinContrato === null}
+                disabled={fechaFinContratoEdit === null}
                 required
-                value={formEditPersonal.fechaFinContrato || ""}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("fechaFinContrato")}
+                value={fechaFinContratoEdit || ""}
               />
 
               <InputSelect
@@ -728,20 +719,17 @@ function RouteComponent() {
                     descripcion: personal.descripcion,
                   })) || []
                 }
-                value={formEditPersonal.idTipoPersonal || 0}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("idTipoPersonal")}
               />
               <CheckboxForm
                 label="¿Tiene arma?"
                 id="arma"
-                checked={formEditPersonal.arma || false}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("arma")}
               />
               <CheckboxForm
                 label="¿Está laborando?"
                 id="laborando"
-                checked={formEditPersonal.laborando || false}
-                onChange={handleChangeEditPersonal}
+                {...registerEditPersonal("laborando")}
               />
             </FormSection>
           </div>
@@ -752,34 +740,34 @@ function RouteComponent() {
         isOpen={isOpenAddNovedadModal}
         onClose={() => {
           setIsOpenAddNovedadModal(false);
-          resetFormAddNovedad();
+          resetNovedad();
         }}
         title={"Agregar novedad"}
         size="lg"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={handleSubmitNovedad((data) => {
             createNovedad(
               {
                 idPersonal: selectedPersonal?.idPersonal || 0,
                 data: {
-                  ...formAddNovedad,
-                  horaFin: timeFormat(formAddNovedad.horaFin || ""),
-                  horaInicio: timeFormat(formAddNovedad.horaInicio || ""),
+                  ...data,
+                  idTipoNovedad: Number(data.idTipoNovedad),
+                  horaFin: timeFormat(data.horaFin || ""),
+                  horaInicio: timeFormat(data.horaInicio || ""),
                 },
               },
               {
                 onSuccess: () => {
                   setIsOpenAddNovedadModal(false);
-                  resetFormAddNovedad();
+                  resetNovedad();
                 },
               },
             );
-          }}
+          })}
           onCancel={() => {
             setIsOpenAddNovedadModal(false);
-            resetFormAddNovedad();
+            resetNovedad();
           }}
           updating={false}
           isLoading={isLoadingCreateNovedad}
@@ -789,56 +777,48 @@ function RouteComponent() {
               label="Tipo de novedad"
               placeholder="Tipo de novedad"
               id="idTipoNovedad"
-              value={formAddNovedad.idTipoNovedad}
-              onChange={handleChangeAddNovedad}
               options={
                 tiposNovedades?.data?.map((tipo) => ({
                   id: tipo.idTipoNovedad,
                   descripcion: tipo.descripcion,
                 })) || []
               }
+              {...registerNovedad("idTipoNovedad")}
             />
             <InputForm
               label="Descripción"
               placeholder="Descripción"
               id="descripcion"
-              value={formAddNovedad.descripcion || ""}
-              onChange={handleChangeAddNovedad}
               type="text"
+              {...registerNovedad("descripcion")}
             />
             <InputForm
               label="Fecha de inicio"
               placeholder="Fecha de inicio"
               id="fechaInicio"
-              value={formAddNovedad.fechaInicio || ""}
-              onChange={handleChangeAddNovedad}
               type="date"
+              {...registerNovedad("fechaInicio")}
             />
             <InputTime24H
               label="Hora de inicio"
               placeholder="Selecciona una hora de inicio"
               id="horaInicio"
-              name="horaInicio"
-              value={formAddNovedad.horaInicio || ""}
-              onChange={handleChangeTimeAddNovedad}
               required={true}
+              {...registerNovedad("horaInicio")}
             />
             <InputForm
               label="Fecha de fin"
               placeholder="Fecha de fin"
               id="fechaFin"
-              value={formAddNovedad.fechaFin || ""}
-              onChange={handleChangeAddNovedad}
               type="date"
+              {...registerNovedad("fechaFin")}
             />
             <InputTime24H
               label="Hora de fin"
               placeholder="Selecciona una hora de fin"
               id="horaFin"
-              name="horaFin"
-              value={formAddNovedad.horaFin || ""}
-              onChange={handleChangeTimeAddNovedad}
               required={true}
+              {...registerNovedad("horaFin")}
             />
           </div>
         </FormsModal>

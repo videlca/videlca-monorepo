@@ -13,7 +13,7 @@ import type { Segmentacion, SubSegmentacion } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { useState } from "react";
 import { InputForm } from "../../../common/InputForm";
-import { useForm } from "../../../../hooks/useForm";
+
 import type {
   CreateSegmentacionDto,
   UpdateSegmentacionDto,
@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { FormsModal } from "../../modals/FormsModal";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 import { MoreActionsButton } from "../../common/MoreActionsButton";
+import { useForm } from "react-hook-form";
 
 export function SegmentacionTab() {
   // Estados
@@ -69,25 +70,34 @@ export function SegmentacionTab() {
   const { mutate: crearSubSegmentacion, isPending: isCreatingSubSegmentacion } =
     useCrearSubSegmentacion();
 
-  // Formularios
+  // Formularios con react-hook-form
   const {
-    form: formCreate,
-    handleChange: handleChangeCreate,
-    resetForm: resetFormCreate,
-    setForm: setFormCreate,
+    register: registerCreate,
+    handleSubmit: handleSubmitCreate,
+    reset: resetCreate,
+    watch: watchCreate,
+    setValue: setValueCreate,
   } = useForm<CreateSegmentacionDto>({
-    descripcion: "",
-    subSegmentaciones: [],
+    defaultValues: {
+      descripcion: "",
+      subSegmentaciones: [],
+    },
   });
+
+  const formCreateSubSegmentaciones = watchCreate("subSegmentaciones");
+
   const {
-    form: formEdit,
-    handleChange: handleChangeEdit,
-    resetForm: resetFormEdit,
-    setForm: setFormEdit,
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
   } = useForm<UpdateSegmentacionDto>({
-    estado: false,
-    descripcion: "",
+    defaultValues: {
+      estado: false,
+      descripcion: "",
+    },
   });
+
+  // Estado auxiliar para sub-segmentaciones (no es un formulario RHF)
   const [subSegmentaciones, setSubSegmentaciones] = useState<SubSegmentacion>({
     descripcion: "",
     estado: false,
@@ -101,22 +111,18 @@ export function SegmentacionTab() {
   };
 
   const handleAddSubSegmentacion = () => {
-    setFormCreate({
-      ...formCreate,
-      subSegmentaciones: [
-        ...formCreate.subSegmentaciones,
-        { descripcion: subSegmentaciones.descripcion },
-      ],
-    });
+    setValueCreate("subSegmentaciones", [
+      ...formCreateSubSegmentaciones,
+      { descripcion: subSegmentaciones.descripcion },
+    ]);
     setSubSegmentaciones({ descripcion: "" });
   };
 
-  const handleCreateSegmentacion = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    crearSegmentacion(formCreate, {
+  const handleCreateSegmentacion = (data: CreateSegmentacionDto) => {
+    crearSegmentacion(data, {
       onSuccess: () => {
         setIsAddModalOpen(false);
-        resetFormCreate();
+        resetCreate();
       },
     });
   };
@@ -140,20 +146,19 @@ export function SegmentacionTab() {
     );
   };
 
-  const handleUpdateSegmentacion = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleUpdateSegmentacion = (data: UpdateSegmentacionDto) => {
     actualizarSegmentacion(
       {
         id: segmentacionById?.data?.idSegmentacion || 0,
         data: {
-          ...formEdit,
-          estado: String(formEdit.estado) === "true",
+          ...data,
+          estado: String(data.estado) === "true",
         },
       },
       {
         onSuccess: () => {
           setIsEditModalOpen(false);
-          resetFormEdit();
+          resetEdit();
         },
       },
     );
@@ -167,7 +172,7 @@ export function SegmentacionTab() {
     setIsEditModalOpen(true);
     obtenerSegmentacionById(id, {
       onSettled: (data) => {
-        setFormEdit({
+        resetEdit({
           estado: data?.data?.estado,
           descripcion: data?.data?.descripcion || "",
         });
@@ -196,7 +201,7 @@ export function SegmentacionTab() {
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
-    resetFormEdit();
+    resetEdit();
     setShowSubSegmentations(false);
     setSubSegmentaciones({
       idSubSegmentacion: 0,
@@ -223,7 +228,7 @@ export function SegmentacionTab() {
       { id, data },
       {
         onSuccess: () => {
-          resetFormEdit();
+          resetEdit();
           setIsEditModalOpen(false);
           setShowSubSegmentations(false);
         },
@@ -338,10 +343,10 @@ export function SegmentacionTab() {
           isLoading={isCreatingSegmentacion}
           onCancel={() => {
             setIsAddModalOpen(false);
-            resetFormCreate();
+            resetCreate();
           }}
           updating={false}
-          onSubmit={handleCreateSegmentacion}
+          onSubmit={handleSubmitCreate(handleCreateSegmentacion)}
         >
           <div className="space-y-6">
             <InputForm
@@ -350,8 +355,7 @@ export function SegmentacionTab() {
               type="text"
               id="descripcion"
               required={true}
-              value={formCreate.descripcion}
-              onChange={handleChangeCreate}
+              {...registerCreate("descripcion")}
             />
 
             <div className="border-t border-gray-200 pt-6">
@@ -387,7 +391,7 @@ export function SegmentacionTab() {
                       label="Descripción *"
                       placeholder="Ej: Sub-segmentación por Industria"
                       type="text"
-                      id="descripcion"
+                      id="sub-descripcion"
                       required={false}
                       value={subSegmentaciones?.descripcion}
                       onChange={handleChangeSubSegmentacion}
@@ -415,14 +419,14 @@ export function SegmentacionTab() {
                   </div>
 
                   {/* List of Sub-segmentations */}
-                  {formCreate.subSegmentaciones.length > 0 && (
+                  {formCreateSubSegmentaciones.length > 0 && (
                     <div className="space-y-2">
                       <h5 className="text-sm font-medium text-gray-900">
                         Sub-segmentaciones (
-                        {formCreate.subSegmentaciones.length})
+                        {formCreateSubSegmentaciones.length})
                       </h5>
                       <div className="max-h-48 space-y-2 overflow-y-auto">
-                        {formCreate.subSegmentaciones.map((subSeg, index) => (
+                        {formCreateSubSegmentaciones.map((subSeg, index) => (
                           <div
                             key={index}
                             className="flex items-center justify-between rounded border border-gray-200 bg-white p-3"
@@ -454,13 +458,12 @@ export function SegmentacionTab() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setFormCreate({
-                                    ...formCreate,
-                                    subSegmentaciones:
-                                      formCreate.subSegmentaciones.filter(
-                                        (subSeg, i) => i !== index,
-                                      ),
-                                  });
+                                  setValueCreate(
+                                    "subSegmentaciones",
+                                    formCreateSubSegmentaciones.filter(
+                                      (_, i) => i !== index,
+                                    ),
+                                  );
                                 }}
                                 className="cursor-pointer text-red-600 transition-colors hover:text-red-700"
                               >
@@ -490,10 +493,10 @@ export function SegmentacionTab() {
           isLoading={isUpdatingSegmentacion || isUpdatingSubSegmentacion}
           onCancel={() => {
             setIsEditModalOpen(false);
-            resetFormEdit();
+            resetEdit();
           }}
           updating={true}
-          onSubmit={handleUpdateSegmentacion}
+          onSubmit={handleSubmitEdit(handleUpdateSegmentacion)}
         >
           <div className="space-y-6">
             <InputForm
@@ -502,16 +505,14 @@ export function SegmentacionTab() {
               type="text"
               id="descripcion"
               required={true}
-              value={formEdit.descripcion || ""}
-              onChange={handleChangeEdit}
+              {...registerEdit("descripcion")}
             />
 
             <InputSelectStateBoolean
               label="Estado"
               id="estado"
               placeholder="Selecciona el estado"
-              value={formEdit.estado?.toString() || ""}
-              onChange={handleChangeEdit}
+              {...registerEdit("estado")}
             />
 
             <div className="border-t border-gray-200 pt-6">
@@ -547,7 +548,7 @@ export function SegmentacionTab() {
                       label="Descripción *"
                       placeholder="Ej: Sub-segmentación por Industria"
                       type="text"
-                      id="descripcion"
+                      id="sub-descripcion-edit"
                       required={false}
                       value={subSegmentaciones?.descripcion || ""}
                       onChange={(e) => {
@@ -560,7 +561,7 @@ export function SegmentacionTab() {
 
                     <InputSelectStateBoolean
                       label="Estado"
-                      id="estado"
+                      id="sub-estado-edit"
                       placeholder="Selecciona el estado"
                       value={subSegmentaciones?.estado?.toString() || ""}
                       onChange={(e) =>
@@ -691,7 +692,7 @@ export function SegmentacionTab() {
             label="Descripción *"
             placeholder="Ej: Sub-segmentación por Industria"
             type="text"
-            id="descripcion"
+            id="sub-descripcion-add"
             required={false}
             value={subSegmentaciones?.descripcion}
             onChange={handleChangeSubSegmentacion}
@@ -721,7 +722,7 @@ export function SegmentacionTab() {
               setIsOpenDeleteSubSegmentacion(false);
               setIsEditModalOpen(false);
               setIdSubSegmentacion(0);
-              resetFormEdit();
+              resetEdit();
             },
           });
         }}
