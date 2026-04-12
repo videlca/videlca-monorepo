@@ -99,3 +99,19 @@ export const updatePassword = async (token: string, data: { clave: string, confi
   })
   return response
 }
+
+// Confirmar cuenta
+export const confirmarCuenta = async (token: string, data: { clave: string, confirmarClave: string }): Promise<ApiResponse> => {
+  const response = await axiosClient.post(`/auth/olvide-password/${token}`, data).then((res) => {
+    return {
+      status: res.status,
+      data: res.data
+    }
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || 'Error de conexión',
+    }
+  })
+  return response
+}

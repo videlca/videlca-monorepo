@@ -28,6 +28,7 @@ import { Route as DashboardExportacionesBaseFacturacionRouteImport } from './rou
 import { Route as DashboardConfiguracionRouteImport } from './routes/dashboard/configuracion'
 import { Route as DashboardClientesRouteImport } from './routes/dashboard/clientes'
 import { Route as DashboardAprobacionLiquidacionesOrdenesRouteImport } from './routes/dashboard/aprobacion-liquidaciones-ordenes'
+import { Route as ConfirmarCuentaIdRouteImport } from './routes/confirmar-cuenta.$id'
 import { Route as ActualizarIdRouteImport } from './routes/actualizar.$id'
 import { Route as DashboardUsuariosIndexRouteImport } from './routes/dashboard/usuarios/index'
 import { Route as DashboardTarifasIndexRouteImport } from './routes/dashboard/tarifas/index'
@@ -163,6 +164,11 @@ const DashboardAprobacionLiquidacionesOrdenesRoute =
     path: '/aprobacion-liquidaciones-ordenes',
     getParentRoute: () => DashboardRoute,
   } as any)
+const ConfirmarCuentaIdRoute = ConfirmarCuentaIdRouteImport.update({
+  id: '/confirmar-cuenta/$id',
+  path: '/confirmar-cuenta/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActualizarIdRoute = ActualizarIdRouteImport.update({
   id: '/actualizar/$id',
   path: '/actualizar/$id',
@@ -376,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRouteWithChildren
   '/recuperar': typeof RecuperarRoute
   '/actualizar/$id': typeof ActualizarIdRoute
+  '/confirmar-cuenta/$id': typeof ConfirmarCuentaIdRoute
   '/dashboard/aprobacion-liquidaciones-ordenes': typeof DashboardAprobacionLiquidacionesOrdenesRouteWithChildren
   '/dashboard/clientes': typeof DashboardClientesRouteWithChildren
   '/dashboard/configuracion': typeof DashboardConfiguracionRouteWithChildren
@@ -432,6 +439,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/recuperar': typeof RecuperarRoute
   '/actualizar/$id': typeof ActualizarIdRoute
+  '/confirmar-cuenta/$id': typeof ConfirmarCuentaIdRoute
   '/dashboard/configuracion': typeof DashboardConfiguracionRouteWithChildren
   '/dashboard/exportaciones-base-facturacion': typeof DashboardExportacionesBaseFacturacionRouteWithChildren
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
@@ -480,6 +488,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/recuperar': typeof RecuperarRoute
   '/actualizar/$id': typeof ActualizarIdRoute
+  '/confirmar-cuenta/$id': typeof ConfirmarCuentaIdRoute
   '/dashboard/aprobacion-liquidaciones-ordenes': typeof DashboardAprobacionLiquidacionesOrdenesRouteWithChildren
   '/dashboard/clientes': typeof DashboardClientesRouteWithChildren
   '/dashboard/configuracion': typeof DashboardConfiguracionRouteWithChildren
@@ -539,6 +548,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/recuperar'
     | '/actualizar/$id'
+    | '/confirmar-cuenta/$id'
     | '/dashboard/aprobacion-liquidaciones-ordenes'
     | '/dashboard/clientes'
     | '/dashboard/configuracion'
@@ -595,6 +605,7 @@ export interface FileRouteTypes {
     | '/'
     | '/recuperar'
     | '/actualizar/$id'
+    | '/confirmar-cuenta/$id'
     | '/dashboard/configuracion'
     | '/dashboard/exportaciones-base-facturacion'
     | '/dashboard/perfil-usuario'
@@ -642,6 +653,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/recuperar'
     | '/actualizar/$id'
+    | '/confirmar-cuenta/$id'
     | '/dashboard/aprobacion-liquidaciones-ordenes'
     | '/dashboard/clientes'
     | '/dashboard/configuracion'
@@ -700,6 +712,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRouteWithChildren
   RecuperarRoute: typeof RecuperarRoute
   ActualizarIdRoute: typeof ActualizarIdRoute
+  ConfirmarCuentaIdRoute: typeof ConfirmarCuentaIdRoute
   OlvidePasswordIdRoute: typeof OlvidePasswordIdRoute
 }
 
@@ -837,6 +850,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard/aprobacion-liquidaciones-ordenes'
       preLoaderRoute: typeof DashboardAprobacionLiquidacionesOrdenesRouteImport
       parentRoute: typeof DashboardRoute
+    }
+    '/confirmar-cuenta/$id': {
+      id: '/confirmar-cuenta/$id'
+      path: '/confirmar-cuenta/$id'
+      fullPath: '/confirmar-cuenta/$id'
+      preLoaderRoute: typeof ConfirmarCuentaIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/actualizar/$id': {
       id: '/actualizar/$id'
@@ -1362,6 +1382,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRouteWithChildren,
   RecuperarRoute: RecuperarRoute,
   ActualizarIdRoute: ActualizarIdRoute,
+  ConfirmarCuentaIdRoute: ConfirmarCuentaIdRoute,
   OlvidePasswordIdRoute: OlvidePasswordIdRoute,
 }
 export const routeTree = rootRouteImport
