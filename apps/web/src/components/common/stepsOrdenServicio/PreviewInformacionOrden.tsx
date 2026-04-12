@@ -15,6 +15,7 @@ import type {
   UpdateOrdenServicioTarifaDto,
 } from "../../../api/dtos";
 import type { CreateOrdenServicioTarifaDto } from "../../../api/dtos";
+import type { Tarifa } from "../../../api/types/periodo";
 
 export const PreviewInformacionOrden = ({
   isEditing = false,
@@ -23,6 +24,7 @@ export const PreviewInformacionOrden = ({
   configuracionServicioTarifa,
   mensajeRespuesta,
   isIndefinite,
+  tarifasDetalle = [],
 }: {
   isEditing?: boolean;
   selectedPuesto: Puesto | null;
@@ -32,6 +34,7 @@ export const PreviewInformacionOrden = ({
     | UpdateOrdenServicioTarifaDto[];
   mensajeRespuesta: string;
   isIndefinite: boolean;
+  tarifasDetalle?: Tarifa[];
 }) => {
   console.log("configuracionServicioTarifa: ", configuracionServicioTarifa);
   return (
@@ -95,225 +98,229 @@ export const PreviewInformacionOrden = ({
           </div>
         </div>
 
-        {/* Información del Servicio */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-            <FileText className="h-6 w-6 text-green-600" />
-            Servicio
-          </h4>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Código:</span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idServicio.codigo} */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Descripción:</span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idServicio.descripcion} */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Tipo de Servicio:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idServicio.idTipoServicio.descripcion} */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Requiere Personal:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idServicio.idTipoServicio.requierePersonal
-                      ? "Sí"
-                      : "No"} */}
-                </span>
-              </p>
-            </div>
-            <div>
-              {/* <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Duración:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {selectedTarifa?.idServicio?.idTipoDuracion
-                    ?.descripcion || "No especificada"}{" "}
-                </span>
-              </p> */}
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Horas Fijas:</span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idServicio.horasFijas} horas */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Horas Máximas:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idServicio.horasMaximas} horas */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Horas Mínimas:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idServicio.horasMinimas} horas */}
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
+        {configuracionServicioTarifa.map((config, index) => {
+          const tarifaDetalle = tarifasDetalle.find(
+            (t) => t.idTarifa === config.idTarifa,
+          );
 
-        {/* Información de Fechas y Horarios */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-            <Calendar className="h-6 w-6 text-purple-600" />
-            Fechas y Horarios
-          </h4>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Fecha de Inicio:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {new Date(formOrdenServicio.fechaInicio).toLocaleDateString()}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Fecha de Fin:</span>{" "}
-                <span className="text-gray-600">
-                  {isIndefinite
-                    ? "Indefinida"
-                    : formOrdenServicio.fechaFin
-                      ? new Date(
-                          formOrdenServicio.fechaFin,
-                        ).toLocaleDateString()
-                      : "No especificada"}
-                </span>
-              </p>
-            </div>
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Hora de Inicio:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idServicio.horasFijas === 24
-                    ? "00:00:00 (24 horas)"
-                    : "00:00:00"} */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Hora de Fin:</span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idServicio.horasFijas === 24
-                    ? "00:00:00 (24 horas)"
-                    : "00:00:00"} */}
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Información del Personal */}
-        {/* TODO: Revisar información de personal */}
-        {/* {selectedTarifa?.idServicio.idTipoServicio.requierePersonal && ( */}
-        {true && (
-          <div className="rounded-lg border border-gray-200 p-4">
-            <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <Users className="h-6 w-6 text-orange-600" />
-              Personal
-            </h4>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">
-                    Cantidad de Personal:
-                  </span>{" "}
-                  <span className="text-gray-600">{0} requeridos</span>
-                </p>
+          return (
+            <div key={index} className="space-y-6">
+              {/* Información del Servicio */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <FileText className="h-6 w-6 text-green-600" />
+                  Servicio
+                </h4>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">Código:</span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idServicio?.codigo || "No especificado"}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Descripción:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idServicio?.descripcion || "No especificada"}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Tipo de Servicio:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idServicio?.idTipoServicio?.descripcion || "No especificado"}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Requiere Personal:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idServicio?.idTipoServicio?.requierePersonal
+                          ? "Sí"
+                          : "No"}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Horas Fijas:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idServicio?.horasFijas ?? 0} horas
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Horas Máximas:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idServicio?.horasMaximas ?? 0} horas
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Horas Mínimas:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idServicio?.horasMinimas ?? 0} horas
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">
-                    Personal Asignado:
-                  </span>{" "}
-                  <span className="text-gray-600">
-                    {configuracionServicioTarifa.length > 0
-                      ? `${configuracionServicioTarifa.length} asignado(s)`
-                      : "Pendiente de asignación"}
-                  </span>
-                </p>
+
+              {/* Información de Fechas y Horarios */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <Calendar className="h-6 w-6 text-purple-600" />
+                  Fechas y Horarios
+                </h4>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Fecha de Inicio:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {new Date(
+                          formOrdenServicio.fechaInicio,
+                        ).toLocaleDateString()}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Fecha de Fin:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {isIndefinite
+                          ? "Indefinida"
+                          : formOrdenServicio.fechaFin
+                            ? new Date(
+                                formOrdenServicio.fechaFin,
+                              ).toLocaleDateString()
+                            : "No especificada"}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Hora de Inicio:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {config.horaInicio || "No especificada"}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Hora de Fin:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {config.horaFin || "No especificada"}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Información del Personal */}
+              {(!tarifaDetalle || tarifaDetalle?.idServicio?.idTipoServicio?.requierePersonal) && (
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <Users className="h-6 w-6 text-orange-600" />
+                    Personal
+                  </h4>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="text-sm">
+                        <span className="font-medium text-gray-700">
+                          Cantidad de Personal:
+                        </span>{" "}
+                        <span className="text-gray-600">
+                          {config.cantidadPersonal ?? 0} requeridos
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm">
+                        <span className="font-medium text-gray-700">
+                          Personal Asignado:
+                        </span>{" "}
+                        <span className="text-gray-600">
+                          {("personal" in config && Array.isArray(config.personal)) ? config.personal.length : 0} asignado(s)
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Información de Tarifa y Precios */}
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <DollarSign className="h-6 w-6 text-green-600" />
+                  Tarifa y Precios
+                </h4>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">Período:</span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idPeriodo?.nombre || "No especificado"}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Tipo de Tarifa:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idTipoTarifa?.nombre || "No especificado"}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Unidad de Tiempo:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {tarifaDetalle?.idTipoTarifa?.idTipoUnidadTiempo?.descripcion || "No especificada"}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Precio sin IVA:
+                      </span>{" "}
+                      <span className="text-gray-600">
+                        {priceFormat(tarifaDetalle?.precioAntesIva || 0)}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">IVA:</span>{" "}
+                      <span className="text-gray-600">
+                        {priceFormat(tarifaDetalle?.iva || 0)}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-medium text-gray-700">
+                        Precio Total Base:
+                      </span>{" "}
+                      <span className="font-semibold text-green-600">
+                        {priceFormat(config.precio || tarifaDetalle?.precioTotal || 0)}
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Información de Tarifa y Precios */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-            <DollarSign className="h-6 w-6 text-green-600" />
-            Tarifa y Precios
-          </h4>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Período:</span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idPeriodo.nombre} */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Tipo de Tarifa:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idTipoTarifa.nombre} */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Unidad de Tiempo:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {/* {selectedTarifa?.idTipoTarifa?.idTipoUnidadTiempo
-                    ?.descripcion || "No especificada"} */}
-                </span>
-              </p>
-            </div>
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Precio sin IVA:
-                </span>{" "}
-                <span className="text-gray-600">
-                  {/* {priceFormat(selectedTarifa?.precioAntesIva || 0)} */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">IVA:</span>{" "}
-                <span className="text-gray-600">
-                  {/* {priceFormat(selectedTarifa?.iva || 0)} */}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Precio Total Base:
-                </span>{" "}
-                <span className="font-semibold text-green-600">
-                  {/* {priceFormat(selectedTarifa?.precioTotal || 0)} */}
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
+          );
+        })}
 
         {/* Información de Precio Calculado */}
         {configuracionServicioTarifa.length > 0 && (

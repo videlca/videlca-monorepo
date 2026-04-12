@@ -14,7 +14,7 @@ export interface UpdateOrdenServicioDto {
   fechaFin: string | null;
   precioTotal: number;
   fechaActualizacion: string;
-  servicios: UpdateOrdenServicioTarifaDto[];
+  // servicios: UpdateOrdenServicioTarifaDto[];
 }
 
 export interface CreateOrdenServicioTarifaDto {

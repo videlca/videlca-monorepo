@@ -35,7 +35,7 @@ import { useTarifasPeriodoActivoByIdTipoServicio } from "../../../api/queryFunct
 import { priceFormat } from "../../../utils/PriceFormat";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { dateFormat } from "../../../utils/DateFormat";
-import { useForm } from "../../../hooks/useForm";
+
 import { OrderStateLabel } from "../../../components/common/OrderStateLabel";
 import type { Puesto } from "../../../types";
 import { toast } from "sonner";
@@ -52,6 +52,7 @@ import { useGetObservacionesOrdenServicio } from "../../../api/queryFunctions/or
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 import { OrdenDetalles } from "../../../components/ui/modals/OrdenDetalles";
+import { useForm } from "react-hook-form";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
@@ -155,29 +156,37 @@ function RouteComponent() {
 
   // Formulario crear orden de servicio
   const {
-    form: formOrdenServicio,
-    resetForm: resetFormOrdenServicio,
-    setForm: setFormOrdenServicio,
+    register: registerCreate,
+    handleSubmit: handleSubmitCreate,
+    reset: resetCreate,
+    setValue: setValueCreate,
+    watch: watchCreate,
   } = useForm<CreateOrdenServicioDto>({
-    fechaInicio: "",
-    fechaFin: "",
-    fechaCreacion: "",
-    idLocacion: 0,
-    precioTotal: 0,
-    numeroOrdenServicio: "",
-    servicios: [],
+    defaultValues: {
+      fechaInicio: "",
+      fechaFin: "",
+      fechaCreacion: "",
+      idLocacion: 0,
+      precioTotal: 0,
+      numeroOrdenServicio: "",
+      servicios: [],
+    },
   });
 
   const {
-    form: formOrdenServicioEdit,
-    setForm: setFormOrdenServicioEdit,
-    resetForm: resetFormOrdenServicioEdit,
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
+    setValue: setValueEdit,
+    watch: watchEdit,
   } = useForm<UpdateOrdenServicioDto>({
-    fechaInicio: "",
-    fechaFin: "",
-    fechaActualizacion: "",
-    precioTotal: 0,
-    servicios: [],
+    defaultValues: {
+      fechaInicio: "",
+      fechaFin: "",
+      fechaActualizacion: "",
+      precioTotal: 0,
+      // servicios: [],
+    },
   });
 
   const [configuracionServicioTarifa, setConfiguracionServicioTarifa] =
@@ -198,8 +207,8 @@ function RouteComponent() {
     setConfiguracionServicioTarifa([]);
     setSelectedServices([]);
     setIsIndefinite(false);
-    resetFormOrdenServicio();
-    resetFormOrdenServicioEdit();
+    resetCreate();
+    resetEdit();
     setIdentificador({ prefijo: "", codigo: 0, codigoTipoServicio: 0 });
   };
 
@@ -215,11 +224,12 @@ function RouteComponent() {
         return;
       }
 
-      formOrdenServicio.numeroOrdenServicio = `${identificador.prefijo}-${identificador.codigo}`;
+      const numeroStr = `${identificador.prefijo}-${identificador.codigo}`;
+      setValueCreate("numeroOrdenServicio", numeroStr);
 
       validarIdOrdenServicio(
         {
-          descripcionId: formOrdenServicio.numeroOrdenServicio,
+          descripcionId: numeroStr,
         },
         {
           onSuccess: () => {
@@ -231,22 +241,22 @@ function RouteComponent() {
     }
 
     if (currentStep === 3) {
-      if (formOrdenServicio.fechaInicio === "") {
+      if (watchCreate("fechaInicio") === "") {
         toast.error("La fecha de inicio es requerida");
         return;
       }
 
-      if (formOrdenServicio.fechaFin === "" && !isIndefinite) {
+      if (watchCreate("fechaFin") === "" && !isIndefinite) {
         toast.error("La fecha de fin es requerida o debe ser indefinida");
         return;
       }
 
       validateFechasOrdenServicio(
         {
-          fechaInicio: dateFormat(new Date(formOrdenServicio.fechaInicio)),
+          fechaInicio: dateFormat(new Date(watchCreate("fechaInicio"))),
           fechaFin: isIndefinite
             ? null
-            : dateFormat(new Date(formOrdenServicio.fechaFin || "")),
+            : dateFormat(new Date(watchCreate("fechaFin") || "")),
         },
         {
           onSuccess: () => {
@@ -294,8 +304,8 @@ function RouteComponent() {
             const response = await getPrecioOrdenServicio({
               horaInicio: servicio.horaInicio,
               horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
-              fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
-              fechaInicio: formOrdenServicio.fechaInicio,
+              fechaFin: isIndefinite ? null : watchCreate("fechaFin"),
+              fechaInicio: watchCreate("fechaInicio"),
               idTarifa: servicio.idTarifa || 0,
               idServicio: servicio.idServicio || 0,
             });
@@ -314,10 +324,7 @@ function RouteComponent() {
           responsePrecioOrdenServicio.every((r) => r.status === "fulfilled");
 
         if (allValidated) {
-          setFormOrdenServicio({
-            ...formOrdenServicio,
-            precioTotal: precioTotal,
-          });
+          setValueCreate("precioTotal", precioTotal);
           toast.success(
             "Rango horario personal y precio de orden de servicio validados correctamente",
           );
@@ -401,8 +408,8 @@ function RouteComponent() {
         {
           id: selectedOrderDetail?.idOrdenServicio || 0,
           data: {
-            fechaInicio: formOrdenServicioEdit.fechaInicio,
-            fechaFin: isIndefinite ? null : formOrdenServicioEdit.fechaFin,
+            fechaInicio: watchEdit("fechaInicio"),
+            fechaFin: isIndefinite ? null : watchEdit("fechaFin"),
             fechaActualizacion: new Date().toISOString(),
           },
         },
@@ -419,8 +426,8 @@ function RouteComponent() {
             const response = await getPrecioOrdenServicio({
               horaInicio: servicio.horaInicio,
               horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
-              fechaFin: isIndefinite ? null : formOrdenServicioEdit.fechaFin,
-              fechaInicio: formOrdenServicioEdit.fechaInicio,
+              fechaFin: isIndefinite ? null : watchEdit("fechaFin"),
+              fechaInicio: watchEdit("fechaInicio"),
               idTarifa: servicio.idTarifa || 0,
               idServicio: servicio.idServicio || 0,
             });
@@ -439,10 +446,7 @@ function RouteComponent() {
         );
 
         if (allValidated) {
-          setFormOrdenServicioEdit({
-            ...formOrdenServicioEdit,
-            precioTotal: precioTotal,
-          });
+          setValueEdit("precioTotal", precioTotal);
           toast.success("Precio de orden de servicio validados correctamente");
           setCurrentStep(2);
         }
@@ -522,12 +526,13 @@ function RouteComponent() {
   };
 
   const handleSaveOrder = async () => {
+    const data = watchCreate();
     const ordenesDeServicioMutation: CreateOrdenServicioDto = {
-      numeroOrdenServicio: formOrdenServicio.numeroOrdenServicio,
-      idLocacion: formOrdenServicio.idLocacion || 0,
-      fechaInicio: formOrdenServicio.fechaInicio,
-      fechaFin: isIndefinite ? null : formOrdenServicio.fechaFin,
-      precioTotal: formOrdenServicio.precioTotal,
+      numeroOrdenServicio: data.numeroOrdenServicio,
+      idLocacion: data.idLocacion || 0,
+      fechaInicio: data.fechaInicio,
+      fechaFin: isIndefinite ? null : data.fechaFin,
+      precioTotal: data.precioTotal,
       fechaCreacion: new Date().toISOString(),
       servicios: configuracionServicioTarifa,
     };
@@ -545,12 +550,13 @@ function RouteComponent() {
       ({ idServicio, ...rest }) => rest,
     );
 
+    const data = watchEdit();
     const ordenesDeServicioMutation: UpdateOrdenServicioDto = {
-      fechaInicio: formOrdenServicioEdit.fechaInicio,
-      fechaFin: isIndefinite ? null : formOrdenServicioEdit.fechaFin,
-      precioTotal: formOrdenServicioEdit.precioTotal,
+      fechaInicio: data.fechaInicio,
+      fechaFin: isIndefinite ? null : data.fechaFin,
+      precioTotal: data.precioTotal,
       fechaActualizacion: new Date().toISOString(),
-      servicios: cleanedServicios,
+      // servicios: cleanedServicios,
     };
 
     actualizarOrdenServicio(
@@ -569,13 +575,13 @@ function RouteComponent() {
 
   const handleEditOrder = async (idOrdenServicio: number) => {
     const ordenServicioById = await obtenerOrdenServicioById(idOrdenServicio);
-    setFormOrdenServicioEdit({
+    resetEdit({
       ...ordenServicioById?.data,
       fechaInicio: ordenServicioById?.data?.fechaInicio || "",
       fechaFin: ordenServicioById?.data?.fechaFin || null,
       fechaActualizacion: ordenServicioById?.data?.fechaActualizacion || "",
       precioTotal: ordenServicioById?.data?.precioTotal || 0,
-      servicios: [],
+      // servicios: [],
     });
 
     setConfiguracionServicioTarifaEdit(
@@ -776,8 +782,8 @@ function RouteComponent() {
       case 2:
         return (
           <SeleccionarPuestoCliente
-            formOrdenServicio={formOrdenServicio}
-            setFormOrdenServicio={setFormOrdenServicio}
+            idLocacion={watchCreate("idLocacion")}
+            setValue={setValueCreate}
             setSelectedPuesto={setSelectedPuesto}
           />
         );
@@ -785,10 +791,8 @@ function RouteComponent() {
       case 3:
         return (
           <ConfigurarFechaOrdenServicio
-            formOrdenServicio={formOrdenServicio}
-            setFormOrdenServicio={(newForm) =>
-              setFormOrdenServicio(newForm as CreateOrdenServicioDto)
-            }
+            register={registerCreate}
+            setValue={setValueCreate}
             isIndefinite={isIndefinite}
             setIsIndefinite={setIsIndefinite}
           />
@@ -833,16 +837,27 @@ function RouteComponent() {
       //       }
       //     />
       //   );
-      case 6: // antes paso 7
+      case 6: { // antes paso 7
+        const tarifasDetalleCreate = configuracionServicioTarifa
+          .map((config) =>
+            (tarifasPeriodoActivoByIdTipoServicioData?.data || []).find(
+              (t) => t.idTarifa === config.idTarifa,
+            ),
+          )
+          .filter((t) => t !== undefined);
+
         return (
           <PreviewInformacionOrden
             selectedPuesto={selectedPuesto}
-            formOrdenServicio={formOrdenServicio}
+            formOrdenServicio={watchCreate()}
             configuracionServicioTarifa={configuracionServicioTarifa}
             mensajeRespuesta={mensajeRespuesta}
             isIndefinite={isIndefinite}
+            // @ts-ignore
+            tarifasDetalle={tarifasDetalleCreate}
           />
         );
+      }
 
       default:
         return null;
@@ -854,10 +869,8 @@ function RouteComponent() {
       case 1:
         return (
           <ConfigurarFechaOrdenServicio
-            formOrdenServicio={formOrdenServicioEdit}
-            setFormOrdenServicio={(newForm) =>
-              setFormOrdenServicioEdit(newForm as UpdateOrdenServicioDto)
-            }
+            register={registerEdit}
+            setValue={setValueEdit}
             isIndefinite={isIndefinite}
             setIsIndefinite={setIsIndefinite}
           />
@@ -885,17 +898,28 @@ function RouteComponent() {
       //     />
       //   );
 
-      case 2: // antes paso 3
+      case 2: { // antes paso 3
+        const tarifasDetalleEdit = configuracionServicioTarifaEdit
+          .map((config) =>
+            selectedOrderDetail?.tarifas?.find(
+              (t) => t.idTarifa.idTarifa === config.idTarifa,
+            )?.idTarifa,
+          )
+          .filter((t) => t !== undefined);
+
         return (
           <PreviewInformacionOrden
             isEditing={isEditing}
             selectedPuesto={selectedOrderDetail?.idLocacion || null}
-            formOrdenServicio={formOrdenServicioEdit}
+            formOrdenServicio={watchEdit()}
             configuracionServicioTarifa={configuracionServicioTarifaEdit}
             mensajeRespuesta={mensajeRespuesta}
             isIndefinite={isIndefinite}
+            // @ts-ignore
+            tarifasDetalle={tarifasDetalleEdit}
           />
         );
+      }
 
       default:
         return null;
@@ -999,8 +1023,8 @@ function RouteComponent() {
                   (currentStep === 1 &&
                     (identificador.codigoTipoServicio === 0 ||
                       identificador.codigo === 0)) ||
-                  (currentStep === 2 && !formOrdenServicio.idLocacion) ||
-                  (currentStep === 3 && !formOrdenServicio.fechaInicio) ||
+                  (currentStep === 2 && !watchCreate("idLocacion")) ||
+                  (currentStep === 3 && !watchCreate("fechaInicio")) ||
                   (currentStep === 4 &&
                     configuracionServicioTarifa.length === 0)
                   // TODO: Revisar validaciones de los pasos
