@@ -235,11 +235,12 @@ export class PermissionsService {
           take: limit,
           skip: offset,
           where: {
-            estado: true
+            estado: true,
+            nombreRol: Not(Roles.SUPER_ADMIN)
           },
           order: {
               descripcion: 'ASC'
-          }
+          },
       });
   
       return roles;

@@ -3,7 +3,7 @@ import { BadRequestException, ForbiddenException,
   Logger, UnauthorizedException, forwardRef, Inject, 
   NotFoundException} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, QueryRunner } from 'typeorm';
+import { DataSource, Repository, QueryRunner, Not } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import * as bcrypt from 'bcrypt';
@@ -82,6 +82,12 @@ export class UsersService {
 
     if(existUser){
       throw new BadRequestException(`Usuario con email ${createUserDto.email} ya existe`);
+    }
+
+    const existUserById = await this.findOneByNroId(createUserDto.numeroIdentificacion);
+
+    if(existUserById){
+      throw new BadRequestException('Numero de identificacion no valido');
     }
 
     const {...userData} = createUserDto;
@@ -313,7 +319,7 @@ export class UsersService {
 
     // No se puede editar un usuario si tiene rol de superadmin
     if(existUser.idRol.nombreRol == Roles.SUPER_ADMIN){
-      throw new UnauthorizedException('No se puede editar este Usuario');
+      throw new UnauthorizedException('No tienes los permisos para editar este usuario');
     }
     
     if(updateUserstateRolDto.hasOwnProperty('estado') && existUser.estado !== updateUserstateRolDto.estado ){
@@ -407,6 +413,11 @@ export class UsersService {
         skip: offset,
         order: {
           primerNombre: 'ASC'
+        },
+        where: {
+          idRol: {
+            nombreRol: Not(Roles.SUPER_ADMIN)
+          }
         }
       });
       
@@ -1048,7 +1059,7 @@ export class UsersService {
   // EMAIL PARA VALIDAR CUENTA DEL USER
   async emailValidation(fullName: string, email: string, token: string) {
 
-    const url = `${this.hostFrontend}/auth/confirmar-cuenta/${token}`;
+    const url = `${this.hostFrontend}/confirmar-cuenta/${token}`;
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">

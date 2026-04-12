@@ -128,12 +128,13 @@ export class ServiciosService {
 
   }
 
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    const { limit = this.defaultLimit, offset = 0, pagination } = paginationDto;
+    
 
+    if (!pagination) {
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
-      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
       const servicios = await this.servicioRepository.find({

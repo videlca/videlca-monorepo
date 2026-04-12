@@ -23,7 +23,7 @@ export class ServiciosController {
   // OBTENER TODOS LOS TIPOS SERVICIOS
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.serviciosService.findAll(paginationDto, paginationDto.pagination);
+    return this.serviciosService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS SERVICIOS QUE NO TIENEN TARIFA EN EL PERIODO ESTABLECIDO

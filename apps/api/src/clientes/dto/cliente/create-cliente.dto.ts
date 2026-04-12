@@ -3,7 +3,7 @@ import { IsNotEmpty, IsNumber, IsPositive, IsString, MaxLength, Min } from "clas
 
 export class CreateClienteDto {
 
-    @ApiProperty({ description: 'Número de identificacíon del cliente', example: 'Pepito', required:true})
+    @ApiProperty({ description: 'Número de identificacíon del cliente', example: '10000', required:true})
     @IsString({ message: 'El campo numero de identificacion debe ser un string'})
     @IsNotEmpty({ message: 'El campo numero de identificacion no puede estar vacío' })
     @MaxLength(50, { message: 'El campo numero de identificacion no puede exceder los 50 caracteres' })
