@@ -270,6 +270,7 @@ export function RouteComponent() {
               {
                 onSuccess: () => {
                   handleCloseEditPuesto();
+                  
                 },
               },
             );
@@ -362,7 +363,7 @@ export function RouteComponent() {
               <InputForm
                 label="Teléfono*"
                 placeholder="Teléfono"
-                type="number"
+                type="text"
                 id="telefono"
                 required
                 {...registerEdit("telefono")}
@@ -370,7 +371,7 @@ export function RouteComponent() {
               <InputForm
                 label="Teléfono 2"
                 placeholder="Teléfono 2"
-                type="number"
+                type="text"
                 id="segundoTelefono"
                 required={false}
                 {...registerEdit("segundoTelefono")}

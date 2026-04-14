@@ -148,18 +148,7 @@ export function ClientesTab() {
     getClienteById(row.original.idCliente, {
       onSuccess: (data) => {
         if (data.data) {
-          resetEdit({
-            idTipoIdentificacion:
-              data.data.idTipoIdentificacion.idTipoIdentificacion || 0,
-            numeroIdentificacion: data.data.numeroIdentificacion || "",
-            nombre: data.data.nombre || "",
-            idTipoCliente: data.data.idTipoCliente.idTipoCliente || 0,
-            idSegmentacion:
-              data.data.idSubSegmentacion.segmentacion?.idSegmentacion || 0,
-            idSubSegmentacion:
-              data.data.idSubSegmentacion.idSubSegmentacion || 0,
-            estado: data.data.estado,
-          });
+          resetEdit();
         }
       },
     });
