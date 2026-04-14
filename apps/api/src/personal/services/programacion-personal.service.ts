@@ -168,11 +168,15 @@ export class ProgramacionPersonalService {
 
       // Añadir programaciones como eventos
       for (const programacion of programaciones) {
+        if (!programacion.idOrdenServicioTarifa || !programacion.idOrdenServicioTarifa.idOrdenServicio) {
+          continue;
+        }
+
         const ordenServicio = programacion.idOrdenServicioTarifa.idOrdenServicio;
         // Crear el evento
         const evento: Event = {
           idEvento: programacion.idProgramacionPersonal.toString(),
-          tituloEvento: `Orden Servicio (${programacion.idOrdenServicioTarifa.idOrdenServicio.ordenServicioId.descripcionId}) - ${programacion.idOrdenServicioTarifa.idTarifa.idServicio.codigo} ${programacion.idOrdenServicioTarifa.idTarifa.idServicio.descripcion}`,
+          tituloEvento: `Orden Servicio (${ordenServicio.ordenServicioId?.descripcionId || ordenServicio.idOrdenServicio}) - ${programacion.idOrdenServicioTarifa.idTarifa?.idServicio?.codigo || ''} ${programacion.idOrdenServicioTarifa.idTarifa?.idServicio?.descripcion || ''}`,
           tipoEvento: 'asignado', // Por ahora fijo; podrías mapear según estado
           fechaInicioEvento: ordenServicio.fechaInicioOrden,
           fechaFinEvento: ordenServicio.fechaFinOrden,
