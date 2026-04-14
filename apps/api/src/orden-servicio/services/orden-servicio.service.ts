@@ -1779,6 +1779,21 @@ export class OrdenServicioService {
 
   }
 
+  async imprimirOrdenServicio(id: number){
+
+    const ordenServicio = await this.findOneOrdenRelations(id);
+
+    const buffer = await this.reporteOrdenServicioService
+    .getBufferReporteOrdenServicio(ordenServicio);
+
+    return {
+      file: buffer.toString('base64'),
+      mimeType: 'application/pdf',
+      fileName: `orden-${id}.pdf`
+    };
+
+  }
+
   private handleDbExceptions(error: any){
           
     if (error.errno === 1062)

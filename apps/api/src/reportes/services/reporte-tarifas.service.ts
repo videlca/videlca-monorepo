@@ -99,8 +99,13 @@ export class ReporteTarifasService {
           t.precioTotal
         ]);
   
-        row.eachCell((cell) => {
-          cell.numFmt = '#,##0'; // formato de número
+        row.eachCell((cell, colNumber) => {
+
+          // Solo aplicar formato a columnas numéricas (opcional)
+          if (colNumber >= 3) {
+            cell.numFmt = '#.##0,00';
+          }
+
           cell.border = rowBorder;
         });
 

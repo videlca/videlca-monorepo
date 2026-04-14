@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsPositive, IsString, MaxLength, Min } from "class-validator";
+import { IsNotEmpty, IsNumber, IsNumberString,  IsPositive, IsString, MaxLength, Min } from "class-validator";
 
 export class CreateClienteDto {
 
@@ -7,6 +7,7 @@ export class CreateClienteDto {
     @IsString({ message: 'El campo numero de identificacion debe ser un string'})
     @IsNotEmpty({ message: 'El campo numero de identificacion no puede estar vacío' })
     @MaxLength(50, { message: 'El campo numero de identificacion no puede exceder los 50 caracteres' })
+    @IsNumberString({}, { message: 'Solo números permitidos' })
     numeroIdentificacion: string;
     
     @ApiProperty({ description: 'Id del tipo de identificación del cliente', example: 1, required:true})

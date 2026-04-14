@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Matches, MaxLength, Min, MinLength } from "class-validator";
+import { IsEmail, IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsPositive, IsString, Matches, MaxLength, Min, MinLength } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
@@ -48,6 +48,7 @@ export class CreateUserDto {
     @IsString({ message: 'El campo numero de identificacion debe ser un string'})
     @IsNotEmpty({ message: 'El campo numero de identificacion no puede estar vacío' })
     @MaxLength(50, { message: 'El campo numero de identificacion no puede exceder los 50 caracteres' })
+    @IsNumberString({}, { message: 'Solo números permitidos' })
     numeroIdentificacion: string;
     
     @ApiProperty({ description: 'Tipo de identificación del usuario', example: 1, required:true})

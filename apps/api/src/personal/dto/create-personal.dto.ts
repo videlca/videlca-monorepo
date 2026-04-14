@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, MaxLength, Min, IsDateString, IsDate, MinLength } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsPositive, IsString, MaxLength, Min, IsDateString, IsDate, MinLength } from "class-validator";
 
 export class CreatePersonalDto {
     
@@ -32,6 +32,7 @@ export class CreatePersonalDto {
     @IsString({ message: 'El campo numero de identificacion debe ser un string'})
     @IsNotEmpty({ message: 'El campo numero de identificacion no puede estar vacío' })
     @MaxLength(50, { message: 'El campo numero de identificacion no puede exceder los 50 caracteres' })
+    @IsNumberString({}, { message: 'Solo números permitidos' })
     numeroIdentificacion: string;
     
     @ApiProperty({ description: 'Tipo de identificación del personal', example: 1, required:true})

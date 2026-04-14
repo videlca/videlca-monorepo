@@ -142,5 +142,13 @@ export class OrdenServicioController {
   ) {
     return this.ordenServicioService.sendOrdenServicioPdf(ordenId, enviarCorreoDto);
   }
+  
+  
+  @Get(':ordenId/imprimir-pdf')
+  imprimirReporte(
+    @Param('ordenId', ParseIntPipe) ordenId: number
+  ) {
+    return this.ordenServicioService.imprimirOrdenServicio(ordenId);
+  }
 
 }

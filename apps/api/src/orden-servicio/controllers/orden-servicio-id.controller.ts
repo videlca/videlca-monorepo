@@ -19,6 +19,12 @@ export class OrdenServicioIdController {
   findAll(@Query() paginationDto: PaginationDto) {
     return this.ordenServicioIdService.findAll(paginationDto, paginationDto.pagination);
   }
+
+  // RUTA PROTEGIDA: Obtener ultimo orden servicio id
+  @Get('next-id')
+  findLast() {
+    return this.ordenServicioIdService.findLast();
+  }
   
   // RUTA PROTEGIDA: ANULAR UN ORDEN SERVICIO ID
   @Post('anular-id')
