@@ -87,7 +87,7 @@ export class UsersService {
     const existUserById = await this.findOneByNroId(createUserDto.numeroIdentificacion);
 
     if(existUserById){
-      throw new BadRequestException('Numero de identificacion no valido');
+      throw new BadRequestException('El numero de identificacion ya se encuentra registrado. Por favor, verifique que el numero de identificacion sea correcto');
     }
 
     const {...userData} = createUserDto;

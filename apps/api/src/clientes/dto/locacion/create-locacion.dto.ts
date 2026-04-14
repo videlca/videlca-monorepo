@@ -66,14 +66,14 @@ export class CreateLocacionDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(10, { message: 'El campo telefono no puede exceder los 10 caracteres' })
-  @MinLength(10, { message: 'El campo telefono debe tener 10 caracteres' })
+  // @MaxLength(10, { message: 'El campo telefono no puede exceder los 10 caracteres' })
+  // @MinLength(10, { message: 'El campo telefono debe tener 10 caracteres' })
   telefono: string;
 
   @IsString()
   @IsOptional()
-  @MaxLength(10, { message: 'El campo segundo telefono no puede exceder los 10 caracteres' })
-  @MinLength(10, { message: 'El campo segundo telefono debe tener 10 caracteres' })
+  // @MaxLength(10, { message: 'El campo segundo telefono no puede exceder los 10 caracteres' })
+  // @MinLength(10, { message: 'El campo segundo telefono debe tener 10 caracteres' })
   segundoTelefono?: string;
 
   @IsNumber({}, {message: 'El valor del campo dias de anticipacion debe ser un número'})
