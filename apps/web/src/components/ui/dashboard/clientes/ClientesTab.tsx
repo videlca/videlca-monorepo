@@ -5,7 +5,7 @@ import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
 import type { Cliente } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useClienteById,
   useClientes,
@@ -29,6 +29,8 @@ import {
 } from "../../../../api/queryFunctions/configuracion";
 import {
   useCreatePuesto,
+  useSegmentacionById,
+  useSegmentaciones,
   useSubSegmentaciones,
 } from "../../../../api/queryFunctions/clientes";
 import { InputSelect } from "../../../common/InputSelect";
@@ -62,10 +64,12 @@ export function ClientesTab() {
 
   const { mutate: createPuesto, isPending: isCreatingPuesto } =
     useCreatePuesto();
+  const { mutate: getSegmentacionbyId, data: segmentacionbyId } =
+    useSegmentacionById();
 
   const { data: tipoIdentificacion } = useTipoIdentificacionActivo();
   const { data: tipoCliente } = useTipoCliente();
-  const { data: subSegmentaciones } = useSubSegmentaciones();
+  const { data: segmentaciones } = useSegmentaciones();
   const { data: ciudades } = useCiudad();
 
   // Formularios con react-hook-form
@@ -73,12 +77,14 @@ export function ClientesTab() {
     register: registerCreate,
     handleSubmit: handleSubmitCreate,
     reset: resetCreate,
-  } = useForm<CreateClienteDto>({
+    watch: watchCreate,
+  } = useForm<CreateClienteDto & { idSegmentacion: number }>({
     defaultValues: {
       idTipoIdentificacion: 0,
       numeroIdentificacion: "",
       nombre: "",
       idTipoCliente: 0,
+      idSegmentacion: 0,
       idSubSegmentacion: 0,
     },
   });
@@ -87,12 +93,14 @@ export function ClientesTab() {
     register: registerEdit,
     handleSubmit: handleSubmitEdit,
     reset: resetEdit,
-  } = useForm<UpdateClienteDto>({
+    watch: watchEdit,
+  } = useForm<UpdateClienteDto & { idSegmentacion: number }>({
     defaultValues: {
       idTipoIdentificacion: 0,
       numeroIdentificacion: "",
       nombre: "",
       idTipoCliente: 0,
+      idSegmentacion: 0,
       idSubSegmentacion: 0,
       estado: true,
     },
@@ -119,6 +127,21 @@ export function ClientesTab() {
     },
   });
 
+  const watchIdSegmentacionCreate = watchCreate("idSegmentacion");
+  const watchIdSegmentacionEdit = watchEdit("idSegmentacion");
+
+  useEffect(() => {
+    if (watchIdSegmentacionCreate && watchIdSegmentacionCreate !== 0) {
+      getSegmentacionbyId(watchIdSegmentacionCreate);
+    }
+  }, [watchIdSegmentacionCreate, getSegmentacionbyId]);
+
+  useEffect(() => {
+    if (watchIdSegmentacionEdit && watchIdSegmentacionEdit !== 0) {
+      getSegmentacionbyId(watchIdSegmentacionEdit);
+    }
+  }, [watchIdSegmentacionEdit, getSegmentacionbyId]);
+
   // Handlers
   const handleShowEditClienteModal = (row: Row<Cliente>) => {
     setEditingCliente(row.original);
@@ -131,6 +154,8 @@ export function ClientesTab() {
             numeroIdentificacion: data.data.numeroIdentificacion || "",
             nombre: data.data.nombre || "",
             idTipoCliente: data.data.idTipoCliente.idTipoCliente || 0,
+            idSegmentacion:
+              data.data.idSubSegmentacion.segmentacion?.idSegmentacion || 0,
             idSubSegmentacion:
               data.data.idSubSegmentacion.idSubSegmentacion || 0,
             estado: data.data.estado,
@@ -264,9 +289,10 @@ export function ClientesTab() {
           }}
           updating={false}
           onSubmit={handleSubmitCreate((data) => {
+            const { idSegmentacion, ...submitData } = data;
             createCliente(
               {
-                ...data,
+                ...submitData,
                 idTipoIdentificacion: Number(data.idTipoIdentificacion),
                 idTipoCliente: Number(data.idTipoCliente),
                 idSubSegmentacion: Number(data.idSubSegmentacion),
@@ -324,11 +350,24 @@ export function ClientesTab() {
               {...registerCreate("idTipoCliente")}
             />
             <InputSelect
+              label="Segmentación"
+              placeholder="Segmentación"
+              id="idSegmentacion"
+              options={
+                segmentaciones?.data?.map((segmentacion) => ({
+                  id: segmentacion.idSegmentacion,
+                  descripcion: segmentacion.descripcion,
+                })) || []
+              }
+              required
+              {...registerCreate("idSegmentacion")}
+            />
+            <InputSelect
               label="Subsegmentación"
               placeholder="Subsegmentación"
               id="idSubSegmentacion"
               options={
-                subSegmentaciones?.data?.map((sub) => ({
+                segmentacionbyId?.data?.subSegmentaciones?.map((sub) => ({
                   id: sub.idSubSegmentacion || 0,
                   descripcion: sub.descripcion,
                 })) || []
@@ -358,11 +397,12 @@ export function ClientesTab() {
           }}
           updating={true}
           onSubmit={handleSubmitEdit((data) => {
+            const { idSegmentacion, ...submitData } = data;
             updateCliente(
               {
                 id: editingCliente?.idCliente || 0,
                 data: {
-                  ...data,
+                  ...submitData,
                   idTipoIdentificacion: Number(data.idTipoIdentificacion),
                   idTipoCliente: Number(data.idTipoCliente),
                   idSubSegmentacion: Number(data.idSubSegmentacion),
@@ -423,16 +463,30 @@ export function ClientesTab() {
               {...registerEdit("idTipoCliente")}
             />
             <InputSelect
+              label="Segmentación"
+              placeholder="Segmentación"
+              id="idSegmentacion"
+              options={
+                segmentaciones?.data?.map((segmentacion) => ({
+                  id: segmentacion.idSegmentacion,
+                  descripcion: segmentacion.descripcion,
+                })) || []
+              }
+              required
+              {...registerEdit("idSegmentacion")}
+            />
+            <InputSelect
               label="Subsegmentación"
               placeholder="Subsegmentación"
               id="idSubSegmentacion"
               options={
-                subSegmentaciones?.data?.map((sub) => ({
+                segmentacionbyId?.data?.subSegmentaciones?.map((sub) => ({
                   id: sub.idSubSegmentacion || 0,
                   descripcion: sub.descripcion,
                 })) || []
               }
               required
+              disabled={!watchIdSegmentacionEdit}
               {...registerEdit("idSubSegmentacion")}
             />
             <InputSelectStateBoolean

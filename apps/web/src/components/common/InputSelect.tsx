@@ -35,7 +35,7 @@ export const InputSelect = React.forwardRef<HTMLSelectElement, InputSelectProps>
           disabled={disabled}
           {...rest}
         >
-          <option value="" disabled>
+          <option value={0} disabled hidden className="text-gray-400">
             {placeholder}
           </option>
           {options.map((option) => (
