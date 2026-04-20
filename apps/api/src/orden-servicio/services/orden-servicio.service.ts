@@ -1468,16 +1468,23 @@ export class OrdenServicioService {
       }
 
       // envio de correos que se tengan registrados en la locacion
-      const nombreResponsable = `${ordenServicio.idLocacion.primerNombreResponsable} ${ordenServicio.idLocacion.primerApellidoResponsable}`;
+      try {
+        const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
 
-      const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.ELIMINACION_ORDEN_SERVICIO);
+        const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.ELIMINACION_ORDEN_SERVICIO);
 
-      await this.notificationDeleteEmail(
-        id,
-        nombreResponsable, 
-        ordenServicio.idLocacion.nombre,
-        emails
-      );
+        if (emails && emails.length > 0) {
+          await this.notificationDeleteEmail(
+            id,
+            nombreResponsable, 
+            ordenServicio.idLocacion?.nombre || '',
+            emails
+          );
+        }
+      } catch (error) {
+        // Ignorar el error si no hay correos asociados al estado de app u otro error al enviar notificación
+        this.logger.warn(`No se pudo enviar notificación de eliminación para la orden ${id}: ${error.message}`);
+      }
       
       await queryRunner.commitTransaction();
 

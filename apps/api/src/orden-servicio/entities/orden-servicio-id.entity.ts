@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { OrdenServicio } from "./orden-servicio.entity";
 
 @Entity({name: "orden_servicio_id"})
@@ -17,6 +17,23 @@ export class OrdenServicioId {
         unique: true // Para evitar duplicados
     })
     descripcionId: string;
+
+    @Column({
+        type: 'int',
+        name: 'consecutivo',
+        nullable: true,
+        default: null
+    })
+    consecutivo: number;
+
+    @BeforeInsert()
+    @BeforeUpdate()
+    updateConsecutivo() {
+        if (this.descripcionId) {
+             const match = this.descripcionId.match(/(\d+)\s*$/);
+             this.consecutivo = match ? parseInt(match[1], 10) : 0;
+        }
+    }
 
     // FECHA CREACION
     @CreateDateColumn({

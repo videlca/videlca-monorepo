@@ -144,7 +144,7 @@ export class OrdenServicioController {
   }
   
   
-  @Get(':ordenId/imprimir-pdf')
+  @Post(':ordenId/imprimir-pdf')
   imprimirReporte(
     @Param('ordenId', ParseIntPipe) ordenId: number
   ) {

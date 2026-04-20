@@ -65,20 +65,12 @@ export class OrdenServicioIdService {
 
     // OBTENER ULTIMO ORDEN DE SERVICIO ID
     async findLast() {
-      const ultimoRegistro = await this.OrdenServicioIdRepository.findOne({
-        order: {
-          idOrdenServicioId: 'DESC',
-        },
-      });
-    
-      if (!ultimoRegistro) {
-        return 1;
-      }
-    
-      const match = ultimoRegistro.descripcionId.match(/(\d+)\s*$/);
-      const ultimoNumero = match ? parseInt(match[1], 10) : 0;
-    
-      return ultimoNumero + 1;
+      const result = await this.OrdenServicioIdRepository.createQueryBuilder('orden')
+        .select('MAX(orden.consecutivo)', 'max')
+        .getRawOne();
+      
+      const maxNumero = result?.max || 0;
+      return maxNumero + 1;
     }
   
     // OBTENER UNA OBSERVACION POR SU ID
