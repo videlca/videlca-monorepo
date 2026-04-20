@@ -19,3 +19,7 @@ export const anularOrdenServicioId = async (data: AnularIdOrdenServicioDto): Pro
 export const deleteIdOrdenServicio = async (id: number): Promise<ApiResponse<any>> => {
   return await apiDelete<any>(`/orden-servicio-id/${id}`);
 }
+
+export const getNextIdOrdenServicio = async (): Promise<ApiResponse<number>> => {
+  return await apiGet<number>("/orden-servicio-id/next-id");
+}

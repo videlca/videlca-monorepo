@@ -3,6 +3,7 @@ import { usePrefijosTipoServicio } from "../../../api/queryFunctions/servicios";
 export const SeleccionarIdentificadorOrden = ({
   identificador,
   setIdentificador,
+  nextIdOrdenServicio,
 }: {
   identificador: {
     codigoTipoServicio: number;
@@ -14,6 +15,7 @@ export const SeleccionarIdentificadorOrden = ({
     prefijo: string;
     codigo: number;
   }) => void;
+  nextIdOrdenServicio: number;
 }) => {
   const { data: prefijosQuery } = usePrefijosTipoServicio();
 
@@ -26,6 +28,13 @@ export const SeleccionarIdentificadorOrden = ({
         <p className="text-sm text-gray-600">
           Ingrese el código de la orden de servicio para identificarla de forma
           única
+        </p>
+      </div>
+      <div className="mt-4 space-y-1 rounded-lg border border-yellow-500 bg-yellow-50 px-4 py-2 text-left">
+        <h4 className="text-base font-medium text-yellow-600">Nota:</h4>{" "}
+        <p className="text-xs text-yellow-600">
+          El siguiente identificador de orden de servicio es el siguiente:{" "}
+          <b>{nextIdOrdenServicio}</b>
         </p>
       </div>
       <label className="text-sm text-gray-700" htmlFor="numeroOrdenServicio">
@@ -57,10 +66,8 @@ export const SeleccionarIdentificadorOrden = ({
           type="number"
           name="codigoOrdenServicio"
           id="codigoOrdenServicio"
-          min={0}
           placeholder="0000"
           value={identificador.codigo}
-          maxLength={10}
           onChange={(e) =>
             setIdentificador({
               ...identificador,

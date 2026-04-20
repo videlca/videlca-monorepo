@@ -1,5 +1,5 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { anularOrdenServicioId, deleteIdOrdenServicio, getIdsOrdenServicio, updateIdOrdenServicio } from "../../functions/orden-servicio/orden-servicio-id";
+import { anularOrdenServicioId, deleteIdOrdenServicio, getIdsOrdenServicio, getNextIdOrdenServicio, updateIdOrdenServicio } from "../../functions/orden-servicio/orden-servicio-id";
 import type { ApiResponse } from "../../types";
 import type { OrdenServicioId } from "../../types/orden-servicio";
 import type { AnularIdOrdenServicioDto, UpdateOrdenServicioIdDto } from "../../dtos";
@@ -69,5 +69,12 @@ export const useDeleteIdOrdenServicio = (): UseMutationResult<ApiResponse<any>, 
     onError: (error) => {
       toast.error(error.message || "Error al eliminar el identificador de orden de servicio");
     },
+  });
+}
+
+export const useGetNextIdOrdenServicio = (): UseQueryResult<ApiResponse<number>, Error> => {
+  return useQuery({
+    queryKey: ["next-id-orden-servicio"],
+    queryFn: () => getNextIdOrdenServicio(),
   });
 }

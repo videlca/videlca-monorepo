@@ -1,5 +1,5 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
+import { createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
 import type { CreateOrdenServicioDto, EnviarCorreoDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 import type { ApiResponse, Personal } from "../../types";
@@ -14,6 +14,9 @@ export const useCreateOrdenServicio = (): UseMutationResult<ApiResponse<OrdenSer
         toast.success("Orden de servicio creada correctamente");
         queryClient.invalidateQueries({
           queryKey: ["orden-servicio"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["next-id-orden-servicio"],
         });
       } else {
         throw new Error(data.message || "Error al crear la orden de servicio");
@@ -78,6 +81,9 @@ export const useDeleteOrdenServicio = (): UseMutationResult<ApiResponse<any>, Er
         toast.success("Orden de servicio eliminada correctamente");
         queryClient.invalidateQueries({
           queryKey: ["orden-servicio"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["next-id-orden-servicio"],
         });
       } else {
         throw new Error(data.message || "Error al eliminar la orden de servicio");
@@ -264,6 +270,26 @@ export const useDescargarPdf = (): UseMutationResult<{ blob: Blob; filename: str
     },
     onError: (error) => {
       toast.error(error.message || "Error al descargar el PDF");
+    },
+  });
+}
+
+export const useImprimirPdf = (): UseMutationResult<ApiResponse<{file: string, fileName: string}>, Error, number> => {
+  return useMutation({
+    mutationKey: ["imprimir-pdf"],
+    mutationFn: (id: number) => imprimirPdf(id),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("PDF impreso correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["imprimir-pdf"],
+        });
+      } else {
+        throw new Error(data.message || "Error al imprimir el PDF");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al imprimir el PDF");
     },
   });
 }

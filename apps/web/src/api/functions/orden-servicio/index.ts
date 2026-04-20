@@ -96,3 +96,7 @@ export const descargarPdf = async (id: number): Promise<{ blob: Blob; filename: 
   
   return { blob: response.data, filename };
 }
+
+export const imprimirPdf = async (id: number): Promise<ApiResponse<{file: string, fileName: string}>> => {
+  return await apiPost<{file: string, fileName: string}>(`/orden-servicio/${id}/imprimir-pdf`);
+}

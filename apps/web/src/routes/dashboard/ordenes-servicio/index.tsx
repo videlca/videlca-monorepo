@@ -15,6 +15,7 @@ import {
   useGetOrdenesServicio,
   useGetOrdenServicioById,
   useGetPrecioOrdenServicio,
+  useImprimirPdf,
   useUpdateOrdenServicio,
   useUpdateValidateFechasOrdenServicio,
   useValidarEmpleadosDisponibles,
@@ -53,6 +54,8 @@ import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButt
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 import { OrdenDetalles } from "../../../components/ui/modals/OrdenDetalles";
 import { useForm } from "react-hook-form";
+import { useGetNextIdOrdenServicio } from "../../../api/queryFunctions/orden-servicio/orden-servicio-id";
+import { printBase64PDF } from "../../../utils/printBase64File";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
@@ -88,6 +91,7 @@ function RouteComponent() {
   // Queries y mutaciones
   const { data: ordenesDeServicioQuery } = useGetOrdenesServicio();
   const { data: tipoServiciosQuery } = useTipoServiciosActivo();
+  const { data: nextIdOrdenServicioQuery } = useGetNextIdOrdenServicio();
 
   const { mutateAsync: obtenerOrdenServicioById } = useGetOrdenServicioById();
   const {
@@ -153,6 +157,7 @@ function RouteComponent() {
   const { mutate: enviarPdfPorCorreo, isPending: enviarCorreoPending } =
     useEnviarPdfPorCorreo();
   const { mutate: descargarPdf } = useDescargarPdf();
+  const { mutateAsync: imprimirPdf } = useImprimirPdf();
 
   // Formulario crear orden de servicio
   const {
@@ -609,6 +614,13 @@ function RouteComponent() {
     descargarPdf(idOrdenServicio);
   };
 
+  const handlePrintPdf = async (idOrdenServicio: number) => {
+    const { data } = await imprimirPdf(idOrdenServicio);
+    if (data) {
+      printBase64PDF(data.file);
+    }
+  };
+
   // const handleValidarEmpleadosDisponibles = async (
   //   idServicio: number,
   //   indexEmpleado: number,
@@ -756,6 +768,12 @@ function RouteComponent() {
               },
             },
             {
+              label: "Imprimir PDF",
+              onClick: () => {
+                handlePrintPdf(row.original.idOrdenServicio);
+              },
+            },
+            {
               label: "Eliminar",
               onClick: () => {
                 setIsOpenDelete(true);
@@ -776,6 +794,7 @@ function RouteComponent() {
           <SeleccionarIdentificadorOrden
             identificador={identificador}
             setIdentificador={setIdentificador}
+            nextIdOrdenServicio={nextIdOrdenServicioQuery?.data || 0}
           />
         );
 
