@@ -72,7 +72,7 @@ export class ReporteOrdenServicioService {
                     { text: "Código", style: "subLabel" },
                     { text: ordenServicio.ordenServicioId.descripcionId, style: "subValue" },
                     { text: "Orden Nº", style: "subLabel", margin: [0, 10, 0, 0] },
-                    { text: ordenServicio.idOrdenServicio.toString(), style: "subValue" },
+                    { text: ordenServicio.ordenServicioId.consecutivo.toString(), style: "subValue" },
                   ],
                   alignment: "right",
                   margin: [0, 10, 0, 0],
@@ -99,8 +99,8 @@ export class ReporteOrdenServicioService {
               ],
               [
                 { text: ordenServicio.fechaCreacion },
-                { text: ordenServicio.fechaInicio },
-                { text: ordenServicio.fechaFin },
+                { text: ordenServicio.fechaInicioOrden },
+                { text: ordenServicio.fechaFinOrden },
               ],
             ],
           },
@@ -108,32 +108,38 @@ export class ReporteOrdenServicioService {
         },
   
         { text: "\n" },
-  
+
         // ===========================================================
-        // USUARIO SOLICITANTE (CARD MODERNA)
+        // CLIENTE
         // ===========================================================
         {
           style: "card",
           table: {
             widths: ["50%", "50%"],
             body: [
-              [{ text: "Usuario Solicitante", colSpan: 2, style: "sectionHeader" }, ""],
-  
+              [{ text: "Cliente", colSpan: 2, style: "sectionHeader" }, ""],
               [
                 {
                   stack: [
                     { text: "Nombre", style: "label" },
-                    {
-                      text: `${ordenServicio.idUsuarioCreacion.primerNombre} ${ordenServicio.idUsuarioCreacion.primerApellido}`,
-                    },
+                    { text: ordenServicio.idLocacion.idCliente.nombre },
                   ],
                 },
                 {
                   stack: [
                     { text: "Identificación", style: "label" },
-                    { text: ordenServicio.idUsuarioCreacion.numeroIdentificacion },
+                    { text: ordenServicio.idLocacion.idCliente.numeroIdentificacion },
                   ],
                 },
+              ],
+              [
+                {
+                  stack: [
+                    { text: "Tipo Cliente", style: "label" },
+                    { text: ordenServicio.idLocacion.idCliente.idTipoCliente.descripcion },
+                  ],
+                },
+                "",
               ],
             ],
           },
@@ -225,38 +231,32 @@ export class ReporteOrdenServicioService {
         },
   
         { text: "\n" },
-  
+
         // ===========================================================
-        // CLIENTE
+        // RESPONSABLE FACTURACION (CARD MODERNA)
         // ===========================================================
         {
           style: "card",
           table: {
             widths: ["50%", "50%"],
             body: [
-              [{ text: "Cliente", colSpan: 2, style: "sectionHeader" }, ""],
+              [{ text: "Responsable Facturacion", colSpan: 2, style: "sectionHeader" }, ""],
+  
               [
                 {
                   stack: [
                     { text: "Nombre", style: "label" },
-                    { text: ordenServicio.idLocacion.idCliente.nombre },
+                    {
+                      text: `${ordenServicio.idLocacion.idClienteFacturacion ? ordenServicio.idLocacion.idClienteFacturacion.nombre : ordenServicio.idLocacion.idCliente.nombre}`,
+                    },
                   ],
                 },
                 {
                   stack: [
                     { text: "Identificación", style: "label" },
-                    { text: ordenServicio.idLocacion.idCliente.numeroIdentificacion },
+                    { text: `${ordenServicio.idLocacion.idClienteFacturacion ? ordenServicio.idLocacion.idClienteFacturacion.numeroIdentificacion : ordenServicio.idLocacion.idCliente.numeroIdentificacion}` },
                   ],
                 },
-              ],
-              [
-                {
-                  stack: [
-                    { text: "Tipo Cliente", style: "label" },
-                    { text: ordenServicio.idLocacion.idCliente.idTipoCliente.descripcion },
-                  ],
-                },
-                "",
               ],
             ],
           },

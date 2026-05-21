@@ -29,6 +29,7 @@ import { Personal } from '../../personal/entities';
 import { 
   OrdenServicio,
   OrdenServicioId,
+  OrdenServicioIdAnulado,
   OrdenServicioTarifa,
   ProgramacionPersonal
 } from '../entities';
@@ -67,6 +68,8 @@ export class OrdenServicioService {
       private readonly ordenServicioRepository: Repository<OrdenServicio>,
       @InjectRepository(OrdenServicioId)
       private readonly ordenServicioIdRepository: Repository<OrdenServicioId>,
+      @InjectRepository(OrdenServicioIdAnulado)
+      private readonly ordenServicioIdAnuladoRepository: Repository<OrdenServicioIdAnulado>,
       @InjectRepository(OrdenServicioTarifa)
       private readonly ordenServicioTarifaRepository: Repository<OrdenServicioTarifa>,
       @InjectRepository(ProgramacionPersonal)
@@ -98,7 +101,7 @@ export class OrdenServicioService {
       throw new BadRequestException(`El ID "${validarIdOrdenServicioDto.descripcionId}" ya existe`);
     }
 
-    return
+    return true
 
   }
 
@@ -292,14 +295,14 @@ export class OrdenServicioService {
 
       const emails = [...emailsLocacion, ...emailsApp];
 
-      await queryRunner.commitTransaction();
-
       await this.notificationEmail(
         savedOrdenServicio.idOrdenServicio,
         nombreResponsable, 
         locacion.nombre,
         emails
       );
+
+      await queryRunner.commitTransaction();
       
       return savedOrdenServicio;
       
@@ -1458,32 +1461,39 @@ export class OrdenServicioService {
       if (!ordenServicio) {
         throw new NotFoundException(`Orden de servicio ${id} no encontrada`);
       }
+
+      const ordenServicioData = await this.findOneOrdenRelations(id);
+
+      const ordenServicioIdAnulada = await this.ordenServicioIdAnuladoRepository.findOne({
+        where: {
+          consecutivo: ordenServicio.ordenServicioId.consecutivo
+        }
+      });
   
       // 🔥 Primero eliminamos la OrdenServicio
       await queryRunner.manager.remove(ordenServicio);
   
       // 🔥 Luego eliminamos el ID asociado
-      if (ordenServicio.ordenServicioId) {
-        await queryRunner.manager.remove(ordenServicio.ordenServicioId);
+      // if (ordenServicio.ordenServicioId) {
+      //   await queryRunner.manager.remove(ordenServicio.ordenServicioId);
+      // }
+
+      if (ordenServicioIdAnulada) {
+        await queryRunner.manager.remove(ordenServicioIdAnulada);
       }
 
       // envio de correos que se tengan registrados en la locacion
-      try {
-        const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
+      const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
 
-        const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.ELIMINACION_ORDEN_SERVICIO);
+      const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.ELIMINACION_ORDEN_SERVICIO);
 
-        if (emails && emails.length > 0) {
-          await this.notificationDeleteEmail(
-            id,
-            nombreResponsable, 
-            ordenServicio.idLocacion?.nombre || '',
-            emails
-          );
-        }
-      } catch (error) {
-        // Ignorar el error si no hay correos asociados al estado de app u otro error al enviar notificación
-        this.logger.warn(`No se pudo enviar notificación de eliminación para la orden ${id}: ${error.message}`);
+      if (emails && emails.length > 0) {
+        await this.notificationDeleteEmail(
+          ordenServicioData,
+          nombreResponsable, 
+          ordenServicio.idLocacion?.nombre || '',
+          emails
+        );
       }
       
       await queryRunner.commitTransaction();
@@ -1510,13 +1520,11 @@ export class OrdenServicioService {
 
   // ENVIAR CORREO PARA INFORMAR ELIMINACION DE ORDEN DE SERVICIO
   private async notificationDeleteEmail(
-    idOrdenServicio: number,
+    ordenServicioData: OrdenServicio,
     nombreResponsable: string,
     locacion: string,
     emails: string[]
   ) {        
-
-    const ordenServicio = await this.findOneOrdenRelations(idOrdenServicio);
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -1524,7 +1532,7 @@ export class OrdenServicioService {
           
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
-            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ELIMINACION ORDEN DE SERVICIO ${ordenServicio.ordenServicioId.descripcionId}</h2>
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ELIMINACION ORDEN DE SERVICIO ${ordenServicioData.ordenServicioId.descripcionId}</h2>
           </div>
           
           <!-- Cuerpo -->
@@ -1561,9 +1569,9 @@ export class OrdenServicioService {
       </div>
       `;
 
-    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): eliminacion orden de servicio ${ordenServicio.ordenServicioId.descripcionId}`;
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): eliminacion orden de servicio ${ordenServicioData.ordenServicioId.descripcionId}`;
 
-    const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicio);
+    const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicioData);
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {
@@ -1572,7 +1580,7 @@ export class OrdenServicioService {
         htmlBody: html,
         attachments: [
         {
-          filename: `Orden-servicio-${ordenServicio.ordenServicioId.descripcionId}.pdf`,
+          filename: `Orden-servicio-${ordenServicioData.ordenServicioId.descripcionId}.pdf`,
           content: ordenServicioBuffer,
           contentType: 'application/pdf',
         },
