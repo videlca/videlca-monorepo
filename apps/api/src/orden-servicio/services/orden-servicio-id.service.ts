@@ -10,7 +10,7 @@ import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface
 import { SendMailOptions } from '../../common/services/email/email.service';
 import { EmailService, CorreoDefaultService } from '../../common/services';
 
-import { OrdenServicioId } from '../entities';
+import { OrdenServicioId, OrdenServicioIdAnulado } from '../entities';
 import { AnularIdOrdenServicioDto, UpdateOrdenServicioIdDto } from '../dto';
 
 
@@ -25,6 +25,8 @@ export class OrdenServicioIdService {
     constructor(
         @InjectRepository(OrdenServicioId)
         private OrdenServicioIdRepository: Repository<OrdenServicioId>,
+        @InjectRepository(OrdenServicioIdAnulado)
+        private OrdenServicioIdAnuladoRepository: Repository<OrdenServicioIdAnulado>,
         private readonly dataSource: DataSource, 
         private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
         private readonly emailService: EmailService, // Servicio de email para envio de correos
@@ -48,6 +50,9 @@ export class OrdenServicioIdService {
                 skip: offset,
                 order: {
                     descripcionId: 'ASC'
+                },
+                where: {
+                    anulado: false
                 }
             });
         
@@ -58,22 +63,70 @@ export class OrdenServicioIdService {
         return await this.OrdenServicioIdRepository.find({
             order: {
                 descripcionId: 'ASC'
+            },
+            where: {
+                anulado: false
+            }
+        });
+        
+    }
+
+    // OBTENER TODOS ORDEN DE SERVICIO ID'S ANULADOS
+    async findAllAnulados(paginationDto: PaginationDto, pagination: boolean = true) {
+    
+        if (pagination) {
+    
+            // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
+            const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+            
+            // Se hace la consulta de manera paginada
+            const ordenServicioIds = await this.OrdenServicioIdAnuladoRepository.find({
+                take: limit,
+                skip: offset,
+                order: {
+                    consecutivo: 'ASC'
+                }
+            });
+        
+            return ordenServicioIds;
+    
+        }
+    
+        return await this.OrdenServicioIdAnuladoRepository.find({
+            order: {
+                consecutivo: 'ASC'
             }
         });
         
     }
 
     // OBTENER ULTIMO ORDEN DE SERVICIO ID
-    async findLast() {
-      const result = await this.OrdenServicioIdRepository.createQueryBuilder('orden')
-        .select('MAX(orden.consecutivo)', 'max')
-        .getRawOne();
-      
-      const maxNumero = result?.max || 0;
-      return maxNumero + 1;
+    async getNextConsecutivo(): Promise<number> {
+
+        const result = await this.OrdenServicioIdRepository
+            .createQueryBuilder('orden')
+            .select('MAX(orden.consecutivo)', 'max')
+            .getRawOne();
+    
+        let next = (result?.max || 0) + 1;
+    
+        while (true) {
+    
+            const exists = await this.OrdenServicioIdAnuladoRepository.exists({
+                where: {
+                    consecutivo: next
+                }
+            });
+    
+            if (!exists) {
+                return next;
+            }
+    
+            next++;
+        }
     }
   
-    // OBTENER UNA OBSERVACION POR SU ID
+    // OBTENER UNA ORDEN SERVICIO ID POR SU ID
     async findOne(id: number){
         
         const ordenServicioId = await this.OrdenServicioIdRepository.findOne({
@@ -90,17 +143,60 @@ export class OrdenServicioIdService {
         return ordenServicioId;
     
     }
+    
+    // OBTENER UNA ORDEN SERVICIO ID ANULADO POR SU ID
+    async findOneAnulado(id: number){
+        
+        const ordenServicioId = await this.OrdenServicioIdAnuladoRepository.findOne({
+            where: { 
+                id 
+            }
+        });
+
+        if(!ordenServicioId) throw new NotFoundException(`Orden de servicio id con id "${id}" no se ha encontrado`);
+
+        const ordenServicioIdEmitido = await this.OrdenServicioIdRepository.findOne({
+            where: {
+                consecutivo: ordenServicioId.consecutivo
+            },
+            relations: {
+                ordenServicio: true
+            }
+        });
+
+        return {
+            ordenServicioId,
+            ordenServicio: ordenServicioIdEmitido?.ordenServicio || null
+        };
+    
+    }
   
-    // EDITAR UN TIPO ID 
+    // EDITAR UN ORDEN SERVICIO ID ANULADO 
     async update(id: number, updateOrdenServicioIdDto: UpdateOrdenServicioIdDto) {
+
+        const idExistente = await this.OrdenServicioIdRepository.findOne({
+            where: {
+                consecutivo: updateOrdenServicioIdDto.consecutivo
+            }
+        });
+
+        const idAnuladoExistente = await this.OrdenServicioIdAnuladoRepository.findOne({
+            where: {
+                consecutivo: updateOrdenServicioIdDto.consecutivo
+            }
+        });
+
+        if (idExistente || idAnuladoExistente) {
+            throw new BadRequestException(`El ID ${updateOrdenServicioIdDto.descripcionId} ya existe`);
+        }
     
-        const ordenServicioId = await this.OrdenServicioIdRepository.preload({idOrdenServicioId: id, ...updateOrdenServicioIdDto});
+        const ordenServicioIdAnulada = await this.OrdenServicioIdAnuladoRepository.preload({ id, ...updateOrdenServicioIdDto});
     
-        if (!ordenServicioId) throw new NotFoundException(`Orden de servicio con ID "${updateOrdenServicioIdDto.descripcionId}" no se ha encontrado`);
+        if (!ordenServicioIdAnulada) throw new NotFoundException(`Orden de servicio con ID "${updateOrdenServicioIdDto.descripcionId}" no se ha encontrado`);
     
         try {
             
-            await this.OrdenServicioIdRepository.save(ordenServicioId);
+            await this.OrdenServicioIdAnuladoRepository.save(ordenServicioIdAnulada);
     
         } catch (error) {
             
@@ -120,29 +216,23 @@ export class OrdenServicioIdService {
     
             const idExistente = await this.OrdenServicioIdRepository.findOne({
                 where: {
-                    descripcionId: anularIdDto.descripcionId
-                },
-                relations: {
-                    ordenServicio: true
+                    consecutivo: anularIdDto.consecutivo
                 }
             });
-    
-            if (idExistente) {
-            
-                // Si existe y tiene orden asociada, error
-                if (idExistente.ordenServicio) {
-                    throw new BadRequestException(`No se puede anular el ID "${anularIdDto.descripcionId}" porque tiene una orden asociada`);
-                }
-        
-                // Si existe pero no tiene orden, también es error (ya está anulado)
-                throw new BadRequestException(`El ID "${anularIdDto.descripcionId}" ya existe`);
 
+            const idAnuladoExistente = await this.OrdenServicioIdAnuladoRepository.findOne({
+                where: {
+                    consecutivo: anularIdDto.consecutivo
+                }
+            });
+
+            if (idExistente || idAnuladoExistente) {
+                throw new BadRequestException(`El consecutivo ${anularIdDto.consecutivo} ya existe, no se pueden anular consecutivos duplicados`);
             }
 
-            // Crear observacion
-            const idAnulado = queryRunner.manager.create(OrdenServicioId, {
-                ...anularIdDto,
-                anulado: true
+            // Anular ID
+            const idAnulado = queryRunner.manager.create(OrdenServicioIdAnulado, {
+                ...anularIdDto
             });
 
             await queryRunner.manager.save(idAnulado);
@@ -171,20 +261,30 @@ export class OrdenServicioIdService {
     }
     
   
-    // ELIMINAR UN ORDEN SERVICIO ID
+    // ELIMINAR UN ORDEN SERVICIO ID ANULADA
     async remove(id: number) {
-    
-        const ordenServicioId = await this.findOne(id);
-        
-        try {
 
-            if(ordenServicioId.ordenServicio){
-                
-                throw new BadRequestException(`Orden de servicio id ${ordenServicioId.descripcionId} no se puede eliminar debido a que se esta usando en una orden de servicio`); 
-            
+        const ordenServicioIdAnulada = await this.OrdenServicioIdAnuladoRepository.findOne({
+            where: { 
+                id 
             }
+        });
+
+        if(!ordenServicioIdAnulada) throw new NotFoundException(`Orden de servicio id con id "${id}" no se ha encontrado`);
+
+        const ordenServicioIdEmitido = await this.OrdenServicioIdRepository.findOne({
+            where: {
+                consecutivo: ordenServicioIdAnulada.consecutivo
+            }
+        });
+
+        if (ordenServicioIdEmitido) {
+            throw new BadRequestException(`Orden de servicio id ${ordenServicioIdAnulada.descripcionId} no se puede eliminar debido a que se esta usando en una orden de servicio`);
+        }
+
+        try {
     
-            await this.OrdenServicioIdRepository.remove(ordenServicioId);
+            await this.OrdenServicioIdAnuladoRepository.remove(ordenServicioIdAnulada);
             
         } catch (error) {
             
@@ -196,7 +296,7 @@ export class OrdenServicioIdService {
             this.logger.error(error);
     
             if(error.errno == 1451){
-                throw new BadRequestException(`Orden de servicio id ${ordenServicioId.descripcionId} no se puede eliminar debido a que se esta usando en el sistema`); 
+                throw new BadRequestException(`Orden de servicio id ${ordenServicioIdAnulada.descripcionId} no se puede eliminar debido a que se esta usando en el sistema`); 
             }
             
             throw new InternalServerErrorException(`Unexpected error, check server logs`);

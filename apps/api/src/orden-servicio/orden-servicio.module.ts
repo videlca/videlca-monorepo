@@ -16,6 +16,7 @@ import { ReportesModule } from 'src/reportes/reportes.module';
 import { 
   OrdenServicio, 
   OrdenServicioId, 
+  OrdenServicioIdAnulado,
   OrdenServicioTarifa, 
   ObservacionOrdenServicio,
   ProgramacionPersonal 
@@ -39,6 +40,7 @@ import {
     TypeOrmModule.forFeature([
       OrdenServicio,
       OrdenServicioId,
+      OrdenServicioIdAnulado,
       OrdenServicioTarifa,
       ObservacionOrdenServicio,
       ProgramacionPersonal,

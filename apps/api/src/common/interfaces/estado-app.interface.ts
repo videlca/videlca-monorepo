@@ -6,12 +6,6 @@ export enum EstadoAppInterface {
     // CONFIGURACION TARIFAS DE UN PERIODO
     CONFIGURACION_TARIFAS = "configuracion de tarifas de un periodo",
     
-    // CREACION LIQUIDACION
-    CREACION_LIQUIDACION = "creacion liquidacion",
-    
-    // APROBACION / DESAPROBACION LIQUIDACION
-    APROBACION_DESAPROBACION_LIQUIDACION = "aprobacion/desaprobacion liquidacion",
-
     // CREACION / ELIMINACION USUARIOS DE LA APLICACION
     CREACION_ELIMINACION_USUARIOS = "creacion/eliminacion de usuarios de la aplicacion",
 
@@ -23,6 +17,12 @@ export enum EstadoAppInterface {
 
     // ELIMINACION ORDEN DE SERVICIO
     ELIMINACION_ORDEN_SERVICIO = "eliminacion orden servicio",
+
+    // CREACION LIQUIDACION
+    CREACION_LIQUIDACION = "creacion liquidacion",
+    
+    // APROBACION / DESAPROBACION LIQUIDACION
+    APROBACION_DESAPROBACION_LIQUIDACION = "aprobacion/desaprobacion liquidacion",
 
     // CREACION CONSOLIDACION
     CREACION_CONSOLIDACION = "creacion consolidacion",

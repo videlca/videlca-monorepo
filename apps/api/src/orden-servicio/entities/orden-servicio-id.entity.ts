@@ -21,8 +21,7 @@ export class OrdenServicioId {
     @Column({
         type: 'int',
         name: 'consecutivo',
-        nullable: true,
-        default: null
+        unique: true // Para asegurar que cada consecutivo sea único
     })
     consecutivo: number;
 
@@ -35,20 +34,20 @@ export class OrdenServicioId {
         }
     }
 
-    // FECHA CREACION
-    @CreateDateColumn({
-        type: 'datetime',
-        name: 'fechaCreacion',
-        nullable: false
-    }) 
-    fechaCreacion: Date; 
-
     @Column({ 
         type: 'boolean',
         name: 'anulado', 
         default: false
     })
     anulado: boolean;
+
+    // FECHA CREACION
+    @CreateDateColumn({
+        type: 'datetime',
+        name: 'fechaCreacion',
+        nullable: false
+    }) 
+    fechaCreacion: Date;
 
     // Relación uno a cero-o-uno con OrdenServicio
     @OneToOne(

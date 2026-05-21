@@ -19,11 +19,17 @@ export class OrdenServicioIdController {
   findAll(@Query() paginationDto: PaginationDto) {
     return this.ordenServicioIdService.findAll(paginationDto, paginationDto.pagination);
   }
+  
+  // RUTA PROTEGIDA: Obtener todos los orden servicio id anulados
+  @Get('anulados')
+  findAllAnulados(@Query() paginationDto: PaginationDto) {
+    return this.ordenServicioIdService.findAllAnulados(paginationDto, paginationDto.pagination);
+  }
 
   // RUTA PROTEGIDA: Obtener ultimo orden servicio id
   @Get('next-id')
   findLast() {
-    return this.ordenServicioIdService.findLast();
+    return this.ordenServicioIdService.getNextConsecutivo();
   }
   
   // RUTA PROTEGIDA: ANULAR UN ORDEN SERVICIO ID
@@ -32,12 +38,17 @@ export class OrdenServicioIdController {
     return this.ordenServicioIdService.anularId(anularIdDto);
   }
 
+  // RUTA PROTEGIDA: OBTENER UN ORDEN SERVICIO ID ANULADO
+  @Get('anulados/:id')
+  findOneAnulado(@Param('id', ParseIntPipe) id: number) {
+    return this.ordenServicioIdService.findOneAnulado(id);
+  }
+
   // RUTA PROTEGIDA: OBTENER UN ORDEN SERVICIO ID
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordenServicioIdService.findOne(id);
   }
-
 
   // RUTA PROTEGIDA: EDITAR UN ORDEN SERVICIO ID
   @Patch(':id')
