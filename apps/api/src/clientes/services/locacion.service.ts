@@ -51,6 +51,17 @@ export class LocacionService {
     
         // Validar que el cliente existe
         const cliente = await this.clienteService.findOne(createLocacionDto.idCliente);
+
+        // Validar cliente facturacion
+        let clienteFacturacion = null;
+
+        if (createLocacionDto.idClienteFacturacion) {
+        
+            clienteFacturacion = await this.clienteService.findOne(
+                createLocacionDto.idClienteFacturacion
+            );
+        
+        }
     
         try {
 
@@ -59,6 +70,7 @@ export class LocacionService {
                 ...locacionData,
                 idCiudad: ciudad,
                 idCliente: cliente,
+                idClienteFacturacion: clienteFacturacion
             });
 
             const savedLocacion = await queryRunner.manager.save(Locacion, locacion);
@@ -110,7 +122,7 @@ export class LocacionService {
                 const savedCorreo = await queryRunner.manager.save(Correo, correo);
 
                 // ENVIAR EMAIL PARA SABER SI CORREO FUNCIONA
-                await this.notificationEmail(correoDto);
+                await this.notificationEmail(correoDto, savedLocacion.nombre);
             
                 correosCreados.push(savedCorreo);
 
@@ -159,7 +171,7 @@ export class LocacionService {
     }
 
     // ENVIAR CORREO PARA INFORMAR REGISTRO DE NOTIFICACIONES EN GEVID Y SABER QUE SI ESTA FUNCIONANDO EL CORREO
-    private async notificationEmail(correoInfo: CreateCorreoDto) {
+    private async notificationEmail(correoInfo: CreateCorreoDto, locacion: string) {
 
         const nombreCompleto = `${correoInfo.nombre} ${correoInfo.apellido}`;        
 
@@ -175,7 +187,7 @@ export class LocacionService {
             <!-- Cuerpo -->
             <div style="padding: 25px; text-align: center;">
               <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-                Buen día <strong>${nombreCompleto}</strong>, este correo ha sido añadido en el sistema de notificaciones de <b>Videlca</b>.
+                Buen día <strong>${nombreCompleto}</strong>, este correo ha sido añadido en el sistema de notificaciones de <b>Videlca</b> para el puesto ${locacion}.
               </p>
               <p style="font-size: 15px; line-height: 1.6; color: #555;">
                 Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
@@ -205,7 +217,7 @@ export class LocacionService {
         </div>
         `;
 
-        const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): correo electronico vinculado a la aplicacion`;
+        const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): correo electronico vinculado a la aplicacion para el puesto ${locacion}`;
 
         // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
         const options: SendMailOptions = {
@@ -243,7 +255,8 @@ export class LocacionService {
                         estados: true
                     },
                     idCiudad: true,
-                    idCliente: true
+                    idCliente: true,
+                    idClienteFacturacion: true
                 }
             });
   
@@ -257,7 +270,8 @@ export class LocacionService {
                     estados: true
                 },
                 idCiudad: true,
-                idCliente: true
+                idCliente: true,
+                idClienteFacturacion: true
             },
             order: {
                 nombre: 'ASC'
@@ -285,7 +299,8 @@ export class LocacionService {
                         estados: true
                     },
                     idCiudad: true,
-                    idCliente: true
+                    idCliente: true,
+                    idClienteFacturacion: true
                 },
                 where: {
                     estado: true // Solo activas
@@ -302,7 +317,8 @@ export class LocacionService {
                     estados: true
                 },
                 idCiudad: true,
-                idCliente: true
+                idCliente: true,
+                idClienteFacturacion: true
             },
             where: {
                 estado: true // Solo activas
@@ -313,7 +329,7 @@ export class LocacionService {
         });
     }
     
-    // Obtener todas las locaciones POR BSUQUEDA
+    // Obtener todas las locaciones POR BUSQUEDA
     async findAllActivesSearch(locacionSearch: LocacionSearchDto) {
 
         const { column, text } = locacionSearch;
@@ -323,6 +339,7 @@ export class LocacionService {
         const qb = this.locacionRepository
             .createQueryBuilder('loc')
             .leftJoinAndSelect('loc.idCliente', 'cliente')
+            .leftJoinAndSelect('loc.idClienteFacturacion', 'clienteFacturacion')
             .leftJoinAndSelect('loc.idCiudad', 'ciudad')   // NUEVO JOIN
             .where('loc.estado = :estado', { estado: true });  // FILTRO GLOBAL
     
@@ -339,7 +356,7 @@ export class LocacionService {
             case 'cliente':
                 qb.andWhere(`LOWER(cliente.nombre) LIKE :search`, { search });
                 break;
-        
+
             default:
                 throw new BadRequestException('Columna inválida');
 
@@ -374,7 +391,7 @@ export class LocacionService {
     // Actualizar locación
     async update(id: number, updateLocacionDto: UpdateLocacionDto) {
 
-        const { correos = [], idCiudad, idCliente, ...locacionData } = updateLocacionDto;
+        const { correos = [], idCiudad, idCliente, idClienteFacturacion, ...locacionData } = updateLocacionDto;
 
         if (correos.length <= 0){
             throw new BadRequestException(`Se debe añadir al menos un correo`);
@@ -407,6 +424,19 @@ export class LocacionService {
                 locacionExistente.idCliente = cliente;
             }
             
+            // Validar cliente facturacion si se está actualizando
+            if (updateLocacionDto.idClienteFacturacion) {
+
+                const clienteFacturacion = await this.clienteService.findOne(updateLocacionDto.idClienteFacturacion);
+
+                locacionExistente.idClienteFacturacion = clienteFacturacion;
+            }
+            else {
+
+                locacionExistente.idClienteFacturacion = null;
+            
+            }
+            
             await queryRunner.manager.save(locacionExistente);
 
             const correosCreados: Correo[] = [];
@@ -433,6 +463,12 @@ export class LocacionService {
         
                 // Crear nuevos correos
                 for (const correoDto of uniqueCorreos) {
+
+                    if (correoDto.estados.length <= 0){
+
+                        throw new BadRequestException(`Se debe enviar al menos un estado en cada correo`);
+    
+                    }
 
                     const estados = await this.estadoOrdenServicioRepository.findBy({
                         idEstadoOrdenServicio: In(correoDto.estados)
@@ -471,7 +507,7 @@ export class LocacionService {
                     
                     if (debeEnviarCorreo) {
                         // ENVIAR EMAIL PARA SABER SI CORREO FUNCIONA
-                        await this.notificationEmail(correoDto);
+                        await this.notificationEmail(correoDto, locacionExistente.nombre);
                     }
 
                     correosCreados.push(savedCorreo);

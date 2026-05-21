@@ -116,6 +116,18 @@ export class Locacion {
     @JoinColumn({name: 'idCliente'})
     idCliente: Cliente;
 
+    // Cliente responsable de facturacion
+    @ManyToOne(
+        () => Cliente,
+        {
+            nullable: true,
+            eager: true,
+            onDelete: 'SET NULL'
+        }
+    )
+    @JoinColumn({ name: 'idClienteFacturacion' })
+    idClienteFacturacion: Cliente;
+
     // estado -> bool
     @Column({
         type: 'boolean',

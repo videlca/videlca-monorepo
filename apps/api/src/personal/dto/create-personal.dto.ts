@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Transform } from "class-transformer";
-import { IsBoolean, IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsPositive, IsString, MaxLength, Min, IsDateString, IsDate, MinLength } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsPositive, IsString, MaxLength, Min, IsDateString, IsDate, MinLength, Length } from "class-validator";
 
 export class CreatePersonalDto {
     
@@ -69,10 +69,9 @@ export class CreatePersonalDto {
     direccionResidencia: string;
     
     @ApiProperty({ description: 'Telefono del personal', example: '3014445566', required:true})
-    @IsString({ message: 'El campo telefono debe ser un string'})
+    @IsNumberString({}, {message: 'El valor del campo telefono debe ser un número'})
     @IsNotEmpty({ message: 'El campo telefono no puede estar vacío' })
-    @MaxLength(10, { message: 'El campo telefono no puede exceder los 10 caracteres' })
-    @MinLength(10, { message: 'El campo telefono debe tener 10 caracteres' })
+    @Length(10, 10, { message: 'El campo telefono debe tener exactamente 10 caracteres' })
     telefono: string;
     
     @ApiProperty({ description: 'El personal posee Arma?', example: false, required:true})

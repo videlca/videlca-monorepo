@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString, IsEmail, Length, ValidateNested, ArrayMinSize, IsNumber, IsPositive, Min, Max, MaxLength, MinLength } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString, IsEmail, Length, ValidateNested, ArrayMinSize, IsNumber, IsPositive, Min, Max, MaxLength, IsNumberString, MinLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 
@@ -64,16 +64,14 @@ export class CreateLocacionDto {
   @Length(1, 50)
   primerApellidoResponsable: string;
 
-  @IsString()
   @IsNotEmpty()
-  // @MaxLength(10, { message: 'El campo telefono no puede exceder los 10 caracteres' })
-  // @MinLength(10, { message: 'El campo telefono debe tener 10 caracteres' })
+  @IsNumberString({}, {message: 'El valor del campo telefono debe ser un número'})
+  @Length(10, 10, { message: 'El campo telefono debe tener exactamente 10 caracteres' })
   telefono: string;
 
-  @IsString()
   @IsOptional()
-  // @MaxLength(10, { message: 'El campo segundo telefono no puede exceder los 10 caracteres' })
-  // @MinLength(10, { message: 'El campo segundo telefono debe tener 10 caracteres' })
+  @IsNumberString({}, {message: 'El valor del campo segundo telefono debe ser un número'})
+  @Length(10, 10, { message: 'El segundo teléfono debe tener exactamente 10 dígitos' })
   segundoTelefono?: string;
 
   @IsNumber({}, {message: 'El valor del campo dias de anticipacion debe ser un número'})
@@ -86,6 +84,12 @@ export class CreateLocacionDto {
   @IsPositive({message: 'El valor del campo Cliente debe ser un numero positivo'})
   @Min(1, {message: 'El valor del campo Cliente debe ser minimo 1'})
   idCliente: number;
+  
+  @IsOptional()
+  @IsNumber({}, {message: 'El valor del campo Cliente Facturacion debe ser un número'})
+  @IsPositive({message: 'El valor del campo Cliente Facturacion debe ser un numero positivo'})
+  @Min(1, {message: 'El valor del campo Cliente Facturacion debe ser minimo 1'})
+  idClienteFacturacion?: number;
 
   // Array de correos (mínimo 1)
   @IsArray()
