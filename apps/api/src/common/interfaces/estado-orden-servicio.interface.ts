@@ -3,6 +3,9 @@ export enum EstadoOrdenServicio {
     // CANCELADA
     CANCELADA = "cancelada",
 
+    // ANULADA
+    ANULADA = "anulada",
+
     // PROGRAMADO
     PROGRAMADO = "programado",
 
@@ -16,9 +19,6 @@ export enum EstadoOrdenServicio {
     POR_TERMINAR = "por terminar",
 
     // TERMINADO
-    TERMINADO = "terminado",
-
-    // ANULADA
-    ANULADA = "anulada"
+    TERMINADO = "terminado"
 
 }

@@ -88,6 +88,16 @@ export class OrdenServicioController {
   updateValidarFechasOrdenServicio(@Param('id', ParseIntPipe) id: number, @Body() updateValidarFechaOrdenServicioDto: UpdateValidarFechaOrdenServicioDto){
     return this.ordenServicioService.updateValidarFechasOrdenServicio(id, updateValidarFechaOrdenServicioDto);
   }
+
+  @Patch('cancelar-orden/:id')
+  cancelarOrden(@Param('id', ParseIntPipe) id: number) {
+    return this.ordenServicioService.cancelarOrdenServicio(id);
+  }
+
+  @Patch('anular-orden/:id')
+  anularOrden(@Param('id', ParseIntPipe) id: number) {
+    return this.ordenServicioService.anularOrdenServicio(id);
+  }
   
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {

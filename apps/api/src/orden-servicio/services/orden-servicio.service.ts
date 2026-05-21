@@ -1045,7 +1045,7 @@ export class OrdenServicioService {
 
     // FECHA FIN ORDEN SERVICIO
 
-    let fechaFinOrden = fechaFin != null ? new Date(fechaFin) : null;
+    let fechaFinOrden = fechaFin ? new Date(fechaFin) : null;
 
     // Validar que las fechas sean lógicamente correcto
     if (fechaFin != null) {
@@ -1071,10 +1071,16 @@ export class OrdenServicioService {
 
     // Convert ordenServicio.fechaInicio to Date if it's a string
     const fechaInicioOrdenString = new Date(ordenServicio.fechaInicio).toISOString().split('T')[0];
-    const fechaFinOrdenString = new Date(ordenServicio.fechaFin).toISOString().split('T')[0];
+    
+    const fechaFinOrdenString = ordenServicio.fechaFin
+      ? new Date(ordenServicio.fechaFin).toISOString().split('T')[0]
+      : null;
+  
+    const fechaFinOrdenDtoString = fechaFinOrden
+      ? fechaFinOrden.toISOString().split('T')[0]
+      : null;
 
-
-    if(fechaInicioOrden.toISOString().split('T')[0] == fechaInicioOrdenString && fechaFinOrden.toISOString().split('T')[0] == fechaFinOrdenString){
+    if(fechaInicioOrden.toISOString().split('T')[0] == fechaInicioOrdenString && fechaFinOrdenDtoString === fechaFinOrdenString){
       return {
         message: 'Las fechas son iguales a las que ya tiene la orden de servicio, no se realizo ningun cambio'
       }
@@ -1086,9 +1092,21 @@ export class OrdenServicioService {
     // si es diferente validar que el estado de la orden sea programado o por iniciar
     if(fechaInicioOrden.toISOString().split('T')[0] != fechaInicioOrdenString){
     
-      if(descripcionEstadoOrdenServicio != EstadoOrdenServicio.PROGRAMADO && descripcionEstadoOrdenServicio != EstadoOrdenServicio.POR_INICIAR){
+      if(descripcionEstadoOrdenServicio == EstadoOrdenServicio.INICIADO || descripcionEstadoOrdenServicio == EstadoOrdenServicio.POR_TERMINAR){
 
-          throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden aun no ha iniciado');
+        throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden aun no ha iniciado');
+
+      }
+
+      if(descripcionEstadoOrdenServicio == EstadoOrdenServicio.CANCELADA || descripcionEstadoOrdenServicio == EstadoOrdenServicio.ANULADA){
+
+        throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden no ha sido cancelada o anulada');
+
+      }
+      
+      if(descripcionEstadoOrdenServicio == EstadoOrdenServicio.TERMINADO){
+
+        throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden no ha terminado');
 
       }
 
@@ -1100,10 +1118,9 @@ export class OrdenServicioService {
     if(fechaFinOrden != null && fechaFinOrden.toISOString().split('T')[0] != fechaFinOrdenString){
 
       if(
-        descripcionEstadoOrdenServicio != EstadoOrdenServicio.PROGRAMADO && 
-        descripcionEstadoOrdenServicio != EstadoOrdenServicio.POR_INICIAR &&
-        descripcionEstadoOrdenServicio != EstadoOrdenServicio.INICIADO &&
-        descripcionEstadoOrdenServicio != EstadoOrdenServicio.POR_TERMINAR
+        descripcionEstadoOrdenServicio == EstadoOrdenServicio.CANCELADA || 
+        descripcionEstadoOrdenServicio == EstadoOrdenServicio.ANULADA ||
+        descripcionEstadoOrdenServicio == EstadoOrdenServicio.TERMINADO 
       ){
 
         throw new BadRequestException('La fecha de fin solo se puede modificar si la orden aun no ha sido cancelada, terminada o anulada');
@@ -1174,7 +1191,7 @@ export class OrdenServicioService {
 
     // FECHA FIN ORDEN SERVICIO
 
-    let fechaFinOrden = fechaFin != null ? new Date(fechaFin) : null;
+    let fechaFinOrden = fechaFin ? new Date(fechaFin) : null;
 
     // Validar que las fechas sean lógicamente correcto
     if (fechaFin != null) {
@@ -1243,8 +1260,8 @@ export class OrdenServicioService {
     try {
       
       // actualizar campos
-      ordenServicio.fechaInicio = fechaInicioOrden;
-      ordenServicio.fechaFin = fechaFinOrden;
+      ordenServicio.fechaInicioOrden = fechaInicioOrden;
+      ordenServicio.fechaFinOrden = fechaFinOrden;
       ordenServicio.fechaActualizacion = fechaActualizacionOrden;
       ordenServicio.precioTotal = updateOrdenServicioDto.precioTotal;
       ordenServicio.idEstadoOrdenServicio = estadoOrdenServicio;
@@ -1321,8 +1338,6 @@ export class OrdenServicioService {
 
       }
 
-      await queryRunner.commitTransaction();
-
       if (cambioEstadoOrden){
 
         // envio de correos que se tengan registrados en la locacion
@@ -1345,6 +1360,8 @@ export class OrdenServicioService {
         );
         
       }
+
+      await queryRunner.commitTransaction();
       
       return savedOrdenServicio;
       
@@ -1596,6 +1613,309 @@ export class OrdenServicioService {
 
   }
 
+  async cancelarOrdenServicio(id: number){
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+  
+    try {
+  
+      const ordenServicio = await this.findOneOrdenRelations(id);
+
+      const estadoCancelada = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.CANCELADA);
+
+      if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio === estadoCancelada.idEstadoOrdenServicio){
+
+        throw new BadRequestException(`La orden de servicio ${id} ya se encuentra cancelada`);
+  
+      }
+
+      ordenServicio.idEstadoOrdenServicio = estadoCancelada;
+
+      await queryRunner.manager.save(OrdenServicio, ordenServicio);
+  
+      // envio de correos que se tengan registrados en la locacion
+      const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
+
+      const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
+        ordenServicio.idLocacion.idLocacion, 
+        estadoCancelada.idEstadoOrdenServicio
+      )
+
+      const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoCancelada.nombre);
+
+      const emails = [...emailsLocacion, ...emailsApp];
+
+      if (emails && emails.length > 0) {
+        await this.notificationCanceladaEmail(
+          ordenServicio,
+          nombreResponsable, 
+          ordenServicio.idLocacion?.nombre || '',
+          emails
+        );
+      }
+      
+      await queryRunner.commitTransaction();
+
+      return { message: `Orden de servicio ${id} cancelada correctamente` };
+  
+    } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      this.logger.error(error);
+  
+      throw new InternalServerErrorException(`Error eliminando la orden`);
+    } finally {
+      await queryRunner.release();
+    }
+
+  }
+
+  // ENVIAR CORREO PARA INFORMAR CANCELACION DE ORDEN DE SERVICIO
+  private async notificationCanceladaEmail(
+    ordenServicioData: OrdenServicio,
+    nombreResponsable: string,
+    locacion: string,
+    emails: string[]
+  ) {        
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">CANCELACION ORDEN DE SERVICIO ${ordenServicioData.ordenServicioId.descripcionId}</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se ha cancelado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio cancelada.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): cancelacion orden de servicio ${ordenServicioData.ordenServicioId.descripcionId}`;
+
+    const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicioData);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+        to: emails,
+        subject: subject,
+        htmlBody: html,
+        attachments: [
+        {
+          filename: `Orden-servicio-${ordenServicioData.ordenServicioId.descripcionId}.pdf`,
+          content: ordenServicioBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    }
+
+  }
+
+  async anularOrdenServicio(id: number){
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+  
+    try {
+  
+      const ordenServicio = await this.findOneOrdenRelations(id);
+
+      const estadoAnulada = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.ANULADA);
+
+      if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio === estadoAnulada.idEstadoOrdenServicio){
+
+        throw new BadRequestException(`La orden de servicio ${id} ya se encuentra anulada`);
+  
+      }
+
+      // =========================================================
+      // CAMBIAR ESTADO ORDEN
+      // =========================================================
+      ordenServicio.idEstadoOrdenServicio = estadoAnulada;
+  
+      await queryRunner.manager.save(OrdenServicio, ordenServicio);
+  
+      // =========================================================
+      // MARCAR ID COMO ANULADO
+      // =========================================================
+      ordenServicio.ordenServicioId.anulado = true;
+  
+      await queryRunner.manager.save(
+        OrdenServicioId,
+        ordenServicio.ordenServicioId
+      );
+
+      // =========================================================
+      // CREAR REGISTRO EN TABLA DE ANULADOS
+      // =========================================================
+      const ordenServicioIdAnulado =
+        this.ordenServicioIdAnuladoRepository.create({
+          descripcionId: ordenServicio.ordenServicioId.descripcionId,
+          consecutivo: ordenServicio.ordenServicioId.consecutivo,
+          motivo: 'Orden anulada manualmente',
+        });
+  
+      await queryRunner.manager.save(
+        OrdenServicioIdAnulado,
+        ordenServicioIdAnulado
+      );
+
+      // =========================================================
+      // EMAILS
+      // =========================================================
+  
+      // envio de correos que se tengan registrados en la locacion
+      const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
+
+      const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoAnulada.nombre);
+
+      const emails = [...emailsApp];
+
+      if (emails && emails.length > 0) {
+        await this.notificationAnuladaEmail(
+          ordenServicio,
+          nombreResponsable, 
+          ordenServicio.idLocacion?.nombre || '',
+          emails
+        );
+      }
+      
+      await queryRunner.commitTransaction();
+
+      return { message: `Orden de servicio ${id} anulada correctamente` };
+  
+    } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      this.logger.error(error);
+  
+      throw new InternalServerErrorException(`Error anulando la orden`);
+    } finally {
+      await queryRunner.release();
+    }
+
+  }
+
+  // ENVIAR CORREO PARA INFORMAR ANULACION DE ORDEN DE SERVICIO
+  private async notificationAnuladaEmail(
+    ordenServicioData: OrdenServicio,
+    nombreResponsable: string,
+    locacion: string,
+    emails: string[]
+  ) {        
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ANULACION ORDEN DE SERVICIO ${ordenServicioData.ordenServicioId.descripcionId}</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se ha anulado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio anulada.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): anulacion orden de servicio ${ordenServicioData.ordenServicioId.descripcionId}`;
+
+    const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicioData);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+        to: emails,
+        subject: subject,
+        htmlBody: html,
+        attachments: [
+        {
+          filename: `Orden-servicio-${ordenServicioData.ordenServicioId.descripcionId}.pdf`,
+          content: ordenServicioBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    }
+
+  }
+    
   async downloadOrdenServicioPdf(id: number){
 
     const ordenServicio = await this.findOneOrdenRelations(id);
