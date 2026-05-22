@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
 
 import { AppAuth, ValidateJwtAuth } from '../auth/decorators';
 import { DescriptionRoutes } from '../auth/interfaces';
@@ -28,6 +28,17 @@ export class PeriodosController {
   findPeriodoActivo() {
     return this.periodosService.obtenerPeriodoActivo();
   }
+
+  @Get('comparativa')
+  compararPeriodos(
+    @Query('periodoA', ParseIntPipe) periodoA: number,
+    @Query('periodoB', ParseIntPipe) periodoB: number,
+  ) {
+    return this.periodosService.compararPeriodos(
+      periodoA,
+      periodoB,
+    );
+  }  
 
   @Get(':id')
   findOne(@Param('id') id: number) {

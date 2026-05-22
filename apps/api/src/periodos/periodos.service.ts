@@ -10,6 +10,7 @@ import { SendMailOptions } from '../common/services/email/email.service';
 import { EmailService, CorreoDefaultService } from '../common/services';
 
 import { Periodo } from './entities/periodo.entity';
+import { Tarifa } from '../tarifas/entities/tarifa.entity';
 
 import { CreatePeriodoDto, UpdatePeriodoDto } from './dto';
 import { Meses } from './interfaces/meses.interface';
@@ -24,12 +25,346 @@ export class PeriodosService {
   constructor(
     @InjectRepository(Periodo)
     private readonly periodoRepository: Repository<Periodo>,
+    @InjectRepository(Tarifa)
+    private readonly tarifaRepository: Repository<Tarifa>,
     private readonly dataSource: DataSource, 
     private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
     private readonly emailService: EmailService, // Servicio de email para envio de correos
     private readonly configService: ConfigService,
   ) {
       this.defaultLimit = this.configService.get<number>('defaultLimit');
+  }
+
+  async compararPeriodos(
+    idPeriodoA: number,
+    idPeriodoB: number,
+  ){
+
+    if (idPeriodoA === idPeriodoB) {
+      throw new BadRequestException('Los periodos a comparar no pueden ser el mismo');
+    }
+
+    // =========================================================
+    // PERIODOS
+    // =========================================================
+
+    const periodoA = await this.periodoRepository.findOne({
+      where: { idPeriodo: idPeriodoA }
+    });
+
+    if (!periodoA) {
+      throw new NotFoundException(`Periodo con id "${idPeriodoA}" no encontrado`);
+    }
+    
+    const periodoB = await this.periodoRepository.findOne({
+      where: { idPeriodo: idPeriodoB }
+    });  
+
+    if (!periodoB) {
+      throw new NotFoundException(`Periodo con id "${idPeriodoB}" no encontrado`);
+    }
+
+    // =========================================================
+    // TARIFAS PERIODO A
+    // =========================================================
+
+    const tarifasA = await this.tarifaRepository
+    .createQueryBuilder('tarifa')  
+    .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+    .leftJoinAndSelect('tarifa.ordenesServicio', 'ordenServicioTarifa')
+    .leftJoinAndSelect(
+      'ordenServicioTarifa.idOrdenServicio',
+      'ordenServicio'
+    )
+    .where('tarifa.idPeriodo = :idPeriodo', {
+      idPeriodo: idPeriodoA,
+    })
+    .getMany();
+
+    // =========================================================
+    // TARIFAS PERIODO B
+    // =========================================================
+  
+    const tarifasB = await this.tarifaRepository
+    .createQueryBuilder('tarifa')
+    .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+    .leftJoinAndSelect('tarifa.ordenesServicio', 'ordenServicioTarifa')
+    .leftJoinAndSelect(
+      'ordenServicioTarifa.idOrdenServicio',
+      'ordenServicio'
+    )
+    .where('tarifa.idPeriodo = :idPeriodo', {
+      idPeriodo: idPeriodoB,
+    })
+    .getMany();
+
+    // =========================================================
+    // MAPAS DE SERVICIOS
+    // =========================================================
+  
+    const serviciosPeriodoA = new Map();
+    const serviciosPeriodoB = new Map();
+  
+    // =========================================================
+    // CONSTRUIR MAPA A
+    // =========================================================
+  
+    for (const tarifa of tarifasA) {
+  
+      const idServicio = tarifa.idServicio.idServicio;
+  
+      const ordenesUnicas = new Set<number>();
+  
+      for (const ordenServicioTarifa of tarifa.ordenesServicio) {
+  
+        if (ordenServicioTarifa.idOrdenServicio) {
+  
+          ordenesUnicas.add(
+            ordenServicioTarifa.idOrdenServicio.idOrdenServicio
+          );
+  
+        }
+  
+      }
+  
+      serviciosPeriodoA.set(idServicio, {
+        idServicio: tarifa.idServicio.idServicio,
+        nombreServicio: tarifa.idServicio.descripcion,
+        idTarifa: tarifa.idTarifa,
+        precio: Number(tarifa.precioTotal),
+        cantidadOrdenes: ordenesUnicas.size,
+        tarifa,
+      });
+  
+    }
+  
+    // =========================================================
+    // CONSTRUIR MAPA B
+    // =========================================================
+  
+    for (const tarifa of tarifasB) {
+  
+      const idServicio = tarifa.idServicio.idServicio;
+  
+      const ordenesUnicas = new Set<number>();
+  
+      for (const ordenServicioTarifa of tarifa.ordenesServicio) {
+  
+        if (ordenServicioTarifa.idOrdenServicio) {
+  
+          ordenesUnicas.add(
+            ordenServicioTarifa.idOrdenServicio.idOrdenServicio
+          );
+  
+        }
+  
+      }
+  
+      serviciosPeriodoB.set(idServicio, {
+        idServicio: tarifa.idServicio.idServicio,
+        nombreServicio: tarifa.idServicio.descripcion,
+        idTarifa: tarifa.idTarifa,
+        precio: Number(tarifa.precioTotal),
+        cantidadOrdenes: ordenesUnicas.size,
+        tarifa,
+      });
+  
+    }
+
+    // =========================================================
+    // SERVICIOS NUEVOS
+    // =========================================================
+  
+    const serviciosNuevos = [];
+  
+    for (const [idServicio, servicioB] of serviciosPeriodoB) {
+  
+      if (!serviciosPeriodoA.has(idServicio)) {
+  
+        serviciosNuevos.push({
+          idServicio: servicioB.idServicio,
+          nombreServicio: servicioB.nombreServicio,
+          precio: servicioB.precio,
+          cantidadOrdenes: servicioB.cantidadOrdenes,
+        });
+  
+      }
+  
+    }
+
+    // =========================================================
+    // SERVICIOS ELIMINADOS
+    // =========================================================
+  
+    const serviciosEliminados = [];
+  
+    for (const [idServicio, servicioA] of serviciosPeriodoA) {
+  
+      if (!serviciosPeriodoB.has(idServicio)) {
+  
+        serviciosEliminados.push({
+          idServicio: servicioA.idServicio,
+          nombreServicio: servicioA.nombreServicio,
+          precio: servicioA.precio,
+          cantidadOrdenes: servicioA.cantidadOrdenes,
+        });
+  
+      }
+  
+    }
+
+    // =========================================================
+    // CAMBIO DE PRECIOS
+    // =========================================================
+  
+    const serviciosConCambioPrecio = [];
+  
+    for (const [idServicio, servicioA] of serviciosPeriodoA) {
+  
+      const servicioB = serviciosPeriodoB.get(idServicio);
+  
+      if (!servicioB) continue;
+  
+      if (
+        Number(servicioA.precio) !==
+        Number(servicioB.precio)
+      ) {
+  
+        serviciosConCambioPrecio.push({
+          idServicio,
+          nombreServicio: servicioA.nombreServicio,
+          precioAnterior: servicioA.precio,
+          precioNuevo: servicioB.precio,
+          diferencia:
+            Number(servicioB.precio) -
+            Number(servicioA.precio),
+        });
+  
+      }
+  
+    }
+  
+    // =========================================================
+    // ORDENES POR SERVICIO
+    // =========================================================
+  
+    const ordenesPorServicio = [];
+  
+    for (const [idServicio, servicioA] of serviciosPeriodoA) {
+  
+      const servicioB = serviciosPeriodoB.get(idServicio);
+  
+      ordenesPorServicio.push({
+        idServicio,
+        nombreServicio: servicioA.nombreServicio,
+        periodoA: {
+          cantidadOrdenes: servicioA.cantidadOrdenes,
+        },
+        periodoB: {
+          cantidadOrdenes: servicioB
+            ? servicioB.cantidadOrdenes
+            : 0,
+        },
+        diferencia:
+          (servicioB
+            ? servicioB.cantidadOrdenes
+            : 0) - servicioA.cantidadOrdenes,
+      });
+  
+    }
+  
+    // =========================================================
+    // SERVICIOS QUE SOLO EXISTEN EN B
+    // =========================================================
+  
+    for (const [idServicio, servicioB] of serviciosPeriodoB) {
+  
+      if (!serviciosPeriodoA.has(idServicio)) {
+  
+        ordenesPorServicio.push({
+          idServicio,
+          nombreServicio: servicioB.nombreServicio,
+          periodoA: {
+            cantidadOrdenes: 0,
+          },
+          periodoB: {
+            cantidadOrdenes: servicioB.cantidadOrdenes,
+          },
+          diferencia: servicioB.cantidadOrdenes,
+        });
+  
+      }
+  
+    }
+  
+    // =========================================================
+    // TOTALES FINANCIEROS
+    // =========================================================
+  
+    const valorTotalPeriodoA = tarifasA.reduce(
+      (acc, tarifa) => acc + Number(tarifa.precioTotal),
+      0
+    );
+  
+    const valorTotalPeriodoB = tarifasB.reduce(
+      (acc, tarifa) => acc + Number(tarifa.precioTotal),
+      0
+    );
+
+    // =========================================================
+    // RESPUESTA
+    // =========================================================
+  
+    return {
+  
+      periodoA: {
+        idPeriodo: periodoA.idPeriodo,
+        nombre: periodoA.nombre,
+        fechaInicio: periodoA.fechaInicio,
+        fechaFin: periodoA.fechaFin,
+      },
+  
+      periodoB: {
+        idPeriodo: periodoB.idPeriodo,
+        nombre: periodoB.nombre,
+        fechaInicio: periodoB.fechaInicio,
+        fechaFin: periodoB.fechaFin,
+      },
+  
+      resumen: {
+  
+        cantidadServicios: {
+          periodoA: serviciosPeriodoA.size,
+          periodoB: serviciosPeriodoB.size,
+          diferencia:
+            serviciosPeriodoB.size -
+            serviciosPeriodoA.size,
+        },
+  
+        valorTotalTarifas: {
+          periodoA: valorTotalPeriodoA,
+          periodoB: valorTotalPeriodoB,
+          diferencia:
+            valorTotalPeriodoB -
+            valorTotalPeriodoA,
+        },
+  
+      },
+  
+      comparativa: {
+  
+        serviciosNuevos,
+  
+        serviciosEliminados,
+  
+        serviciosConCambioPrecio,
+  
+        ordenesPorServicio,
+  
+      },
+  
+    };
+  
   }
 
   async create(createPeriodoDto: CreatePeriodoDto) {
