@@ -68,28 +68,28 @@ export class OrdenServicio {
         name: 'fechaInicio',
         nullable: false
     })
-    fechaInicio: Date; // campo para identificar fecha inicial de la orden
+    fechaInicio: Date; // campo para identificar fecha inicial de la orden / UTILIZAR PARA LIQUIDAR
 
     @Column({
         type: 'date',
         name: 'fechaFin',
         nullable: true
     })
-    fechaFin: Date | null; // campo para identificar fecha inicial de la orden
+    fechaFin: Date | null; // campo para identificar fecha inicial de la orden / UTILIZAR PARA LIQUIDAR
     
     @Column({
         type: 'date',
         name: 'fechaInicioOrden',
         nullable: false
     })
-    fechaInicioOrden: Date; // Campo para saber si la fecha se modifico
+    fechaInicioOrden: Date; // Campo para saber si la fecha se modifico / FECHA DE CUANDO SE CREO LA ORDEN
 
     @Column({
         type: 'date',
         name: 'fechaFinOrden',
         nullable: true
     })
-    fechaFinOrden: Date | null; // Campo para saber si la fecha se modifico
+    fechaFinOrden: Date | null; // Campo para saber si la fecha se modifico / FECHA DE CUANDO SE CREO LA ORDEN
     
     // PRECIO TOTAL CON IVA
     @Column({

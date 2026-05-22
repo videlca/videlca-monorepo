@@ -1260,8 +1260,8 @@ export class OrdenServicioService {
     try {
       
       // actualizar campos
-      ordenServicio.fechaInicioOrden = fechaInicioOrden;
-      ordenServicio.fechaFinOrden = fechaFinOrden;
+      ordenServicio.fechaInicio = fechaInicioOrden;
+      ordenServicio.fechaFin = fechaFinOrden;
       ordenServicio.fechaActualizacion = fechaActualizacionOrden;
       ordenServicio.precioTotal = updateOrdenServicioDto.precioTotal;
       ordenServicio.idEstadoOrdenServicio = estadoOrdenServicio;
@@ -1632,6 +1632,8 @@ export class OrdenServicioService {
       }
 
       ordenServicio.idEstadoOrdenServicio = estadoCancelada;
+      ordenServicio.fechaActualizacion = new Date();
+      ordenServicio.fechaFin = new Date();
 
       await queryRunner.manager.save(OrdenServicio, ordenServicio);
   

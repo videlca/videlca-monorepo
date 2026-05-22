@@ -113,8 +113,8 @@ export class LiquidacionesService {
     if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    // if (today.getMonth() + 1 === mes && today.getDate() < 20)
-    // throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
+    if (today.getMonth() + 1 === mes && today.getDate() < 20)
+      throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
 
     // Crear QueryRunner para manejar la transacción
     const queryRunner = this.dataSource.createQueryRunner();
@@ -392,8 +392,8 @@ export class LiquidacionesService {
     }
 
     const today = new Date();
-    // if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
-    //   throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
+      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
     // Rango del mes objetivo: [inicioMes, finMes)
     const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
@@ -439,9 +439,9 @@ export class LiquidacionesService {
       throw new BadRequestException('Parámetros inválidos (anio, mes)');
     }
 
-    // const today = new Date();
-    // if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
-    //   throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+    const today = new Date();
+    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
+      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
     // Rango del mes objetivo: [inicioMes, finMes)
     const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
@@ -675,6 +675,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
       .leftJoinAndSelect('orden.tarifas', 'ost')
       .leftJoinAndSelect('ost.idTarifa', 'tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
@@ -693,7 +694,7 @@ export class LiquidacionesService {
     
     for (const liq of liquidaciones) {
 
-      const cliente = liq.ordenServicio.idLocacion.idCliente;
+      const cliente = liq.ordenServicio.idLocacion.idClienteFacturacion ? liq.ordenServicio.idLocacion.idClienteFacturacion : liq.ordenServicio.idLocacion.idCliente;
 
       const clienteId = cliente.idCliente;
       const clienteNombre = cliente.nombre;
@@ -803,6 +804,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCiudad', 'ciudad') // 🆕 nuevo join
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
       .leftJoinAndSelect('cliente.idSubSegmentacion', 'subsegmentacion') // 🆕 nuevo join
       .leftJoinAndSelect('orden.tarifas', 'ost')
       .leftJoinAndSelect('ost.idTarifa', 'tarifa')
@@ -822,7 +824,7 @@ export class LiquidacionesService {
     
     for (const liq of liquidaciones) {
 
-      const cliente = liq.ordenServicio.idLocacion.idCliente;
+      const cliente = liq.ordenServicio.idLocacion.idClienteFacturacion ? liq.ordenServicio.idLocacion.idClienteFacturacion : liq.ordenServicio.idLocacion.idCliente;
 
       const clienteId = cliente.idCliente;
       const clienteNombre = cliente.nombre;
