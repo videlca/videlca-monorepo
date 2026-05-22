@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { EnvConfiguration } from './config/env.config';
 import { JoiValidationSchema } from './config/joi.validation';
@@ -38,6 +39,8 @@ import { ReportesModule } from './reportes/reportes.module';
       autoLoadEntities: true,
       synchronize: process.env.ENV === 'dev',
     }),
+
+    ScheduleModule.forRoot(),
 
     AuthModule, 
 

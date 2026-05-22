@@ -25,7 +25,8 @@ import {
 import { 
   OrdenServicioService,
   OrdenServicioIdService, 
-  ObservacionesOrdenServicioService 
+  ObservacionesOrdenServicioService,
+  OrdenServicioScheduler
 } from './services';
 
 import { 
@@ -69,6 +70,7 @@ import {
     OrdenServicioService,
     OrdenServicioIdService,
     ObservacionesOrdenServicioService,
+    OrdenServicioScheduler,
   ],
   exports: [
     TypeOrmModule,

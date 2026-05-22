@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Repository } from 'typeorm';
+import { Brackets, DataSource, In, Not, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -2126,6 +2126,328 @@ export class OrdenServicioService {
       mimeType: 'application/pdf',
       fileName: `orden-${id}.pdf`
     };
+
+  }
+
+  async actualizarEstadosAutomaticamente(){
+
+    const now = new Date();
+
+    // =========================================================
+    // NORMALIZAR FECHA ACTUAL
+    // =========================================================
+  
+    const hoy = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+
+    // =========================================================
+    // ESTADOS
+    // =========================================================
+  
+    const estadoProgramado =
+      await this.estadoOrdenService.findOneByName(
+        EstadoOrdenServicio.PROGRAMADO
+      );
+  
+    const estadoPorIniciar =
+      await this.estadoOrdenService.findOneByName(
+        EstadoOrdenServicio.POR_INICIAR
+      );
+  
+    const estadoIniciado =
+      await this.estadoOrdenService.findOneByName(
+        EstadoOrdenServicio.INICIADO
+      );
+  
+    const estadoPorTerminar =
+      await this.estadoOrdenService.findOneByName(
+        EstadoOrdenServicio.POR_TERMINAR
+      );
+  
+    const estadoTerminado =
+      await this.estadoOrdenService.findOneByName(
+        EstadoOrdenServicio.TERMINADO
+      );
+
+     // =========================================================
+    // TRAER ORDENES ACTIVAS
+    // =========================================================
+  
+    const ordenes = await this.ordenServicioRepository.find({
+      where: {
+        idEstadoOrdenServicio: {
+          nombre: Not(
+            In([
+              EstadoOrdenServicio.CANCELADA,
+              EstadoOrdenServicio.ANULADA,
+              EstadoOrdenServicio.TERMINADO,
+            ])
+          ),
+        },
+      },
+      relations: {
+        idEstadoOrdenServicio: true,
+        idLocacion: true,
+        ordenServicioId: true,
+      },
+    });
+
+    // =========================================================
+    // RECORRER ORDENES
+    // =========================================================
+  
+    for (const orden of ordenes) {
+
+      let nuevoEstado = null;
+      
+      try {
+    
+        const estadoActual = orden.idEstadoOrdenServicio.nombre;
+    
+        // ============================================
+        // FECHAS NORMALIZADAS
+        // ============================================
+    
+        const fechaInicio = new Date(orden.fechaInicio);
+        const fechaInicioNormalizada = new Date(
+          fechaInicio.getFullYear(),
+          fechaInicio.getMonth(),
+          fechaInicio.getDate()
+        );
+    
+        let fechaFinNormalizada = null;
+    
+        if (orden.fechaFin) {
+    
+          const fechaFin = new Date(orden.fechaFin);
+    
+          fechaFinNormalizada = new Date(
+            fechaFin.getFullYear(),
+            fechaFin.getMonth(),
+            fechaFin.getDate()
+          );
+    
+        }
+    
+        // ============================================
+        // DIAS RESTANTES
+        // ============================================
+    
+        const diffInicio =
+          Math.ceil(
+            (fechaInicioNormalizada.getTime() - hoy.getTime())
+            / (1000 * 60 * 60 * 24)
+          );
+    
+        let diffFin = null;
+    
+        if (fechaFinNormalizada) {
+    
+          diffFin =
+            Math.ceil(
+              (fechaFinNormalizada.getTime() - hoy.getTime())
+              / (1000 * 60 * 60 * 24)
+            );
+    
+        }
+    
+        // =====================================================
+        // PROGRAMADO -> POR INICIAR
+        // =====================================================
+    
+        if (
+          estadoActual === EstadoOrdenServicio.PROGRAMADO &&
+          diffInicio <= 2 &&
+          diffInicio > 0
+        ) {
+    
+          nuevoEstado = estadoPorIniciar;
+    
+        }
+    
+        // =====================================================
+        // POR INICIAR -> INICIADO
+        // =====================================================
+    
+        if (
+          estadoActual === EstadoOrdenServicio.POR_INICIAR &&
+          diffInicio === 0
+        ) {
+    
+          nuevoEstado = estadoIniciado;
+    
+        }
+    
+        // =====================================================
+        // INICIADO -> POR TERMINAR
+        // =====================================================
+    
+        if (
+          estadoActual === EstadoOrdenServicio.INICIADO &&
+          fechaFinNormalizada &&
+          diffFin <= 2 &&
+          diffFin > 0
+        ) {
+    
+          nuevoEstado = estadoPorTerminar;
+    
+        }
+    
+        // =====================================================
+        // POR TERMINAR -> TERMINADO
+        // =====================================================
+    
+        if (
+          estadoActual === EstadoOrdenServicio.POR_TERMINAR &&
+          fechaFinNormalizada &&
+          diffFin === 0
+        ) {
+    
+          nuevoEstado = estadoTerminado;
+    
+        }
+    
+        // =====================================================
+        // ACTUALIZAR
+        // =====================================================
+    
+        if (nuevoEstado) {
+  
+          orden.idEstadoOrdenServicio = nuevoEstado;
+  
+          await this.ordenServicioRepository.save(orden);
+    
+          // =====================================================
+          // EMAILS
+          // =====================================================
+    
+          const emailsApp =
+            await this.correoDefaultService.findAllByEstadoOrden(
+              nuevoEstado.nombre
+            );
+  
+          const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
+            orden.idLocacion.idLocacion, 
+            nuevoEstado.idEstadoOrdenServicio
+          )
+    
+          const emails = [...emailsApp, ...emailsLocacion];
+    
+          if (emails.length > 0) {
+    
+            const nombreResponsable =
+              `${orden.idLocacion?.primerNombreResponsable || ''} ${orden.idLocacion?.primerApellidoResponsable || ''}`
+                .trim();
+            
+            try {
+
+              await this.notificationCambioEstadoEmail(
+                orden,
+                nombreResponsable,
+                orden.idLocacion?.nombre || '',
+                emails,
+                nuevoEstado.nombre
+              );
+              
+            } catch (error) {
+
+              this.logger.error(`Error enviando correo de notificacion por cambio de estado de orden ${orden.idOrdenServicio} a ${nuevoEstado.nombre}:`, error);
+              
+            }
+    
+          }
+        
+        }
+
+      } catch (error) {
+
+        this.logger.error(`Error actualizando estado de orden ${orden.idOrdenServicio} a ${nuevoEstado.nombre}:`, error);
+        
+      }
+  
+    }
+
+  }
+
+  // ENVIAR CORREO PARA INFORMAR ANULACION DE ORDEN DE SERVICIO
+  private async notificationCambioEstadoEmail(
+    ordenServicioData: OrdenServicio,
+    nombreResponsable: string,
+    locacion: string,
+    emails: string[],
+    nuevoEstado: string
+  ) {        
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ORDEN DE SERVICIO ${ordenServicioData.ordenServicioId.descripcionId} CAMBIO DE ESTADO</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se ha cambiado de estado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): orden de servicio ${ordenServicioData.ordenServicioId.descripcionId} CAMBIO DE ESTADO`;
+
+    const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicioData);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+        to: emails,
+        subject: subject,
+        htmlBody: html,
+        attachments: [
+        {
+          filename: `Orden-servicio-${ordenServicioData.ordenServicioId.descripcionId}.pdf`,
+          content: ordenServicioBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    }
 
   }
 
