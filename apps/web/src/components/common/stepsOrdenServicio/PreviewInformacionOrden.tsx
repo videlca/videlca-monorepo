@@ -63,6 +63,14 @@ export const PreviewInformacionOrden = ({
                   {selectedPuesto?.idCliente.nombre}
                 </span>
               </p>
+              {selectedPuesto?.idClienteFacturacion && (
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Cliente Facturación:</span>{" "}
+                  <span className="text-gray-600">
+                    {selectedPuesto.idClienteFacturacion.nombre}
+                  </span>
+                </p>
+              )}
               <p className="text-sm">
                 <span className="font-medium text-gray-700">Ubicación:</span>{" "}
                 <span className="text-gray-600">{selectedPuesto?.nombre}</span>

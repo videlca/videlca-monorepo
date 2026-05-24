@@ -8,7 +8,7 @@ import { SimpleModal } from "../../../common/SimpleModal";
 import { useState, useEffect } from "react";
 import {
   useClienteById,
-  useClientes,
+  useClientesActivo,
   useCreateCliente,
   useDeleteCliente,
   useUpdateCliente,
@@ -31,10 +31,10 @@ import {
   useCreatePuesto,
   useSegmentacionById,
   useSegmentaciones,
-  useSubSegmentaciones,
 } from "../../../../api/queryFunctions/clientes";
 import { InputSelect } from "../../../common/InputSelect";
 import { InputSelectStateBoolean } from "../../../common/InputSelectState";
+import { CheckboxForm } from "../../../common/CheckboxForm";
 import { FormsModal } from "../../modals/FormsModal";
 import { FormSection } from "../../../common/FormSection";
 import { ConfiguracionCorreo } from "../../../common/ConfiguracionCorreo";
@@ -50,11 +50,12 @@ export function ClientesTab() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
+  const [isFacturacionDiferente, setIsFacturacionDiferente] = useState(false);
 
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
 
   // Mutaciones y queries
-  const { data: clientes } = useClientes();
+  const { data: clientes } = useClientesActivo();
   const { mutate: getClienteById } = useClienteById();
   const { mutate: createCliente, isPending: isCreatingCliente } =
     useCreateCliente();
@@ -115,6 +116,7 @@ export function ClientesTab() {
     defaultValues: {
       idCliente: 0,
       nombre: "",
+      idClienteFacturacion: null,
       idCiudad: 0,
       direccion: "",
       latitud: 0,
@@ -159,6 +161,7 @@ export function ClientesTab() {
     setIsAddPuestoModalOpen(false);
     resetAddPuesto();
     setCorreos([]);
+    setIsFacturacionDiferente(false);
   };
 
   const handleShowViewPuestoModal = (row: Row<Cliente>) => {
@@ -509,6 +512,7 @@ export function ClientesTab() {
                 ...data,
                 idCiudad: Number(data.idCiudad),
                 correos: correos,
+                idClienteFacturacion: isFacturacionDiferente ? Number(data.idClienteFacturacion) : null,
               },
               {
                 onSuccess: () => {
@@ -532,20 +536,6 @@ export function ClientesTab() {
                 required
                 {...registerAddPuesto("nombre")}
               />
-              {/* <InputSelect
-                label="Cliente*"
-                placeholder="Cliente"
-                id="idCliente"
-                value={formAddPuesto.idCliente}
-                onChange={handleNumericChangeAddPuesto}
-                options={
-                  clientes?.data?.map((cliente) => ({
-                    id: cliente.idCliente,
-                    descripcion: cliente.nombre,
-                  })) || []
-                }
-                required
-              /> */}
               <InputSelect
                 label="Ciudad*"
                 placeholder="Ciudad"
@@ -595,6 +585,32 @@ export function ClientesTab() {
                   {...registerAddPuesto("longitud")}
                 />
               </div>
+              <CheckboxForm
+                label="La facturacion para este puesto sera diferente."
+                id="isFacturacionDiferente"
+                checked={isFacturacionDiferente}
+                onChange={(e) => {
+                  setIsFacturacionDiferente(e.target.checked);
+                  if (!e.target.checked) {
+                    setValueAddPuesto("idClienteFacturacion", null);
+                  }
+                }}
+              />
+              {isFacturacionDiferente && (
+                <InputSelect
+                  label="Cliente facturación*"
+                  placeholder="Cliente facturación"
+                  id="idClienteFacturacion"
+                  options={
+                    clientes?.data?.map((cliente) => ({
+                      id: cliente.idCliente,
+                      descripcion: cliente.nombre,
+                    })) || []
+                  }
+                  required
+                  {...registerAddPuesto("idClienteFacturacion")}
+                />
+              )}
             </FormSection>
             <FormSection
               title="Información de contacto"

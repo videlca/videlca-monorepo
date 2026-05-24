@@ -6,6 +6,7 @@ import {
 import { useState } from "react";
 import type { CreateCorreoDto, UpdatePuestoDto } from "../../../api/dtos";
 import {
+  useClientesActivo,
   useDeletePuesto,
   usePuestoById,
   usePuestosByCliente,
@@ -27,6 +28,7 @@ import { InputSelect } from "../../../components/common/InputSelect";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 import { ConfiguracionCorreo } from "../../../components/common/ConfiguracionCorreo";
+import { CheckboxForm } from "../../../components/common/CheckboxForm";
 
 export const Route = createFileRoute("/dashboard/clientes/$idCliente/puestos")({
   component: RouteComponent,
@@ -42,11 +44,12 @@ export function RouteComponent() {
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
   const [idPuestoSelected, setIdPuestoSelected] = useState<number | null>(null);
+  const [isFacturacionDiferente, setIsFacturacionDiferente] = useState(false);
 
   // Mutaciones y Queries
   const { data: puestos } = usePuestosByCliente(Number(idCliente));
   const { data: ciudades } = useCiudad();
-  // const { data: clientes } = useClientesActivo();
+  const { data: clientes } = useClientesActivo();
 
   const { mutate: updatePuesto, isPending: isUpdatingPuesto } =
     useUpdatePuesto();
@@ -61,9 +64,12 @@ export function RouteComponent() {
     register: registerEdit,
     handleSubmit: handleSubmitEdit,
     reset: resetEditForm,
+    setValue: setValueEdit,
+
   } = useForm<UpdatePuestoDto>({
     defaultValues: {
       idCliente: 0,
+      idClienteFacturacion: null,
       nombre: "",
       idCiudad: 0,
       direccion: "",
@@ -105,8 +111,10 @@ export function RouteComponent() {
             diasAnticipaticionNotificacion:
               data.data.diasAnticipaticionNotificacion,
             estado: data.data.estado,
+            idClienteFacturacion: data.data.idClienteFacturacion?.idCliente || null,
             correos: [...correosFormatted],
           });
+          setIsFacturacionDiferente(data.data.idClienteFacturacion != null);
           setCorreos(correosFormatted);
         }
       },
@@ -270,7 +278,7 @@ export function RouteComponent() {
               {
                 onSuccess: () => {
                   handleCloseEditPuesto();
-                  
+
                 },
               },
             );
@@ -326,6 +334,7 @@ export function RouteComponent() {
                   type="number"
                   id="latitud"
                   required
+                  allowNegative={true}
                   {...registerEdit("latitud", { valueAsNumber: true })}
                 />
                 <InputForm
@@ -334,9 +343,36 @@ export function RouteComponent() {
                   type="number"
                   id="longitud"
                   required
+                  allowNegative={true}
                   {...registerEdit("longitud", { valueAsNumber: true })}
                 />
               </div>
+              <CheckboxForm
+                label="La facturacion para este puesto sera diferente."
+                id="isFacturacionDiferente"
+                checked={isFacturacionDiferente}
+                onChange={(e) => {
+                  setIsFacturacionDiferente(e.target.checked);
+                  if (!e.target.checked) {
+                    setValueEdit("idClienteFacturacion", null);
+                  }
+                }}
+              />
+              {isFacturacionDiferente && (
+                <InputSelect
+                  label="Cliente facturación*"
+                  placeholder="Cliente facturación"
+                  id="idClienteFacturacion"
+                  options={
+                    clientes?.data?.map((cliente) => ({
+                      id: cliente.idCliente,
+                      descripcion: cliente.nombre,
+                    })) || []
+                  }
+                  required
+                  {...registerEdit("idClienteFacturacion")}
+                />
+              )}
             </FormSection>
 
             <FormSection

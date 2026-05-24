@@ -115,6 +115,7 @@ export interface Puesto {
   estado: boolean;
   idCiudad: Ciudad;
   idCliente: Cliente;
+  idClienteFacturacion?: Cliente | null;
   correos: Correo[];
 }
 

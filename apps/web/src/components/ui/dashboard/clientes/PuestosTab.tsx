@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { FormsModal } from "../../modals/FormsModal";
 import { FormSection } from "../../../common/FormSection";
 import { MoreActionsButton } from "../../common/MoreActionsButton";
+import { CheckboxForm } from "../../../common/CheckboxForm";
 import { useForm } from "react-hook-form";
 
 export function PuestosTab() {
@@ -41,6 +42,7 @@ export function PuestosTab() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
+  const [isFacturacionDiferente, setIsFacturacionDiferente] = useState(false);
   const [correoInput, setCorreoInput] = useState<{
     nombre: string;
     apellido: string;
@@ -69,6 +71,7 @@ export function PuestosTab() {
     register: registerEdit,
     handleSubmit: handleSubmitEdit,
     reset: resetEdit,
+    setValue: setValueEdit,
   } = useForm<UpdatePuestoDto>({
     defaultValues: {
       idCliente: 0,
@@ -83,6 +86,7 @@ export function PuestosTab() {
       diasAnticipaticionNotificacion: 0,
       correos: [],
       estado: true,
+      idClienteFacturacion: null,
     },
   });
 
@@ -105,8 +109,10 @@ export function PuestosTab() {
             diasAnticipaticionNotificacion:
               data.data.diasAnticipaticionNotificacion,
             estado: data.data.estado,
+            idClienteFacturacion: data.data.idClienteFacturacion?.idCliente || null,
             correos: [...data.data.correos] as unknown as CreateCorreoDto[],
           });
+          setIsFacturacionDiferente(data.data.idClienteFacturacion != null);
           setCorreos(data.data.correos as unknown as CreateCorreoDto[]);
         }
       },
@@ -154,6 +160,11 @@ export function PuestosTab() {
     {
       accessorKey: "idCliente.nombre",
       header: "Cliente",
+    },
+    {
+      accessorKey: "idClienteFacturacion.nombre",
+      header: "Cliente facturación",
+      cell: ({ row }) => row.original.idClienteFacturacion ? row.original.idClienteFacturacion.nombre : "Mismo cliente",
     },
     {
       accessorKey: "idCiudad.descripcion",
@@ -215,6 +226,7 @@ export function PuestosTab() {
     setIsEditModalOpen(false);
     resetEdit();
     setCorreos([]);
+    setIsFacturacionDiferente(false);
     setCorreoInput({
       nombre: "",
       apellido: "",
@@ -262,6 +274,7 @@ export function PuestosTab() {
                   idCliente: Number(data.idCliente),
                   idCiudad: Number(data.idCiudad),
                   correos: correos,
+                  idClienteFacturacion: isFacturacionDiferente ? Number(data.idClienteFacturacion) : null,
                 },
               },
               {
@@ -299,6 +312,32 @@ export function PuestosTab() {
                 required
                 {...registerEdit("idCliente")}
               />
+              <CheckboxForm
+                label="La facturacion para este puesto sera diferente."
+                id="isFacturacionDiferente"
+                checked={isFacturacionDiferente}
+                onChange={(e) => {
+                  setIsFacturacionDiferente(e.target.checked);
+                  if (!e.target.checked) {
+                    setValueEdit("idClienteFacturacion", null);
+                  }
+                }}
+              />
+              {isFacturacionDiferente && (
+                <InputSelect
+                  label="Cliente facturación*"
+                  placeholder="Cliente facturación"
+                  id="idClienteFacturacion"
+                  options={
+                    clientes?.data?.map((cliente) => ({
+                      id: cliente.idCliente,
+                      descripcion: cliente.nombre,
+                    })) || []
+                  }
+                  required
+                  {...registerEdit("idClienteFacturacion")}
+                />
+              )}
               <InputSelect
                 label="Ciudad*"
                 placeholder="Ciudad"

@@ -32,6 +32,7 @@ export interface CreatePuestoDto {
   primerApellidoResponsable: string;
   telefono: string;
   segundoTelefono?: string;
+  idClienteFacturacion?: number | null;
   diasAnticipaticionNotificacion: number;
   idCliente: number;
   correos: CreateCorreoDto[];
