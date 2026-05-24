@@ -295,6 +295,8 @@ export class OrdenServicioService {
 
       const emails = [...emailsLocacion, ...emailsApp];
 
+      await queryRunner.commitTransaction();
+      
       await this.notificationEmail(
         savedOrdenServicio.idOrdenServicio,
         nombreResponsable, 
@@ -302,8 +304,6 @@ export class OrdenServicioService {
         emails
       );
 
-      await queryRunner.commitTransaction();
-      
       return savedOrdenServicio;
       
     } catch (error) {
