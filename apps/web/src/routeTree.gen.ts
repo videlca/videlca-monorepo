@@ -33,7 +33,6 @@ import { Route as ActualizarIdRouteImport } from './routes/actualizar.$id'
 import { Route as DashboardUsuariosIndexRouteImport } from './routes/dashboard/usuarios/index'
 import { Route as DashboardTarifasIndexRouteImport } from './routes/dashboard/tarifas/index'
 import { Route as DashboardServiciosIndexRouteImport } from './routes/dashboard/servicios/index'
-import { Route as DashboardReportesIndexRouteImport } from './routes/dashboard/reportes/index'
 import { Route as DashboardProgramacionesIndexRouteImport } from './routes/dashboard/programaciones/index'
 import { Route as DashboardPersonalIndexRouteImport } from './routes/dashboard/personal/index'
 import { Route as DashboardOrdenesServicioIndexRouteImport } from './routes/dashboard/ordenes-servicio/index'
@@ -42,6 +41,7 @@ import { Route as DashboardClientesIndexRouteImport } from './routes/dashboard/c
 import { Route as DashboardAprobacionLiquidacionesOrdenesIndexRouteImport } from './routes/dashboard/aprobacion-liquidaciones-ordenes/index'
 import { Route as DashboardTarifasTipoTarifaRouteImport } from './routes/dashboard/tarifas/tipo-tarifa'
 import { Route as DashboardTarifasPeriodoRouteImport } from './routes/dashboard/tarifas/periodo'
+import { Route as DashboardTarifasComparativaPeriodosRouteImport } from './routes/dashboard/tarifas/comparativa-periodos'
 import { Route as DashboardServiciosTipoServicioRouteImport } from './routes/dashboard/servicios/tipo-servicio'
 import { Route as DashboardServiciosTipoHorarioRouteImport } from './routes/dashboard/servicios/tipo-horario'
 import { Route as DashboardServiciosConfigurarHorariosRouteImport } from './routes/dashboard/servicios/configurar-horarios'
@@ -189,11 +189,6 @@ const DashboardServiciosIndexRoute = DashboardServiciosIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardServiciosRoute,
 } as any)
-const DashboardReportesIndexRoute = DashboardReportesIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DashboardReportesRoute,
-} as any)
 const DashboardProgramacionesIndexRoute =
   DashboardProgramacionesIndexRouteImport.update({
     id: '/',
@@ -239,6 +234,12 @@ const DashboardTarifasPeriodoRoute = DashboardTarifasPeriodoRouteImport.update({
   path: '/periodo',
   getParentRoute: () => DashboardTarifasRoute,
 } as any)
+const DashboardTarifasComparativaPeriodosRoute =
+  DashboardTarifasComparativaPeriodosRouteImport.update({
+    id: '/comparativa-periodos',
+    path: '/comparativa-periodos',
+    getParentRoute: () => DashboardTarifasRoute,
+  } as any)
 const DashboardServiciosTipoServicioRoute =
   DashboardServiciosTipoServicioRouteImport.update({
     id: '/tipo-servicio',
@@ -393,7 +394,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/permisos': typeof DashboardPermisosRouteWithChildren
   '/dashboard/personal': typeof DashboardPersonalRouteWithChildren
   '/dashboard/programaciones': typeof DashboardProgramacionesRouteWithChildren
-  '/dashboard/reportes': typeof DashboardReportesRouteWithChildren
+  '/dashboard/reportes': typeof DashboardReportesRoute
   '/dashboard/servicios': typeof DashboardServiciosRouteWithChildren
   '/dashboard/tarifas': typeof DashboardTarifasRouteWithChildren
   '/dashboard/usuarios': typeof DashboardUsuariosRouteWithChildren
@@ -418,6 +419,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
   '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
   '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
+  '/dashboard/tarifas/comparativa-periodos': typeof DashboardTarifasComparativaPeriodosRoute
   '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/aprobacion-liquidaciones-ordenes/': typeof DashboardAprobacionLiquidacionesOrdenesIndexRoute
@@ -426,7 +428,6 @@ export interface FileRoutesByFullPath {
   '/dashboard/ordenes-servicio/': typeof DashboardOrdenesServicioIndexRoute
   '/dashboard/personal/': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
-  '/dashboard/reportes/': typeof DashboardReportesIndexRoute
   '/dashboard/servicios/': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
@@ -444,6 +445,7 @@ export interface FileRoutesByTo {
   '/dashboard/exportaciones-base-facturacion': typeof DashboardExportacionesBaseFacturacionRouteWithChildren
   '/dashboard/perfil-usuario': typeof DashboardPerfilUsuarioRoute
   '/dashboard/permisos': typeof DashboardPermisosRouteWithChildren
+  '/dashboard/reportes': typeof DashboardReportesRoute
   '/olvide-password/$id': typeof OlvidePasswordIdRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/configuracion/correos-default': typeof DashboardConfiguracionCorreosDefaultRoute
@@ -465,6 +467,7 @@ export interface FileRoutesByTo {
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
   '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
   '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
+  '/dashboard/tarifas/comparativa-periodos': typeof DashboardTarifasComparativaPeriodosRoute
   '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/aprobacion-liquidaciones-ordenes': typeof DashboardAprobacionLiquidacionesOrdenesIndexRoute
@@ -473,7 +476,6 @@ export interface FileRoutesByTo {
   '/dashboard/ordenes-servicio': typeof DashboardOrdenesServicioIndexRoute
   '/dashboard/personal': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones': typeof DashboardProgramacionesIndexRoute
-  '/dashboard/reportes': typeof DashboardReportesIndexRoute
   '/dashboard/servicios': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios': typeof DashboardUsuariosIndexRoute
@@ -499,7 +501,7 @@ export interface FileRoutesById {
   '/dashboard/permisos': typeof DashboardPermisosRouteWithChildren
   '/dashboard/personal': typeof DashboardPersonalRouteWithChildren
   '/dashboard/programaciones': typeof DashboardProgramacionesRouteWithChildren
-  '/dashboard/reportes': typeof DashboardReportesRouteWithChildren
+  '/dashboard/reportes': typeof DashboardReportesRoute
   '/dashboard/servicios': typeof DashboardServiciosRouteWithChildren
   '/dashboard/tarifas': typeof DashboardTarifasRouteWithChildren
   '/dashboard/usuarios': typeof DashboardUsuariosRouteWithChildren
@@ -524,6 +526,7 @@ export interface FileRoutesById {
   '/dashboard/servicios/configurar-horarios': typeof DashboardServiciosConfigurarHorariosRoute
   '/dashboard/servicios/tipo-horario': typeof DashboardServiciosTipoHorarioRoute
   '/dashboard/servicios/tipo-servicio': typeof DashboardServiciosTipoServicioRoute
+  '/dashboard/tarifas/comparativa-periodos': typeof DashboardTarifasComparativaPeriodosRoute
   '/dashboard/tarifas/periodo': typeof DashboardTarifasPeriodoRoute
   '/dashboard/tarifas/tipo-tarifa': typeof DashboardTarifasTipoTarifaRoute
   '/dashboard/aprobacion-liquidaciones-ordenes/': typeof DashboardAprobacionLiquidacionesOrdenesIndexRoute
@@ -532,7 +535,6 @@ export interface FileRoutesById {
   '/dashboard/ordenes-servicio/': typeof DashboardOrdenesServicioIndexRoute
   '/dashboard/personal/': typeof DashboardPersonalIndexRoute
   '/dashboard/programaciones/': typeof DashboardProgramacionesIndexRoute
-  '/dashboard/reportes/': typeof DashboardReportesIndexRoute
   '/dashboard/servicios/': typeof DashboardServiciosIndexRoute
   '/dashboard/tarifas/': typeof DashboardTarifasIndexRoute
   '/dashboard/usuarios/': typeof DashboardUsuariosIndexRoute
@@ -584,6 +586,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios/configurar-horarios'
     | '/dashboard/servicios/tipo-horario'
     | '/dashboard/servicios/tipo-servicio'
+    | '/dashboard/tarifas/comparativa-periodos'
     | '/dashboard/tarifas/periodo'
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/aprobacion-liquidaciones-ordenes/'
@@ -592,7 +595,6 @@ export interface FileRouteTypes {
     | '/dashboard/ordenes-servicio/'
     | '/dashboard/personal/'
     | '/dashboard/programaciones/'
-    | '/dashboard/reportes/'
     | '/dashboard/servicios/'
     | '/dashboard/tarifas/'
     | '/dashboard/usuarios/'
@@ -610,6 +612,7 @@ export interface FileRouteTypes {
     | '/dashboard/exportaciones-base-facturacion'
     | '/dashboard/perfil-usuario'
     | '/dashboard/permisos'
+    | '/dashboard/reportes'
     | '/olvide-password/$id'
     | '/dashboard'
     | '/dashboard/configuracion/correos-default'
@@ -631,6 +634,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios/configurar-horarios'
     | '/dashboard/servicios/tipo-horario'
     | '/dashboard/servicios/tipo-servicio'
+    | '/dashboard/tarifas/comparativa-periodos'
     | '/dashboard/tarifas/periodo'
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/aprobacion-liquidaciones-ordenes'
@@ -639,7 +643,6 @@ export interface FileRouteTypes {
     | '/dashboard/ordenes-servicio'
     | '/dashboard/personal'
     | '/dashboard/programaciones'
-    | '/dashboard/reportes'
     | '/dashboard/servicios'
     | '/dashboard/tarifas'
     | '/dashboard/usuarios'
@@ -689,6 +692,7 @@ export interface FileRouteTypes {
     | '/dashboard/servicios/configurar-horarios'
     | '/dashboard/servicios/tipo-horario'
     | '/dashboard/servicios/tipo-servicio'
+    | '/dashboard/tarifas/comparativa-periodos'
     | '/dashboard/tarifas/periodo'
     | '/dashboard/tarifas/tipo-tarifa'
     | '/dashboard/aprobacion-liquidaciones-ordenes/'
@@ -697,7 +701,6 @@ export interface FileRouteTypes {
     | '/dashboard/ordenes-servicio/'
     | '/dashboard/personal/'
     | '/dashboard/programaciones/'
-    | '/dashboard/reportes/'
     | '/dashboard/servicios/'
     | '/dashboard/tarifas/'
     | '/dashboard/usuarios/'
@@ -886,13 +889,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardServiciosIndexRouteImport
       parentRoute: typeof DashboardServiciosRoute
     }
-    '/dashboard/reportes/': {
-      id: '/dashboard/reportes/'
-      path: '/'
-      fullPath: '/dashboard/reportes/'
-      preLoaderRoute: typeof DashboardReportesIndexRouteImport
-      parentRoute: typeof DashboardReportesRoute
-    }
     '/dashboard/programaciones/': {
       id: '/dashboard/programaciones/'
       path: '/'
@@ -947,6 +943,13 @@ declare module '@tanstack/react-router' {
       path: '/periodo'
       fullPath: '/dashboard/tarifas/periodo'
       preLoaderRoute: typeof DashboardTarifasPeriodoRouteImport
+      parentRoute: typeof DashboardTarifasRoute
+    }
+    '/dashboard/tarifas/comparativa-periodos': {
+      id: '/dashboard/tarifas/comparativa-periodos'
+      path: '/comparativa-periodos'
+      fullPath: '/dashboard/tarifas/comparativa-periodos'
+      preLoaderRoute: typeof DashboardTarifasComparativaPeriodosRouteImport
       parentRoute: typeof DashboardTarifasRoute
     }
     '/dashboard/servicios/tipo-servicio': {
@@ -1274,17 +1277,6 @@ const DashboardProgramacionesRouteWithChildren =
     DashboardProgramacionesRouteChildren,
   )
 
-interface DashboardReportesRouteChildren {
-  DashboardReportesIndexRoute: typeof DashboardReportesIndexRoute
-}
-
-const DashboardReportesRouteChildren: DashboardReportesRouteChildren = {
-  DashboardReportesIndexRoute: DashboardReportesIndexRoute,
-}
-
-const DashboardReportesRouteWithChildren =
-  DashboardReportesRoute._addFileChildren(DashboardReportesRouteChildren)
-
 interface DashboardServiciosRouteChildren {
   DashboardServiciosConfigurarHorariosRoute: typeof DashboardServiciosConfigurarHorariosRoute
   DashboardServiciosTipoHorarioRoute: typeof DashboardServiciosTipoHorarioRoute
@@ -1304,6 +1296,7 @@ const DashboardServiciosRouteWithChildren =
   DashboardServiciosRoute._addFileChildren(DashboardServiciosRouteChildren)
 
 interface DashboardTarifasRouteChildren {
+  DashboardTarifasComparativaPeriodosRoute: typeof DashboardTarifasComparativaPeriodosRoute
   DashboardTarifasPeriodoRoute: typeof DashboardTarifasPeriodoRoute
   DashboardTarifasTipoTarifaRoute: typeof DashboardTarifasTipoTarifaRoute
   DashboardTarifasIndexRoute: typeof DashboardTarifasIndexRoute
@@ -1312,6 +1305,8 @@ interface DashboardTarifasRouteChildren {
 }
 
 const DashboardTarifasRouteChildren: DashboardTarifasRouteChildren = {
+  DashboardTarifasComparativaPeriodosRoute:
+    DashboardTarifasComparativaPeriodosRoute,
   DashboardTarifasPeriodoRoute: DashboardTarifasPeriodoRoute,
   DashboardTarifasTipoTarifaRoute: DashboardTarifasTipoTarifaRoute,
   DashboardTarifasIndexRoute: DashboardTarifasIndexRoute,
@@ -1346,7 +1341,7 @@ interface DashboardRouteChildren {
   DashboardPermisosRoute: typeof DashboardPermisosRouteWithChildren
   DashboardPersonalRoute: typeof DashboardPersonalRouteWithChildren
   DashboardProgramacionesRoute: typeof DashboardProgramacionesRouteWithChildren
-  DashboardReportesRoute: typeof DashboardReportesRouteWithChildren
+  DashboardReportesRoute: typeof DashboardReportesRoute
   DashboardServiciosRoute: typeof DashboardServiciosRouteWithChildren
   DashboardTarifasRoute: typeof DashboardTarifasRouteWithChildren
   DashboardUsuariosRoute: typeof DashboardUsuariosRouteWithChildren
@@ -1366,7 +1361,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardPermisosRoute: DashboardPermisosRouteWithChildren,
   DashboardPersonalRoute: DashboardPersonalRouteWithChildren,
   DashboardProgramacionesRoute: DashboardProgramacionesRouteWithChildren,
-  DashboardReportesRoute: DashboardReportesRouteWithChildren,
+  DashboardReportesRoute: DashboardReportesRoute,
   DashboardServiciosRoute: DashboardServiciosRouteWithChildren,
   DashboardTarifasRoute: DashboardTarifasRouteWithChildren,
   DashboardUsuariosRoute: DashboardUsuariosRouteWithChildren,

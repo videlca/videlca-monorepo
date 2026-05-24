@@ -37,7 +37,6 @@ interface LinksSideBar {
   usuarios: LinkSideBar[];
   programaciones: LinkSideBar[];
   tarifas: LinkSideBar[];
-  reportes: LinkSideBar[];
   "ordenes-servicio": LinkSideBar[];
   servicios: LinkSideBar[];
   liquidaciones: LinkSideBar[];
@@ -157,12 +156,10 @@ export const linksSideBar: LinksSideBar = {
       description: "tipo-tarifa",
       icon: <DollarSignIcon className="h-6 w-6" />,
     },
-  ],
-  reportes: [
     {
-      to: "/dashboard/reportes",
-      label: "Reportes",
-      description: "reportes",
+      to: "/dashboard/tarifas/comparativa-periodos",
+      label: "Comparativa de Periodos",
+      description: "comparativa-periodos",
       icon: <ChartColumn className="h-6 w-6" />,
     },
   ],

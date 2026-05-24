@@ -110,13 +110,6 @@ export function Sidebar({
       requiredPermission: "ordenes-servicio",
     },
     {
-      id: "reportes",
-      label: "Reportes",
-      icon: BarChart3,
-      subItems: linksSideBar.reportes,
-      requiredPermission: "reportes",
-    },
-    {
       id: "liquidaciones",
       label: "Liquidaciones",
       icon: DollarSign,
@@ -174,7 +167,7 @@ export function Sidebar({
                 item.subItems.length < 1 && item.id !== "dashboard"
                   ? "bg-blue-500"
                   : ""
-              }`}
+                }`}
             >
               <div>
                 <button
@@ -210,11 +203,10 @@ export function Sidebar({
                       {item.subItems.map((subItem) => (
                         <li
                           key={subItem.to}
-                          className={` ${
-                            subItem.to === pathname.pathname
+                          className={` ${subItem.to === pathname.pathname
                               ? "border-l-2 border-blue-300 bg-blue-500/40"
                               : ""
-                          }`}
+                            }`}
                         >
                           <button
                             onClick={() =>
