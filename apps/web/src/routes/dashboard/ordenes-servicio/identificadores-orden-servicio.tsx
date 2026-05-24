@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 import Table from "../../../components/common/Table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { OrdenServicioId } from "../../../api/types/orden-servicio";
@@ -17,6 +17,7 @@ import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { InputForm } from "../../../components/common/InputForm";
 import { useAnularIdOrdenServicio } from "../../../api/queryFunctions/orden-servicio/orden-servicio-id";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
+import { useForm } from "react-hook-form";
 
 export const Route = createFileRoute(
   "/dashboard/ordenes-servicio/identificadores-orden-servicio",
@@ -33,7 +34,19 @@ function RouteComponent() {
   const [idOrdenServicioId, setIdOrdenServicioId] = useState<number | null>(
     null,
   );
-  const [descripcionId, setDescripcionId] = useState<string>("");
+
+  const {
+    register: registerAdd,
+    handleSubmit: handleSubmitAdd,
+    reset: resetAdd,
+  } = useForm<{ descripcionId: string; }>();
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
+    setValue: setValueEdit,
+  } = useForm<{ descripcionId: string }>();
 
   // Queries y mutaciones
   const { data: idsOrdenServicio } = useGetIdsOrdenServicio();
@@ -93,7 +106,7 @@ function RouteComponent() {
               onClick: () => {
                 setIsOpenEdit(true);
                 setIdOrdenServicioId(row.original.idOrdenServicioId);
-                setDescripcionId(row.original.descripcionId);
+                setValueEdit("descripcionId", row.original.descripcionId);
               },
             },
             {
@@ -137,22 +150,21 @@ function RouteComponent() {
         title="Ingresar identificador de orden de servicio a anular"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={handleSubmitAdd((data) => {
             anularIdOrdenServicio(
-              { descripcionId },
+              { descripcionId: Number(data.descripcionId) },
               {
                 onSuccess: () => {
                   setIsOpenAdd(false);
-                  setDescripcionId("");
+                  resetAdd();
                 },
               },
             );
-          }}
+          })}
           isLoading={isAnulandoIdOrdenServicio}
           onCancel={() => {
             setIsOpenAdd(false);
-            setDescripcionId("");
+            resetAdd();
           }}
           updating={false}
         >
@@ -161,9 +173,8 @@ function RouteComponent() {
             id="descripcionId"
             label="Identificador"
             placeholder="Identificador de orden de servicio"
-            value={descripcionId}
-            onChange={(e) => setDescripcionId(e.target.value)}
             required
+            {...registerAdd("descripcionId")}
           />
         </FormsModal>
       </SimpleModal>
@@ -174,22 +185,21 @@ function RouteComponent() {
         title="Editar identificador de orden de servicio"
       >
         <FormsModal
-          onSubmit={(e) => {
-            e.preventDefault();
+          onSubmit={handleSubmitEdit((data) => {
             updateIdOrdenServicio(
-              { id: idOrdenServicioId || 0, data: { descripcionId } },
+              { id: idOrdenServicioId || 0, data: { descripcionId: data.descripcionId } },
               {
                 onSuccess: () => {
                   setIsOpenEdit(false);
-                  setDescripcionId("");
+                  resetEdit();
                 },
               },
             );
-          }}
+          })}
           isLoading={isUpdatingIdOrdenServicio}
           onCancel={() => {
             setIsOpenEdit(false);
-            setDescripcionId("");
+            resetEdit();
           }}
           updating={true}
         >
@@ -198,9 +208,8 @@ function RouteComponent() {
             id="descripcionId"
             label="Identificador"
             placeholder="Identificador de orden de servicio"
-            value={descripcionId}
-            onChange={(e) => setDescripcionId(e.target.value)}
             required
+            {...registerEdit("descripcionId")}
           />
         </FormsModal>
       </SimpleModal>

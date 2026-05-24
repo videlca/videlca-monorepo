@@ -56,6 +56,7 @@ import { OrdenDetalles } from "../../../components/ui/modals/OrdenDetalles";
 import { useForm } from "react-hook-form";
 import { useGetNextIdOrdenServicio } from "../../../api/queryFunctions/orden-servicio/orden-servicio-id";
 import { printBase64PDF } from "../../../utils/printBase64File";
+import { queryClient } from "../../../App";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
@@ -214,7 +215,7 @@ function RouteComponent() {
     setIsIndefinite(false);
     resetCreate();
     resetEdit();
-    setIdentificador({ prefijo: "", codigo: 0, codigoTipoServicio: 0 });
+    setIdentificador({ prefijo: "", codigo: nextIdOrdenServicioQuery?.data || 0, codigoTipoServicio: 0 });
   };
 
   const handleNext = async () => {
@@ -981,13 +982,12 @@ function RouteComponent() {
             {[1, 2, 3, 4, 5, 6].map((step) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                    step < currentStep
-                      ? "bg-green-500 text-white"
-                      : step === currentStep
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-600"
-                  }`}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step < currentStep
+                    ? "bg-green-500 text-white"
+                    : step === currentStep
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-600"
+                    }`}
                 >
                   {step < currentStep ? <Check className="h-4 w-4" /> : step}
                 </div>
@@ -1048,11 +1048,10 @@ function RouteComponent() {
                     configuracionServicioTarifa.length === 0)
                   // TODO: Revisar validaciones de los pasos
                 }
-                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
-                  currentStep < 6
-                    ? "bg-blue-600 hover:bg-blue-700"
-                    : "bg-green-600 hover:bg-green-700"
-                } ${isCrearOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
+                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${currentStep < 6
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-green-600 hover:bg-green-700"
+                  } ${isCrearOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
               >
                 {isCrearOrdenServicioPending ? (
                   <div className="flex items-center gap-2">
@@ -1085,13 +1084,12 @@ function RouteComponent() {
             {[1, 2].map((step) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                    step < currentStep
-                      ? "bg-green-500 text-white"
-                      : step === currentStep
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-600"
-                  }`}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step < currentStep
+                    ? "bg-green-500 text-white"
+                    : step === currentStep
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-600"
+                    }`}
                 >
                   {step < currentStep ? <Check className="h-4 w-4" /> : step}
                 </div>
@@ -1145,11 +1143,10 @@ function RouteComponent() {
                 //   (currentStep === 2 && !formOrdenServicio.idLocacion)
                 //   // TODO: Revisar validaciones de los pasos
                 // }
-                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
-                  currentStep < 2
-                    ? "bg-blue-600 hover:bg-blue-700"
-                    : "bg-green-600 hover:bg-green-700"
-                } ${isActualizarOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
+                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${currentStep < 2
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-green-600 hover:bg-green-700"
+                  } ${isActualizarOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
               >
                 {isActualizarOrdenServicioPending ? (
                   <div className="flex items-center gap-2">
