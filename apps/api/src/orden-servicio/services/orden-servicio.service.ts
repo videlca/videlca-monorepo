@@ -9,7 +9,7 @@ import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
 import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
 import { User } from '../../users/entities/user.entity';
-import { EstadoOrdenServicio as EstadoOrdenEntity} from "../../common/entities";
+import { EstadoOrdenServicio as EstadoOrdenEntity } from "../../common/entities";
 import { SendMailOptions } from '../../common/services/email/email.service';
 
 import { EstadoOrdenServicioService, EmailService, CorreoDefaultService } from '../../common/services';
@@ -26,7 +26,7 @@ import { TipoTarifaInterface } from '../../tarifas/interfaces/tipo-tarifa.interf
 
 import { Personal } from '../../personal/entities';
 
-import { 
+import {
   OrdenServicio,
   OrdenServicioId,
   OrdenServicioIdAnulado,
@@ -34,14 +34,14 @@ import {
   ProgramacionPersonal
 } from '../entities';
 
-import { 
+import {
   CreateOrdenServicioDto,
   UpdateOrdenServicioDto,
 
   // VALIDACIONES CREACION
   ValidarIdOrdenServicioDto,
   ValidarFechasOrdenServicioDto,
-  ValidarHorarioServicioDto, 
+  ValidarHorarioServicioDto,
   PrecioOrdenDto,
   ValidarEmpleadosDisponiblesDto,
   ValidarRangoHorarioPersonalOrdenDto,
@@ -60,44 +60,44 @@ import {
 export class OrdenServicioService {
 
   private readonly logger = new Logger('OrdenServicioService');
-          
+
   private defaultLimit: number; // valor de la cantidad por defecto que se va a retornar en una consulta 
 
   constructor(
-      @InjectRepository(OrdenServicio)
-      private readonly ordenServicioRepository: Repository<OrdenServicio>,
-      @InjectRepository(OrdenServicioId)
-      private readonly ordenServicioIdRepository: Repository<OrdenServicioId>,
-      @InjectRepository(OrdenServicioIdAnulado)
-      private readonly ordenServicioIdAnuladoRepository: Repository<OrdenServicioIdAnulado>,
-      @InjectRepository(OrdenServicioTarifa)
-      private readonly ordenServicioTarifaRepository: Repository<OrdenServicioTarifa>,
-      @InjectRepository(ProgramacionPersonal)
-      private readonly programacionPersonalRepository: Repository<ProgramacionPersonal>,
-      @InjectRepository(Personal)
-      private readonly personalRepository: Repository<Personal>,
-      private readonly personalService: PersonalService,
-      private readonly estadoOrdenService: EstadoOrdenServicioService,
-      private readonly locacionService: LocacionService,
-      private readonly tarifasService: TarifasService,
-      private readonly tipoHorarioService: TipoHorarioService,
-      private readonly servicioService: ServiciosService,
-      private readonly emailService: EmailService, // Servicio de email para envio de correos
-      private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
-      private readonly reporteOrdenServicioService: ReporteOrdenServicioService, // Servicio para generar reportes
-      private readonly dataSource: DataSource,
-      private readonly configService: ConfigService,
+    @InjectRepository(OrdenServicio)
+    private readonly ordenServicioRepository: Repository<OrdenServicio>,
+    @InjectRepository(OrdenServicioId)
+    private readonly ordenServicioIdRepository: Repository<OrdenServicioId>,
+    @InjectRepository(OrdenServicioIdAnulado)
+    private readonly ordenServicioIdAnuladoRepository: Repository<OrdenServicioIdAnulado>,
+    @InjectRepository(OrdenServicioTarifa)
+    private readonly ordenServicioTarifaRepository: Repository<OrdenServicioTarifa>,
+    @InjectRepository(ProgramacionPersonal)
+    private readonly programacionPersonalRepository: Repository<ProgramacionPersonal>,
+    @InjectRepository(Personal)
+    private readonly personalRepository: Repository<Personal>,
+    private readonly personalService: PersonalService,
+    private readonly estadoOrdenService: EstadoOrdenServicioService,
+    private readonly locacionService: LocacionService,
+    private readonly tarifasService: TarifasService,
+    private readonly tipoHorarioService: TipoHorarioService,
+    private readonly servicioService: ServiciosService,
+    private readonly emailService: EmailService, // Servicio de email para envio de correos
+    private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
+    private readonly reporteOrdenServicioService: ReporteOrdenServicioService, // Servicio para generar reportes
+    private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {
-      this.defaultLimit = this.configService.get<number>('defaultLimit');
+    this.defaultLimit = this.configService.get<number>('defaultLimit');
   }
 
-  async validarOrdenServicioId(validarIdOrdenServicioDto: ValidarIdOrdenServicioDto){
+  async validarOrdenServicioId(validarIdOrdenServicioDto: ValidarIdOrdenServicioDto) {
 
     const ordenServicioId = await this.ordenServicioIdRepository.findOneBy({
       descripcionId: validarIdOrdenServicioDto.descripcionId
     });
 
-    if (ordenServicioId){
+    if (ordenServicioId) {
       throw new BadRequestException(`El ID "${validarIdOrdenServicioDto.descripcionId}" ya existe`);
     }
 
@@ -120,16 +120,16 @@ export class OrdenServicioService {
       descripcionId: createOrdenServicioDto.numeroOrdenServicio
     });
 
-    if (existeNumeroOrden){
+    if (existeNumeroOrden) {
       throw new BadRequestException(`El ID "${createOrdenServicioDto.numeroOrdenServicio}" ya existe`);
     }
 
     // FECHA INICIO ORDEN SERVICIO
-                
+
     const fechaInicioSplit = createOrdenServicioDto.fechaInicio.toISOString().split('T')[0];
 
     const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
-    
+
     const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
 
     // FECHA FIN ORDEN SERVICIO
@@ -138,35 +138,35 @@ export class OrdenServicioService {
 
     // Validar que las fechas sean lógicamente correcto
     if (createOrdenServicioDto.fechaFin != null) {
-        
-        // FECHA FIN ORDEN SERVICIO
 
-        const fechaFinSplit = createOrdenServicioDto.fechaFin.toISOString().split('T')[0];
-    
-        const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
-                
-        fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
+      // FECHA FIN ORDEN SERVICIO
 
-        if (fechaInicioOrden >= fechaFinOrden) {
+      const fechaFinSplit = createOrdenServicioDto.fechaFin.toISOString().split('T')[0];
 
-            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
-        
-        }
+      const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
 
-        if (createOrdenServicioDto.precioTotal == null || createOrdenServicioDto.precioTotal == 0){
+      fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
 
-            throw new BadRequestException('se debe enviar el precio total al ser una orden definida');          
+      if (fechaInicioOrden >= fechaFinOrden) {
 
-        }
+        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+
+      }
+
+      if (createOrdenServicioDto.precioTotal == null || createOrdenServicioDto.precioTotal == 0) {
+
+        throw new BadRequestException('se debe enviar el precio total al ser una orden definida');
+
+      }
 
     }
 
     // FECHA CREACION ORDEN SERVICIO
-                
+
     const fechaCreacionSplit = createOrdenServicioDto.fechaCreacion.toISOString().split('T')[0];
 
     const [añoCreacion, mesCreacion, diaCreacion] = fechaCreacionSplit.split('-').map(Number);
-    
+
     const fechaCreacionOrden = new Date(añoCreacion, mesCreacion - 1, diaCreacion);
 
     // OBTENER ID ESTADO ORDEN SERVICIO
@@ -174,9 +174,9 @@ export class OrdenServicioService {
     let estadoOrdenServicio: EstadoOrdenEntity;
 
     if (createOrdenServicioDto.fechaFin != null && fechaFinOrden < fechaCreacionOrden) {
-     // Caso 1: Ya terminó (fecha fin es anterior a fecha creación)
+      // Caso 1: Ya terminó (fecha fin es anterior a fecha creación)
       estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.TERMINADO);
-    
+
     }
 
     else if (fechaInicioOrden > fechaCreacionOrden) {
@@ -224,19 +224,19 @@ export class OrdenServicioService {
       const nombreServicios = []
 
       for (const servicio of servicios) {
-              
+
         // OBTENER TARIFA
         const tarifa = await this.tarifasService.findOne(servicio.idTarifa);
 
         nombreServicios.push(tarifa.idServicio.descripcion);
-        
+
         // Validar si se debe enviar el precio del servicio
         if (createOrdenServicioDto.fechaFin != null) {
-  
-          if (servicio.precio == null || servicio.precio == 0){
-  
-            throw new BadRequestException(`se debe enviar el precio del servicio ${tarifa.idServicio.descripcion} al ser una orden definida`);          
-  
+
+          if (servicio.precio == null || servicio.precio == 0) {
+
+            throw new BadRequestException(`se debe enviar el precio del servicio ${tarifa.idServicio.descripcion} al ser una orden definida`);
+
           }
 
         }
@@ -244,19 +244,19 @@ export class OrdenServicioService {
         // TODO!: FEATURE PERSONAL
         // Validar si el servicio requiere personal
         // if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.personal.length <= 0){
-          
+
         //   throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
 
         // }
 
         // Crear el servicio para la orden
         const servicioOrden = queryRunner.manager.create(OrdenServicioTarifa, {
-            idOrdenServicio: savedOrdenServicio,
-            idTarifa: tarifa,
-            cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
-            horaInicio: servicio.horaInicio,
-            horaFin: servicio.horaFin,
-            precio: servicio.precio ? servicio.precio : 0
+          idOrdenServicio: savedOrdenServicio,
+          idTarifa: tarifa,
+          cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
+          horaInicio: servicio.horaInicio,
+          horaFin: servicio.horaFin,
+          precio: servicio.precio ? servicio.precio : 0
         });
 
         const savedServicio = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
@@ -264,22 +264,22 @@ export class OrdenServicioService {
         // agregar el personal si es necesario
         const personalServicio = servicio.personal;
 
-        for (const personalAsignado of personalServicio){
+        for (const personalAsignado of personalServicio) {
 
           // OBTENER PERSONAL
           const personal = await this.personalService.findOne(personalAsignado.idPersonal);
 
           // asignar personal para el servicio
           const asignarPersonal = queryRunner.manager.create(ProgramacionPersonal, {
-              idOrdenServicioTarifa: savedServicio,
-              idPersonal: personal,
-              horaInicio: personalAsignado.horaInicio,
-              horaFin: personalAsignado.horaFin
+            idOrdenServicioTarifa: savedServicio,
+            idPersonal: personal,
+            horaInicio: personalAsignado.horaInicio,
+            horaFin: personalAsignado.horaFin
           });
 
           const savedPersonal = await queryRunner.manager.save(ProgramacionPersonal, asignarPersonal);
 
-        }        
+        }
 
       }
 
@@ -287,7 +287,7 @@ export class OrdenServicioService {
       const nombreResponsable = `${locacion.primerNombreResponsable} ${locacion.primerApellidoResponsable}`;
 
       const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
-        createOrdenServicioDto.idLocacion, 
+        createOrdenServicioDto.idLocacion,
         estadoOrdenServicio.idEstadoOrdenServicio
       )
 
@@ -296,16 +296,16 @@ export class OrdenServicioService {
       const emails = [...emailsLocacion, ...emailsApp];
 
       await queryRunner.commitTransaction();
-      
+
       await this.notificationEmail(
         savedOrdenServicio.idOrdenServicio,
-        nombreResponsable, 
+        nombreResponsable,
         locacion.nombre,
         emails
       );
 
       return savedOrdenServicio;
-      
+
     } catch (error) {
 
       if (queryRunner.isTransactionActive) {
@@ -313,13 +313,13 @@ export class OrdenServicioService {
       }
 
       throw error;
-      
+
     } finally {
 
       await queryRunner.release();
 
     }
-    
+
 
   }
 
@@ -329,7 +329,7 @@ export class OrdenServicioService {
     nombreResponsable: string,
     locacion: string,
     emails: string[]
-  ) {        
+  ) {
 
     const ordenServicio = await this.findOneOrdenRelations(idOrdenServicio);
 
@@ -376,49 +376,49 @@ export class OrdenServicioService {
       </div>
       `;
 
-      const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): creacion orden de servicio ${ordenServicio.ordenServicioId.descripcionId}`;
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): creacion orden de servicio ${ordenServicio.ordenServicioId.descripcionId}`;
 
-      const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicio);
+    const ordenServicioBuffer = await this.reporteOrdenServicioService.getBufferReporteOrdenServicio(ordenServicio);
 
-      // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
-      const options: SendMailOptions = {
-          to: emails,
-          subject: subject,
-          htmlBody: html,
-          attachments: [
-          {
-            filename: `Orden-servicio-${ordenServicio.ordenServicioId.descripcionId}.pdf`,
-            content: ordenServicioBuffer,
-            contentType: 'application/pdf',
-          },
-        ],
-      }
-  
-      // Enviamos correo para notificar al usuario
-      const isEmailSend = await this.emailService.sendEmail(options);
-  
-      if (!isEmailSend){
-          throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
-      }
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
+        {
+          filename: `Orden-servicio-${ordenServicio.ordenServicioId.descripcionId}.pdf`,
+          content: ordenServicioBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend) {
+      throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    }
 
   }
 
   async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
-    
+
     if (pagination) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
-      
+
       // Se hace la consulta de manera paginada
       const ordenesServicio = await this.ordenServicioRepository.find({
-          take: limit,
-          skip: offset,
-          order: {
-              fechaInicio: 'DESC'
-          }
+        take: limit,
+        skip: offset,
+        order: {
+          fechaInicio: 'DESC'
+        }
       });
-  
+
       return ordenesServicio;
 
     }
@@ -432,10 +432,10 @@ export class OrdenServicioService {
   }
 
   async findOne(id: number) {
-    
-    const ordenServicio = await this.ordenServicioRepository.findOneBy({idOrdenServicio: id});
-    
-    if(!ordenServicio) throw new NotFoundException(`Orden de servicio con id "${id}" no se ha encontrado`);
+
+    const ordenServicio = await this.ordenServicioRepository.findOneBy({ idOrdenServicio: id });
+
+    if (!ordenServicio) throw new NotFoundException(`Orden de servicio con id "${id}" no se ha encontrado`);
 
     return ordenServicio;
 
@@ -463,25 +463,25 @@ export class OrdenServicioService {
         },
       },
     });
-  
+
     if (!ordenServicio)
       throw new NotFoundException(`Orden de servicio con id "${id}" no se ha encontrado`);
-  
+
     return ordenServicio;
   }
 
-  async validacionFechas(validarFechasOrdenDto: ValidarFechasOrdenServicioDto){
+  async validacionFechas(validarFechasOrdenDto: ValidarFechasOrdenServicioDto) {
 
     const { fechaInicio, fechaFin } = validarFechasOrdenDto;
 
     //! VALIDACION FECHAS
 
     // FECHA INICIO ORDEN SERVICIO
-                
+
     const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
 
     const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
-    
+
     const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
 
     // FECHA FIN ORDEN SERVICIO
@@ -490,26 +490,26 @@ export class OrdenServicioService {
 
     // Validar que las fechas sean lógicamente correcto
     if (fechaFin != null) {
-        
+
       // FECHA FIN ORDEN SERVICIO
 
       const fechaFinSplit = fechaFin.toISOString().split('T')[0];
-  
+
       const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
-              
+
       fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
 
       if (fechaInicioOrden >= fechaFinOrden) {
 
-          throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
-      
+        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+
       }
 
     }
-      
+
   }
 
-  async validacionHorarios(validarHorarioServicioDto: ValidarHorarioServicioDto){
+  async validacionHorarios(validarHorarioServicioDto: ValidarHorarioServicioDto) {
 
     const { idTarifa, idServicio, horaInicio, horaFin } = validarHorarioServicioDto;
 
@@ -530,9 +530,9 @@ export class OrdenServicioService {
 
     }
 
-    if (tipohorarioDescripcion.nombre === TipoHorarioInterface.MIXTO && horaInicio > horaFin){
+    if (tipohorarioDescripcion.nombre === TipoHorarioInterface.MIXTO && horaInicio > horaFin) {
 
-      throw new BadRequestException(`El horario ${tipohorarioDescripcion.nombre} debe estar en un rango valido`);          
+      throw new BadRequestException(`El horario ${tipohorarioDescripcion.nombre} debe estar en un rango valido`);
 
     }
 
@@ -541,18 +541,18 @@ export class OrdenServicioService {
       const tipoHorario = await this.tipoHorarioService.findOneVigenteByName(tipohorarioDescripcion.nombre);
 
       const { horaInicio: tipoHorariohoraInicio, horaFin: tipoHorarioHoraFin } = tipoHorario;
-  
+
       if (horaInicio < tipoHorariohoraInicio || horaFin > tipoHorarioHoraFin) {
-  
+
         throw new BadRequestException(`El horario ${tipohorarioDescripcion.nombre} debe estar dentro del rango de ${tipoHorariohoraInicio} a ${tipoHorarioHoraFin}`);
-      
+
       }
 
     }
 
     let duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
 
-    if (!Number.isInteger(duracionServicio)){
+    if (!Number.isInteger(duracionServicio)) {
 
       throw new BadRequestException(`La duracion del servicio debe ser horas exactas`);
 
@@ -562,7 +562,7 @@ export class OrdenServicioService {
 
     // Validar que la duracion del servicio sea correcta
     if (tipoDuracion.descripcion === TipoDuracionInterface.FIJA) {
-      
+
       const horasFijas = servicio.horasFijas;
 
       if (duracionServicio !== horasFijas) {
@@ -599,8 +599,8 @@ export class OrdenServicioService {
 
     // Convertir a minutos totales
     function horaAMinutos(hora: string): number {
-        const [h, m, s] = hora.split(':').map(Number);
-        return h * 60 + m + s / 60;
+      const [h, m, s] = hora.split(':').map(Number);
+      return h * 60 + m + s / 60;
     }
 
     let minutosInicio = horaAMinutos(horaInicio);
@@ -608,16 +608,16 @@ export class OrdenServicioService {
 
     // Si la hora de fin es menor, cruza medianoche
     if (minutosFin < minutosInicio) {
-        minutosFin += 24 * 60; // Agregar 24 horas
+      minutosFin += 24 * 60; // Agregar 24 horas
     }
-    
+
     const duracionMinutos = minutosFin - minutosInicio;
     return duracionMinutos / 60; // Convertir a horas
-  
+
 
   }
 
-  async obtenerPrecio(validarPrecioOrdenDto: PrecioOrdenDto){
+  async obtenerPrecio(validarPrecioOrdenDto: PrecioOrdenDto) {
 
     const { idTarifa, horaInicio, horaFin, fechaInicio, fechaFin } = validarPrecioOrdenDto;
 
@@ -626,7 +626,7 @@ export class OrdenServicioService {
     // const servicio = await this.servicioService.findOne(idServicio);
 
     if (!fechaFin) {
-  
+
       return {
         "message": "La orden de servicio es indefinida, el precio se calculara al momento de hacer la liquidacion o al finalizar el servicio",
         "precio": null,
@@ -637,25 +637,25 @@ export class OrdenServicioService {
         "precioAntesIva": null,
         "iva": null
       }
-        
+
     }
-    
+
     //! DESESTRUCTURAR FECHAS PARA EL MANEJO CORRECTO
 
     // FECHA INICIO ORDEN SERVICIO
-                
+
     const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
 
     const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
-    
+
     const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
-    
+
     // FECHA FIN ORDEN SERVICIO
-                
+
     const fechaFinSplit = fechaFin.toISOString().split('T')[0];
 
     const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
-    
+
     const fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
 
 
@@ -667,21 +667,21 @@ export class OrdenServicioService {
     let costosDirectosSeguroVida: number;
     let aui: number;
     let precioAntesIva: number;
-    let iva: number; 
+    let iva: number;
 
     // VALIDAR SI SE ESTA PIDIENDO SERVICIO POR UN MES EXACTO, ES DECIR TODO ENERO, TODO FEBRERO, ...
     if (this.esMesCompleto(fechaInicioOrden, fechaFinOrden)) {
-      
+
       let diaFinMes: number = diaFin;
 
-      if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
+      if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO) {
 
         diaFinMes = diaFin - 1;
 
-      } 
+      }
 
       // SI EL TIPO DE TARIFA ES POR MES
-      if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES){
+      if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES) {
 
         precioTotal = tarifa.precioTotal;
         costosDirectos = tarifa.costosDirectos;
@@ -689,26 +689,26 @@ export class OrdenServicioService {
         costosDirectosSeguroVida = tarifa.costosDirectosSeguroVida;
         aui = tarifa.aui;
         precioAntesIva = tarifa.precioAntesIva;
-        iva = tarifa.iva; 
+        iva = tarifa.iva;
 
       }
 
       // SI ES UNIDAD O DIA
-      else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa.idTipoTarifa.nombre === TipoTarifaInterface.DIA){
+      else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa.idTipoTarifa.nombre === TipoTarifaInterface.DIA) {
 
         costosDirectos = tarifa.costosDirectos * diaFinMes;
         seguroVida = tarifa.seguroVida * diaFinMes;
         aui = tarifa.aui * diaFinMes;
         costosDirectosSeguroVida = costosDirectos + seguroVida;
         precioAntesIva = costosDirectosSeguroVida + aui;
-        iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+        iva = Math.round(precioAntesIva * 0.019); // IVA del 19%
         precioTotal = Math.round(precioAntesIva + iva);
 
       }
 
       // SI ES TIPO HORA
       else {
-        
+
         const costosDirectosTotalDia = tarifa.costosDirectos * duracionServicio;
         const seguroVidaTotalDia = tarifa.seguroVida * duracionServicio;
         const auiTotalDia = tarifa.aui * duracionServicio;
@@ -718,7 +718,7 @@ export class OrdenServicioService {
         aui = auiTotalDia * diaFinMes;
         costosDirectosSeguroVida = costosDirectos + seguroVida;
         precioAntesIva = costosDirectosSeguroVida + aui;
-        iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+        iva = Math.round(precioAntesIva * 0.019); // IVA del 19%
         precioTotal = Math.round(precioAntesIva + iva);
 
       }
@@ -740,7 +740,7 @@ export class OrdenServicioService {
     // VALIDACIONES POR DIA
     let duracionServicioDias = this.calcularDuracionServicioDias(fechaInicioOrden, fechaFinOrden);
 
-    if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO){
+    if (tarifa.idServicio.idTipoHorarioDescripcion.descripcion == TipoHorarioInterface.NOCTURNO) {
 
       duracionServicioDias -= 1
 
@@ -749,35 +749,35 @@ export class OrdenServicioService {
     }
 
     // SI EL TIPO DE TARIFA ES POR MES
-    if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES){
+    if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.MES) {
 
       const costosDirectosDia = tarifa.costosDirectos / tarifa.idTipoTarifa.cantidadTiempo;
       const seguroVidaDia = tarifa.seguroVida / tarifa.idTipoTarifa.cantidadTiempo;
       const auiDia = tarifa.aui / tarifa.idTipoTarifa.cantidadTiempo;
-      
+
       costosDirectos = costosDirectosDia * duracionServicioDias;
       seguroVida = seguroVidaDia * duracionServicioDias;
       aui = auiDia * duracionServicioDias;
       costosDirectosSeguroVida = costosDirectos + seguroVida;
       precioAntesIva = costosDirectosSeguroVida + aui;
-      iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+      iva = Math.round(precioAntesIva * 0.019); // IVA del 19%
       precioTotal = Math.round(precioAntesIva + iva);
 
     }
-    
+
     // SI ES UNIDAD O DIA
-    else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa.idTipoTarifa.nombre === TipoTarifaInterface.DIA){
+    else if (tarifa.idTipoTarifa.nombre === TipoTarifaInterface.UNIDAD || tarifa.idTipoTarifa.nombre === TipoTarifaInterface.DIA) {
 
       costosDirectos = tarifa.costosDirectos * duracionServicioDias;
       seguroVida = tarifa.seguroVida * duracionServicioDias;
       aui = tarifa.aui * duracionServicioDias;
       costosDirectosSeguroVida = costosDirectos + seguroVida;
       precioAntesIva = costosDirectosSeguroVida + aui;
-      iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+      iva = Math.round(precioAntesIva * 0.019); // IVA del 19%
       precioTotal = Math.round(precioAntesIva + iva);
 
     }
-    
+
     // SI ES TIPO HORA
     else {
 
@@ -790,7 +790,7 @@ export class OrdenServicioService {
       aui = auiTotalDia * duracionServicioDias;
       costosDirectosSeguroVida = costosDirectos + seguroVida;
       precioAntesIva = costosDirectosSeguroVida + aui;
-      iva =  Math.round(precioAntesIva * 0.019); // IVA del 19%
+      iva = Math.round(precioAntesIva * 0.019); // IVA del 19%
       precioTotal = Math.round(precioAntesIva + iva);
 
     }
@@ -806,51 +806,51 @@ export class OrdenServicioService {
       "precioAntesIva": precioAntesIva,
       "iva": iva
     }
-    
+
   }
 
   private esMesCompleto(fechaInicio: Date, fechaFin: Date): boolean {
-    
+
     // Verificar que sean del mismo mes y año
-    if (fechaInicio.getFullYear() !== fechaFin.getFullYear() || 
-        fechaInicio.getMonth() !== fechaFin.getMonth()) {
+    if (fechaInicio.getFullYear() !== fechaFin.getFullYear() ||
+      fechaInicio.getMonth() !== fechaFin.getMonth()) {
       return false;
     }
-    
+
     // Verificar que la fecha de inicio sea el día 1
     if (fechaInicio.getDate() !== 1) {
       return false;
     }
-    
+
     // Obtener el último día del mes
     const ultimoDiaDelMes = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + 1, 0).getDate();
-    
+
     // Verificar que la fecha fin sea el último día del mes
     return fechaFin.getDate() === ultimoDiaDelMes;
 
   }
 
-  private calcularDuracionServicioDias(fechaInicio: Date, fechaFin: Date){
+  private calcularDuracionServicioDias(fechaInicio: Date, fechaFin: Date) {
 
     // Convertir a objetos Date si son strings
     const inicio = fechaInicio;
     const fin = fechaFin;
-    
+
     // Resetear las horas para trabajar solo con fechas (sin horas)
     inicio.setHours(0, 0, 0, 0);
     fin.setHours(0, 0, 0, 0);
-    
+
     // Calcular la diferencia en milisegundos
     const diferenciaMilisegundos = fin.getTime() - inicio.getTime();
-    
+
     // Convertir a días
     const diasDiferencia = Math.floor(diferenciaMilisegundos / (1000 * 60 * 60 * 24));
-    
+
     // La duración mínima es 1 día (mismo día = 1 día de servicio)
     return diasDiferencia + 1;
 
   }
-  
+
   private parseHour(time: string): number {
     const [hh] = time.split(":").map(Number);
     return hh;
@@ -863,33 +863,33 @@ export class OrdenServicioService {
   }
 
   async validarAsignaciones(validarRangoHorarioPersonalOrdenDto: ValidarRangoHorarioPersonalOrdenDto) {
-    
+
     const horaInicio = this.parseHour(validarRangoHorarioPersonalOrdenDto.horaInicio);
     const horaFin = this.parseHour(validarRangoHorarioPersonalOrdenDto.horaFin);
     const duracionServicio = this.getDuration(horaInicio, horaFin);
-  
+
     let totalEmpleadoHoras = 0;
 
-    if (validarRangoHorarioPersonalOrdenDto.personal.length === 0){
+    if (validarRangoHorarioPersonalOrdenDto.personal.length === 0) {
       return {
         message: "No se asigno personal, no es necesario validar horarios"
       }
     }
-  
+
     for (const emp of validarRangoHorarioPersonalOrdenDto.personal) {
 
       const horaInicioEmpleado = this.parseHour(emp.horaInicio);
       const horaFinEmpleado = this.parseHour(emp.horaFin);
       const duracionEmp = this.getDuration(horaInicioEmpleado, horaFinEmpleado);
 
-      if (duracionServicio < 24){
+      if (duracionServicio < 24) {
 
-        if (horaInicioEmpleado == horaFinEmpleado){
+        if (horaInicioEmpleado == horaFinEmpleado) {
           throw new BadRequestException(`Hora inicio y fin de un empleado no puede ser la misma`);
         }
 
         // Validar que horario sea durante las horas del dia: hora inicio mayor a hora fin
-        if(horaInicio < horaFin){
+        if (horaInicio < horaFin) {
 
           // Validar que el horario del empleado este dentro del rango de la orden de servicio
           if (!(horaInicioEmpleado >= horaInicio && horaFinEmpleado <= horaFin)) {
@@ -901,9 +901,9 @@ export class OrdenServicioService {
 
           // Validar que el horario del empleado este dentro del rango de la orden de servicio (turno nocturno) o pasa por la medianoche
           const inicioEnRango = horaInicioEmpleado >= horaInicio || horaInicioEmpleado < horaFin;
-      
+
           const finEnRango = horaFinEmpleado <= horaFin || horaFinEmpleado > horaInicio;
-        
+
           // Validar que el turno del empleado esté dentro del rango
           if (!(inicioEnRango && finEnRango)) {
 
@@ -916,13 +916,13 @@ export class OrdenServicioService {
         }
 
       }
-  
+
       totalEmpleadoHoras += duracionEmp;
     }
 
-  
+
     // Validar que los empleados cubran la orden completa
-    if (!(totalEmpleadoHoras === duracionServicio)){
+    if (!(totalEmpleadoHoras === duracionServicio)) {
       throw new BadRequestException(`La duracion del horario de los empleados debe cubrir toda el tiempo de la orden`);
     }
 
@@ -976,7 +976,7 @@ export class OrdenServicioService {
     validarEmpleadosDisponiblesDto: ValidarEmpleadosDisponiblesDto,      // "HH:mm:ss"
   ): Promise<Personal[]> {
 
-    const {fechaInicio, fechaFin, horaInicio, horaFin} = validarEmpleadosDisponiblesDto;
+    const { fechaInicio, fechaFin, horaInicio, horaFin } = validarEmpleadosDisponiblesDto;
 
     // 1) Traer programaciones relevantes por FECHA (sin validar horas aquí)
     const qb = this.dataSource
@@ -990,8 +990,8 @@ export class OrdenServicioService {
       .innerJoin(OrdenServicioTarifa, "ost", "pp.idOrdenServicioTarifa = ost.idOrdenServicioTarifa")
       .innerJoin(OrdenServicio, "os", "ost.idOrdenServicio = os.idOrdenServicio")
       .innerJoin(EstadoOrdenEntity, "eos", "os.idEstadoOrdenServicio = eos.idEstadoOrdenServicio")
-      .where("eos.nombre NOT IN (:...estadosIgnorados)", { 
-        estadosIgnorados: [EstadoOrdenServicio.CANCELADA, EstadoOrdenServicio.ANULADA, EstadoOrdenServicio.TERMINADO] 
+      .where("eos.nombre NOT IN (:...estadosIgnorados)", {
+        estadosIgnorados: [EstadoOrdenServicio.CANCELADA, EstadoOrdenServicio.ANULADA, EstadoOrdenServicio.TERMINADO]
       });
 
     if (fechaFin) {
@@ -1030,17 +1030,17 @@ export class OrdenServicioService {
   }
 
   async updateValidarFechasOrdenServicio(id: number, updateValidarFechaOrdenServicioDto: UpdateValidarFechaOrdenServicioDto) {
-    
+
     const { fechaInicio, fechaFin, fechaActualizacion } = updateValidarFechaOrdenServicioDto;
-    
+
     // validar orden logico de las fechas
 
     // FECHA INICIO ORDEN SERVICIO
-                
+
     const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
 
     const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
-    
+
     const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
 
     // FECHA FIN ORDEN SERVICIO
@@ -1049,38 +1049,38 @@ export class OrdenServicioService {
 
     // Validar que las fechas sean lógicamente correcto
     if (fechaFin != null) {
-        
-        // FECHA FIN ORDEN SERVICIO
 
-        const fechaFinSplit = fechaFin.toISOString().split('T')[0];
-    
-        const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
-                
-        fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
+      // FECHA FIN ORDEN SERVICIO
 
-        if (fechaInicioOrden >= fechaFinOrden) {
+      const fechaFinSplit = fechaFin.toISOString().split('T')[0];
 
-            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
-        
-        }
+      const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+
+      fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
+
+      if (fechaInicioOrden >= fechaFinOrden) {
+
+        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+
+      }
 
     }
-    
+
     // Obtener orden de servicio
     const ordenServicio = await this.findOne(id);
 
     // Convert ordenServicio.fechaInicio to Date if it's a string
     const fechaInicioOrdenString = new Date(ordenServicio.fechaInicio).toISOString().split('T')[0];
-    
+
     const fechaFinOrdenString = ordenServicio.fechaFin
       ? new Date(ordenServicio.fechaFin).toISOString().split('T')[0]
       : null;
-  
+
     const fechaFinOrdenDtoString = fechaFinOrden
       ? fechaFinOrden.toISOString().split('T')[0]
       : null;
 
-    if(fechaInicioOrden.toISOString().split('T')[0] == fechaInicioOrdenString && fechaFinOrdenDtoString === fechaFinOrdenString){
+    if (fechaInicioOrden.toISOString().split('T')[0] == fechaInicioOrdenString && fechaFinOrdenDtoString === fechaFinOrdenString) {
       return {
         message: 'Las fechas son iguales a las que ya tiene la orden de servicio, no se realizo ningun cambio'
       }
@@ -1090,38 +1090,38 @@ export class OrdenServicioService {
 
     // validar si es diferente a la que se coloco
     // si es diferente validar que el estado de la orden sea programado o por iniciar
-    if(fechaInicioOrden.toISOString().split('T')[0] != fechaInicioOrdenString){
-    
-      if(descripcionEstadoOrdenServicio == EstadoOrdenServicio.INICIADO || descripcionEstadoOrdenServicio == EstadoOrdenServicio.POR_TERMINAR){
+    if (fechaInicioOrden.toISOString().split('T')[0] != fechaInicioOrdenString) {
+
+      if (descripcionEstadoOrdenServicio == EstadoOrdenServicio.INICIADO || descripcionEstadoOrdenServicio == EstadoOrdenServicio.POR_TERMINAR) {
 
         throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden aun no ha iniciado');
 
       }
 
-      if(descripcionEstadoOrdenServicio == EstadoOrdenServicio.CANCELADA || descripcionEstadoOrdenServicio == EstadoOrdenServicio.ANULADA){
+      if (descripcionEstadoOrdenServicio == EstadoOrdenServicio.CANCELADA || descripcionEstadoOrdenServicio == EstadoOrdenServicio.ANULADA) {
 
         throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden no ha sido cancelada o anulada');
 
       }
-      
-      if(descripcionEstadoOrdenServicio == EstadoOrdenServicio.TERMINADO){
+
+      if (descripcionEstadoOrdenServicio == EstadoOrdenServicio.TERMINADO) {
 
         throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden no ha terminado');
 
       }
 
     }
-    
+
     // validar fecha fin de la orden y si es diferente a la que se coloco
     // si es diferente validar - que el estado de la orden sea PROGRAMADO , POR INICIAR , INICIADO , POR TERMINAR 
 
-    if(fechaFinOrden != null && fechaFinOrden.toISOString().split('T')[0] != fechaFinOrdenString){
+    if (fechaFinOrden != null && fechaFinOrden.toISOString().split('T')[0] != fechaFinOrdenString) {
 
-      if(
-        descripcionEstadoOrdenServicio == EstadoOrdenServicio.CANCELADA || 
+      if (
+        descripcionEstadoOrdenServicio == EstadoOrdenServicio.CANCELADA ||
         descripcionEstadoOrdenServicio == EstadoOrdenServicio.ANULADA ||
-        descripcionEstadoOrdenServicio == EstadoOrdenServicio.TERMINADO 
-      ){
+        descripcionEstadoOrdenServicio == EstadoOrdenServicio.TERMINADO
+      ) {
 
         throw new BadRequestException('La fecha de fin solo se puede modificar si la orden aun no ha sido cancelada, terminada o anulada');
 
@@ -1130,13 +1130,13 @@ export class OrdenServicioService {
     }
 
     // VALIDAR ESTADO DE LA ORDEN, TENER EN CUENTA SI LAS FECHAS SON IGUALES QUEDA COMO ESTA, SI CAMBIARON ENTONCES VALIDAR EN QUE ESTADO QUEDA
-    
+
     // FECHA ACTUALIZACION ORDEN SERVICIO
-                
+
     const fechaActualizacionSplit = fechaActualizacion.toISOString().split('T')[0];
 
     const [añoActualizacion, mesActualizacion, diaActualizacion] = fechaActualizacionSplit.split('-').map(Number);
-    
+
     const fechaActualizacionOrden = new Date(añoActualizacion, mesActualizacion - 1, diaActualizacion);
 
     // OBTENER ID ESTADO ORDEN SERVICIO
@@ -1148,12 +1148,12 @@ export class OrdenServicioService {
       return {
         message: `Estado Orden servicio luego de la actualizacion ${EstadoOrdenServicio.TERMINADO}`
       }
-    
+
     }
 
     else if (fechaInicioOrden > fechaActualizacionOrden) {
       // Caso 2: Está programado para el futuro
-      
+
       return {
         message: `Estado Orden servicio luego de la actualizacion ${EstadoOrdenServicio.PROGRAMADO}`
       }
@@ -1168,11 +1168,11 @@ export class OrdenServicioService {
         message: `Estado Orden servicio luego de la actualizacion ${EstadoOrdenServicio.INICIADO}`
       }
 
-    } 
+    }
 
   }
 
-  async updateOrdenServicio(id: number, updateOrdenServicioDto: UpdateOrdenServicioDto){
+  async updateOrdenServicio(id: number, updateOrdenServicioDto: UpdateOrdenServicioDto) {
 
     const { fechaInicio, fechaFin, fechaActualizacion } = updateOrdenServicioDto;
 
@@ -1182,11 +1182,11 @@ export class OrdenServicioService {
     await queryRunner.startTransaction();
 
     // FECHA INICIO ORDEN SERVICIO
-                
+
     const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
 
     const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
-    
+
     const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
 
     // FECHA FIN ORDEN SERVICIO
@@ -1195,35 +1195,35 @@ export class OrdenServicioService {
 
     // Validar que las fechas sean lógicamente correcto
     if (fechaFin != null) {
-        
-        // FECHA FIN ORDEN SERVICIO
 
-        const fechaFinSplit = fechaFin.toISOString().split('T')[0];
-    
-        const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
-                
-        fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
+      // FECHA FIN ORDEN SERVICIO
 
-        if (fechaInicioOrden >= fechaFinOrden) {
+      const fechaFinSplit = fechaFin.toISOString().split('T')[0];
 
-            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
-        
-        }
+      const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
 
-        if (updateOrdenServicioDto.precioTotal == null || updateOrdenServicioDto.precioTotal == 0){
+      fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
 
-            throw new BadRequestException('se debe enviar el precio total al ser una orden definida');          
+      if (fechaInicioOrden >= fechaFinOrden) {
 
-        }
+        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+
+      }
+
+      if (updateOrdenServicioDto.precioTotal == null || updateOrdenServicioDto.precioTotal == 0) {
+
+        throw new BadRequestException('se debe enviar el precio total al ser una orden definida');
+
+      }
 
     }
 
     // FECHA ACTUALIZACION ORDEN SERVICIO
-                
+
     const fechaActualizacionSplit = fechaActualizacion.toISOString().split('T')[0];
 
     const [añoActualizacion, mesActualizacion, diaActualizacion] = fechaActualizacionSplit.split('-').map(Number);
-    
+
     const fechaActualizacionOrden = new Date(añoActualizacion, mesActualizacion - 1, diaActualizacion);
 
     // OBTENER ID ESTADO ORDEN SERVICIO
@@ -1231,9 +1231,9 @@ export class OrdenServicioService {
     let estadoOrdenServicio: EstadoOrdenEntity;
 
     if (fechaFin != null && fechaFinOrden < fechaActualizacionOrden) {
-     // Caso 1: Ya terminó (fecha fin es anterior a fecha actualizacion)
+      // Caso 1: Ya terminó (fecha fin es anterior a fecha actualizacion)
       estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.TERMINADO);
-    
+
     }
 
     else if (fechaInicioOrden > fechaActualizacionOrden) {
@@ -1253,12 +1253,12 @@ export class OrdenServicioService {
 
     const ordenServicio = await this.findOne(id);
 
-    if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio != estadoOrdenServicio.idEstadoOrdenServicio){
+    if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio != estadoOrdenServicio.idEstadoOrdenServicio) {
       cambioEstadoOrden = true;
     }
 
     try {
-      
+
       // actualizar campos
       ordenServicio.fechaInicio = fechaInicioOrden;
       ordenServicio.fechaFin = fechaFinOrden;
@@ -1268,7 +1268,7 @@ export class OrdenServicioService {
 
       const savedOrdenServicio = await queryRunner.manager.save(OrdenServicio, ordenServicio);
 
-      const servicios = ordenServicio.tarifas; 
+      const servicios = ordenServicio.tarifas;
 
       // eliminar tarifas asociadas a la orden
       await queryRunner.manager.delete(OrdenServicioTarifa, { idOrdenServicio: id });
@@ -1277,13 +1277,13 @@ export class OrdenServicioService {
 
         // OBTENER PRECIO
         let precio = 0
-              
+
         // OBTENER TARIFA
         const tarifa = await this.tarifasService.findOne(servicio.idTarifa.idTarifa);
-        
+
         // Validar si se debe enviar el precio del servicio
         if (fechaFinOrden != null) {
-  
+
           // calcular precio
           const resultado = await this.obtenerPrecio({
             idTarifa: tarifa.idTarifa,
@@ -1299,19 +1299,19 @@ export class OrdenServicioService {
 
         // Validar si el servicio requiere personal
         // if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.programaciones.length <= 0){
-          
+
         //   throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
 
         // }
 
         // Crear el servicio para la orden
         const servicioOrden = queryRunner.manager.create(OrdenServicioTarifa, {
-            idOrdenServicio: savedOrdenServicio,
-            idTarifa: tarifa,
-            cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
-            horaInicio: servicio.horaInicio,
-            horaFin: servicio.horaFin,
-            precio: precio
+          idOrdenServicio: savedOrdenServicio,
+          idTarifa: tarifa,
+          cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
+          horaInicio: servicio.horaInicio,
+          horaFin: servicio.horaFin,
+          precio: precio
         });
 
         const savedServicio = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
@@ -1338,33 +1338,33 @@ export class OrdenServicioService {
 
       }
 
-      if (cambioEstadoOrden){
+      await queryRunner.commitTransaction();
+
+      if (cambioEstadoOrden) {
 
         // envio de correos que se tengan registrados en la locacion
         const nombreResponsable = `${ordenServicio.idLocacion.primerNombreResponsable} ${ordenServicio.idLocacion.primerApellidoResponsable}`;
-  
+
         const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
-          ordenServicio.idLocacion.idLocacion, 
+          ordenServicio.idLocacion.idLocacion,
           estadoOrdenServicio.idEstadoOrdenServicio
         )
-  
+
         const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoOrdenServicio.nombre);
-  
+
         const emails = [...emailsLocacion, ...emailsApp];
-  
+
         await this.notificationUpdateEmail(
           savedOrdenServicio.idOrdenServicio,
-          nombreResponsable, 
+          nombreResponsable,
           ordenServicio.idLocacion.nombre,
           emails
         );
-        
+
       }
 
-      await queryRunner.commitTransaction();
-      
       return savedOrdenServicio;
-      
+
     } catch (error) {
 
       if (queryRunner.isTransactionActive) {
@@ -1372,7 +1372,7 @@ export class OrdenServicioService {
       }
 
       throw error;
-      
+
     } finally {
 
       await queryRunner.release();
@@ -1387,7 +1387,7 @@ export class OrdenServicioService {
     nombreResponsable: string,
     locacion: string,
     emails: string[]
-  ) {        
+  ) {
 
     const ordenServicio = await this.findOneOrdenRelations(idOrdenServicio);
 
@@ -1440,10 +1440,10 @@ export class OrdenServicioService {
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {
-        to: emails,
-        subject: subject,
-        htmlBody: html,
-        attachments: [
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
         {
           filename: `Orden-servicio-${ordenServicio.ordenServicioId.descripcionId}.pdf`,
           content: ordenServicioBuffer,
@@ -1455,8 +1455,8 @@ export class OrdenServicioService {
     // Enviamos correo para notificar al usuario
     const isEmailSend = await this.emailService.sendEmail(options);
 
-    if (!isEmailSend){
-        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    if (!isEmailSend) {
+      throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
     }
 
   }
@@ -1467,14 +1467,14 @@ export class OrdenServicioService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-  
+
     try {
       // 🔥 Traer orden con su OrdenServicioId
       const ordenServicio = await this.ordenServicioRepository.findOne({
         where: { idOrdenServicio: id },
         relations: ['ordenServicioId'],
       });
-  
+
       if (!ordenServicio) {
         throw new NotFoundException(`Orden de servicio ${id} no encontrada`);
       }
@@ -1486,10 +1486,10 @@ export class OrdenServicioService {
           consecutivo: ordenServicio.ordenServicioId.consecutivo
         }
       });
-  
+
       // 🔥 Primero eliminamos la OrdenServicio
       await queryRunner.manager.remove(ordenServicio);
-  
+
       // 🔥 Luego eliminamos el ID asociado
       // if (ordenServicio.ordenServicioId) {
       //   await queryRunner.manager.remove(ordenServicio.ordenServicioId);
@@ -1507,28 +1507,28 @@ export class OrdenServicioService {
       if (emails && emails.length > 0) {
         await this.notificationDeleteEmail(
           ordenServicioData,
-          nombreResponsable, 
+          nombreResponsable,
           ordenServicio.idLocacion?.nombre || '',
           emails
         );
       }
-      
+
       await queryRunner.commitTransaction();
 
       return { message: `Orden de servicio ${id} eliminada correctamente` };
-  
+
     } catch (error) {
       if (queryRunner.isTransactionActive) {
         await queryRunner.rollbackTransaction();
       }
       this.logger.error(error);
-  
+
       if (error.errno == 1451) {
         throw new BadRequestException(
           `La orden de servicio no se puede eliminar porque está siendo usada en el sistema`,
         );
       }
-  
+
       throw new InternalServerErrorException(`Error eliminando la orden`);
     } finally {
       await queryRunner.release();
@@ -1541,7 +1541,7 @@ export class OrdenServicioService {
     nombreResponsable: string,
     locacion: string,
     emails: string[]
-  ) {        
+  ) {
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -1592,10 +1592,10 @@ export class OrdenServicioService {
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {
-        to: emails,
-        subject: subject,
-        htmlBody: html,
-        attachments: [
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
         {
           filename: `Orden-servicio-${ordenServicioData.ordenServicioId.descripcionId}.pdf`,
           content: ordenServicioBuffer,
@@ -1607,28 +1607,28 @@ export class OrdenServicioService {
     // Enviamos correo para notificar al usuario
     const isEmailSend = await this.emailService.sendEmail(options);
 
-    if (!isEmailSend){
-        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    if (!isEmailSend) {
+      throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
     }
 
   }
 
-  async cancelarOrdenServicio(id: number){
+  async cancelarOrdenServicio(id: number) {
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-  
+
     try {
-  
+
       const ordenServicio = await this.findOneOrdenRelations(id);
 
       const estadoCancelada = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.CANCELADA);
 
-      if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio === estadoCancelada.idEstadoOrdenServicio){
+      if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio === estadoCancelada.idEstadoOrdenServicio) {
 
         throw new BadRequestException(`La orden de servicio ${id} ya se encuentra cancelada`);
-  
+
       }
 
       ordenServicio.idEstadoOrdenServicio = estadoCancelada;
@@ -1636,12 +1636,12 @@ export class OrdenServicioService {
       ordenServicio.fechaFin = new Date();
 
       await queryRunner.manager.save(OrdenServicio, ordenServicio);
-  
+
       // envio de correos que se tengan registrados en la locacion
       const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
 
       const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
-        ordenServicio.idLocacion.idLocacion, 
+        ordenServicio.idLocacion.idLocacion,
         estadoCancelada.idEstadoOrdenServicio
       )
 
@@ -1652,22 +1652,22 @@ export class OrdenServicioService {
       if (emails && emails.length > 0) {
         await this.notificationCanceladaEmail(
           ordenServicio,
-          nombreResponsable, 
+          nombreResponsable,
           ordenServicio.idLocacion?.nombre || '',
           emails
         );
       }
-      
+
       await queryRunner.commitTransaction();
 
       return { message: `Orden de servicio ${id} cancelada correctamente` };
-  
+
     } catch (error) {
       if (queryRunner.isTransactionActive) {
         await queryRunner.rollbackTransaction();
       }
       this.logger.error(error);
-  
+
       throw new InternalServerErrorException(`Error eliminando la orden`);
     } finally {
       await queryRunner.release();
@@ -1681,7 +1681,7 @@ export class OrdenServicioService {
     nombreResponsable: string,
     locacion: string,
     emails: string[]
-  ) {        
+  ) {
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -1732,10 +1732,10 @@ export class OrdenServicioService {
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {
-        to: emails,
-        subject: subject,
-        htmlBody: html,
-        attachments: [
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
         {
           filename: `Orden-servicio-${ordenServicioData.ordenServicioId.descripcionId}.pdf`,
           content: ordenServicioBuffer,
@@ -1747,42 +1747,42 @@ export class OrdenServicioService {
     // Enviamos correo para notificar al usuario
     const isEmailSend = await this.emailService.sendEmail(options);
 
-    if (!isEmailSend){
-        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    if (!isEmailSend) {
+      throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
     }
 
   }
 
-  async anularOrdenServicio(id: number){
+  async anularOrdenServicio(id: number) {
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-  
+
     try {
-  
+
       const ordenServicio = await this.findOneOrdenRelations(id);
 
       const estadoAnulada = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.ANULADA);
 
-      if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio === estadoAnulada.idEstadoOrdenServicio){
+      if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio === estadoAnulada.idEstadoOrdenServicio) {
 
         throw new BadRequestException(`La orden de servicio ${id} ya se encuentra anulada`);
-  
+
       }
 
       // =========================================================
       // CAMBIAR ESTADO ORDEN
       // =========================================================
       ordenServicio.idEstadoOrdenServicio = estadoAnulada;
-  
+
       await queryRunner.manager.save(OrdenServicio, ordenServicio);
-  
+
       // =========================================================
       // MARCAR ID COMO ANULADO
       // =========================================================
       ordenServicio.ordenServicioId.anulado = true;
-  
+
       await queryRunner.manager.save(
         OrdenServicioId,
         ordenServicio.ordenServicioId
@@ -1797,7 +1797,7 @@ export class OrdenServicioService {
           consecutivo: ordenServicio.ordenServicioId.consecutivo,
           motivo: 'Orden anulada manualmente',
         });
-  
+
       await queryRunner.manager.save(
         OrdenServicioIdAnulado,
         ordenServicioIdAnulado
@@ -1806,7 +1806,7 @@ export class OrdenServicioService {
       // =========================================================
       // EMAILS
       // =========================================================
-  
+
       // envio de correos que se tengan registrados en la locacion
       const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
 
@@ -1817,22 +1817,22 @@ export class OrdenServicioService {
       if (emails && emails.length > 0) {
         await this.notificationAnuladaEmail(
           ordenServicio,
-          nombreResponsable, 
+          nombreResponsable,
           ordenServicio.idLocacion?.nombre || '',
           emails
         );
       }
-      
+
       await queryRunner.commitTransaction();
 
       return { message: `Orden de servicio ${id} anulada correctamente` };
-  
+
     } catch (error) {
       if (queryRunner.isTransactionActive) {
         await queryRunner.rollbackTransaction();
       }
       this.logger.error(error);
-  
+
       throw new InternalServerErrorException(`Error anulando la orden`);
     } finally {
       await queryRunner.release();
@@ -1846,7 +1846,7 @@ export class OrdenServicioService {
     nombreResponsable: string,
     locacion: string,
     emails: string[]
-  ) {        
+  ) {
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -1897,10 +1897,10 @@ export class OrdenServicioService {
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {
-        to: emails,
-        subject: subject,
-        htmlBody: html,
-        attachments: [
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
         {
           filename: `Orden-servicio-${ordenServicioData.ordenServicioId.descripcionId}.pdf`,
           content: ordenServicioBuffer,
@@ -1912,24 +1912,24 @@ export class OrdenServicioService {
     // Enviamos correo para notificar al usuario
     const isEmailSend = await this.emailService.sendEmail(options);
 
-    if (!isEmailSend){
-        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    if (!isEmailSend) {
+      throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
     }
 
   }
-    
-  async downloadOrdenServicioPdf(id: number){
+
+  async downloadOrdenServicioPdf(id: number) {
 
     const ordenServicio = await this.findOneOrdenRelations(id);
 
     return {
       pdfDoc: this.reporteOrdenServicioService.getReporteOrdenServicio(ordenServicio),
       title: `Orden-servicio-${ordenServicio.idOrdenServicio}`
-    };    
+    };
 
   }
-  
-  async sendOrdenServicioPdf(id: number, enviarCorreoDto: EnviarCorreoDto){
+
+  async sendOrdenServicioPdf(id: number, enviarCorreoDto: EnviarCorreoDto) {
 
     const ordenServicio = await this.findOneOrdenRelations(id);
 
@@ -1999,13 +1999,13 @@ export class OrdenServicioService {
     // Enviamos correo para notificar al usuario
     const isEmailSend = await this.emailService.sendEmail(options);
 
-    if (!isEmailSend){
-        throw new InternalServerErrorException(`Error al enviar correo con PDF orden de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
+    if (!isEmailSend) {
+      throw new InternalServerErrorException(`Error al enviar correo con PDF orden de servicio a los emails ${emails}, revisar correos si estan bien escritos`);
     }
 
   }
 
-  async reportesInicio(months: number){
+  async reportesInicio(months: number) {
 
     const now = new Date();
     let from: Date;
@@ -2046,37 +2046,37 @@ export class OrdenServicioService {
       acc[estado] = (acc[estado] || 0) + 1;
       return acc;
     }, {});
-    
+
     // Ordenes por mes + distribución por estado
     const mesesMap = {};
     const mesesLabels = [
       'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
       'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
     ];
-    
+
     for (const o of ordenes) {
       const fecha = new Date(o.fechaInicio);
       const mes = mesesLabels[fecha.getMonth()];
-    
+
       if (!mesesMap[mes]) mesesMap[mes] = {};
-    
+
       const estado = o.idEstadoOrdenServicio?.nombre;
       mesesMap[mes][estado] = (mesesMap[mes][estado] || 0) + 1;
     }
 
     // TOP 10 SERVICIOS MÁS UTILIZADOS
     const serviciosCount: Record<string, number> = {};
-    
+
     for (const o of ordenes) {
       for (const t of o.tarifas) {
         const servicio = t.idTarifa.idServicio;
         if (!servicio) continue;
-    
+
         const key = `${servicio.codigo} - ${servicio.descripcion}`;
         serviciosCount[key] = (serviciosCount[key] || 0) + 1;
       }
     }
-    
+
     const topServicios = Object.entries(serviciosCount)
       .map(([nombre, total]) => ({ nombre, total }))
       .sort((a, b) => b.total - a.total)
@@ -2084,14 +2084,14 @@ export class OrdenServicioService {
 
     // TOP 10 CLIENTES
     const clientesCount: Record<string, number> = {};
-    
+
     for (const o of ordenes) {
       const cliente = o.idLocacion?.idCliente;
       if (!cliente) continue;
-    
+
       clientesCount[cliente.nombre] = (clientesCount[cliente.nombre] || 0) + 1;
     }
-    
+
     const topClientes = Object.entries(clientesCount)
       .map(([nombre, total]) => ({ nombre, total }))
       .sort((a, b) => b.total - a.total)
@@ -2116,12 +2116,12 @@ export class OrdenServicioService {
 
   }
 
-  async imprimirOrdenServicio(id: number){
+  async imprimirOrdenServicio(id: number) {
 
     const ordenServicio = await this.findOneOrdenRelations(id);
 
     const buffer = await this.reporteOrdenServicioService
-    .getBufferReporteOrdenServicio(ordenServicio);
+      .getBufferReporteOrdenServicio(ordenServicio);
 
     return {
       file: buffer.toString('base64'),
@@ -2131,14 +2131,14 @@ export class OrdenServicioService {
 
   }
 
-  async actualizarEstadosAutomaticamente(){
+  async actualizarEstadosAutomaticamente() {
 
     const now = new Date();
 
     // =========================================================
     // NORMALIZAR FECHA ACTUAL
     // =========================================================
-  
+
     const hoy = new Date(
       now.getFullYear(),
       now.getMonth(),
@@ -2148,36 +2148,36 @@ export class OrdenServicioService {
     // =========================================================
     // ESTADOS
     // =========================================================
-  
+
     const estadoProgramado =
       await this.estadoOrdenService.findOneByName(
         EstadoOrdenServicio.PROGRAMADO
       );
-  
+
     const estadoPorIniciar =
       await this.estadoOrdenService.findOneByName(
         EstadoOrdenServicio.POR_INICIAR
       );
-  
+
     const estadoIniciado =
       await this.estadoOrdenService.findOneByName(
         EstadoOrdenServicio.INICIADO
       );
-  
+
     const estadoPorTerminar =
       await this.estadoOrdenService.findOneByName(
         EstadoOrdenServicio.POR_TERMINAR
       );
-  
+
     const estadoTerminado =
       await this.estadoOrdenService.findOneByName(
         EstadoOrdenServicio.TERMINADO
       );
 
-     // =========================================================
+    // =========================================================
     // TRAER ORDENES ACTIVAS
     // =========================================================
-  
+
     const ordenes = await this.ordenServicioRepository.find({
       where: {
         idEstadoOrdenServicio: {
@@ -2200,150 +2200,150 @@ export class OrdenServicioService {
     // =========================================================
     // RECORRER ORDENES
     // =========================================================
-  
+
     for (const orden of ordenes) {
 
       let nuevoEstado = null;
-      
+
       try {
-    
+
         const estadoActual = orden.idEstadoOrdenServicio.nombre;
-    
+
         // ============================================
         // FECHAS NORMALIZADAS
         // ============================================
-    
+
         const fechaInicio = new Date(orden.fechaInicio);
         const fechaInicioNormalizada = new Date(
           fechaInicio.getFullYear(),
           fechaInicio.getMonth(),
           fechaInicio.getDate()
         );
-    
+
         let fechaFinNormalizada = null;
-    
+
         if (orden.fechaFin) {
-    
+
           const fechaFin = new Date(orden.fechaFin);
-    
+
           fechaFinNormalizada = new Date(
             fechaFin.getFullYear(),
             fechaFin.getMonth(),
             fechaFin.getDate()
           );
-    
+
         }
-    
+
         // ============================================
         // DIAS RESTANTES
         // ============================================
-    
+
         const diffInicio =
           Math.ceil(
             (fechaInicioNormalizada.getTime() - hoy.getTime())
             / (1000 * 60 * 60 * 24)
           );
-    
+
         let diffFin = null;
-    
+
         if (fechaFinNormalizada) {
-    
+
           diffFin =
             Math.ceil(
               (fechaFinNormalizada.getTime() - hoy.getTime())
               / (1000 * 60 * 60 * 24)
             );
-    
+
         }
-    
+
         // =====================================================
         // PROGRAMADO -> POR INICIAR
         // =====================================================
-    
+
         if (
           estadoActual === EstadoOrdenServicio.PROGRAMADO &&
           diffInicio <= 2 &&
           diffInicio > 0
         ) {
-    
+
           nuevoEstado = estadoPorIniciar;
-    
+
         }
-    
+
         // =====================================================
         // POR INICIAR -> INICIADO
         // =====================================================
-    
+
         if (
           estadoActual === EstadoOrdenServicio.POR_INICIAR &&
           diffInicio === 0
         ) {
-    
+
           nuevoEstado = estadoIniciado;
-    
+
         }
-    
+
         // =====================================================
         // INICIADO -> POR TERMINAR
         // =====================================================
-    
+
         if (
           estadoActual === EstadoOrdenServicio.INICIADO &&
           fechaFinNormalizada &&
           diffFin <= 2 &&
           diffFin > 0
         ) {
-    
+
           nuevoEstado = estadoPorTerminar;
-    
+
         }
-    
+
         // =====================================================
         // POR TERMINAR -> TERMINADO
         // =====================================================
-    
+
         if (
           estadoActual === EstadoOrdenServicio.POR_TERMINAR &&
           fechaFinNormalizada &&
           diffFin === 0
         ) {
-    
+
           nuevoEstado = estadoTerminado;
-    
+
         }
-    
+
         // =====================================================
         // ACTUALIZAR
         // =====================================================
-    
+
         if (nuevoEstado) {
-  
+
           orden.idEstadoOrdenServicio = nuevoEstado;
-  
+
           await this.ordenServicioRepository.save(orden);
-    
+
           // =====================================================
           // EMAILS
           // =====================================================
-    
+
           const emailsApp =
             await this.correoDefaultService.findAllByEstadoOrden(
               nuevoEstado.nombre
             );
-  
+
           const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
-            orden.idLocacion.idLocacion, 
+            orden.idLocacion.idLocacion,
             nuevoEstado.idEstadoOrdenServicio
           )
-    
+
           const emails = [...emailsApp, ...emailsLocacion];
-    
+
           if (emails.length > 0) {
-    
+
             const nombreResponsable =
               `${orden.idLocacion?.primerNombreResponsable || ''} ${orden.idLocacion?.primerApellidoResponsable || ''}`
                 .trim();
-            
+
             try {
 
               await this.notificationCambioEstadoEmail(
@@ -2353,23 +2353,23 @@ export class OrdenServicioService {
                 emails,
                 nuevoEstado.nombre
               );
-              
+
             } catch (error) {
 
               this.logger.error(`Error enviando correo de notificacion por cambio de estado de orden ${orden.idOrdenServicio} a ${nuevoEstado.nombre}:`, error);
-              
+
             }
-    
+
           }
-        
+
         }
 
       } catch (error) {
 
         this.logger.error(`Error actualizando estado de orden ${orden.idOrdenServicio} a ${nuevoEstado.nombre}:`, error);
-        
+
       }
-  
+
     }
 
   }
@@ -2381,7 +2381,7 @@ export class OrdenServicioService {
     locacion: string,
     emails: string[],
     nuevoEstado: string
-  ) {        
+  ) {
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -2432,10 +2432,10 @@ export class OrdenServicioService {
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {
-        to: emails,
-        subject: subject,
-        htmlBody: html,
-        attachments: [
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
         {
           filename: `Orden-servicio-${ordenServicioData.ordenServicioId.descripcionId}.pdf`,
           content: ordenServicioBuffer,
@@ -2447,16 +2447,16 @@ export class OrdenServicioService {
     // Enviamos correo para notificar al usuario
     const isEmailSend = await this.emailService.sendEmail(options);
 
-    if (!isEmailSend){
-        throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+    if (!isEmailSend) {
+      throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
     }
 
   }
 
-  private handleDbExceptions(error: any){
-          
+  private handleDbExceptions(error: any) {
+
     if (error.errno === 1062)
-        throw new BadRequestException(`El registro que intenta crear ya existe, no puede crear duplicados`);
+      throw new BadRequestException(`El registro que intenta crear ya existe, no puede crear duplicados`);
 
     this.logger.error(error);
 
@@ -2466,20 +2466,20 @@ export class OrdenServicioService {
 
   // ELIMINAR TODOS LAS ORDEN DE SERVICIO
   // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA ORDEN-SERVICO
-  async deleteAllOrdenesServicio(){
+  async deleteAllOrdenesServicio() {
 
     const query = this.ordenServicioRepository.createQueryBuilder('orden-servicio');
 
     try {
-        
-        return await query
+
+      return await query
         .delete()
         .where({})
         .execute();
 
     } catch (error) {
-        
-        this.handleDbExceptions(error);
+
+      this.handleDbExceptions(error);
 
     }
 

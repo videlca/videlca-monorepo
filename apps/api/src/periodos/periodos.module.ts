@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 
 import { Periodo } from './entities/periodo.entity';
+import { Tarifa } from '../tarifas/entities/tarifa.entity';
 import { PeriodosService } from './periodos.service';
 import { PeriodosController } from './periodos.controller';
 
@@ -14,7 +15,8 @@ import { PeriodosController } from './periodos.controller';
   imports: [
 
     TypeOrmModule.forFeature([
-      Periodo
+      Periodo,
+      Tarifa
     ]),
     AuthModule,
     PermissionsModule,
@@ -29,4 +31,4 @@ import { PeriodosController } from './periodos.controller';
     PeriodosService
   ]
 })
-export class PeriodosModule {}
+export class PeriodosModule { }
