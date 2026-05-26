@@ -42,7 +42,7 @@ export interface CreatePersonalServicioDto {
   horaFin: string;
 }
 
-export interface UpdatePersonalServicioDto extends CreatePersonalServicioDto {}
+export interface UpdatePersonalServicioDto extends CreatePersonalServicioDto { }
 
 // validaciones
 export interface ValidarFechasOrdenServicioDto {
@@ -102,10 +102,14 @@ export interface ValidarRangoHorarioPersonalOrdenDto {
 // orden de servicio id
 export interface UpdateOrdenServicioIdDto {
   descripcionId: string;
+  motivo?: string;
+  consecutivo: number;
 }
 
 export interface AnularIdOrdenServicioDto {
   descripcionId: string;
+  motivo?: string;
+  consecutivo: number;
 }
 
 // observaciones orden servicio
@@ -132,6 +136,6 @@ export interface UpdateObservacionGrupoOrdenServicioDto {
 
 export type MonthsAvailable = 0 | 3 | 6 | 12;
 
-export interface GetDashboardInicioDto  {
+export interface GetDashboardInicioDto {
   months: MonthsAvailable;
 }

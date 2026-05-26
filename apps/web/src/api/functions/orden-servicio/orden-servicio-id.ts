@@ -1,10 +1,14 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { AnularIdOrdenServicioDto, PaginationDto, UpdateOrdenServicioIdDto } from "../../dtos";
 import type { ApiResponse } from "../../types";
-import type { OrdenServicioId } from "../../types/orden-servicio";
+import type { OrdenServicioId, OrdenServicioIdAnulados } from "../../types/orden-servicio";
 
 export const getIdsOrdenServicio = async (pagination: PaginationDto): Promise<ApiResponse<OrdenServicioId[]>> => {
   return await apiGet<OrdenServicioId[]>("/orden-servicio-id", pagination);
+}
+
+export const getIdsAnuladosOrdenServicio = async (pagination: PaginationDto): Promise<ApiResponse<OrdenServicioIdAnulados[]>> => {
+  return await apiGet<OrdenServicioIdAnulados[]>("/orden-servicio-id/anulados", pagination);
 }
 
 export const updateIdOrdenServicio = async (id: number, data: UpdateOrdenServicioIdDto): Promise<ApiResponse<any>> => {

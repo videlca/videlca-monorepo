@@ -2,6 +2,7 @@
 
 export type TableType = "ciudades" | "departamentos" | "paises";
 export type ClientesTableType = "clientes" | "puestos" | "segmentacion" | "sub-segmentacion";
+export type OrdenServicioIdTableType = "emitidos" | "anulados";
 export type ExportacionesBaseFacturacionTableType = "Consolidación" | "Archivo de interfase" | "Anexo de facturación";
 export type TabsExportaciones = "Generar" | "Archivos generados";
 

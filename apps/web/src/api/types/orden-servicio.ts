@@ -39,6 +39,14 @@ export interface OrdenServicioId {
   ordenServicio: OrdenServicio;
 }
 
+export interface OrdenServicioIdAnulados {
+  id: number;
+  descripcionId: string;
+  motivo: string;
+  fechaCreacion: string;
+  consecutivo: number;
+}
+
 export interface ObservacionOrdenServicio {
   idObservacionOrdenServicio: number;
   descripcion: string;
@@ -50,7 +58,7 @@ export interface OrdenServicioTarifa {
   idOrdenServicioTarifa: number;
   idOrdenServicio: OrdenServicio;
   idTarifa: Tarifa;
-  cantidadPersonal: number; 
+  cantidadPersonal: number;
   horaInicio: string;
   horaFin: string;
   precio: number | null;
