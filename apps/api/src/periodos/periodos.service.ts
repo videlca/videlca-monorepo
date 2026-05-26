@@ -10,7 +10,7 @@ import { SendMailOptions } from '../common/services/email/email.service';
 import { EmailService, CorreoDefaultService } from '../common/services';
 
 import { Periodo } from './entities/periodo.entity';
-import { Tarifa } from '../tarifas/entities/tarifa.entity';
+import { TarifasService } from '../tarifas/services/tarifas.service';
 
 import { CreatePeriodoDto, UpdatePeriodoDto } from './dto';
 import { Meses } from './interfaces/meses.interface';
@@ -25,9 +25,8 @@ export class PeriodosService {
   constructor(
     @InjectRepository(Periodo)
     private readonly periodoRepository: Repository<Periodo>,
-    @InjectRepository(Tarifa)
-    private readonly tarifaRepository: Repository<Tarifa>,
     private readonly dataSource: DataSource, 
+    private readonly tarifasService: TarifasService,
     private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
     private readonly emailService: EmailService, // Servicio de email para envio de correos
     private readonly configService: ConfigService,
@@ -68,35 +67,13 @@ export class PeriodosService {
     // TARIFAS PERIODO A
     // =========================================================
 
-    const tarifasA = await this.tarifaRepository
-    .createQueryBuilder('tarifa')  
-    .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-    .leftJoinAndSelect('tarifa.ordenesServicio', 'ordenServicioTarifa')
-    .leftJoinAndSelect(
-      'ordenServicioTarifa.idOrdenServicio',
-      'ordenServicio'
-    )
-    .where('tarifa.idPeriodo = :idPeriodo', {
-      idPeriodo: idPeriodoA,
-    })
-    .getMany();
+    const tarifasA = await this.tarifasService.searchTarifaByPeriodo(idPeriodoA);
 
     // =========================================================
     // TARIFAS PERIODO B
     // =========================================================
   
-    const tarifasB = await this.tarifaRepository
-    .createQueryBuilder('tarifa')
-    .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-    .leftJoinAndSelect('tarifa.ordenesServicio', 'ordenServicioTarifa')
-    .leftJoinAndSelect(
-      'ordenServicioTarifa.idOrdenServicio',
-      'ordenServicio'
-    )
-    .where('tarifa.idPeriodo = :idPeriodo', {
-      idPeriodo: idPeriodoB,
-    })
-    .getMany();
+    const tarifasB = await this.tarifasService.searchTarifaByPeriodo(idPeriodoB);
 
     // =========================================================
     // MAPAS DE SERVICIOS

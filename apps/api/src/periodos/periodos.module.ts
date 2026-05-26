@@ -5,9 +5,9 @@ import { ConfigModule } from '@nestjs/config';
 import { CommonModule } from '../common/common.module';
 import { AuthModule } from '../auth/auth.module';
 import { PermissionsModule } from '../permissions/permissions.module';
+import { TarifasModule } from '../tarifas/tarifas.module';
 
 import { Periodo } from './entities/periodo.entity';
-import { Tarifa } from '../tarifas/entities/tarifa.entity';
 import { PeriodosService } from './periodos.service';
 import { PeriodosController } from './periodos.controller';
 
@@ -15,13 +15,13 @@ import { PeriodosController } from './periodos.controller';
   imports: [
 
     TypeOrmModule.forFeature([
-      Periodo,
-      Tarifa
+      Periodo
     ]),
     AuthModule,
     PermissionsModule,
     CommonModule,
     ConfigModule,
+    TarifasModule
 
   ],
   controllers: [PeriodosController],

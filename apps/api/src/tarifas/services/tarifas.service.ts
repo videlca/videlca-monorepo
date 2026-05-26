@@ -592,6 +592,25 @@ export class TarifasService {
 
   }
 
+  async searchTarifaByPeriodo(idPeriodo: number){
+
+    const tarifas = await this.tarifaRepository
+    .createQueryBuilder('tarifa')
+    .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+    .leftJoinAndSelect('tarifa.ordenesServicio', 'ordenServicioTarifa')
+    .leftJoinAndSelect(
+      'ordenServicioTarifa.idOrdenServicio',
+      'ordenServicio'
+    )
+    .where('tarifa.idPeriodo = :idPeriodo', {
+      idPeriodo,
+    })
+    .getMany();
+
+    return tarifas;
+
+  }
+
   private handleDbExceptions(error: any){
       
     if (error.errno === 1062)
