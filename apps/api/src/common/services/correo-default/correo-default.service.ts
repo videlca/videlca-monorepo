@@ -17,7 +17,7 @@ import { CorreoDefaultDto, CreateCorreoDefaultDto } from '../../dto';
 export class CorreoDefaultService {
 
     private readonly logger = new Logger('CorreoDefaultService');
-      
+
     private defaultLimit: number; // valor de la cantidad por defecto que se va a retornar en una consulta
 
     constructor(
@@ -38,7 +38,7 @@ export class CorreoDefaultService {
 
         const { correos = [] } = createCorreoDefaultDto;
 
-        if (correos.length <= 0){
+        if (correos.length <= 0) {
             throw new BadRequestException(`Se debe añadir al menos un correo`);
         }
 
@@ -46,10 +46,10 @@ export class CorreoDefaultService {
 
         // Validar que todos los estados de orden estén cubiertos
         await this.validateEstadosOrdenCompletos(uniqueCorreos);
-        
+
         // Validar que todos los estados de app estén cubiertos
         await this.validateEstadosAppCompletos(uniqueCorreos);
-    
+
         // Usar QueryRunner para transacción manual
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
@@ -72,40 +72,40 @@ export class CorreoDefaultService {
             .from(CorreoDefault)
             .where("1=1")
             .execute();
-    
+
         try {
 
             // Procesar cada correo
             const correosCreados: CorreoDefault[] = [];
-            
+
             for (const correoDto of uniqueCorreos) {
 
-                if (correoDto.estados.length <= 0){
+                if (correoDto.estados.length <= 0) {
 
                     throw new BadRequestException(`Se debe enviar al menos un estado en cada correo`);
 
                 }
-        
+
                 // Validar que los estados existen
                 // Busca los estados por sus IDs
                 const estados = await this.estadoOrdenServicioRepository.findBy({
                     idEstadoOrdenServicio: In(correoDto.estados)
                 });
-        
+
                 if (!estados.length) {
                     throw new NotFoundException(`No se encontraron estados con los IDs proporcionados para el correo ${correoDto.email}`);
                 }
-            
+
                 if (estados.length !== correoDto.estados.length) {
-        
+
                     const estadosEncontrados = estados.map(e => e.idEstadoOrdenServicio);
-        
+
                     const estadosNoEncontrados = correoDto.estados.filter(
                         id => !estadosEncontrados.includes(id)
                     );
-        
+
                     throw new BadRequestException(`Los siguientes estados no existen: ${estadosNoEncontrados.join(', ')}`);
-        
+
                 }
 
                 // Validar que los estados de app existen
@@ -113,23 +113,23 @@ export class CorreoDefaultService {
                 const estadosApp = await this.estadoAppRepository.findBy({
                     idEstadoApp: In(correoDto.estadosApp)
                 });
-        
+
                 if (!estadosApp.length) {
                     throw new NotFoundException(`No se encontraron estados de app con los IDs proporcionados para el correo ${correoDto.email}`);
                 }
-            
+
                 if (estadosApp.length !== correoDto.estadosApp.length) {
-        
+
                     const estadosAppEncontrados = estadosApp.map(e => e.idEstadoApp);
-        
+
                     const estadosAppNoEncontrados = correoDto.estadosApp.filter(
                         id => !estadosAppEncontrados.includes(id)
                     );
-        
+
                     throw new BadRequestException(`Los siguientes estados de app no existen: ${estadosAppNoEncontrados.join(', ')}`);
-        
+
                 }
-    
+
                 // Crear el correo
                 const correo = queryRunner.manager.create(CorreoDefault, {
                     descripcion: correoDto.descripcion,
@@ -137,25 +137,25 @@ export class CorreoDefaultService {
                     estados: estados,
                     estadosApp: estadosApp
                 });
-    
+
                 const savedCorreo = await queryRunner.manager.save(CorreoDefault, correo);
-                
+
                 // Validar si este correo está en la lista de envío
-                const debeEnviarCorreo = crearCorreos.some(emailEnvio => 
+                const debeEnviarCorreo = crearCorreos.some(emailEnvio =>
                     emailEnvio.email === correo.email
                 );
-                
+
                 if (debeEnviarCorreo) {
                     // ENVIAR EMAIL PARA SABER SI CORREO FUNCIONA
                     await this.notificationEmail(correoDto);
                 }
-            
+
                 correosCreados.push(savedCorreo);
 
             }
-    
+
             await queryRunner.commitTransaction();
-    
+
             // Retornar cantidad de correos creados
             return {
                 message: `Se crearon ${correos.length} correos`
@@ -181,13 +181,13 @@ export class CorreoDefaultService {
         return correos.filter(correo => {
 
             const normalizedEmail = correo.email.toLowerCase().trim();
-            
+
             if (seen.has(normalizedEmail)) {
                 return false;
             }
-            
+
             seen.add(normalizedEmail);
-            
+
             return true;
         });
     }
@@ -198,149 +198,145 @@ export class CorreoDefaultService {
         const todosLosEstados = await this.estadoOrdenServicioRepository.find({
             where: { estado: true }
         });
-    
+
         if (todosLosEstados.length === 0) {
             throw new BadRequestException('No hay estados configurados en el sistema');
         }
 
-    
+
         // 2. Recopilar todos los estados asignados en los correos
         const estadosAsignados = new Set<number>();
-        
+
         correos.forEach(correo => {
             correo.estados.forEach(estadoId => {
                 estadosAsignados.add(estadoId);
             });
         });
 
-    
+
         // 3. Verificar que todos los estados estén cubiertos
         const estadosRequeridos = new Set(
             todosLosEstados.map(estado => estado.idEstadoOrdenServicio)
         );
-    
+
         const estadosFaltantes = [...estadosRequeridos].filter(
             estadoId => !estadosAsignados.has(estadoId)
         );
 
-    
+
         if (estadosFaltantes.length > 0) {
-    
+
             throw new BadRequestException(
-                `Se deben cubrir todos los estados de orden de servicio. Estados faltantes: ${
-                    estadosFaltantes.map(id => {
-                        const estado = todosLosEstados.find(e => e.idEstadoOrdenServicio === id);
-                        return estado?.descripcion || `ID: ${id}`;
-                    }).join(', ')
+                `Se deben cubrir todos los estados de orden de servicio. Estados faltantes: ${estadosFaltantes.map(id => {
+                    const estado = todosLosEstados.find(e => e.idEstadoOrdenServicio === id);
+                    return estado?.descripcion || `ID: ${id}`;
+                }).join(', ')
                 }`
             );
         }
-    
+
         // 4. Validar que todos los estados existen
         const estadosInvalidos = [...estadosAsignados].filter(
             estadoId => !estadosRequeridos.has(estadoId)
         );
 
-    
+
         if (estadosInvalidos.length > 0) {
             throw new BadRequestException(
-                `Estados inválidos encontrados: ${
-                    estadosInvalidos.map(id => {
-                        const estado = todosLosEstados.find(e => e.idEstadoOrdenServicio === id);
-                        return estado?.descripcion || `ID: ${id}`;
-                    }).join(', ')
+                `Estados inválidos encontrados: ${estadosInvalidos.map(id => {
+                    const estado = todosLosEstados.find(e => e.idEstadoOrdenServicio === id);
+                    return estado?.descripcion || `ID: ${id}`;
+                }).join(', ')
                 }`
             );
         }
     }
-    
+
     private async validateEstadosAppCompletos(correos: CreateCorreoDefaultDto[]): Promise<void> {
 
         // 1. Obtener todos los estados existentes
         const todosLosEstados = await this.estadoAppRepository.find({
             where: { estado: true }
         });
-    
+
         if (todosLosEstados.length === 0) {
             throw new BadRequestException('No hay estados configurados en el sistema');
         }
-    
+
         // 2. Recopilar todos los estados asignados en los correos
         const estadosAsignados = new Set<number>();
-        
+
         correos.forEach(correo => {
             correo.estadosApp.forEach(estadoId => {
                 estadosAsignados.add(estadoId);
             });
         });
-    
+
         // 3. Verificar que todos los estados estén cubiertos
         const estadosRequeridos = new Set(
             todosLosEstados.map(estado => estado.idEstadoApp)
         );
 
-    
+
         const estadosFaltantes = [...estadosRequeridos].filter(
             estadoId => !estadosAsignados.has(estadoId)
         );
-    
+
         if (estadosFaltantes.length > 0) {
-    
+
             throw new BadRequestException(
-                `Se debe cubrir todos los estados de aplicacion. Estados faltantes: ${
-                    estadosFaltantes.map(id => {
-                        const estado = todosLosEstados.find(e => e.idEstadoApp === id);
-                        return estado?.descripcion || `ID: ${id}`;
-                    }).join(', ')
+                `Se debe cubrir todos los estados de aplicacion. Estados faltantes: ${estadosFaltantes.map(id => {
+                    const estado = todosLosEstados.find(e => e.idEstadoApp === id);
+                    return estado?.descripcion || `ID: ${id}`;
+                }).join(', ')
                 }`
             );
         }
-    
+
         // 4. Validar que todos los estados existen
         const estadosInvalidos = [...estadosAsignados].filter(
             estadoId => !estadosRequeridos.has(estadoId)
         );
-    
+
         if (estadosInvalidos.length > 0) {
             throw new BadRequestException(
-                `Estados inválidos encontrados: ${
-                    estadosInvalidos.map(id => {
-                        const estado = todosLosEstados.find(e => e.idEstadoApp === id);
-                        return estado?.descripcion || `ID: ${id}`;
-                    }).join(', ')
+                `Estados inválidos encontrados: ${estadosInvalidos.map(id => {
+                    const estado = todosLosEstados.find(e => e.idEstadoApp === id);
+                    return estado?.descripcion || `ID: ${id}`;
+                }).join(', ')
                 }`
             );
         }
     }
 
-    private async analizarCambiosCorreos(correosExistentes: CorreoDefault[], correosNuevos: CreateCorreoDefaultDto[]){
-    
+    private async analizarCambiosCorreos(correosExistentes: CorreoDefault[], correosNuevos: CreateCorreoDefaultDto[]) {
+
         const correosACrear: CreateCorreoDefaultDto[] = [];
-    
+
         // Crear mapas para comparación eficiente
         const correosExistentesMap = new Map(
             correosExistentes.map(correo => [correo.email, correo])
         );
-    
+
         // Encontrar correos a crear 
         for (const correoNuevo of correosNuevos) {
-            
+
             const correoExistente = correosExistentesMap.get(correoNuevo.email);
-    
+
             if (!correoExistente) {
                 // Es un correo nuevo
                 correosACrear.push(correoNuevo);
-            } 
+            }
         }
-    
+
         return correosACrear;
     }
 
     // ENVIAR CORREO PARA INFORMAR REGISTRO DE NOTIFICACIONES EN GEVID Y SABER QUE SI ESTA FUNCIONANDO EL CORREO
     private async notificationEmail(correoInfo: CreateCorreoDefaultDto) {
 
-        const nombreCompleto = `${correoInfo.descripcion}`;        
-        
+        const nombreCompleto = `${correoInfo.descripcion}`;
+
         const html = `
         <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
           <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
@@ -391,11 +387,11 @@ export class CorreoDefaultService {
             subject: subject,
             htmlBody: html
         }
-    
+
         // Enviamos correo para notificar al usuario
         const isEmailSend = await this.emailService.sendEmail(options);
-    
-        if (!isEmailSend){
+
+        if (!isEmailSend) {
             throw new InternalServerErrorException(`Error al enviar correo de notificacion al email ${correoInfo.email}, revisar correo si esta bien escrito`);
         }
 
@@ -408,7 +404,7 @@ export class CorreoDefaultService {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
-            
+
             // Se hace la consulta de manera paginada
             const correosDefault = await this.correoDefaultRepository.find({
                 take: limit,
@@ -421,11 +417,11 @@ export class CorreoDefaultService {
                     estadosApp: true
                 }
             });
-  
+
             return correosDefault;
 
-        }    
-        
+        }
+
         return await this.correoDefaultRepository.find({
             relations: {
                 estados: true,
@@ -436,10 +432,10 @@ export class CorreoDefaultService {
             }
         });
     }
-    
+
     // Obtener todos los correos default por estado de app
-    async findAllByEstadoApp(estadoApp: EstadoAppInterface) {  
-        
+    async findAllByEstadoApp(estadoApp: EstadoAppInterface) {
+
         const correosDefault = await this.correoDefaultRepository.find({
             where: {
                 estadosApp: {
@@ -455,17 +451,17 @@ export class CorreoDefaultService {
             }
         });
 
-        if (correosDefault.length === 0) {
-            throw new NotFoundException(`No hay correos asociados al estado de app "${estadoApp}"`);
-        }
+        // if (correosDefault.length === 0) {
+        //     throw new NotFoundException(`No hay correos asociados al estado de app "${estadoApp}"`);
+        // }
 
         return correosDefault.map(correo => correo.email);
 
     }
-    
+
     // Obtener todos los correos defaultnpor estado de orden de servicio
-    async findAllByEstadoOrden(estadoOrden: string) {  
-        
+    async findAllByEstadoOrden(estadoOrden: string) {
+
         const correosDefault = await this.correoDefaultRepository.find({
             where: {
                 estados: {
@@ -493,19 +489,19 @@ export class CorreoDefaultService {
     async findOne(id: number) {
 
         const correoDefault = await this.correoDefaultRepository.findOne({
-            where: { 
-                idCorreoDefault: id 
+            where: {
+                idCorreoDefault: id
             },
             relations: {
                 estados: true,
                 estadosApp: true
             }
         });
-        
+
         if (!correoDefault) {
             throw new NotFoundException(`Correo con id "${id}" no encontrado`);
         }
-        
+
         return correoDefault;
     }
 

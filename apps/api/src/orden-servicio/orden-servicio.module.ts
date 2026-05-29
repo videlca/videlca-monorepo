@@ -45,8 +45,6 @@ import {
       OrdenServicioTarifa,
       ObservacionOrdenServicio,
       ProgramacionPersonal,
-      ObservacionOrdenServicio,
-      LiquidacionesModule,
     ]),
     ConfigModule,
     CommonModule,

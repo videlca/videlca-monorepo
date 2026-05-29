@@ -85,6 +85,10 @@ export class EmailService {
 
         const { to, subject, htmlBody, attachments } = options;
 
+        if (!to || (Array.isArray(to) && to.length === 0)) {
+            return true;
+        }
+
         // Validar dominio antes de enviar
         const validDomain = await this.validateEmailDomain(
           Array.isArray(to) ? to[0] : to
