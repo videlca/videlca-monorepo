@@ -1,5 +1,5 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
+import { anularOrdenServicio, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
 import type { CreateOrdenServicioDto, EnviarCorreoDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 import type { ApiResponse, Personal } from "../../types";
@@ -69,6 +69,44 @@ export const useGetOrdenServicioById = (): UseMutationResult<ApiResponse<OrdenSe
     },
     onError: (error) => {
       toast.error(error.message || "Error al obtener la orden de servicio");
+    },
+  });
+}
+
+export const useCancelarOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, number> => {
+  return useMutation({
+    mutationFn: (id: number) => cancelarOrdenServicio(id),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Orden de servicio cancelada correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["orden-servicio"],
+        });
+      } else {
+        throw new Error(data.message || "Error al cancelar la orden de servicio");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al cancelar la orden de servicio");
+    },
+  });
+}
+
+export const useAnularOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, number> => {
+  return useMutation({
+    mutationFn: (id: number) => anularOrdenServicio(id),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Orden de servicio anulada correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["orden-servicio"],
+        });
+      } else {
+        throw new Error(data.message || "Error al anular la orden de servicio");
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Error al anular la orden de servicio");
     },
   });
 }
@@ -265,7 +303,7 @@ export const useDescargarPdf = (): UseMutationResult<{ blob: Blob; filename: str
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success("PDF descargado correctamente");
     },
     onError: (error) => {
@@ -274,7 +312,7 @@ export const useDescargarPdf = (): UseMutationResult<{ blob: Blob; filename: str
   });
 }
 
-export const useImprimirPdf = (): UseMutationResult<ApiResponse<{file: string, fileName: string}>, Error, number> => {
+export const useImprimirPdf = (): UseMutationResult<ApiResponse<{ file: string, fileName: string }>, Error, number> => {
   return useMutation({
     mutationKey: ["imprimir-pdf"],
     mutationFn: (id: number) => imprimirPdf(id),

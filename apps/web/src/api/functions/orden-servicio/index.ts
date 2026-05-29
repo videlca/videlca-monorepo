@@ -23,6 +23,14 @@ export const deleteOrdenServicio = async (id: number): Promise<ApiResponse<any>>
   return await apiDelete<any>(`/orden-servicio/${id}`);
 }
 
+export const cancelarOrdenServicio = async (id: number): Promise<ApiResponse<any>> => {
+  return await apiPatch<any>(`/orden-servicio/cancelar-orden/${id}`);
+}
+
+export const anularOrdenServicio = async (id: number): Promise<ApiResponse<any>> => {
+  return await apiPatch<any>(`/orden-servicio/anular-orden/${id}`);
+}
+
 // TODO: revisar respuesta
 export const validateFechasOrdenServicio = async (data: ValidarFechasOrdenServicioDto): Promise<ApiResponse<any>> => {
   return await apiPost<any>("/orden-servicio/validacion-fechas", data);
@@ -93,10 +101,10 @@ export const descargarPdf = async (id: number): Promise<{ blob: Blob; filename: 
       filename = filenameMatch[1].replace(/['"]/g, '');
     }
   }
-  
+
   return { blob: response.data, filename };
 }
 
-export const imprimirPdf = async (id: number): Promise<ApiResponse<{file: string, fileName: string}>> => {
-  return await apiPost<{file: string, fileName: string}>(`/orden-servicio/${id}/imprimir-pdf`);
+export const imprimirPdf = async (id: number): Promise<ApiResponse<{ file: string, fileName: string }>> => {
+  return await apiPost<{ file: string, fileName: string }>(`/orden-servicio/${id}/imprimir-pdf`);
 }

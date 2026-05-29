@@ -8,6 +8,8 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import {
+  useAnularOrdenServicio,
+  useCancelarOrdenServicio,
   useCreateOrdenServicio,
   useDeleteOrdenServicio,
   useDescargarPdf,
@@ -73,6 +75,14 @@ function RouteComponent() {
   const [isEditing, setIsEditing] = useState(false);
   const [isOpenDetails, setIsOpenDetails] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    text: string;
+    action: () => void;
+    actionLabel?: string;
+  }>({
+    text: "",
+    action: () => { },
+  });
   const [isOpenObservaciones, setIsOpenObservaciones] = useState(false);
   const [isOpenEmail, setIsOpenEmail] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -122,6 +132,8 @@ function RouteComponent() {
   } = useUpdateOrdenServicio();
 
   const { mutate: deleteOrdenServicio } = useDeleteOrdenServicio();
+  const { mutate: cancelarOrdenServicio } = useCancelarOrdenServicio();
+  const { mutate: anularOrdenServicio } = useAnularOrdenServicio();
 
   // Validaciones
   const {
@@ -419,47 +431,45 @@ function RouteComponent() {
             fechaActualizacion: new Date().toISOString(),
           },
         },
-        // {
-        //   onSuccess: () => {
-        //     setCurrentStep(2);
-        //   },
-        // },
-      );
+        {
+          onSuccess: async () => {
+            try {
+              const responsePrecioOrdenServicio = await Promise.allSettled(
+                configuracionServicioTarifaEdit.map(async (servicio) => {
+                  const response = await getPrecioOrdenServicio({
+                    horaInicio: servicio.horaInicio,
+                    horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+                    fechaFin: isIndefinite ? null : watchEdit("fechaFin"),
+                    fechaInicio: watchEdit("fechaInicio"),
+                    idTarifa: servicio.idTarifa || 0,
+                    idServicio: servicio.idServicio || 0,
+                  });
 
-      try {
-        const responsePrecioOrdenServicio = await Promise.allSettled(
-          configuracionServicioTarifaEdit.map(async (servicio) => {
-            const response = await getPrecioOrdenServicio({
-              horaInicio: servicio.horaInicio,
-              horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
-              fechaFin: isIndefinite ? null : watchEdit("fechaFin"),
-              fechaInicio: watchEdit("fechaInicio"),
-              idTarifa: servicio.idTarifa || 0,
-              idServicio: servicio.idServicio || 0,
-            });
+                  if (response.status === 201) {
+                    servicio.precio = response.data.precio;
+                    precioTotal += response.data.precio;
+                    setMensajeRespuesta(response.data.message);
+                  }
+                  return response;
+                }),
+              );
 
-            if (response.status === 201) {
-              servicio.precio = response.data.precio;
-              precioTotal += response.data.precio;
-              setMensajeRespuesta(response.data.message);
+              const allValidated = responsePrecioOrdenServicio.every(
+                (r) => r.status === "fulfilled",
+              );
+
+              if (allValidated) {
+                setValueEdit("precioTotal", precioTotal);
+                toast.success("Precio de orden de servicio validados correctamente");
+                setCurrentStep(2);
+              }
+            } catch (error) {
+              console.log(error);
+              toast.error("Error al validar el precio de la orden de servicio");
             }
-            return response;
-          }),
-        );
-
-        const allValidated = responsePrecioOrdenServicio.every(
-          (r) => r.status === "fulfilled",
-        );
-
-        if (allValidated) {
-          setValueEdit("precioTotal", precioTotal);
-          toast.success("Precio de orden de servicio validados correctamente");
-          setCurrentStep(2);
-        }
-      } catch (error) {
-        console.log(error);
-        toast.error("Error al validar el precio de la orden de servicio");
-      }
+          },
+        },
+      );
 
       return;
     }
@@ -622,6 +632,8 @@ function RouteComponent() {
     }
   };
 
+
+
   // const handleValidarEmpleadosDisponibles = async (
   //   idServicio: number,
   //   indexEmpleado: number,
@@ -775,10 +787,42 @@ function RouteComponent() {
               },
             },
             {
+              label: "Anular",
+              onClick: () => {
+                setSelectedOrderDetail(row.original);
+                setConfirmConfig({
+                  text: "¿Estás seguro de querer anular esta orden de servicio?",
+                  actionLabel: "Anular Orden",
+                  action: () => {
+                    anularOrdenServicio(row.original.idOrdenServicio, {
+                      onSuccess: () => {
+                        setIsOpenDelete(false);
+                        setSelectedOrderDetail(null);
+                      },
+                    });
+                  },
+                });
+                setIsOpenDelete(true);
+              },
+              color: "yellow" as const,
+            },
+            {
               label: "Eliminar",
               onClick: () => {
-                setIsOpenDelete(true);
                 setSelectedOrderDetail(row.original);
+                setConfirmConfig({
+                  text: "¿Estás seguro de querer eliminar esta orden de servicio? Esta acción no se puede deshacer.",
+                  actionLabel: "Eliminar",
+                  action: () => {
+                    deleteOrdenServicio(row.original.idOrdenServicio, {
+                      onSuccess: () => {
+                        setIsOpenDelete(false);
+                        setSelectedOrderDetail(null);
+                      },
+                    });
+                  },
+                });
+                setIsOpenDelete(true);
               },
               color: "red" as const,
             },
@@ -1134,15 +1178,10 @@ function RouteComponent() {
               <button
                 type="button"
                 onClick={currentStep < 2 ? handleNextEdit : handleUpdateOrder}
-                // disabled={
-                //   isValidateFechasOrdenServicioPending ||
-                //   isGetPrecioOrdenPending ||
-                //   (currentStep === 1 &&
-                //     (identificador.codigoTipoServicio === 0 ||
-                //       identificador.codigo === 0)) ||
-                //   (currentStep === 2 && !formOrdenServicio.idLocacion)
-                //   // TODO: Revisar validaciones de los pasos
-                // }
+                disabled={
+                  isValidateFechasOrdenServicioPending ||
+                  isGetPrecioOrdenPending
+                }
                 className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${currentStep < 2
                   ? "bg-blue-600 hover:bg-blue-700"
                   : "bg-green-600 hover:bg-green-700"
@@ -1194,15 +1233,9 @@ function RouteComponent() {
 
       <ConfirmarDelete
         isOpenDelete={isOpenDelete}
-        text="¿Estás seguro de querer eliminar esta orden de servicio? Esta acción no se puede deshacer."
-        onDelete={() => {
-          deleteOrdenServicio(selectedOrderDetail?.idOrdenServicio || 0, {
-            onSuccess: () => {
-              setIsOpenDelete(false);
-              setSelectedOrderDetail(null);
-            },
-          });
-        }}
+        text={confirmConfig.text}
+        onDelete={confirmConfig.action}
+        actionLabel={confirmConfig.actionLabel}
         onClose={() => setIsOpenDelete(false)}
       />
     </Section>

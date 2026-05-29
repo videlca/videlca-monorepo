@@ -2,16 +2,30 @@ import { MoreVertical } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
+export type ActionColor = "default" | "red" | "blue" | "green" | "yellow" | "orange" | "purple";
+
 export interface MoreActionsButtonProps {
   menuId: string;
   onActionClick?: (action: string) => void;
   actions?: Array<{
     label: string;
     onClick: () => void;
-    color?: "default" | "red";
+    color?: ActionColor;
   }>;
   children?: React.ReactNode;
 }
+
+const getColorClasses = (color?: ActionColor) => {
+  switch (color) {
+    case "red": return "text-red-600 hover:bg-red-50 focus:bg-red-50";
+    case "blue": return "text-blue-600 hover:bg-blue-50 focus:bg-blue-50";
+    case "green": return "text-green-600 hover:bg-green-50 focus:bg-green-50";
+    case "yellow": return "text-yellow-600 hover:bg-yellow-50 focus:bg-yellow-50";
+    case "orange": return "text-orange-600 hover:bg-orange-50 focus:bg-orange-50";
+    case "purple": return "text-purple-600 hover:bg-purple-50 focus:bg-purple-50";
+    default: return "text-gray-700 hover:bg-gray-50 focus:bg-gray-50";
+  }
+};
 
 export const MoreActionsButton = ({
   menuId,
@@ -121,11 +135,7 @@ export const MoreActionsButton = ({
             <button
               key={index}
               onClick={() => handleActionClick(action.onClick, action.label)}
-              className={`w-full cursor-pointer px-4 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none ${
-                action.color === "red"
-                  ? "text-red-600 hover:bg-red-50 focus:bg-red-50"
-                  : "text-gray-700"
-              }`}
+              className={`w-full cursor-pointer px-4 py-2 text-left text-sm focus:outline-none ${getColorClasses(action.color)}`}
               role="menuitem"
             >
               {action.label}
