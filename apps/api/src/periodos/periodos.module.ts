@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
@@ -21,7 +21,7 @@ import { PeriodosController } from './periodos.controller';
     PermissionsModule,
     CommonModule,
     ConfigModule,
-    TarifasModule
+    forwardRef(() => TarifasModule),
 
   ],
   controllers: [PeriodosController],

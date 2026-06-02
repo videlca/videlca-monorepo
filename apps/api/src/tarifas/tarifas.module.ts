@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
@@ -27,7 +27,7 @@ import { TarifasController, TipoTarifaController, TipoUnidadTiempoController } f
     PermissionsModule,
     CommonModule,
     ReportesModule,
-    PeriodosModule,
+    forwardRef(() => PeriodosModule),
     ServiciosModule,
     ConfigModule,
     

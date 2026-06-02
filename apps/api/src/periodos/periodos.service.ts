@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -26,6 +26,7 @@ export class PeriodosService {
     @InjectRepository(Periodo)
     private readonly periodoRepository: Repository<Periodo>,
     private readonly dataSource: DataSource, 
+    @Inject(forwardRef(() => TarifasService))
     private readonly tarifasService: TarifasService,
     private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
     private readonly emailService: EmailService, // Servicio de email para envio de correos
