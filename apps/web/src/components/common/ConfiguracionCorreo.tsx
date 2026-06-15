@@ -173,7 +173,7 @@ export function ConfiguracionCorreo({
       </div>
 
       {/* Lista de correos configurados */}
-      <div className="mt-4 flex h-full flex-col gap-2 overflow-y-auto">
+      <div className="mt-4 flex flex-col gap-2">
         {correos.length > 0 &&
           correos.map((correo) => (
             <div

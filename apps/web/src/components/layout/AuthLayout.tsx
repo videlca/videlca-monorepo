@@ -11,7 +11,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
                 <Clock className="h-10 w-10 text-white" />
               </div>
               <div className="space-y-2">
-                <h1 className="text-4xl font-bold tracking-wide">GEVID</h1>
+                <h1 className="text-4xl font-bold tracking-wide">SOFIA</h1>
                 <p className="max-w-xs text-lg leading-relaxed text-blue-100">
                   Sistema de Gestión de Vigilancia y Seguridad
                 </p>
@@ -30,7 +30,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
               {children}
               <div className="pt-6 text-center">
                 <p className="text-xs text-gray-500">
-                  © 2025 GEVID. Todos los derechos reservados.
+                  © 2025 SOFIA. Todos los derechos reservados.
                 </p>
               </div>
             </div>

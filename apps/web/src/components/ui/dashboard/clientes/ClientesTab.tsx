@@ -528,44 +528,44 @@ export function ClientesTab() {
               description="Información del puesto"
               Icon={Building2}
             >
-              <InputForm
-                label="Nombre*"
-                placeholder="Nombre"
-                type="text"
-                id="nombre"
-                required
-                {...registerAddPuesto("nombre")}
-              />
-              <InputSelect
-                label="Ciudad*"
-                placeholder="Ciudad"
-                id="idCiudad"
-                options={
-                  ciudades?.data?.map((ciudad) => ({
-                    id: ciudad.idCiudad,
-                    descripcion: ciudad.descripcion,
-                  })) || []
-                }
-                required
-                {...registerAddPuesto("idCiudad")}
-              />
-              <InputForm
-                label="Dirección*"
-                placeholder="Dirección"
-                type="text"
-                id="direccion"
-                required
-                {...registerAddPuesto("direccion")}
-              />
-              <InputForm
-                label="Días de anticipación de notificación*"
-                placeholder="Días de anticipación de notificación"
-                type="number"
-                id="diasAnticipaticionNotificacion"
-                required
-                {...registerAddPuesto("diasAnticipaticionNotificacion")}
-              />
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <InputForm
+                  label="Nombre*"
+                  placeholder="Nombre"
+                  type="text"
+                  id="nombre"
+                  required
+                  {...registerAddPuesto("nombre")}
+                />
+                <InputSelect
+                  label="Ciudad*"
+                  placeholder="Ciudad"
+                  id="idCiudad"
+                  options={
+                    ciudades?.data?.map((ciudad) => ({
+                      id: ciudad.idCiudad,
+                      descripcion: ciudad.descripcion,
+                    })) || []
+                  }
+                  required
+                  {...registerAddPuesto("idCiudad")}
+                />
+                <InputForm
+                  label="Dirección*"
+                  placeholder="Dirección"
+                  type="text"
+                  id="direccion"
+                  required
+                  {...registerAddPuesto("direccion")}
+                />
+                <InputForm
+                  label="Días de anticipación de notificación*"
+                  placeholder="Días de anticipación de notificación"
+                  type="number"
+                  id="diasAnticipaticionNotificacion"
+                  required
+                  {...registerAddPuesto("diasAnticipaticionNotificacion")}
+                />
                 <InputForm
                   label="Latitud*"
                   placeholder="Latitud"
@@ -584,71 +584,77 @@ export function ClientesTab() {
                   allowNegative={true}
                   {...registerAddPuesto("longitud")}
                 />
+                <div className="md:col-span-2">
+                  <CheckboxForm
+                    label="El responsable de facturación es diferente al cliente."
+                    id="isFacturacionDiferente"
+                    checked={isFacturacionDiferente}
+                    onChange={(e) => {
+                      setIsFacturacionDiferente(e.target.checked);
+                      if (!e.target.checked) {
+                        setValueAddPuesto("idClienteFacturacion", null);
+                      }
+                    }}
+                  />
+                </div>
+                {isFacturacionDiferente && (
+                  <div className="md:col-span-2">
+                    <InputSelect
+                      label="Responsable facturación*"
+                      placeholder="Responsable facturación"
+                      id="idClienteFacturacion"
+                      options={
+                        clientes?.data?.map((cliente) => ({
+                          id: cliente.idCliente,
+                          descripcion: cliente.nombre,
+                        })) || []
+                      }
+                      required
+                      {...registerAddPuesto("idClienteFacturacion")}
+                    />
+                  </div>
+                )}
               </div>
-              <CheckboxForm
-                label="La facturacion para este puesto sera diferente."
-                id="isFacturacionDiferente"
-                checked={isFacturacionDiferente}
-                onChange={(e) => {
-                  setIsFacturacionDiferente(e.target.checked);
-                  if (!e.target.checked) {
-                    setValueAddPuesto("idClienteFacturacion", null);
-                  }
-                }}
-              />
-              {isFacturacionDiferente && (
-                <InputSelect
-                  label="Cliente facturación*"
-                  placeholder="Cliente facturación"
-                  id="idClienteFacturacion"
-                  options={
-                    clientes?.data?.map((cliente) => ({
-                      id: cliente.idCliente,
-                      descripcion: cliente.nombre,
-                    })) || []
-                  }
-                  required
-                  {...registerAddPuesto("idClienteFacturacion")}
-                />
-              )}
             </FormSection>
             <FormSection
               title="Información de contacto"
               description="Información de contacto"
               Icon={User}
             >
-              <InputForm
-                label="Primer nombre responsable*"
-                placeholder="Primer nombre responsable"
-                type="text"
-                id="primerNombreResponsable"
-                required
-                {...registerAddPuesto("primerNombreResponsable")}
-              />
-              <InputForm
-                label="Primer apellido responsable*"
-                placeholder="Primer apellido responsable"
-                type="text"
-                id="primerApellidoResponsable"
-                required
-                {...registerAddPuesto("primerApellidoResponsable")}
-              />
-              <InputForm
-                label="Teléfono*"
-                placeholder="Teléfono"
-                type="text"
-                id="telefono"
-                required
-                {...registerAddPuesto("telefono")}
-              />
-              <InputForm
-                label="Teléfono 2"
-                placeholder="Teléfono 2"
-                type="text"
-                id="segundoTelefono"
-                required={false}
-                {...registerAddPuesto("segundoTelefono")}
-              />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <InputForm
+                  label="Primer nombre responsable*"
+                  placeholder="Primer nombre responsable"
+                  type="text"
+                  id="primerNombreResponsable"
+                  required
+                  {...registerAddPuesto("primerNombreResponsable")}
+                />
+                <InputForm
+                  label="Primer apellido responsable*"
+                  placeholder="Primer apellido responsable"
+                  type="text"
+                  id="primerApellidoResponsable"
+                  required
+                  {...registerAddPuesto("primerApellidoResponsable")}
+                />
+                <InputForm
+                  label="Teléfono*"
+                  placeholder="Teléfono"
+                  type="text"
+                  id="telefono"
+                  required
+                  {...registerAddPuesto("telefono")}
+                />
+                <InputForm
+                  label="Teléfono 2"
+                  placeholder="Teléfono 2"
+                  type="text"
+                  id="segundoTelefono"
+                  required={false}
+                  {...registerAddPuesto("segundoTelefono")}
+                />
+              </div>
             </FormSection>
             <FormSection
               title="Correos electrónicos"

@@ -1,5 +1,4 @@
 import {
-  BarChart3,
   Calendar,
   CheckSquareIcon,
   ChevronRight,
@@ -145,7 +144,7 @@ export function Sidebar({
         className={`${collapsed ? "p-2" : "p-6"} flex min-h-[80px] items-center justify-between border-b border-blue-500`}
       >
         <div className={`${collapsed ? "hidden" : "block"} flex-1`}>
-          <h1 className="text-xl font-bold">GEVID</h1>
+          <h1 className="text-xl font-bold">SOFIA</h1>
           <p className="text-sm text-blue-200">Panel Administrativo</p>
         </div>
         <button
@@ -204,8 +203,8 @@ export function Sidebar({
                         <li
                           key={subItem.to}
                           className={` ${subItem.to === pathname.pathname
-                              ? "border-l-2 border-blue-300 bg-blue-500/40"
-                              : ""
+                            ? "border-l-2 border-blue-300 bg-blue-500/40"
+                            : ""
                             }`}
                         >
                           <button

@@ -68,6 +68,7 @@ export const useCreateCliente = (): UseMutationResult<
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         queryClient.invalidateQueries({ queryKey: ["clientes"] });
+        queryClient.invalidateQueries({ queryKey: ["clientes-activo"] });
         toast.success("Cliente creado exitosamente", {
           description: "El cliente ha sido creado correctamente",
         });
@@ -92,6 +93,7 @@ export const useUpdateCliente = (): UseMutationResult<
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         queryClient.invalidateQueries({ queryKey: ["clientes"] });
+        queryClient.invalidateQueries({ queryKey: ["clientes-activo"] });
         toast.success("Cliente actualizado exitosamente", {
           description: "El cliente ha sido actualizado correctamente",
         });
@@ -115,6 +117,7 @@ export const useDeleteCliente = (): UseMutationResult<
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         queryClient.invalidateQueries({ queryKey: ["clientes"] });
+        queryClient.invalidateQueries({ queryKey: ["clientes-activo"] });
         toast.success("Cliente eliminado exitosamente", {
           description: "El cliente ha sido eliminado correctamente",
         });

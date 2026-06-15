@@ -92,6 +92,8 @@ export const useCreatePuesto = (): UseMutationResult<
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         queryClient.invalidateQueries({ queryKey: ["puestos"] });
+        queryClient.invalidateQueries({ queryKey: ["puestos-by-cliente"] });
+        queryClient.invalidateQueries({ queryKey: ["puestos-activo"] });
         toast.success("Puesto creado exitosamente", {
           description: "El puesto ha sido creado correctamente",
         });
@@ -116,9 +118,8 @@ export const useUpdatePuesto = (): UseMutationResult<
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201 || data.status === 204) {
         queryClient.invalidateQueries({ queryKey: ["puestos"] });
-        queryClient.invalidateQueries({
-          queryKey: ["puestos-by-cliente"],
-        });
+        queryClient.invalidateQueries({ queryKey: ["puestos-by-cliente"] });
+        queryClient.invalidateQueries({ queryKey: ["puestos-activo"] });
         toast.success("Puesto actualizado exitosamente", {
           description: "El puesto ha sido actualizado correctamente",
         });
@@ -142,6 +143,8 @@ export const useDeletePuesto = (): UseMutationResult<
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         queryClient.invalidateQueries({ queryKey: ["puestos"] });
+        queryClient.invalidateQueries({ queryKey: ["puestos-by-cliente"] });
+        queryClient.invalidateQueries({ queryKey: ["puestos-activo"] });
         toast.success("Puesto eliminado exitosamente", {
           description: "El puesto ha sido eliminado correctamente",
         });

@@ -2,9 +2,7 @@ import { ButtonAction } from "../../../common/ButtonAction";
 import {
   Building2,
   Mail,
-  PencilIcon,
   PlusIcon,
-  TrashIcon,
   User,
   XIcon,
 } from "lucide-react";
@@ -163,7 +161,7 @@ export function PuestosTab() {
     },
     {
       accessorKey: "idClienteFacturacion.nombre",
-      header: "Cliente facturación",
+      header: "Responsable facturación",
       cell: ({ row }) => row.original.idClienteFacturacion ? row.original.idClienteFacturacion.nombre : "Mismo cliente",
     },
     {
@@ -291,43 +289,19 @@ export function PuestosTab() {
               description="Información del puesto"
               Icon={Building2}
             >
-              <InputForm
-                label="Nombre*"
-                placeholder="Nombre"
-                type="text"
-                id="nombre"
-                required
-                {...registerEdit("nombre")}
-              />
-              <InputSelect
-                label="Cliente*"
-                placeholder="Cliente"
-                id="idCliente"
-                options={
-                  clientes?.data?.map((cliente) => ({
-                    id: cliente.idCliente,
-                    descripcion: cliente.nombre,
-                  })) || []
-                }
-                required
-                {...registerEdit("idCliente")}
-              />
-              <CheckboxForm
-                label="La facturacion para este puesto sera diferente."
-                id="isFacturacionDiferente"
-                checked={isFacturacionDiferente}
-                onChange={(e) => {
-                  setIsFacturacionDiferente(e.target.checked);
-                  if (!e.target.checked) {
-                    setValueEdit("idClienteFacturacion", null);
-                  }
-                }}
-              />
-              {isFacturacionDiferente && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <InputForm
+                  label="Nombre*"
+                  placeholder="Nombre"
+                  type="text"
+                  id="nombre"
+                  required
+                  {...registerEdit("nombre")}
+                />
                 <InputSelect
-                  label="Cliente facturación*"
-                  placeholder="Cliente facturación"
-                  id="idClienteFacturacion"
+                  label="Cliente*"
+                  placeholder="Cliente"
+                  id="idCliente"
                   options={
                     clientes?.data?.map((cliente) => ({
                       id: cliente.idCliente,
@@ -335,39 +309,67 @@ export function PuestosTab() {
                     })) || []
                   }
                   required
-                  {...registerEdit("idClienteFacturacion")}
+                  {...registerEdit("idCliente")}
                 />
-              )}
-              <InputSelect
-                label="Ciudad*"
-                placeholder="Ciudad"
-                id="idCiudad"
-                options={
-                  ciudades?.data?.map((ciudad) => ({
-                    id: ciudad.idCiudad,
-                    descripcion: ciudad.descripcion,
-                  })) || []
-                }
-                required
-                {...registerEdit("idCiudad")}
-              />
-              <InputForm
-                label="Dirección*"
-                placeholder="Dirección"
-                type="text"
-                id="direccion"
-                required
-                {...registerEdit("direccion")}
-              />
-              <InputForm
-                label="Días de anticipación de notificación*"
-                placeholder="Días de anticipación de notificación"
-                type="number"
-                id="diasAnticipaticionNotificacion"
-                required
-                {...registerEdit("diasAnticipaticionNotificacion")}
-              />
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <CheckboxForm
+                    label="El responsable de facturación es diferente al cliente."
+                    id="isFacturacionDiferente"
+                    checked={isFacturacionDiferente}
+                    onChange={(e) => {
+                      setIsFacturacionDiferente(e.target.checked);
+                      if (!e.target.checked) {
+                        setValueEdit("idClienteFacturacion", null);
+                      }
+                    }}
+                  />
+                </div>
+                {isFacturacionDiferente && (
+                  <div className="md:col-span-2">
+                    <InputSelect
+                      label="Responsable facturación*"
+                      placeholder="Responsable facturación"
+                      id="idClienteFacturacion"
+                      options={
+                        clientes?.data?.map((cliente) => ({
+                          id: cliente.idCliente,
+                          descripcion: cliente.nombre,
+                        })) || []
+                      }
+                      required
+                      {...registerEdit("idClienteFacturacion")}
+                    />
+                  </div>
+                )}
+                <InputSelect
+                  label="Ciudad*"
+                  placeholder="Ciudad"
+                  id="idCiudad"
+                  options={
+                    ciudades?.data?.map((ciudad) => ({
+                      id: ciudad.idCiudad,
+                      descripcion: ciudad.descripcion,
+                    })) || []
+                  }
+                  required
+                  {...registerEdit("idCiudad")}
+                />
+                <InputForm
+                  label="Dirección*"
+                  placeholder="Dirección"
+                  type="text"
+                  id="direccion"
+                  required
+                  {...registerEdit("direccion")}
+                />
+                <InputForm
+                  label="Días de anticipación de notificación*"
+                  placeholder="Días de anticipación de notificación"
+                  type="number"
+                  id="diasAnticipaticionNotificacion"
+                  required
+                  {...registerEdit("diasAnticipaticionNotificacion")}
+                />
                 <InputForm
                   label="Latitud*"
                   placeholder="Latitud"
@@ -394,38 +396,40 @@ export function PuestosTab() {
               description="Información de contacto"
               Icon={User}
             >
-              <InputForm
-                label="Primer nombre responsable*"
-                placeholder="Primer nombre responsable"
-                type="text"
-                id="primerNombreResponsable"
-                required
-                {...registerEdit("primerNombreResponsable")}
-              />
-              <InputForm
-                label="Primer apellido responsable*"
-                placeholder="Primer apellido responsable"
-                type="text"
-                id="primerApellidoResponsable"
-                required
-                {...registerEdit("primerApellidoResponsable")}
-              />
-              <InputForm
-                label="Teléfono*"
-                placeholder="Teléfono"
-                type="text"
-                id="telefono"
-                required
-                {...registerEdit("telefono")}
-              />
-              <InputForm
-                label="Teléfono 2"
-                placeholder="Teléfono 2"
-                type="text"
-                id="segundoTelefono"
-                required={false}
-                {...registerEdit("segundoTelefono")}
-              />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <InputForm
+                  label="Primer nombre responsable*"
+                  placeholder="Primer nombre responsable"
+                  type="text"
+                  id="primerNombreResponsable"
+                  required
+                  {...registerEdit("primerNombreResponsable")}
+                />
+                <InputForm
+                  label="Primer apellido responsable*"
+                  placeholder="Primer apellido responsable"
+                  type="text"
+                  id="primerApellidoResponsable"
+                  required
+                  {...registerEdit("primerApellidoResponsable")}
+                />
+                <InputForm
+                  label="Teléfono*"
+                  placeholder="Teléfono"
+                  type="text"
+                  id="telefono"
+                  required
+                  {...registerEdit("telefono")}
+                />
+                <InputForm
+                  label="Teléfono 2"
+                  placeholder="Teléfono 2"
+                  type="text"
+                  id="segundoTelefono"
+                  required={false}
+                  {...registerEdit("segundoTelefono")}
+                />
+              </div>
             </FormSection>
 
             <FormSection
@@ -514,7 +518,7 @@ export function PuestosTab() {
                   la lista
                 </span>
               </div>
-              <div className="mt-4 flex h-full flex-col gap-2 overflow-y-auto">
+              <div className="mt-4 flex flex-col gap-2">
                 {correos.length > 0 &&
                   correos.map((correo) => (
                     <div
@@ -530,7 +534,7 @@ export function PuestosTab() {
                           onClick={() => {
                             setCorreos(
                               correos.filter((c) => c.email !== correo.email) ||
-                                [],
+                              [],
                             );
                           }}
                         >
@@ -564,18 +568,18 @@ export function PuestosTab() {
                                     correos.map((c) =>
                                       c.email === correo.email
                                         ? {
-                                            ...c,
-                                            estados: e.target.checked
-                                              ? [
-                                                  ...c.estados,
-                                                  estado.idEstadoOrdenServicio,
-                                                ]
-                                              : c.estados.filter(
-                                                  (id) =>
-                                                    id !==
-                                                    estado.idEstadoOrdenServicio,
-                                                ),
-                                          }
+                                          ...c,
+                                          estados: e.target.checked
+                                            ? [
+                                              ...c.estados,
+                                              estado.idEstadoOrdenServicio,
+                                            ]
+                                            : c.estados.filter(
+                                              (id) =>
+                                                id !==
+                                                estado.idEstadoOrdenServicio,
+                                            ),
+                                        }
                                         : c,
                                     ),
                                   );

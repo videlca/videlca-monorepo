@@ -30,8 +30,8 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center ${
-        isOpen ? "block" : "hidden"
+      className={`fixed inset-0 z-50 items-center justify-center p-4 md:p-6 ${
+        isOpen ? "flex" : "hidden"
       }`}
     >
       <div
@@ -39,7 +39,7 @@ export const SimpleModal: React.FC<SimpleModalProps> = ({
         onClick={clickOutsideClose ? onClose : undefined}
       />
       <div
-        className={`relative mx-4 w-full rounded-lg bg-white shadow-xl ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}
+        className={`relative mx-4 w-full rounded-lg bg-white shadow-xl ${sizeClasses[size]} max-h-[85vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
