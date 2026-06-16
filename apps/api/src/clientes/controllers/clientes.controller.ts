@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, ParseIntPipe } from '@nestjs/common';
+import type { Response } from 'express';
 
 import { AppAuth, ValidateJwtAuth } from '../../auth/decorators';
 import { DescriptionRoutes } from '../../auth/interfaces';
 
-import { PaginationDto } from '../../common/dto';
+import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
 
 import { ClientesService } from '../services';
 import { CreateClienteDto, UpdateClienteDto } from '../dto';
@@ -29,6 +30,36 @@ export class ClientesController {
   @ValidateJwtAuth()
   findAllActivos(@Query() paginationDto: PaginationDto) {
     return this.clientesService.findAllActives(paginationDto, paginationDto.pagination);
+  }
+
+  @Get('descargar-clientes')
+  async generarReporteClientes(
+    @Res() res: Response
+  ) {
+      
+    const {excelBuffer, title} = await this.clientesService.downloadClientes();
+  
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${title}.xlsx`,
+    );
+  
+    res.end(excelBuffer);
+
+  }
+
+  @Post('enviar-excel-clientes')
+  enviarReporteLiquidacion(
+    @Body() enviarCorreoDto: EnviarCorreoDto
+  ) {
+
+    return this.clientesService.sendClientesExcel(enviarCorreoDto);
+
   }
 
   @Get(':id')

@@ -3,9 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
-import { TipoClienteService, TipoIdentificacionService } from '../../common/services';
+import { EnviarCorreoDto } from '../../common/dto';
+import { SendMailOptions } from '../../common/services/email/email.service';
+import { EmailService, TipoClienteService, TipoIdentificacionService } from '../../common/services';
 
 import { PaginationDto } from '../../common/dto';
+
+import { ReporteClientesPuestosService } from '../../reportes/services';
 
 import { Cliente } from '../entities';
 import { SubSegmentacionService } from './sub-segmentacion.service';
@@ -25,6 +29,8 @@ export class ClientesService {
     private readonly subSegmentacionService: SubSegmentacionService,
     private readonly tipoClienteService: TipoClienteService,
     private readonly tipoIdentificacionService: TipoIdentificacionService,
+    private readonly reporteClientesPuestosService: ReporteClientesPuestosService, // Servicio para generar reportes de clientes y puestos
+    private readonly emailService: EmailService, // Servicio de email para envio de correos
     private readonly configService: ConfigService,
   ) {
       this.defaultLimit = this.configService.get<number>('defaultLimit');
@@ -218,6 +224,103 @@ export class ClientesService {
         
       throw new InternalServerErrorException(`Unexpected error, check server logs`);
 
+    }
+
+  }
+
+  async downloadClientes(){
+
+    const clientes = await this.clienteRepository.find({
+      relations: {
+        locaciones: true,
+      },
+    });
+
+    const excelBuffer = await this.reporteClientesPuestosService.generateExcel(clientes);
+
+    return {
+      excelBuffer: excelBuffer,
+      title: `clientes_puestos_${new Date().toISOString()}`
+    };    
+
+  }
+
+  async sendClientesExcel(enviarCorreoDto: EnviarCorreoDto){
+  
+    const clientes = await this.clienteRepository.find({
+      relations: {
+        locaciones: true,
+      },
+    });
+
+    const excelBuffer = await this.reporteClientesPuestosService.generateExcel(clientes);
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): Reporte Clientes & Puestos`;
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+          
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">REPORTE CLIENTES & PUESTOS</h2>
+          </div>
+          
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se envia EXCEL adjunto con exportacion de <b>clientes & puestos</b><br><br>
+              Por favor, revise el <b>EXCEL adjunto</b> para más detalles.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+      
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU" 
+                  alt="videlca" 
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+      
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+      
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+          
+        </div>
+      </div>
+      `;
+
+    const emails = enviarCorreoDto.correos.map(correo => correo.email);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
+        {
+          filename: `clientes_puestos_${new Date().toISOString()}.xlsx`,
+          content: excelBuffer,
+          contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      ],
+    }
+
+    // Enviamos correo para notificar al usuario
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+      throw new InternalServerErrorException(`Error al enviar correo con exportacion de clientes y puestos a los emails ${emails}, revisar correos si estan bien escritos`);
     }
 
   }
