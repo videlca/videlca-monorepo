@@ -23,7 +23,7 @@ export const SeleccionarIdentificadorOrden = ({
   useEffect(() => {
     setIdentificador({
       ...identificador,
-      codigo: nextIdOrdenServicio,
+      codigo: nextIdOrdenServicio === 0 ? 1 : nextIdOrdenServicio,
     });
   }, [nextIdOrdenServicio]);
 

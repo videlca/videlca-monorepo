@@ -1,8 +1,8 @@
 import type { Cliente } from "../../../types";
-import type { PaginationDto } from "../../dtos/common";
+import type { PaginationDto, EnviarCorreoDto } from "../../dtos/common";
 import type { CreateClienteDto, UpdateClienteDto } from "../../dtos/clientes";
 import type { ApiResponse } from "../../types";
-import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
+import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 
 
 export const getClientes = async (pagination: PaginationDto): Promise<ApiResponse<Cliente[]>> => {
@@ -28,3 +28,25 @@ export const updateCliente = async (id: number, data: UpdateClienteDto): Promise
 export const deleteCliente = async (id: number): Promise<ApiResponse> => {
   return await apiDelete<Cliente>(`/clientes/${id}`);
 }
+
+export const descargarExcelClientes = async (): Promise<{ blob: Blob; filename: string }> => {
+  const response = await axiosClient.get("/clientes/descargar-clientes", {
+    responseType: "blob",
+  });
+
+  const contentDisposition = response.headers["content-disposition"];
+  let filename = `clientes_puestos_${new Date().toISOString()}.xlsx`;
+
+  if (contentDisposition) {
+    const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    if (match && match[1]) {
+      filename = match[1].replace(/['"]/g, "");
+    }
+  }
+
+  return { blob: response.data, filename };
+};
+
+export const enviarExcelClientes = async (data: EnviarCorreoDto): Promise<ApiResponse> => {
+  return await apiPost("/clientes/enviar-excel-clientes", data);
+};

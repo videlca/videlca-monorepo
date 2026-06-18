@@ -1,5 +1,5 @@
 import { ButtonAction } from "../../../common/ButtonAction";
-import { Building2, Mail, PlusIcon, User } from "lucide-react";
+import { Building2, Download, Mail, PlusIcon, User } from "lucide-react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
@@ -11,9 +11,12 @@ import {
   useClientesActivo,
   useCreateCliente,
   useDeleteCliente,
+  useDescargarExcelClientes,
+  useEnviarExcelClientes,
   useUpdateCliente,
 } from "../../../../api/queryFunctions/clientes/clientes";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
+import { EnvioCorreos } from "../../modals/EnvioCorreos";
 
 import type {
   CreateClienteDto,
@@ -50,6 +53,7 @@ export function ClientesTab() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
+  const [isOpenEmail, setIsOpenEmail] = useState(false);
   const [isFacturacionDiferente, setIsFacturacionDiferente] = useState(false);
 
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
@@ -62,6 +66,10 @@ export function ClientesTab() {
   const { mutate: updateCliente, isPending: isUpdatingCliente } =
     useUpdateCliente();
   const { mutate: deleteCliente } = useDeleteCliente();
+  const { mutate: descargarExcel, isPending: isDownloadingExcel } =
+    useDescargarExcelClientes();
+  const { mutate: enviarExcelClientes, isPending: isSendingExcel } =
+    useEnviarExcelClientes();
 
   const { mutate: createPuesto, isPending: isCreatingPuesto } =
     useCreatePuesto();
@@ -247,7 +255,21 @@ export function ClientesTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <ButtonAction
+          Icon={Download}
+          label={isDownloadingExcel ? "Descargando..." : "Descargar Excel"}
+          onClick={() => descargarExcel()}
+          color="green-light"
+          disabled={isDownloadingExcel}
+        />
+        <ButtonAction
+          Icon={Mail}
+          label={isSendingExcel ? "Enviando..." : "Enviar Excel"}
+          onClick={() => setIsOpenEmail(true)}
+          color="yellow-light"
+          disabled={isSendingExcel}
+        />
         <ButtonAction
           Icon={PlusIcon}
           label="Nuevo cliente"
@@ -687,6 +709,13 @@ export function ClientesTab() {
           });
         }}
         onClose={() => setIsOpenDelete(false)}
+      />
+
+      <EnvioCorreos
+        isOpen={isOpenEmail}
+        setIsOpen={setIsOpenEmail}
+        mutationEmail={enviarExcelClientes}
+        envioCorreoPending={isSendingExcel}
       />
     </div>
   );

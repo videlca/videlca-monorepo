@@ -39,7 +39,7 @@ export const InputForm = React.forwardRef<HTMLInputElement, InputFormProps>(
             ref={ref}
             type={type}
             id={id}
-            max={type === "number" ? "99" : undefined}
+            max={type === "number" ? "9999" : undefined}
             min={type === "number" && !allowNegative ? "0" : undefined}
             required={required}
             maxLength={maxLength}
