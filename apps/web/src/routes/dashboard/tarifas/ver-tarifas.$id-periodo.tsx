@@ -10,6 +10,8 @@ import {
   ArrowLeftIcon,
   Calculator,
   Calendar,
+  ChevronDown,
+  ChevronRight,
   DollarSign,
   FileSpreadsheet,
   Mail,
@@ -59,6 +61,7 @@ function RouteComponent() {
   const [isOpenDeleteTarifa, setIsOpenDeleteTarifa] = useState(false);
   const [tarifaSelected, setTarifaSelected] = useState<Tarifa | null>(null);
   const [isOpenSendExcel, setIsOpenSendExcel] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   // Queries y Mutaciones
   const { data: tarifas } = useTarifas(Number(idPeriodoParam));
@@ -373,20 +376,44 @@ function RouteComponent() {
 
       <div className="flex flex-col gap-6">
         {serviciosData.map(([key, value]: [string, any]) => {
+          const isCollapsed = collapsedGroups.has(key);
           return (
             <div
               key={key}
               className="rounded-lg border border-blue-200 bg-blue-100/70 pt-2"
             >
-              <h2 className="mb-2 w-fit rounded-lg p-2 px-4 text-xl font-medium text-blue-600">
-                {key}
-              </h2>
-              <Table
-                columns={columns}
-                data={value || []}
-                pageSize={10}
-                enablePagination={false}
-              />
+              <button
+                type="button"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg p-2 px-4 text-left transition-colors hover:bg-blue-200/50"
+                onClick={() => {
+                  setCollapsedGroups((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(key)) {
+                      next.delete(key);
+                    } else {
+                      next.add(key);
+                    }
+                    return next;
+                  });
+                }}
+              >
+                {isCollapsed ? (
+                  <ChevronRight className="h-5 w-5 text-blue-600" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-blue-600" />
+                )}
+                <h2 className="text-xl font-medium text-blue-600">
+                  {key}
+                </h2>
+              </button>
+              {!isCollapsed && (
+                <Table
+                  columns={columns}
+                  data={value || []}
+                  pageSize={10}
+                  enablePagination={false}
+                />
+              )}
             </div>
           );
         })}
