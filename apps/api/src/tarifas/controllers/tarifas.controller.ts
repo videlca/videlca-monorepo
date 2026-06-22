@@ -22,8 +22,8 @@ export class TarifasController {
   
   // RUTA PROTEGIDA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO
   @Get('periodo/:idPeriodo')
-  findAllByPeriodo(@Param('idPeriodo', ParseIntPipe) id: number, @Query() paginationDto: PaginationDto) {
-    return this.tarifasService.findAllByPeriodo(id, paginationDto, paginationDto.pagination);
+  findAllByPeriodo(@Param('idPeriodo', ParseIntPipe) id: number) {
+    return this.tarifasService.findAllByPeriodo(id);
   }
   
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO
