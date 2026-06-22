@@ -318,11 +318,10 @@ function RouteComponent() {
             {" "}
             Periodo {periodo?.data?.anioInicio}{" "}
             <span
-              className={`ml-2 rounded-full px-3 py-1.5 text-sm font-semibold ${
-                periodo?.data?.periodoActivoFacturacion
-                  ? "bg-green-200 text-green-700"
-                  : "bg-red-200 text-red-700"
-              }`}
+              className={`ml-2 rounded-full px-3 py-1.5 text-sm font-semibold ${periodo?.data?.periodoActivoFacturacion
+                ? "bg-green-200 text-green-700"
+                : "bg-red-200 text-red-700"
+                }`}
             >
               {periodo?.data?.periodoActivoFacturacion
                 ? "Activo para facturación"
@@ -410,7 +409,7 @@ function RouteComponent() {
                 <Table
                   columns={columns}
                   data={value || []}
-                  pageSize={10}
+                  pageSize={200}
                   enablePagination={false}
                 />
               )}
@@ -446,11 +445,10 @@ function RouteComponent() {
                 <p>
                   <span className="font-medium">Estado:</span>{" "}
                   <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                      tarifaSelected?.estado
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.estado
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                      }`}
                   >
                     {tarifaSelected?.estado ? "Activa" : "Inactiva"}
                   </span>
@@ -512,11 +510,10 @@ function RouteComponent() {
                 <p>
                   <span className="font-medium">Activo para Facturación:</span>{" "}
                   <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                      tarifaSelected?.idPeriodo.periodoActivoFacturacion
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.idPeriodo.periodoActivoFacturacion
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                      }`}
                   >
                     {tarifaSelected?.idPeriodo.periodoActivoFacturacion
                       ? "Sí"
@@ -560,11 +557,10 @@ function RouteComponent() {
                 <p>
                   <span className="font-medium">Estado del Servicio:</span>{" "}
                   <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                      tarifaSelected?.idServicio.estado
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.idServicio.estado
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                      }`}
                   >
                     {tarifaSelected?.idServicio.estado ? "Activo" : "Inactivo"}
                   </span>
