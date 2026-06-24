@@ -1,6 +1,7 @@
 // CLIENTE
 export { CreateClienteDto } from "./cliente/create-cliente.dto";
 export { UpdateClienteDto } from "./cliente/update-cliente.dto";
+export { FilterClienteDto, ClienteFilterColumn } from './cliente/filter-cliente.dto';
 
 // SEGMENTACION
 export { CreateSegmentacionDto } from "./segmentacion/create-segmentacion.dto";

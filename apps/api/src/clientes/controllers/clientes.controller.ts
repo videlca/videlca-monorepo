@@ -7,7 +7,7 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
 
 import { ClientesService } from '../services';
-import { CreateClienteDto, UpdateClienteDto } from '../dto';
+import { CreateClienteDto, UpdateClienteDto, FilterClienteDto } from '../dto';
 
 @Controller('clientes')
 @AppAuth(DescriptionRoutes.CLIENTE) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -60,6 +60,14 @@ export class ClientesController {
 
     return this.clientesService.sendClientesExcel(enviarCorreoDto);
 
+  }
+
+  @Get('filter')
+  findFiltered(@Query() filterClienteDto: FilterClienteDto) {
+    return this.clientesService.findFiltered(
+      filterClienteDto,
+      filterClienteDto.pagination,
+    );
   }
 
   @Get(':id')

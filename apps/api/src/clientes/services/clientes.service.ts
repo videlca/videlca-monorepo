@@ -14,7 +14,7 @@ import { ReporteClientesPuestosService } from '../../reportes/services';
 import { Cliente } from '../entities';
 import { SubSegmentacionService } from './sub-segmentacion.service';
 
-import { CreateClienteDto, UpdateClienteDto } from '../dto';
+import { CreateClienteDto, UpdateClienteDto, FilterClienteDto, ClienteFilterColumn } from '../dto';
 
 @Injectable()
 export class ClientesService {
@@ -226,6 +226,48 @@ export class ClientesService {
 
     }
 
+  }
+
+  async findFiltered(
+    filterClienteDto: FilterClienteDto,
+    pagination: boolean = true,
+  ) {
+    
+    const {
+      column,
+      query,
+      limit = this.defaultLimit,
+      offset = 0,
+    } = filterClienteDto;
+  
+    const columnMap: Record<ClienteFilterColumn, string> = {
+      [ClienteFilterColumn.NUMERO_IDENTIFICACION]: 'cliente.numeroIdentificacion',
+      [ClienteFilterColumn.NOMBRE]: 'cliente.nombre',
+      [ClienteFilterColumn.TIPO_CLIENTE]: 'tipoCliente.descripcion',
+      [ClienteFilterColumn.SUBSEGMENTACION]: 'subSegmentacion.descripcion',
+    };
+  
+    const dbColumn = columnMap[column];
+  
+    if (!dbColumn) {
+      throw new BadRequestException('Columna de filtro no permitida');
+    }
+  
+    const qb = this.clienteRepository
+      .createQueryBuilder('cliente')
+      .leftJoinAndSelect('cliente.idTipoIdentificacion', 'tipoIdentificacion')
+      .leftJoinAndSelect('cliente.idTipoCliente', 'tipoCliente')
+      .leftJoinAndSelect('cliente.idSubSegmentacion', 'subSegmentacion')
+      .where(`${dbColumn} LIKE :query`, {
+        query: `%${query}%`,
+      })
+      .orderBy('cliente.nombre', 'ASC');
+  
+    if (pagination) {
+      qb.take(limit).skip(offset);
+    }
+  
+    return await qb.getMany();
   }
 
   async downloadClientes(){
