@@ -11,6 +11,7 @@ import {
   getPersonalActivo,
   getPersonalById,
   updatePersonal,
+  getFilteredPersonal,
 } from "../../functions/personal";
 import type { ApiResponse } from "../../types/common";
 import type { Personal } from "../../types/personal";
@@ -25,6 +26,19 @@ export const usePersonal = (): UseQueryResult<
   return useQuery<ApiResponse<Personal[]>, Error>({
     queryKey: ["personal"],
     queryFn: () => getPersonal({ pagination: false }),
+  });
+};
+
+export const useFilterPersonal = (): UseMutationResult<
+  ApiResponse<Personal[]>,
+  Error,
+  any
+> => {
+  return useMutation({
+    mutationFn: (filter: any) => getFilteredPersonal(filter),
+    onError: (error) => {
+      toast.error(error.message || "Error al filtrar personal");
+    },
   });
 };
 

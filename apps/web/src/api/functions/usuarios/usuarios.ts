@@ -19,6 +19,21 @@ export const getUsuarios = async (pagination: PaginationDto): Promise<ApiRespons
   return response
 };
 
+export const getFilteredUsuarios = async (filter: any): Promise<ApiResponse<Usuario[]>> => {
+  const response = await axiosClient.get('/users/filter', { params: filter }).then((res) => {
+    return {
+      status: res.status,
+      data: res.data
+    }
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || 'Error de conexión',
+    }
+  })
+  return response
+};
+
 export const createUsuario = async (data: CreateUserDto): Promise<ApiResponse> => {
   const response = await axiosClient.post('/users', data).then((res) => {
     return {

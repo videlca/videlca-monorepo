@@ -1,5 +1,5 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { createUsuario, deleteUsuario, getUsuarioByCookie, getUsuarios, updateUsuario, updateUsuarioPerfil } from "../../functions/usuarios";
+import { createUsuario, deleteUsuario, getUsuarioByCookie, getUsuarios, updateUsuario, updateUsuarioPerfil, getFilteredUsuarios } from "../../functions/usuarios";
 import type { ApiResponse } from "../../types/common";
 import type { Usuario } from "../../../types";
 import type { CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from "../../dtos";
@@ -12,6 +12,15 @@ export const useGetUsuarios = (): UseQueryResult<ApiResponse<Usuario[]>, Error> 
     queryFn: () => getUsuarios({ pagination: false }),
   })
 }
+
+export const useFilterUsuarios = (): UseMutationResult<ApiResponse<Usuario[]>, Error, any> => {
+  return useMutation({
+    mutationFn: (filter: any) => getFilteredUsuarios(filter),
+    onError: (error) => {
+      toast.error(error.message || "Error al filtrar usuarios");
+    },
+  });
+};
 
 export const useCreateUsuario = (): UseMutationResult<ApiResponse, Error, CreateUserDto> => {
   return useMutation({ 

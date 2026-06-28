@@ -68,4 +68,18 @@ export interface UpdateClienteDto {
   estado?: boolean;
 }
 
+// Filter
+export enum ClienteFilterColumn {
+  NUMERO_IDENTIFICACION = 'numeroIdentificacion',
+  NOMBRE = 'nombre',
+  TIPO_CLIENTE = 'tipoCliente',
+  SUBSEGMENTACION = 'subsegmentacion',
+}
 
+export interface FilterClienteDto {
+  column: ClienteFilterColumn;
+  query: string;
+  limit?: number;
+  offset?: number;
+  pagination?: boolean;
+}

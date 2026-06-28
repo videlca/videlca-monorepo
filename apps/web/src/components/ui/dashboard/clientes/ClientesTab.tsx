@@ -2,6 +2,7 @@ import { ButtonAction } from "../../../common/ButtonAction";
 import { Building2, Download, Mail, PlusIcon, User } from "lucide-react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Table from "../../../common/Table";
+import type { ServerFilterColumn } from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
 import type { Cliente } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
@@ -13,8 +14,10 @@ import {
   useDeleteCliente,
   useDescargarExcelClientes,
   useEnviarExcelClientes,
+  useFilterClientes,
   useUpdateCliente,
 } from "../../../../api/queryFunctions/clientes/clientes";
+import { ClienteFilterColumn } from "../../../../api/dtos/clientes";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 import { EnvioCorreos } from "../../modals/EnvioCorreos";
 
@@ -22,6 +25,7 @@ import type {
   CreateClienteDto,
   CreateCorreoDto,
   CreatePuestoDto,
+  FilterClienteDto,
   UpdateClienteDto,
 } from "../../../../api/dtos/clientes";
 import { InputForm } from "../../../common/InputForm";
@@ -57,6 +61,8 @@ export function ClientesTab() {
   const [isFacturacionDiferente, setIsFacturacionDiferente] = useState(false);
 
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
+  const [filteredClientes, setFilteredClientes] = useState<Cliente[] | null>(null);
+  const [currentFilter, setCurrentFilter] = useState<FilterClienteDto | undefined>(undefined);
 
   // Mutaciones y queries
   const { data: clientes } = useClientesActivo();
@@ -70,6 +76,8 @@ export function ClientesTab() {
     useDescargarExcelClientes();
   const { mutate: enviarExcelClientes, isPending: isSendingExcel } =
     useEnviarExcelClientes();
+  const { mutate: filterClientes, isPending: isFilteringClientes } =
+    useFilterClientes();
 
   const { mutate: createPuesto, isPending: isCreatingPuesto } =
     useCreatePuesto();
@@ -259,7 +267,7 @@ export function ClientesTab() {
         <ButtonAction
           Icon={Download}
           label={isDownloadingExcel ? "Descargando..." : "Descargar Excel"}
-          onClick={() => descargarExcel()}
+          onClick={() => descargarExcel(currentFilter)}
           color="green-light"
           disabled={isDownloadingExcel}
         />
@@ -277,12 +285,35 @@ export function ClientesTab() {
         />
       </div>
       <Table
-        data={clientes?.data || []}
+        data={filteredClientes ?? clientes?.data ?? []}
         columns={columnsClientes}
         enableSorting={true}
         enablePagination={true}
         pageSize={5}
         enableFiltering={true}
+        filterColumns={[
+          { label: "Número de identificación", value: ClienteFilterColumn.NUMERO_IDENTIFICACION },
+          { label: "Nombre", value: ClienteFilterColumn.NOMBRE },
+          { label: "Tipo de cliente", value: ClienteFilterColumn.TIPO_CLIENTE },
+          { label: "Subsegmentación", value: ClienteFilterColumn.SUBSEGMENTACION },
+        ] satisfies ServerFilterColumn[]}
+        onServerFilter={(column, query) => {
+          const filter = { column: column as ClienteFilterColumn, query, pagination: false };
+          setCurrentFilter(filter);
+          filterClientes(
+            filter,
+            {
+              onSuccess: (data) => {
+                setFilteredClientes(data.data ?? []);
+              },
+            },
+          );
+        }}
+        onServerFilterClear={() => {
+          setFilteredClientes(null);
+          setCurrentFilter(undefined);
+        }}
+        serverFilterLoading={isFilteringClientes}
       />
 
       {/* Modal para agregar cliente */}
@@ -714,7 +745,9 @@ export function ClientesTab() {
       <EnvioCorreos
         isOpen={isOpenEmail}
         setIsOpen={setIsOpenEmail}
-        mutationEmail={enviarExcelClientes}
+        mutationEmail={(data: any, options: any) =>
+          enviarExcelClientes({ data, filter: currentFilter }, options)
+        }
         envioCorreoPending={isSendingExcel}
       />
     </div>

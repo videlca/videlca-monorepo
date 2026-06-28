@@ -8,6 +8,10 @@ export const getPersonal = async (pagination: PaginationDto): Promise<ApiRespons
   return await apiGet<Personal[]>("/personal", pagination);
 };
 
+export const getFilteredPersonal = async (filter: any): Promise<ApiResponse<Personal[]>> => {
+  return await apiGet<Personal[]>("/personal/filter", filter);
+};
+
 export const getPersonalById = async (id: number): Promise<ApiResponse<Personal>> => {
   return await apiGet<Personal>(`/personal/${id}`);
 };

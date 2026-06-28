@@ -139,3 +139,19 @@ export type MonthsAvailable = 0 | 3 | 6 | 12;
 export interface GetDashboardInicioDto {
   months: MonthsAvailable;
 }
+
+// Filter
+export enum OrdenServicioFilterColumn {
+  NUMERO_ORDEN = 'numeroOrden',
+  LOCACION = 'locacion',
+  CLIENTE = 'cliente',
+  ESTADO = 'estado',
+}
+
+export interface FilterOrdenServicioDto {
+  column: OrdenServicioFilterColumn;
+  query: string;
+  limit?: number;
+  offset?: number;
+  pagination?: boolean;
+}

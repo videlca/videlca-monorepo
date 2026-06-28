@@ -25,3 +25,19 @@ export interface UpdateUserStatusDto {
   estado?: boolean;
   idRol?: number;
 }
+
+// Filter
+export enum UserFilterColumn {
+  NUMERO_IDENTIFICACION = 'numeroIdentificacion',
+  NOMBRE = 'nombre',
+  EMAIL = 'email',
+  ROL = 'rol',
+}
+
+export interface FilterUserDto {
+  column: UserFilterColumn;
+  query: string;
+  limit?: number;
+  offset?: number;
+  pagination?: boolean;
+}

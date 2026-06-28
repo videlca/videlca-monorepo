@@ -23,14 +23,16 @@ import {
   useValidarEmpleadosDisponibles,
   useValidarHorarioServicioOrdenServicio,
   useValidarIdOrdenServicio,
-  useValidarRangoHorarioPersonalOrdenServicio,
   useValidateFechasOrdenServicio,
+  useFilterOrdenesServicio,
+  useValidarRangoHorarioPersonalOrdenServicio,
 } from "../../../api/queryFunctions/orden-servicio";
-import type {
-  CreateOrdenServicioDto,
-  CreateOrdenServicioTarifaDto,
-  UpdateOrdenServicioDto,
-  UpdateOrdenServicioTarifaDto,
+import {
+  type CreateOrdenServicioDto,
+  type CreateOrdenServicioTarifaDto,
+  type UpdateOrdenServicioDto,
+  type UpdateOrdenServicioTarifaDto,
+  OrdenServicioFilterColumn,
 } from "../../../api/dtos";
 import type { OrdenServicio } from "../../../api/types/orden-servicio";
 import { useTipoServiciosActivo } from "../../../api/queryFunctions/servicios";
@@ -59,6 +61,7 @@ import { useForm } from "react-hook-form";
 import { useGetNextIdOrdenServicio } from "../../../api/queryFunctions/orden-servicio/orden-servicio-id";
 import { printBase64PDF } from "../../../utils/printBase64File";
 import { queryClient } from "../../../App";
+import type { ServerFilterColumn } from "../../../components/common/Table";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
@@ -98,6 +101,9 @@ function RouteComponent() {
   const [mensajeRespuesta, setMensajeRespuesta] = useState<string>("");
 
   const [isIndefinite, setIsIndefinite] = useState(false);
+
+  const { mutate: filterOrdenesServicio, isPending: isFilteringOrdenesServicio } = useFilterOrdenesServicio();
+  const [filteredOrdenesServicio, setFilteredOrdenesServicio] = useState<OrdenServicio[] | null>(null);
 
   // Queries y mutaciones
   const { data: ordenesDeServicioQuery } = useGetOrdenesServicio();
@@ -1004,10 +1010,28 @@ function RouteComponent() {
         </div>
         <Table
           columns={columns}
-          data={ordenesDeServicioQuery?.data || []}
+          data={filteredOrdenesServicio ?? ordenesDeServicioQuery?.data ?? []}
           pageSize={5}
           enableFiltering={true}
           enablePagination={true}
+          filterColumns={[
+            { label: "Número de orden", value: OrdenServicioFilterColumn.NUMERO_ORDEN },
+            { label: "Locación", value: OrdenServicioFilterColumn.LOCACION },
+            { label: "Cliente", value: OrdenServicioFilterColumn.CLIENTE },
+            { label: "Estado", value: OrdenServicioFilterColumn.ESTADO },
+          ] satisfies ServerFilterColumn[]}
+          onServerFilter={(column, query) => {
+            filterOrdenesServicio(
+              { column: column as OrdenServicioFilterColumn, query, pagination: false },
+              {
+                onSuccess: (data) => {
+                  setFilteredOrdenesServicio(data.data ?? []);
+                },
+              },
+            );
+          }}
+          onServerFilterClear={() => setFilteredOrdenesServicio(null)}
+          serverFilterLoading={isFilteringOrdenesServicio}
         />
       </div>
 

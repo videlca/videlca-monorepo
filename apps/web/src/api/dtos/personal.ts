@@ -33,3 +33,19 @@ export interface CreateNovedadDto {
 }
 
 export interface UpdateNovedadDto extends Partial<CreateNovedadDto> {}
+
+// Filter
+export enum PersonalFilterColumn {
+  NUMERO_IDENTIFICACION = 'numeroIdentificacion',
+  NOMBRE = 'nombre',
+  TIPO_PERSONAL = 'tipoPersonal',
+  TIPO_CONTRATO = 'tipoContrato',
+}
+
+export interface FilterPersonalDto {
+  column: PersonalFilterColumn;
+  query: string;
+  limit?: number;
+  offset?: number;
+  pagination?: boolean;
+}

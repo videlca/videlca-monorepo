@@ -11,8 +11,9 @@ import {
   useDeleteUsuario,
   useGetUsuarios,
   useUpdateUsuario,
+  useFilterUsuarios,
 } from "../../../api/queryFunctions/usuarios";
-import type { CreateUserDto, UpdateUserStatusDto } from "../../../api/dtos";
+import { UserFilterColumn, type CreateUserDto, type UpdateUserStatusDto } from "../../../api/dtos";
 import { useForm } from "react-hook-form";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
@@ -24,6 +25,7 @@ import { InputSelectStateBoolean } from "../../../components/common/InputSelectS
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
+import type { ServerFilterColumn } from "../../../components/common/Table";
 
 export const Route = createFileRoute("/dashboard/usuarios/")({
   component: RouteComponent,
@@ -42,6 +44,9 @@ function RouteComponent() {
   const { mutate: editarUsuario, isPending: isEditingUsuario } =
     useUpdateUsuario();
   const { mutate: eliminarUsuario } = useDeleteUsuario();
+  const { mutate: filterUsuarios, isPending: isFilteringUsuarios } = useFilterUsuarios();
+
+  const [filteredUsuarios, setFilteredUsuarios] = useState<Usuario[] | null>(null);
 
   const { data: roles } = useActiveRoles();
   const { data: tiposIdentificacion } = useTipoIdentificacionActivo();
@@ -196,12 +201,30 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={usuarios?.data || []}
+          data={filteredUsuarios ?? usuarios?.data ?? []}
           columns={columns}
           enablePagination={true}
           pageSize={5}
           enableSorting={true}
           enableFiltering={true}
+          filterColumns={[
+            { label: "Número de identificación", value: UserFilterColumn.NUMERO_IDENTIFICACION },
+            { label: "Nombre", value: UserFilterColumn.NOMBRE },
+            { label: "Email", value: UserFilterColumn.EMAIL },
+            { label: "Rol", value: UserFilterColumn.ROL },
+          ] satisfies ServerFilterColumn[]}
+          onServerFilter={(column, query) => {
+            filterUsuarios(
+              { column: column as UserFilterColumn, query, pagination: false },
+              {
+                onSuccess: (data) => {
+                  setFilteredUsuarios(data.data ?? []);
+                },
+              },
+            );
+          }}
+          onServerFilterClear={() => setFilteredUsuarios(null)}
+          serverFilterLoading={isFilteringUsuarios}
         />
       </div>
 

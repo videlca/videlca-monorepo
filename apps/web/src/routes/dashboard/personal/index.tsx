@@ -13,6 +13,7 @@ import {
   usePersonal,
   usePersonalById,
   useUpdatePersonal,
+  useFilterPersonal,
 } from "../../../api/queryFunctions/personal";
 import { useState } from "react";
 import { SimpleModal } from "../../../components/common/SimpleModal";
@@ -25,10 +26,11 @@ import {
   useTipoPersonalActivo,
 } from "../../../api/queryFunctions/configuracion";
 
-import type {
-  CreateNovedadDto,
-  CreatePersonalDto,
-  UpdatePersonalDto,
+import {
+  type CreateNovedadDto,
+  type CreatePersonalDto,
+  type UpdatePersonalDto,
+  PersonalFilterColumn,
 } from "../../../api/dtos/personal";
 import { InputForm } from "../../../components/common/InputForm";
 import { InputSelect } from "../../../components/common/InputSelect";
@@ -40,6 +42,7 @@ import { timeFormat } from "../../../utils/TimeFormat";
 import { InputTime24H } from "../../../components/common/InputTime24H";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 import { useForm } from "react-hook-form";
+import type { ServerFilterColumn } from "../../../components/common/Table";
 
 export const Route = createFileRoute("/dashboard/personal/")({
   component: RouteComponent,
@@ -71,6 +74,9 @@ function RouteComponent() {
   const { mutate: updatePersonal, isPending: isUpdatingPersonal } =
     useUpdatePersonal();
   const { mutate: deletePersonal } = useDeletePersonal();
+  const { mutate: filterPersonal, isPending: isFilteringPersonal } = useFilterPersonal();
+
+  const [filteredPersonal, setFilteredPersonal] = useState<Personal[] | null>(null);
 
   const { mutate: createNovedad, isPending: isLoadingCreateNovedad } =
     useCreatePersonalNovedad();
@@ -290,12 +296,30 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={personal?.data || []}
+          data={filteredPersonal ?? personal?.data ?? []}
           columns={columns}
           enablePagination={true}
           pageSize={5}
           enableSorting={true}
           enableFiltering={true}
+          filterColumns={[
+            { label: "Número de identificación", value: PersonalFilterColumn.NUMERO_IDENTIFICACION },
+            { label: "Nombre", value: PersonalFilterColumn.NOMBRE },
+            { label: "Tipo de personal", value: PersonalFilterColumn.TIPO_PERSONAL },
+            { label: "Tipo de contrato", value: PersonalFilterColumn.TIPO_CONTRATO },
+          ] satisfies ServerFilterColumn[]}
+          onServerFilter={(column, query) => {
+            filterPersonal(
+              { column: column as PersonalFilterColumn, query, pagination: false },
+              {
+                onSuccess: (data) => {
+                  setFilteredPersonal(data.data ?? []);
+                },
+              },
+            );
+          }}
+          onServerFilterClear={() => setFilteredPersonal(null)}
+          serverFilterLoading={isFilteringPersonal}
         />
       </div>
       <SimpleModal

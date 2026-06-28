@@ -15,6 +15,10 @@ export const getOrdenesServicio = async (pagination: PaginationDto): Promise<Api
   return await apiGet<OrdenServicio[]>("/orden-servicio", pagination);
 }
 
+export const getFilteredOrdenesServicio = async (filter: any): Promise<ApiResponse<OrdenServicio[]>> => {
+  return await apiGet<OrdenServicio[]>("/orden-servicio/filter", filter);
+}
+
 export const getOrdenServicioById = async (id: number): Promise<ApiResponse<OrdenServicio>> => {
   return await apiGet<OrdenServicio>(`/orden-servicio/${id}`);
 }

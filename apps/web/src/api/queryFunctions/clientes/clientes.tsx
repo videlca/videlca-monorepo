@@ -12,11 +12,12 @@ import {
   getClienteById,
   getClientes,
   getClientesActivo,
+  getFilteredClientes,
   updateCliente,
 } from "../../functions/clientes/clientes";
 import type { ApiResponse } from "../../types";
 import type { Cliente } from "../../../types";
-import type { CreateClienteDto, UpdateClienteDto } from "../../dtos/clientes";
+import type { CreateClienteDto, FilterClienteDto, UpdateClienteDto } from "../../dtos/clientes";
 import type { EnviarCorreoDto } from "../../dtos/common";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
@@ -137,10 +138,10 @@ export const useDeleteCliente = (): UseMutationResult<
 export const useDescargarExcelClientes = (): UseMutationResult<
   { blob: Blob; filename: string },
   Error,
-  void
+  FilterClienteDto | undefined
 > => {
   return useMutation({
-    mutationFn: () => descargarExcelClientes(),
+    mutationFn: (filter?: FilterClienteDto) => descargarExcelClientes(filter),
     onSuccess: ({ blob, filename }) => {
       // Trigger browser download
       const url = window.URL.createObjectURL(blob);
@@ -162,10 +163,10 @@ export const useDescargarExcelClientes = (): UseMutationResult<
 export const useEnviarExcelClientes = (): UseMutationResult<
   ApiResponse,
   Error,
-  EnviarCorreoDto
+  { data: EnviarCorreoDto, filter?: FilterClienteDto }
 > => {
   return useMutation({
-    mutationFn: (data: EnviarCorreoDto) => enviarExcelClientes(data),
+    mutationFn: ({ data, filter }: { data: EnviarCorreoDto, filter?: FilterClienteDto }) => enviarExcelClientes(data, filter),
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         toast.success("Correo enviado correctamente", {
@@ -181,3 +182,15 @@ export const useEnviarExcelClientes = (): UseMutationResult<
   });
 };
 
+export const useFilterClientes = (): UseMutationResult<
+  ApiResponse<Cliente[]>,
+  Error,
+  FilterClienteDto
+> => {
+  return useMutation({
+    mutationFn: (filter: FilterClienteDto) => getFilteredClientes(filter),
+    onError: (error) => {
+      toast.error(error.message || "Error al filtrar clientes");
+    },
+  });
+};

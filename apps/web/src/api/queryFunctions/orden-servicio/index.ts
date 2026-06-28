@@ -1,5 +1,5 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { anularOrdenServicio, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio } from "../../functions/orden-servicio";
+import { anularOrdenServicio, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio, getFilteredOrdenesServicio } from "../../functions/orden-servicio";
 import type { CreateOrdenServicioDto, EnviarCorreoDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 import type { ApiResponse, Personal } from "../../types";
@@ -51,6 +51,15 @@ export const useGetOrdenesServicio = (): UseQueryResult<ApiResponse<OrdenServici
   return useQuery({
     queryKey: ["orden-servicio"],
     queryFn: () => getOrdenesServicio({ pagination: false }),
+  });
+}
+
+export const useFilterOrdenesServicio = (): UseMutationResult<ApiResponse<OrdenServicio[]>, Error, any> => {
+  return useMutation({
+    mutationFn: (filter: any) => getFilteredOrdenesServicio(filter),
+    onError: (error) => {
+      toast.error(error.message || "Error al filtrar ordenes de servicio");
+    },
   });
 }
 

@@ -1,12 +1,16 @@
 import type { Cliente } from "../../../types";
 import type { PaginationDto, EnviarCorreoDto } from "../../dtos/common";
-import type { CreateClienteDto, UpdateClienteDto } from "../../dtos/clientes";
+import type { CreateClienteDto, UpdateClienteDto, FilterClienteDto } from "../../dtos/clientes";
 import type { ApiResponse } from "../../types";
 import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 
 
 export const getClientes = async (pagination: PaginationDto): Promise<ApiResponse<Cliente[]>> => {
   return await apiGet<Cliente[]>("/clientes", pagination);
+};
+
+export const getFilteredClientes = async (filter: FilterClienteDto): Promise<ApiResponse<Cliente[]>> => {
+  return await apiGet<Cliente[]>("/clientes/filter", filter);
 };
 
 export const getClienteById = async (id: number): Promise<ApiResponse<Cliente | null>> => {
@@ -29,8 +33,21 @@ export const deleteCliente = async (id: number): Promise<ApiResponse> => {
   return await apiDelete<Cliente>(`/clientes/${id}`);
 }
 
-export const descargarExcelClientes = async (): Promise<{ blob: Blob; filename: string }> => {
-  const response = await axiosClient.get("/clientes/descargar-clientes", {
+export const descargarExcelClientes = async (filter?: FilterClienteDto): Promise<{ blob: Blob; filename: string }> => {
+  let url = "/clientes/descargar-clientes";
+  
+  if (filter?.column && filter?.query) {
+    const params = new URLSearchParams({
+      column: filter.column,
+      query: filter.query,
+    });
+    if (filter.pagination !== undefined) {
+      params.append('pagination', String(filter.pagination));
+    }
+    url += `?${params.toString()}`;
+  }
+
+  const response = await axiosClient.get(url, {
     responseType: "blob",
   });
 
@@ -47,6 +64,19 @@ export const descargarExcelClientes = async (): Promise<{ blob: Blob; filename: 
   return { blob: response.data, filename };
 };
 
-export const enviarExcelClientes = async (data: EnviarCorreoDto): Promise<ApiResponse> => {
-  return await apiPost("/clientes/enviar-excel-clientes", data);
+export const enviarExcelClientes = async (data: EnviarCorreoDto, filter?: FilterClienteDto): Promise<ApiResponse> => {
+  let url = "/clientes/enviar-excel-clientes";
+
+  if (filter?.column && filter?.query) {
+    const params = new URLSearchParams({
+      column: filter.column,
+      query: filter.query,
+    });
+    if (filter.pagination !== undefined) {
+      params.append('pagination', String(filter.pagination));
+    }
+    url += `?${params.toString()}`;
+  }
+
+  return await apiPost(url, data);
 };
