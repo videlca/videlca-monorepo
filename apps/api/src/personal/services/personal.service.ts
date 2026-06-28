@@ -11,7 +11,7 @@ import { PaginationDto } from '../../common/dto';
 import { Personal } from '../entities';
 import { TipoGeneroService, TipoPersonalService, TipoContratoService } from '.';
 
-import { CreatePersonalDto, UpdatePersonalDto } from '../dto';
+import { CreatePersonalDto, UpdatePersonalDto, FilterPersonalDto, PersonalFilterColumn } from '../dto';
 
 @Injectable()
 export class PersonalService {
@@ -184,6 +184,53 @@ export class PersonalService {
 
 
   }
+
+  // FILTRAR PERSONAL POR COLUMNA
+  async findFiltered(
+    filterPersonalDto: FilterPersonalDto,
+    pagination: boolean = true,
+  ) {
+    
+    const {
+      column,
+      query,
+      limit = this.defaultLimit,
+      offset = 0,
+    } = filterPersonalDto;
+  
+    const columnMap: Record<PersonalFilterColumn, string> = {
+      [PersonalFilterColumn.NUMERO_IDENTIFICACION]: 'personal.numeroIdentificacion',
+      [PersonalFilterColumn.NOMBRE]: 'personal.primerNombre',
+      [PersonalFilterColumn.TIPO_PERSONAL]: 'tipoPersonal.descripcion',
+      [PersonalFilterColumn.TIPO_CONTRATO]: 'tipoContrato.descripcion',
+    };
+  
+    const dbColumn = columnMap[column];
+  
+    if (!dbColumn) {
+      throw new BadRequestException('Columna de filtro no permitida');
+    }
+  
+    const qb = this.personalRepository
+      .createQueryBuilder('personal')
+      .leftJoinAndSelect('personal.idTipoIdentificacion', 'tipoIdentificacion')
+      .leftJoinAndSelect('personal.idTipoGenero', 'tipoGenero')
+      .leftJoinAndSelect('personal.idTipoPersonal', 'tipoPersonal')
+      .leftJoinAndSelect('personal.idTipoContrato', 'tipoContrato')
+      .leftJoinAndSelect('personal.idCiudad', 'ciudad')
+      .leftJoinAndSelect('personal.novedades', 'novedades')
+      .where(`${dbColumn} LIKE :query`, {
+        query: `%${query}%`,
+      })
+      .orderBy('personal.primerApellido', 'ASC');
+  
+    if (pagination) {
+      qb.take(limit).skip(offset);
+    }
+  
+    return await qb.getMany();
+  }
+
   
   async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
     

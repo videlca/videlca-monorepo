@@ -52,6 +52,10 @@ import {
   // ANULAR ORDEN
   AnularIdOrdenServicioDto,
 
+  // FILTRO
+  FilterOrdenServicioDto,
+  OrdenServicioFilterColumn,
+
   // INICIO
   GetReporteInicioDto
 } from '../dto';
@@ -429,6 +433,54 @@ export class OrdenServicioService {
       }
     });
 
+  }
+
+  // FILTRAR ORDENES DE SERVICIO POR COLUMNA
+  async findFiltered(
+    filterOrdenServicioDto: FilterOrdenServicioDto,
+    pagination: boolean = true,
+  ) {
+    
+    const {
+      column,
+      query,
+      limit = this.defaultLimit,
+      offset = 0,
+    } = filterOrdenServicioDto;
+  
+    const columnMap: Record<OrdenServicioFilterColumn, string> = {
+      [OrdenServicioFilterColumn.NUMERO_ORDEN]: 'ordenServicioId.descripcionId',
+      [OrdenServicioFilterColumn.LOCACION]: 'locacion.nombre',
+      [OrdenServicioFilterColumn.CLIENTE]: 'cliente.nombre',
+      [OrdenServicioFilterColumn.ESTADO]: 'estadoOrdenServicio.nombre',
+    };
+  
+    const dbColumn = columnMap[column];
+  
+    if (!dbColumn) {
+      throw new BadRequestException('Columna de filtro no permitida');
+    }
+  
+    const qb = this.ordenServicioRepository
+      .createQueryBuilder('orden')
+      .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
+      .leftJoinAndSelect('orden.idUsuarioCreacion', 'usuarioCreacion')
+      .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
+      .leftJoinAndSelect('orden.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('orden.tarifas', 'tarifas')
+      .leftJoinAndSelect('tarifas.idTarifa', 'tarifa')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .where(`${dbColumn} LIKE :query`, {
+        query: `%${query}%`,
+      })
+      .orderBy('orden.fechaInicio', 'DESC');
+  
+    if (pagination) {
+      qb.take(limit).skip(offset);
+    }
+  
+    return await qb.getMany();
   }
 
   async findOne(id: number) {

@@ -7,7 +7,7 @@ import { PaginationDto } from '../common/dto';
 
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto, UpdateUserStateRolDto } from './dto';
+import { CreateUserDto, UpdateUserDto, UpdateUserStateRolDto, FilterUserDto } from './dto';
 
 @Controller('users')
 export class UsersController {
@@ -74,6 +74,16 @@ export class UsersController {
       
     return this.usersService.reenviarToken(id);
 
+  }
+
+  // RUTA PROTEGIDA : Filtrar usuarios por columna
+  @Get('filter')
+  @AppAuth(DescriptionRoutes.USUARIOS)
+  findFiltered(@Query() filterUserDto: FilterUserDto) {
+    return this.usersService.findFiltered(
+      filterUserDto,
+      filterUserDto.pagination,
+    );
   }
 
   // RUTA PROTEGIDA : Obtener data de un user

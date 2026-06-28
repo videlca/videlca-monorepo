@@ -6,7 +6,7 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { PaginationDto } from '../../common/dto';
 
 import { PersonalService } from '../services/personal.service';
-import { CreatePersonalDto, UpdatePersonalDto } from '../dto';
+import { CreatePersonalDto, UpdatePersonalDto, FilterPersonalDto } from '../dto';
 
 @Controller('personal')
 @AppAuth(DescriptionRoutes.PERSONAL) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -30,6 +30,15 @@ export class PersonalController {
   @ValidateJwtAuth()
   findAllActivos(@Query() paginationDto: PaginationDto) {
     return this.personalService.findAllActives(paginationDto, paginationDto.pagination);
+  }
+  
+  // RUTA PROTEGIDA: Filtrar personal por columna
+  @Get('filter')
+  findFiltered(@Query() filterPersonalDto: FilterPersonalDto) {
+    return this.personalService.findFiltered(
+      filterPersonalDto,
+      filterPersonalDto.pagination,
+    );
   }
   
   // RUTA PROTEGIDA: OBTENER UN EMPLEADO
