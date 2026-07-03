@@ -53,6 +53,10 @@ import {
   // ANULAR ORDEN
   AnularIdOrdenServicioDto,
 
+  // FILTRO
+  FilterOrdenServicioDto,
+  OrdenServicioFilterColumn,
+
   // INICIO
   GetReporteInicioDto
 } from '../dto';
@@ -453,6 +457,82 @@ export class OrdenServicioService {
         hasPreviousPage: false,
       }
     };
+
+  }
+
+  // FILTRAR ORDENES DE SERVICIO POR COLUMNA
+  async findFiltered(
+    filterOrdenServicioDto: FilterOrdenServicioDto
+  ) {
+    
+    const {
+      column,
+      query,
+      limit = this.defaultLimit,
+      offset = 0,
+    } = filterOrdenServicioDto;
+  
+    const columnMap: Record<OrdenServicioFilterColumn, string> = {
+      [OrdenServicioFilterColumn.NUMERO_ORDEN]: 'ordenServicioId.descripcionId',
+      [OrdenServicioFilterColumn.LOCACION]: 'locacion.nombre',
+      [OrdenServicioFilterColumn.CLIENTE]: 'cliente.nombre',
+      [OrdenServicioFilterColumn.ESTADO]: 'estadoOrdenServicio.nombre',
+    };
+  
+    const dbColumn = columnMap[column];
+  
+    if (!dbColumn) {
+      throw new BadRequestException('Columna de filtro no permitida');
+    }
+  
+    const qb = this.ordenServicioRepository
+      .createQueryBuilder('orden')
+      .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
+      .leftJoinAndSelect('orden.idUsuarioCreacion', 'usuarioCreacion')
+      .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
+      .leftJoinAndSelect('orden.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('orden.tarifas', 'tarifas')
+      .leftJoinAndSelect('tarifas.idTarifa', 'tarifa')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .where(`${dbColumn} LIKE :query`, {
+        query: `%${query}%`,
+      })
+      .orderBy('orden.fechaInicio', 'DESC');
+  
+    if (filterOrdenServicioDto.pagination === PaginationOption.TRUE) {
+      qb.take(limit).skip(offset);
+
+      const [ordenesServicio, total] = await qb.getManyAndCount();
+
+      return {
+        data: ordenesServicio,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        },
+      };
+    }
+  
+    const ordenesServicio = await qb.getMany();
+
+    return {
+      data: ordenesServicio,
+      pagination: {
+        total: ordenesServicio.length,
+        limit: ordenesServicio.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    }
 
   }
 

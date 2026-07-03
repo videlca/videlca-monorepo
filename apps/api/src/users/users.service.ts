@@ -16,6 +16,7 @@ import { Roles } from '../auth/interfaces/roles.interface';
 import { SendMailOptions } from './../common/services/email/email.service';
 import { PaginationDto } from '../common/dto';
 import { PaginationOption } from '../common/interfaces/pagination.interface';
+import { FilterUserDto, UserFilterColumn } from './dto/filter-user.dto';
 import { EstadoAppInterface } from '../common/interfaces/estado-app.interface';
 
 import { User } from './entities/user.entity';
@@ -456,6 +457,78 @@ export class UsersService {
       }
     };
 
+  }
+
+  // FILTRAR USUARIOS POR COLUMNA
+  async findFiltered(
+    filterUserDto: FilterUserDto
+  ) {
+    
+    const {
+      column,
+      query,
+      limit = this.defaultLimit,
+      offset = 0,
+    } = filterUserDto;
+  
+    const columnMap: Record<UserFilterColumn, string> = {
+      [UserFilterColumn.NUMERO_IDENTIFICACION]: 'user.numeroIdentificacion',
+      [UserFilterColumn.NOMBRE]: 'user.primerNombre',
+      [UserFilterColumn.EMAIL]: 'user.email',
+      [UserFilterColumn.ROL]: 'rol.descripcion',
+    };
+  
+    const dbColumn = columnMap[column];
+  
+    if (!dbColumn) {
+      throw new BadRequestException('Columna de filtro no permitida');
+    }
+  
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.idTipoIdentificacion', 'tipoIdentificacion')
+      .leftJoinAndSelect('user.idRol', 'rol')
+      .where(`${dbColumn} LIKE :query`, {
+        query: `%${query}%`,
+      })
+      .andWhere('rol.nombreRol != :superAdmin', { superAdmin: Roles.SUPER_ADMIN })
+      .orderBy('user.primerNombre', 'ASC');
+  
+    if (filterUserDto.pagination === PaginationOption.TRUE) {
+      qb.take(limit).skip(offset);
+
+      const [users, total] = await qb.getManyAndCount();
+
+      return {
+        data: users,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        },
+      };
+  
+    }
+  
+    const users = await qb.getMany();
+
+    return {
+      data: users,
+      pagination: {
+        total: users.length,
+        limit: users.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+    
   }
   
   // OBTENER UN USER POR SU NUMERO DE ID

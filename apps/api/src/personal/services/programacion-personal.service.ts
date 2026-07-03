@@ -182,14 +182,13 @@ export class ProgramacionPersonalService {
   
         }
   
-        // aquí dejas exactamente igual tu lógica de novedades y programaciones
       }
   
       const data = Object.values(personalMap);
   
       return {
         data,
-        meta: {
+        pagination: {
           total,
           limit,
           offset,

@@ -347,13 +347,40 @@ export class ClientesService {
     
   }
 
-  async downloadClientes(){
+  async downloadClientes(filterClienteDto?: FilterClienteDto){
 
-    const clientes = await this.clienteRepository.find({
-      relations: {
-        locaciones: true,
-      },
-    });
+    let clientes;
+
+    if (filterClienteDto?.column && filterClienteDto?.query) {
+      const { column, query } = filterClienteDto;
+      const columnMap: Record<ClienteFilterColumn, string> = {
+        [ClienteFilterColumn.NUMERO_IDENTIFICACION]: 'cliente.numeroIdentificacion',
+        [ClienteFilterColumn.NOMBRE]: 'cliente.nombre',
+        [ClienteFilterColumn.TIPO_CLIENTE]: 'tipoCliente.descripcion',
+        [ClienteFilterColumn.SUBSEGMENTACION]: 'subSegmentacion.descripcion',
+      };
+      const dbColumn = columnMap[column as ClienteFilterColumn];
+
+      if (!dbColumn) {
+        throw new BadRequestException('Columna de filtro no permitida');
+      }
+
+      clientes = await this.clienteRepository
+        .createQueryBuilder('cliente')
+        .leftJoinAndSelect('cliente.idTipoIdentificacion', 'tipoIdentificacion')
+        .leftJoinAndSelect('cliente.idTipoCliente', 'tipoCliente')
+        .leftJoinAndSelect('cliente.idSubSegmentacion', 'subSegmentacion')
+        .leftJoinAndSelect('cliente.locaciones', 'locaciones')
+        .where(`${dbColumn} LIKE :query`, { query: `%${query}%` })
+        .orderBy('cliente.nombre', 'ASC')
+        .getMany();
+    } else {
+      clientes = await this.clienteRepository.find({
+        relations: {
+          locaciones: true,
+        },
+      });
+    }
 
     const excelBuffer = await this.reporteClientesPuestosService.generateExcel(clientes);
 
@@ -364,13 +391,40 @@ export class ClientesService {
 
   }
 
-  async sendClientesExcel(enviarCorreoDto: EnviarCorreoDto){
+  async sendClientesExcel(enviarCorreoDto: EnviarCorreoDto, filterClienteDto?: FilterClienteDto){
   
-    const clientes = await this.clienteRepository.find({
-      relations: {
-        locaciones: true,
-      },
-    });
+    let clientes;
+
+    if (filterClienteDto?.column && filterClienteDto?.query) {
+      const { column, query } = filterClienteDto;
+      const columnMap: Record<ClienteFilterColumn, string> = {
+        [ClienteFilterColumn.NUMERO_IDENTIFICACION]: 'cliente.numeroIdentificacion',
+        [ClienteFilterColumn.NOMBRE]: 'cliente.nombre',
+        [ClienteFilterColumn.TIPO_CLIENTE]: 'tipoCliente.descripcion',
+        [ClienteFilterColumn.SUBSEGMENTACION]: 'subSegmentacion.descripcion',
+      };
+      const dbColumn = columnMap[column as ClienteFilterColumn];
+
+      if (!dbColumn) {
+        throw new BadRequestException('Columna de filtro no permitida');
+      }
+
+      clientes = await this.clienteRepository
+        .createQueryBuilder('cliente')
+        .leftJoinAndSelect('cliente.idTipoIdentificacion', 'tipoIdentificacion')
+        .leftJoinAndSelect('cliente.idTipoCliente', 'tipoCliente')
+        .leftJoinAndSelect('cliente.idSubSegmentacion', 'subSegmentacion')
+        .leftJoinAndSelect('cliente.locaciones', 'locaciones')
+        .where(`${dbColumn} LIKE :query`, { query: `%${query}%` })
+        .orderBy('cliente.nombre', 'ASC')
+        .getMany();
+    } else {
+      clientes = await this.clienteRepository.find({
+        relations: {
+          locaciones: true,
+        },
+      });
+    }
 
     const excelBuffer = await this.reporteClientesPuestosService.generateExcel(clientes);
 

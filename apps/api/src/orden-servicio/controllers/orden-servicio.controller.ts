@@ -20,7 +20,8 @@ import {
   UpdateValidarFechaOrdenServicioDto,
   CreateOrdenServicioDto,
   UpdateOrdenServicioDto,
-  GetReporteInicioDto
+  GetReporteInicioDto,
+  FilterOrdenServicioDto
 } from '../dto';
 
 import { ApiQuery } from '@nestjs/swagger';
@@ -46,6 +47,13 @@ export class OrdenServicioController {
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
     return this.ordenServicioService.findAll(paginationDto);
+  }
+
+  @Get('filter')
+  findFiltered(@Query() filterOrdenServicioDto: FilterOrdenServicioDto) {
+    return this.ordenServicioService.findFiltered(
+      filterOrdenServicioDto
+    );
   }
 
   @Get('inicio')

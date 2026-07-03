@@ -7,7 +7,7 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
 
 import { ClientesService } from '../services';
-import { CreateClienteDto, UpdateClienteDto, FilterClienteDto } from '../dto';
+import { CreateClienteDto, UpdateClienteDto, FilterClienteDto, ClienteFilterColumn } from '../dto';
 
 @Controller('clientes')
 // @AppAuth(DescriptionRoutes.CLIENTE) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -37,10 +37,13 @@ export class ClientesController {
 
   @Get('descargar-clientes')
   async generarReporteClientes(
-    @Res() res: Response
+    @Res() res: Response,
+    @Query('column') column?: ClienteFilterColumn,
+    @Query('query') query?: string,
   ) {
       
-    const {excelBuffer, title} = await this.clientesService.downloadClientes();
+    const filter = column && query ? { column, query } as FilterClienteDto : undefined;
+    const {excelBuffer, title} = await this.clientesService.downloadClientes(filter);
   
     res.setHeader(
       'Content-Type',
@@ -58,10 +61,13 @@ export class ClientesController {
 
   @Post('enviar-excel-clientes')
   enviarReporteLiquidacion(
-    @Body() enviarCorreoDto: EnviarCorreoDto
+    @Body() enviarCorreoDto: EnviarCorreoDto,
+    @Query('column') column?: ClienteFilterColumn,
+    @Query('query') query?: string,
   ) {
 
-    return this.clientesService.sendClientesExcel(enviarCorreoDto);
+    const filter = column && query ? { column, query } as FilterClienteDto : undefined;
+    return this.clientesService.sendClientesExcel(enviarCorreoDto, filter);
 
   }
 

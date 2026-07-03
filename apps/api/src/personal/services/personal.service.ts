@@ -12,7 +12,7 @@ import { PaginationOption } from '../../common/interfaces/pagination.interface';
 import { Personal } from '../entities';
 import { TipoGeneroService, TipoPersonalService, TipoContratoService } from '.';
 
-import { CreatePersonalDto, UpdatePersonalDto } from '../dto';
+import { CreatePersonalDto, UpdatePersonalDto, FilterPersonalDto, PersonalFilterColumn } from '../dto';
 
 @Injectable()
 export class PersonalService {
@@ -209,6 +209,82 @@ export class PersonalService {
 
 
   }
+
+  // FILTRAR PERSONAL POR COLUMNA
+  async findFiltered(
+    filterPersonalDto: FilterPersonalDto
+  ) {
+    
+    const {
+      column,
+      query,
+      limit = this.defaultLimit,
+      offset = 0,
+    } = filterPersonalDto;
+  
+    const columnMap: Record<PersonalFilterColumn, string> = {
+      [PersonalFilterColumn.NUMERO_IDENTIFICACION]: 'personal.numeroIdentificacion',
+      [PersonalFilterColumn.NOMBRE]: 'personal.primerNombre',
+      [PersonalFilterColumn.TIPO_PERSONAL]: 'tipoPersonal.descripcion',
+      [PersonalFilterColumn.TIPO_CONTRATO]: 'tipoContrato.descripcion',
+    };
+  
+    const dbColumn = columnMap[column];
+  
+    if (!dbColumn) {
+      throw new BadRequestException('Columna de filtro no permitida');
+    }
+  
+    const qb = this.personalRepository
+      .createQueryBuilder('personal')
+      .leftJoinAndSelect('personal.idTipoIdentificacion', 'tipoIdentificacion')
+      .leftJoinAndSelect('personal.idTipoGenero', 'tipoGenero')
+      .leftJoinAndSelect('personal.idTipoPersonal', 'tipoPersonal')
+      .leftJoinAndSelect('personal.idTipoContrato', 'tipoContrato')
+      .leftJoinAndSelect('personal.idCiudad', 'ciudad')
+      .leftJoinAndSelect('personal.novedades', 'novedades')
+      .where(`${dbColumn} LIKE :query`, {
+        query: `%${query}%`,
+      })
+      .orderBy('personal.primerApellido', 'ASC');
+  
+    if (filterPersonalDto.pagination === PaginationOption.TRUE) {
+      qb.take(limit).skip(offset);
+
+      const [empleados, total] = await qb.getManyAndCount();
+
+      return {
+        data: empleados,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        },
+      };
+
+    }
+  
+    const empleados = await qb.getMany();
+
+    return {
+      data: empleados,
+      pagination: {
+        total: empleados.length,
+        limit: empleados.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    }
+
+  }
+
   
   async findAllActives(paginationDto: PaginationDto) {
     
