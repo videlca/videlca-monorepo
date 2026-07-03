@@ -8,6 +8,7 @@ import { User } from '../../users/entities/user.entity';
 import { Roles } from '../../auth/interfaces';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
 import { SendMailOptions } from '../../common/services/email/email.service';
@@ -88,19 +89,47 @@ export class ObservacionesOrdenServicioService {
     }
   
     // OBTENER TODAS LAS OBSERVACIONES DE UNA ORDEN DE SERVICIO
-    async findAll(idOrdenServicio: number, paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAll(idOrdenServicio: number, paginationDto: PaginationDto) {
     
         const queryBuilder = this.observacionOrdenServicioRepository.createQueryBuilder('obs')
             .where('obs.idOrdenServicio = :idOrdenServicio', { idOrdenServicio })
             .orderBy('obs.fechaCreacion', 'ASC') // Opcional: ordenar por más reciente
             .leftJoinAndSelect('obs.idUsuario', 'u')
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             queryBuilder.take(limit).skip(offset);
+
+            const [observaciones, total] = await queryBuilder.getManyAndCount();
+
+            return {
+                data: observaciones,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                }
+            };
         }
         
-        return await queryBuilder.getMany();
+        const observaciones = await queryBuilder.getMany();
+
+        return {
+            data: observaciones,
+            pagination: {
+                total: observaciones.length,
+                limit: observaciones.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
 
     }
   

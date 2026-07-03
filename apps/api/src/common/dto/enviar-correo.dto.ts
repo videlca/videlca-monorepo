@@ -5,10 +5,10 @@ import { IsArray, IsNotEmpty, IsString, IsEmail, Length, ArrayMinSize, ValidateN
 export class CorreosDto {
     
     @ApiProperty({ description: 'email', example: 'example@example.com', required:true})
-    @IsString()
-    @IsNotEmpty()
-    @IsEmail()
-    @Length(1, 100)
+    @IsString({message: 'El campo email debe ser un string'})
+    @IsNotEmpty({ message: 'El campo email no puede estar vacío' })
+    @IsEmail({}, { message: 'El correo no es válido' })
+    @Length(1, 100, { message: 'El campo email debe tener entre 1 y 100 caracteres' })
     email: string;
 
 }

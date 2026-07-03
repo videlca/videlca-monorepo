@@ -10,6 +10,7 @@ import { ReporteTarifasService } from '../../reportes/services';
 
 import { SendMailOptions } from '../../common/services/email/email.service';
 import { EnviarCorreoDto, PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
 import { Tarifa } from '../entities';
@@ -158,7 +159,7 @@ export class TarifasService {
 
   }
 
-  async findAllByPeriodo(id: number, paginationDto?: PaginationDto, pagination: boolean = false) {
+  async findAllByPeriodo(id: number) {
 
     const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
@@ -170,11 +171,6 @@ export class TarifasService {
       // .leftJoinAndSelect('tipoHorarioDescripcion.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
       // .leftJoinAndSelect('tipoHorario.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
       .where('tarifa.idPeriodo = :id', { id })
-
-    if (pagination && paginationDto) {
-      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
-      queryBuilder.take(limit).skip(offset);
-    }
 
     const tarifas = await queryBuilder.getMany();
 
@@ -197,7 +193,7 @@ export class TarifasService {
 
   }
 
-  async findAllActivesByPeriodo(id: number, paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllActivesByPeriodo(id: number, paginationDto: PaginationDto) {
 
     const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
@@ -207,12 +203,41 @@ export class TarifasService {
       .where('tarifa.idPeriodo = :id', { id })
       .andWhere('tarifa.estado = :estado', { estado: true })
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       queryBuilder.take(limit).skip(offset);
+
+      const [tarifas, total] = await queryBuilder.getManyAndCount();
+
+      return {
+        data: tarifas,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
+
     }
 
-    return await queryBuilder.getMany();
+    const tarifas = await queryBuilder.getMany();
+
+    return {
+      data: tarifas,
+      pagination: {
+        total: tarifas.length,
+        limit: tarifas.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
 
@@ -231,13 +256,42 @@ export class TarifasService {
     if (pagination) {
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       queryBuilder.take(limit).skip(offset);
+      
+      const [tarifas, total] = await queryBuilder.getManyAndCount();
+
+      return {
+        data: tarifas,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
+
     }
 
-    return await queryBuilder.getMany();
+    const tarifas = await queryBuilder.getMany();
+
+    return {
+      data: tarifas,
+      pagination: {
+        total: tarifas.length,
+        limit: tarifas.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
 
-  async findAllActivesByPeriodoActivoTipoServicio(idTipoServicio: number, paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllActivesByPeriodoActivoTipoServicio(idTipoServicio: number, paginationDto: PaginationDto) {
 
     const periodoActivoFacturacion = await this.periodoService.obtenerPeriodoActivo();
 
@@ -251,12 +305,41 @@ export class TarifasService {
       .andWhere('tipoServicio.idTipoServicio = :idTipoServicio', { idTipoServicio })
       .andWhere('tarifa.estado = :estado', { estado: true })
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       queryBuilder.take(limit).skip(offset);
+
+      const [tarifas, total] = await queryBuilder.getManyAndCount();
+
+      return {
+        data: tarifas,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
+
     }
 
-    return await queryBuilder.getMany();
+    const tarifas = await queryBuilder.getMany();
+
+    return {
+      data: tarifas,
+      pagination: {
+        total: tarifas.length,
+        limit: tarifas.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
 

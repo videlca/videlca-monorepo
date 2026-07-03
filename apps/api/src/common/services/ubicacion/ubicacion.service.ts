@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { Pais, Ciudad, Departamento } from '../../entities';
+import { PaginationOption } from '../../interfaces/pagination.interface';
 import { 
     CreatePaisDto, 
     CreateDepartamentoDto, 
@@ -73,15 +74,15 @@ export class UbicacionService {
     }
   
     // OBTENER TODOS LOS PAISES
-    async findAllPais(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAllPais(paginationDto: PaginationDto) {
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const paises = await this.paisRepository.find({
+            const [paises, total] = await this.paisRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 relations: {
@@ -92,11 +93,22 @@ export class UbicacionService {
                 }
             });
         
-            return paises;
+            return {
+                data: paises,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                }
+            };
 
         }
 
-        return await this.paisRepository.find({
+        const paises = await this.paisRepository.find({
             relations: {
                 departamentos: true
             },
@@ -105,6 +117,18 @@ export class UbicacionService {
             }
         });
 
+        return {
+            data: paises,
+            pagination: {
+                total: paises.length,
+                limit: paises.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
     }
 
     // EDITAR PAIS
@@ -194,9 +218,9 @@ export class UbicacionService {
     }
   
     // OBTENER TODOS LOS DEPARTAMENTOS
-    async findAllDepartamentos(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAllDepartamentos(paginationDto: PaginationDto) {
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
@@ -223,15 +247,15 @@ export class UbicacionService {
     }
 
     // OBTENER TODOS LOS DEPARTAMENTOS
-    async findAllDepartamentosCiudades(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAllDepartamentosCiudades(paginationDto: PaginationDto) {
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const departamentos = await this.departamentoRepository.find({
+            const [departamentos, total] = await this.departamentoRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 relations: {
@@ -242,11 +266,22 @@ export class UbicacionService {
                 }
             });
         
-            return departamentos;
+            return {
+                data: departamentos,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                }
+            };
 
         }
 
-        return await this.departamentoRepository.find({
+        const departamentos =await this.departamentoRepository.find({
             relations: {
                 ciudades: true
             },
@@ -254,6 +289,19 @@ export class UbicacionService {
                 descripcion: 'ASC'
             }
         });
+
+        return {
+            data: departamentos,
+            pagination: {
+                total: departamentos.length,
+                limit: departamentos.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
 
     }
     
@@ -364,15 +412,15 @@ export class UbicacionService {
   }
   
     // OBTENER TODAS LAS CIUDADES
-    async findAllCiudades(paginationDto: PaginationDto, pagination: boolean = true){
+    async findAllCiudades(paginationDto: PaginationDto){
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const ciudades = await this.ciudadRepository.find({
+            const [ciudades, total] = await this.ciudadRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 relations: {
@@ -383,12 +431,23 @@ export class UbicacionService {
                 }
             });
         
-            return ciudades;
+            return {
+                data: ciudades,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                }
+            };
 
         }
         
 
-        return await this.ciudadRepository.find({
+        const ciudades = await this.ciudadRepository.find({
             relations: {
                 departamento: true
             },
@@ -397,18 +456,31 @@ export class UbicacionService {
             }
         });
 
+        return {
+            data: ciudades,
+            pagination: {
+                total: ciudades.length,
+                limit: ciudades.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
+
     }
   
     // OBTENER TODAS LAS CIUDADES ACTIVAS
-    async findAllCiudadesActivas(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAllCiudadesActivas(paginationDto: PaginationDto) {
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const ciudades = await this.ciudadRepository.find({
+            const [ciudades, total] = await this.ciudadRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 where: {
@@ -422,11 +494,22 @@ export class UbicacionService {
                 }
             });
         
-            return ciudades;
+            return {
+                data: ciudades,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                }
+            };
 
         }
 
-        return await this.ciudadRepository.find({
+        const ciudades = await this.ciudadRepository.find({
             relations: {
                 departamento: true
             },
@@ -436,20 +519,33 @@ export class UbicacionService {
             }
         });
 
+        return {
+            data: ciudades,
+            pagination: {
+                total: ciudades.length,
+                limit: ciudades.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
+
     }
     
     // OBTENER TODAS LAS CIUDADES SEGUN EL ID DEL DEPARTAMENTO
-    async findAllCiudadesDepartamento(idDepartamento: number, paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAllCiudadesDepartamento(idDepartamento: number, paginationDto: PaginationDto) {
 
         const departamento = await this.findOneDepartamento(idDepartamento);
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const ciudades = await this.ciudadRepository.find({
+            const [ciudades, total] = await this.ciudadRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 where: {
@@ -460,11 +556,22 @@ export class UbicacionService {
                 }
             });
         
-            return ciudades;
+            return {
+                data: ciudades,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                }
+            };
 
         }
 
-        return await this.ciudadRepository.find({
+        const ciudades = await this.ciudadRepository.find({
             relations: {
                 departamento: true
             },
@@ -475,6 +582,19 @@ export class UbicacionService {
                 descripcion: 'ASC'
             }
         });
+
+        return {
+            data: ciudades,
+            pagination: {
+                total: ciudades.length,
+                limit: ciudades.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
 
     }
 

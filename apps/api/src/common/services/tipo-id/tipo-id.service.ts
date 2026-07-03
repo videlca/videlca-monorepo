@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
+import { PaginationOption } from '../../interfaces/pagination.interface';
+
 import { TipoIdentificacion } from '../../entities';
 import { CreateTipoDto, UpdatetipoDto, PaginationDto } from '../../dto';
 
@@ -65,15 +67,15 @@ export class TipoIdentificacionService {
   }
   
   // OBTENER TODOS LOS TIPO ID
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposId = await this.tipoIdRepository.find({
+      const [tiposId, total] = await this.tipoIdRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -81,28 +83,52 @@ export class TipoIdentificacionService {
           }
       });
   
-      return tiposId;
+      return {
+          data: tiposId,
+          pagination: {
+              total,
+              limit,
+              offset,
+              page: Math.floor(offset / limit) + 1,
+              totalPages: Math.ceil(total / limit),
+              hasNextPage: offset + limit < total,
+              hasPreviousPage: offset > 0,
+          }
+      };
 
     }
 
-    return await this.tipoIdRepository.find({
+    const tiposId =await this.tipoIdRepository.find({
       order: {
         descripcion: 'ASC'
       }
     });
+
+    return {
+      data: tiposId,
+      pagination: {
+          total: tiposId.length,
+          limit: tiposId.length,
+          offset: 0,
+          page: 1,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+      }
+    };
   
   }
   
   // OBTENER TODOS LOS TIPO ID ACTIVOS
-  async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllActives(paginationDto: PaginationDto) {
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposId = await this.tipoIdRepository.find({
+      const [tiposId, total] = await this.tipoIdRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -113,11 +139,22 @@ export class TipoIdentificacionService {
           }
       });
   
-      return tiposId;
+      return {
+          data: tiposId,
+          pagination: {
+              total,
+              limit,
+              offset,
+              page: Math.floor(offset / limit) + 1,
+              totalPages: Math.ceil(total / limit),
+              hasNextPage: offset + limit < total,
+              hasPreviousPage: offset > 0,
+          }
+      };
 
     }
     
-    return await this.tipoIdRepository.find({
+    const tiposId = await this.tipoIdRepository.find({
       order: {
         descripcion: 'ASC'
       },
@@ -125,6 +162,19 @@ export class TipoIdentificacionService {
         estado: true
       }
     });
+
+    return {
+      data: tiposId,
+      pagination: {
+          total: tiposId.length,
+          limit: tiposId.length,
+          offset: 0,
+          page: 1,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+      }
+    };
 
   }
 

@@ -19,14 +19,14 @@ export class EstadoOrdenController {
   
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.estadoOrdenService.findAll(paginationDto, paginationDto.pagination);
+    return this.estadoOrdenService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS ESTADOS ORDEN ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
-    return this.estadoOrdenService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.estadoOrdenService.findAllActives(paginationDto);
   }
 
   @Get(':id')

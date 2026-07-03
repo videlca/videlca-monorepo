@@ -23,13 +23,13 @@ export class TipoHorarioDescripcionController {
   // RUTA PROTEGIDA: OBTENER TODOS LOS TIPOS HORARIO DESCRIPCION
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoHorarioDescripcionService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoHorarioDescripcionService.findAll(paginationDto);
   }
   
   // RUTA PROTEGIDA: OBTENER TODOS LOS HORARIOS DIURNOS Y NOCTURNOS
   @Get('horario-diurno-nocturno')
   findAllHorarioDiurnoNocturno(@Query() paginationDto: PaginationDto) {
-    return this.tipoHorarioDescripcionService.findAllHorarioDirunoNocturno(paginationDto, paginationDto.pagination);
+    return this.tipoHorarioDescripcionService.findAllHorarioDirunoNocturno(paginationDto);
   }
 
   // RUTA PROTEGIDA: OBTENER UN TIPO HORARIO DESCRIPCION

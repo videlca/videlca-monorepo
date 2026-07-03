@@ -23,7 +23,7 @@ export class TipoHorarioController {
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS HORARIO
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoHorarioService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoHorarioService.findAll(paginationDto);
   }
 
   // RUTA PROTEGIDA: OBTENER UN TIPO HORARIO

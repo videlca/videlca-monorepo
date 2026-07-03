@@ -3,6 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
+import { QueryOption } from '../../common/interfaces/query-activos.interface';
+
 import { UpdatetipoDto } from '../../common/dto';
 
 import { SubSegmentacion } from '../entities';
@@ -35,27 +38,52 @@ export class SubSegmentacionService {
     }
 
     // Filtrar solo activos si se solicita
-    if (query.soloActivos) {
+    if (query.soloActivos === QueryOption.TRUE) {
       queryOptions.where.estado = true;
     }
 
-    if (query.pagination) {
+    if (query.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = query;
       
       // Se hace la consulta de manera paginada
-      const subSegmentaciones = await this.subSegmentacionRepository.find({
+      const [subSegmentaciones, total] = await this.subSegmentacionRepository.findAndCount({
           ...queryOptions,
           take: limit,
           skip: offset
       });
   
-      return subSegmentaciones;
+      return {
+        data: subSegmentaciones,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        }
+      };
 
     }
 
-    return await this.subSegmentacionRepository.find(queryOptions);
+    const subSegmentaciones = await this.subSegmentacionRepository.find(queryOptions);
+
+    return {
+      data: subSegmentaciones,
+      pagination: {
+          total: subSegmentaciones.length,
+          limit: subSegmentaciones.length,
+          offset: 0,
+          page: 1,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+      }
+    };
+
   }
 
   async findOne(id: number) {

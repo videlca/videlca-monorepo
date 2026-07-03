@@ -10,7 +10,7 @@ import { ClientesService } from '../services';
 import { CreateClienteDto, UpdateClienteDto, FilterClienteDto } from '../dto';
 
 @Controller('clientes')
-@AppAuth(DescriptionRoutes.CLIENTE) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+// @AppAuth(DescriptionRoutes.CLIENTE) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class ClientesController {
 
   constructor(private readonly clientesService: ClientesService) {}
@@ -22,14 +22,17 @@ export class ClientesController {
 
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.clientesService.findAll(paginationDto, paginationDto.pagination);
+    console.log('paginationDto', paginationDto);
+
+    return this.clientesService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS CLIENTES ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivos(@Query() paginationDto: PaginationDto) {
-    return this.clientesService.findAllActives(paginationDto, paginationDto.pagination);
+    
+    return this.clientesService.findAllActives(paginationDto);
   }
 
   @Get('descargar-clientes')
@@ -65,8 +68,7 @@ export class ClientesController {
   @Get('filter')
   findFiltered(@Query() filterClienteDto: FilterClienteDto) {
     return this.clientesService.findFiltered(
-      filterClienteDto,
-      filterClienteDto.pagination,
+      filterClienteDto
     );
   }
 

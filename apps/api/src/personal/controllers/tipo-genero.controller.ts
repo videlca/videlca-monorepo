@@ -23,14 +23,14 @@ export class TipoGeneroController {
   // RUTA PROTEGIDA: Obtener todos los tipos de genero
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoGeneroService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoGeneroService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS GENERO ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
-    return this.tipoGeneroService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.tipoGeneroService.findAllActives(paginationDto);
   }
 
   // OBTENER UN TIPO GENERO

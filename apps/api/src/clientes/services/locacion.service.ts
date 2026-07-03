@@ -8,6 +8,7 @@ import { SendMailOptions } from '../../common/services/email/email.service';
 import { EstadoOrdenServicio } from '../../common/entities';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { Locacion, Correo } from '../entities';
 import { ClientesService } from '../services';
@@ -236,15 +237,15 @@ export class LocacionService {
     }
 
     // Obtener todas las locaciones
-    async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAll(paginationDto: PaginationDto) {
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const locaciones = await this.locacionRepository.find({
+            const [locaciones, total] = await this.locacionRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 order: {
@@ -260,11 +261,22 @@ export class LocacionService {
                 }
             });
   
-            return locaciones;
+            return {
+                data: locaciones,
+                pagination: {
+                  total,
+                  limit,
+                  offset,
+                  page: Math.floor(offset / limit) + 1,
+                  totalPages: Math.ceil(total / limit),
+                  hasNextPage: offset + limit < total,
+                  hasPreviousPage: offset > 0,
+                }
+            };
 
         }    
         
-        return await this.locacionRepository.find({
+        const locaciones = await this.locacionRepository.find({
             relations: {
                 correos: {
                     estados: true
@@ -277,18 +289,32 @@ export class LocacionService {
                 nombre: 'ASC'
             }
         });
+
+        return {
+            data: locaciones,
+            pagination: {
+                total: locaciones.length,
+                limit: locaciones.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
+
     }
 
     // Obtener todas las locaciones
-    async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAllActives(paginationDto: PaginationDto) {
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const locaciones = await this.locacionRepository.find({
+            const [locaciones, total] = await this.locacionRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 order: {
@@ -307,11 +333,22 @@ export class LocacionService {
                 },
             });
   
-            return locaciones;
+            return {
+                data: locaciones,
+                pagination: {
+                  total,
+                  limit,
+                  offset,
+                  page: Math.floor(offset / limit) + 1,
+                  totalPages: Math.ceil(total / limit),
+                  hasNextPage: offset + limit < total,
+                  hasPreviousPage: offset > 0,
+                }
+            };
 
         }    
         
-        return await this.locacionRepository.find({
+        const locaciones = await this.locacionRepository.find({
             relations: {
                 correos: {
                     estados: true
@@ -327,6 +364,20 @@ export class LocacionService {
                 nombre: 'ASC'
             }
         });
+
+        return {
+            data: locaciones,
+            pagination: {
+                total: locaciones.length,
+                limit: locaciones.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
+        
     }
     
     // Obtener todas las locaciones POR BUSQUEDA

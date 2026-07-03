@@ -17,7 +17,7 @@ export class PermissionsController {
   // RUTA PROTEGIDA (solo un user con permisos puede acceder): Obtener todos los permisos que estan en la app
   @Get()
   findAllPermission(@Query() paginationDto: PaginationDto) {
-    return this.permissionsService.findAllPermissions(paginationDto, paginationDto.pagination);
+    return this.permissionsService.findAllPermissions(paginationDto);
   }
 
   //! ROLES
@@ -31,13 +31,13 @@ export class PermissionsController {
   // RUTA PROTEGIDA (solo un user con permisos puede acceder): Obtener todos los roles
   @Get('roles')
   findAllRole(@Query() paginationDto: PaginationDto) {
-    return this.permissionsService.findAllRole(paginationDto, paginationDto.pagination);
+    return this.permissionsService.findAllRole(paginationDto);
   }
 
   // RUTA PROTEGIDA (solo un user con permisos puede acceder): Obtener todos los roles con sus permisos
   @Get('roles-permissions')
   findAllRoleWithPermissions(@Query() paginationDto: PaginationDto) {
-    return this.permissionsService.findAllRoleWithPermissions(paginationDto, paginationDto.pagination);
+    return this.permissionsService.findAllRoleWithPermissions(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown):: Obtener todos los roles ACTIVOS
@@ -45,7 +45,7 @@ export class PermissionsController {
   @Get('roles/activos')
   @ValidateJwtAuth()
   findAllRoleActivos(@Query() paginationDto: PaginationDto) {
-    return this.permissionsService.findAllRoleActivos(paginationDto, paginationDto.pagination);
+    return this.permissionsService.findAllRoleActivos(paginationDto);
   }
 
   // RUTA PROTEGIDA (solo un user con permisos puede acceder): Obtener un rol por el id y los permisos relacionados

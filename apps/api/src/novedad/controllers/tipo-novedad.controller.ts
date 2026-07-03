@@ -22,14 +22,14 @@ export class TipoNovedadController {
   // RUTA PROTEGIDA: Obtener todos los tipos de novedad
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoNovedadService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoNovedadService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS NOVEDAD ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
-    return this.tipoNovedadService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.tipoNovedadService.findAllActives(paginationDto);
   }
 
   // OBTENER UN TIPO NOVEDAD

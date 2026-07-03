@@ -20,7 +20,7 @@ export class PeriodosController {
 
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.periodosService.findAll(paginationDto, paginationDto.pagination);
+    return this.periodosService.findAll(paginationDto);
   }
   
   @Get('activo')

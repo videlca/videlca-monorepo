@@ -21,14 +21,14 @@ export class LocacionController {
 
     @Get()
     findAll(@Query() paginationDto: PaginationDto) {
-        return this.locacionService.findAll(paginationDto, paginationDto.pagination);
+        return this.locacionService.findAll(paginationDto);
     }
 
     // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODAS LAS LOCACIONES ACTIVAS
     @Get('actives')
     @ValidateJwtAuth()
     findAllActivas(@Query() paginationDto: PaginationDto) {
-        return this.locacionService.findAllActives(paginationDto, paginationDto.pagination);
+        return this.locacionService.findAllActives(paginationDto);
     }
     
     // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODAS LAS LOCACIONES POR BUSQUEDA DE TEXTO

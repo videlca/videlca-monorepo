@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { TipoServicio } from '../entities';
 import { CreateTipoServicioDto, UpdateTipoServicioDto } from '../dto';
@@ -70,15 +71,15 @@ export class TipoServicioService {
   }
   
   // OBTENER TODOS LOS TIPO SERVICIO
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposServicio = await this.tipoServicioRepository.find({
+      const [tiposServicio, total] = await this.tipoServicioRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -86,40 +87,18 @@ export class TipoServicioService {
           }
       });
   
-      return tiposServicio;
-
-    }
-
-    return await this.tipoServicioRepository.find({
-      order: {
-        descripcion: 'ASC'
-      }
-    });
-  
-  }
-  // OBTENER TODOS LOS PREFIJOS DE LOS TIPO SERVICIO
-  async findAllPrefixes(paginationDto: PaginationDto, pagination: boolean = true) {
-    
-    if (pagination) {
-
-      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
-      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
-      
-      // Se hace la consulta de manera paginada
-      const tiposServicio = await this.tipoServicioRepository.find({
-          take: limit,
-          skip: offset,
-          order: {
-              descripcion: 'ASC'
-          }
-      });
-  
-      return tiposServicio.map(ts => {
-        return {
-          prefijo: `${ts.prefijo} - ${ts.nombre}`,
-          idTipoServicio: ts.idTipoServicio
+      return {
+        data: tiposServicio,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
         }
-      });
+      };
 
     }
 
@@ -129,27 +108,97 @@ export class TipoServicioService {
       }
     });
 
-    return tiposServicio.map(ts => {
-      return {
-        prefijo: `${ts.prefijo} - ${ts.nombre}`,
-        idTipoServicio: ts.idTipoServicio
+    return {
+      data: tiposServicio,
+      pagination: {
+        total: tiposServicio.length,
+        limit: tiposServicio.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
       }
-    });
+    };
   
   }
-
-
-  
-  // OBTENER TODOS LOS TIPO SERVICIO ACTIVOS
-  async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
-
-    if (pagination) {
+  // OBTENER TODOS LOS PREFIJOS DE LOS TIPO SERVICIO
+  async findAllPrefixes(paginationDto: PaginationDto) {
+    
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposServicio = await this.tipoServicioRepository.find({
+      const [tiposServicio, total] = await this.tipoServicioRepository.findAndCount({
+          take: limit,
+          skip: offset,
+          order: {
+              descripcion: 'ASC'
+          }
+      });
+  
+      const data = tiposServicio.map(ts => {
+        return {
+          prefijo: `${ts.prefijo} - ${ts.nombre}`,
+          idTipoServicio: ts.idTipoServicio
+        }
+      });
+
+      return {
+        data,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
+
+    }
+
+    const tiposServicio = await this.tipoServicioRepository.find({
+      order: {
+        descripcion: 'ASC'
+      }
+    });
+
+    const data = tiposServicio.map(ts => {
+      return {
+        prefijo: `${ts.prefijo} - ${ts.nombre}`,
+        idTipoServicio: ts.idTipoServicio
+      }
+    });
+
+    return {
+      data: data,
+      pagination: {
+        total: tiposServicio.length,
+        limit: tiposServicio.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+  
+  }
+  
+  // OBTENER TODOS LOS TIPO SERVICIO ACTIVOS
+  async findAllActives(paginationDto: PaginationDto) {
+
+    if (paginationDto.pagination === PaginationOption.TRUE) {
+
+      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
+      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+      
+      // Se hace la consulta de manera paginada
+      const [tiposServicio, total] = await this.tipoServicioRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -160,11 +209,22 @@ export class TipoServicioService {
           }
       });
   
-      return tiposServicio;
+      return {
+        data: tiposServicio,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
     
-    return await this.tipoServicioRepository.find({
+    const tiposServicio = await this.tipoServicioRepository.find({
       order: {
         descripcion: 'ASC'
       },
@@ -172,6 +232,19 @@ export class TipoServicioService {
         estado: true
       }
     });
+
+    return {
+      data: tiposServicio,
+      pagination: {
+        total: tiposServicio.length,
+        limit: tiposServicio.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
 

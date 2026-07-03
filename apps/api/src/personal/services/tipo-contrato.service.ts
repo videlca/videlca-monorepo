@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { TipoContrato } from '../entities';
 import { CreateTipoContratoDto, UpdatetipoContratoDto } from '../dto';
@@ -67,15 +68,15 @@ export class TipoContratoService {
   }
   
   // OBTENER TODOS LOS TIPO CONTRATO
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposContrato = await this.tipoContratoRepository.find({
+      const [tiposContrato, total] = await this.tipoContratoRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -83,28 +84,52 @@ export class TipoContratoService {
           }
       });
   
-      return tiposContrato;
+      return {
+        data: tiposContrato,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
 
-    return await this.tipoContratoRepository.find({
+    const tiposContrato = await this.tipoContratoRepository.find({
       order: {
         descripcion: 'ASC'
       }
     });
+
+    return {
+      data: tiposContrato,
+      pagination: {
+        total: tiposContrato.length,
+        limit: tiposContrato.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
   
   }
   
   // OBTENER TODOS LOS TIPO CONTRATO ACTIVOS
-  async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllActives(paginationDto: PaginationDto) {
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposContrato = await this.tipoContratoRepository.find({
+      const [tiposContrato, total] = await this.tipoContratoRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -115,11 +140,22 @@ export class TipoContratoService {
           }
       });
   
-      return tiposContrato;
+      return {
+        data: tiposContrato,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
     
-    return await this.tipoContratoRepository.find({
+    const tiposContrato = await this.tipoContratoRepository.find({
         order: {
             descripcion: 'ASC'
         },
@@ -127,6 +163,19 @@ export class TipoContratoService {
             estado: true
         }
     });
+
+    return {
+      data: tiposContrato,
+      pagination: {
+        total: tiposContrato.length,
+        limit: tiposContrato.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
 

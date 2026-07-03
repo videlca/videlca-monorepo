@@ -8,6 +8,7 @@ import { TipoNovedadService } from '../services';
 
 import { Personal } from '../../personal/entities';
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { Novedad, TipoNovedad } from '../entities';
 import { TipoEstadoPersonal } from '../interfaces/tipo-estado.interface';
@@ -168,15 +169,15 @@ export class NovedadService {
   }
   
   // OBTENER TODAS LAS NOVEDADES
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const novedades = await this.novedadRepository.find({
+      const [novedades, total] = await this.novedadRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -185,7 +186,20 @@ export class NovedadService {
           }
       });
 
-      return this.groupByEmployee(novedades);
+      const groupedNovedades = this.groupByEmployee(novedades);
+
+      return {
+        data: groupedNovedades,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        }
+      };
 
     }
 
@@ -196,8 +210,21 @@ export class NovedadService {
       }
     });
 
-    return this.groupByEmployee(novedades);
-  
+    const groupedNovedades = this.groupByEmployee(novedades);
+
+    return {
+      data: groupedNovedades,
+      pagination: {
+        total: groupedNovedades.length,
+        limit: groupedNovedades.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+
   }
 
   private groupByEmployee(novedades: Novedad[]) {

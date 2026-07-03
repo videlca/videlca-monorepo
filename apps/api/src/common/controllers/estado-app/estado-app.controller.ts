@@ -19,14 +19,14 @@ export class EstadoAppController {
   
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.estadoAppService.findAll(paginationDto, paginationDto.pagination);
+    return this.estadoAppService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS ESTADOS APP ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
-    return this.estadoAppService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.estadoAppService.findAllActives(paginationDto);
   }
 
   @Get(':id')

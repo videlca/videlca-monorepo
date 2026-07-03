@@ -22,14 +22,14 @@ export class PersonalController {
   // RUTA PROTEGIDA: Obtener todos los empleados
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.personalService.findAll(paginationDto, paginationDto.pagination);
+    return this.personalService.findAll(paginationDto);
   }
   
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS EMPLEADOS QUE ESTAN LABORANDO
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivos(@Query() paginationDto: PaginationDto) {
-    return this.personalService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.personalService.findAllActives(paginationDto);
   }
   
   // RUTA PROTEGIDA: OBTENER UN EMPLEADO

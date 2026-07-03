@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { TipoDuracion } from '../entities';
 import { CreateTipoDto, UpdatetipoDto, PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 @Injectable()
 export class TipoDuracionService {
@@ -65,15 +66,15 @@ export class TipoDuracionService {
   }
   
   // OBTENER TODOS LOS TIPO DURACION
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposDuracion = await this.tipoDuracionRepository.find({
+      const [tiposDuracion, total] = await this.tipoDuracionRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -81,15 +82,39 @@ export class TipoDuracionService {
           }
       });
   
-      return tiposDuracion;
+      return {
+        data: tiposDuracion,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
 
-    return await this.tipoDuracionRepository.find({
+    const tiposDuracion = await this.tipoDuracionRepository.find({
       order: {
         descripcion: 'ASC'
       }
     });
+
+    return {
+      data: tiposDuracion,
+      pagination: {
+        total: tiposDuracion.length,
+        limit: tiposDuracion.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
   
   }
   

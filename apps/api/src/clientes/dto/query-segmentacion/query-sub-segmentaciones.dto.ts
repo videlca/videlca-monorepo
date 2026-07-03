@@ -1,5 +1,6 @@
-import { IsOptional, IsBoolean, IsNumber, IsPositive } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { IsOptional, IsNumber, IsPositive, IsEnum } from 'class-validator';
+import { Type } from 'class-transformer';
+import { QueryOption } from '../../../common/interfaces/query-activos.interface';
 
 export class QuerySubSegmentacionesDto {
     
@@ -10,8 +11,9 @@ export class QuerySubSegmentacionesDto {
   segmentacionId?: number;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
-  soloActivos?: boolean;
+  @IsEnum(QueryOption, {
+    message: 'soloActivos debe ser "true" o "false"',
+  })
+  soloActivos?: QueryOption;
 
 }

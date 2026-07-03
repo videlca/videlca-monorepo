@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { TipoPersonal } from '../entities';
 import { CreateTipoDto, UpdatetipoDto } from '../../common/dto';
@@ -67,15 +68,15 @@ export class TipoPersonalService {
   }
   
   // OBTENER TODOS LOS TIPO PERSONAL
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposPersonal = await this.tipoPersonalRepository.find({
+      const [tiposPersonal, total] = await this.tipoPersonalRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -83,28 +84,52 @@ export class TipoPersonalService {
           }
       });
   
-      return tiposPersonal;
+      return {
+        data: tiposPersonal,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
 
-    return await this.tipoPersonalRepository.find({
+    const tiposPersonal = await this.tipoPersonalRepository.find({
       order: {
         descripcion: 'ASC'
       }
     });
+
+    return {
+      data: tiposPersonal,
+      pagination: {
+        total: tiposPersonal.length,
+        limit: tiposPersonal.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
   
   }
   
   // OBTENER TODOS LOS TIPO PERSONAL ACTIVOS
-  async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllActives(paginationDto: PaginationDto) {
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposPersonal = await this.tipoPersonalRepository.find({
+      const [tiposPersonal, total] = await this.tipoPersonalRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -115,11 +140,22 @@ export class TipoPersonalService {
           }
       });
   
-      return tiposPersonal;
+      return {
+        data: tiposPersonal,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
     
-    return await this.tipoPersonalRepository.find({
+    const tiposPersonal = await this.tipoPersonalRepository.find({
         order: {
             descripcion: 'ASC'
         },
@@ -127,6 +163,19 @@ export class TipoPersonalService {
             estado: true
         }
     });
+
+    return {
+      data: tiposPersonal,
+      pagination: {
+        total: tiposPersonal.length,
+        limit: tiposPersonal.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
 

@@ -23,14 +23,14 @@ export class TipoPersonalController {
   // RUTA PROTEGIDA: Obtener todos los tipos de personal
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoPersonalService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoPersonalService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS PERSONAL ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
-    return this.tipoPersonalService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.tipoPersonalService.findAllActives(paginationDto);
   }
 
   // OBTENER UN TIPO PERSONAL

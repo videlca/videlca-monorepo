@@ -17,13 +17,13 @@ export class OrdenServicioIdController {
   // RUTA PROTEGIDA: Obtener todos los orden servicio id
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.ordenServicioIdService.findAll(paginationDto, paginationDto.pagination);
+    return this.ordenServicioIdService.findAll(paginationDto);
   }
   
   // RUTA PROTEGIDA: Obtener todos los orden servicio id anulados
   @Get('anulados')
   findAllAnulados(@Query() paginationDto: PaginationDto) {
-    return this.ordenServicioIdService.findAllAnulados(paginationDto, paginationDto.pagination);
+    return this.ordenServicioIdService.findAllAnulados(paginationDto);
   }
 
   // RUTA PROTEGIDA: Obtener ultimo orden servicio id

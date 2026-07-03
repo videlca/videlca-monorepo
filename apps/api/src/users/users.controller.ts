@@ -64,7 +64,7 @@ export class UsersController {
   @Get()
   @AppAuth(DescriptionRoutes.USUARIOS)
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.usersService.findAll(paginationDto, paginationDto.pagination);
+    return this.usersService.findAll(paginationDto);
   }
 
   // RUTA PROTEGIDA : reenviar token de validacion de cuenta a usuario

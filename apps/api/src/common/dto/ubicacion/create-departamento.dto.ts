@@ -9,9 +9,9 @@ export class CreateDepartamentoDto {
     descripcion: string;
     
     @ApiProperty({ description: 'Identificador del Id del país', example: 2, required:true})
-    @IsNumber({}, {message: 'El valor del campo pais debe ser un número'})
-    @IsPositive({message: 'El valor del campo pais debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo pais debe ser minimo 1'})
+    @IsNumber({}, {message: 'El valor del campo pais no puede estar vacio'})
+    @IsPositive({message: 'El valor del campo pais no puede estar vacio'})
+    @Min(1, {message: 'El valor del campo pais no puede estar vacio'})
     pais: number;
     
     @ApiProperty({ description: 'Código del departamento', example: '05', required:true})

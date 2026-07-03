@@ -20,7 +20,7 @@ export class CorreoDefaultController {
   @Get()
   @ValidateJwtAuth()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.correoDefaultService.findAll(paginationDto, paginationDto.pagination);
+    return this.correoDefaultService.findAll(paginationDto);
   }
 
   @Get(':id')

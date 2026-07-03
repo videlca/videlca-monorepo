@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsNumberString,  IsPositive, IsString, MaxLength, Min } from "class-validator";
+import { IsNotEmpty, IsNumber, IsNumberString, IsPositive, IsString, IsOptional, MaxLength, Min } from "class-validator";
 
 export class CreateClienteDto {
 
@@ -11,9 +11,9 @@ export class CreateClienteDto {
     numeroIdentificacion: string;
     
     @ApiProperty({ description: 'Id del tipo de identificación del cliente', example: 1, required:true})
-    @IsNumber({}, {message: 'El valor del campo Tipo de identificacion debe ser un número'})
-    @IsPositive({message: 'El valor del campo Tipo de identificacion debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo Tipo de identificacion debe ser minimo 1'})
+    @IsNumber({}, {message: 'El valor del campo Tipo de identificacion no puede estar vacio'})
+    @IsPositive({message: 'El valor del campo Tipo de identificacion no puede estar vacio'})
+    @Min(1, {message: 'El valor del campo Tipo de identificacion no puede estar vacio'})
     idTipoIdentificacion: number;
 
     @ApiProperty({ description: 'Nombre del cliente', example: 'Pepito Perez', required:true})
@@ -23,15 +23,16 @@ export class CreateClienteDto {
     nombre: string;
 
     @ApiProperty({ description: 'Id el tipo de cliente', example: 1, required:true})
-    @IsNumber({}, {message: 'El valor del campo Tipo de Cliente debe ser un número'})
-    @IsPositive({message: 'El valor del campo Tipo de Cliente debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo Tipo de Cliente debe ser minimo 1'})
+    @IsNumber({}, {message: 'El valor del campo Tipo de Cliente no puede estar vacio'})
+    @IsPositive({message: 'El valor del campo Tipo de Cliente no puede estar vacio'})
+    @Min(1, {message: 'El valor del campo Tipo de Cliente no puede estar vacio'})
     idTipoCliente: number;
     
     @ApiProperty({ description: 'id de la subsegmentación del cliente', example: 2, required:true})
-    @IsNumber({}, {message: 'El valor del campo Sub Segmentacion debe ser un número'})
-    @IsPositive({message: 'El valor del campo Sub Segmentacion debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo Sub Segmentacion debe ser minimo 1'})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo Sub Segmentacion no puede estar vacio'})
+    @IsPositive({message: 'El valor del campo Sub Segmentacion no puede estar vacio'})
+    @Min(1, {message: 'El valor del campo Sub Segmentacion no puede estar vacio'})
     idSubSegmentacion: number;
     
 }

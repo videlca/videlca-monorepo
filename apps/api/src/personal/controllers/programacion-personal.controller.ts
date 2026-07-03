@@ -12,7 +12,7 @@ export class ProgramacionPersonalController {
 
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.programacionPersonalService.findAll(paginationDto, paginationDto.pagination);
+    return this.programacionPersonalService.findAll(paginationDto);
   }
 
 }

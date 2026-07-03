@@ -30,14 +30,14 @@ export class TarifasController {
   @Get('actives/:idPeriodo')
   @ValidateJwtAuth()
   findAllActivesByPeriodo(@Param('idPeriodo', ParseIntPipe) id: number, @Query() paginationDto: PaginationDto){
-    return this.tarifasService.findAllActivesByPeriodo(id, paginationDto, paginationDto.pagination);
+    return this.tarifasService.findAllActivesByPeriodo(id, paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO ACTIVO DE FACTURACION FILTRADAS POR SU TIPO DE SERVICIO
   @Get('periodo-activo-facturacion/:idTipoServicio')
   @ValidateJwtAuth()
   findAllActivesByPeriodoActivoTipoServicio(@Param('idTipoServicio', ParseIntPipe) idTipoServicio: number, @Query() paginationDto: PaginationDto){
-    return this.tarifasService.findAllActivesByPeriodoActivoTipoServicio(idTipoServicio, paginationDto, paginationDto.pagination);
+    return this.tarifasService.findAllActivesByPeriodoActivoTipoServicio(idTipoServicio, paginationDto);
   }
 
   // RUTA PROTEGIDA: guardar tarifas para un periodo
@@ -50,7 +50,7 @@ export class TarifasController {
   @Get('periodo-activo')
   @ValidateJwtAuth()
   findAllActivesByPeriodoActivo(@Query() paginationDto: PaginationDto){
-    return this.tarifasService.findAllActivesByPeriodoActivo(paginationDto, paginationDto.pagination);
+    return this.tarifasService.findAllActivesByPeriodoActivo(paginationDto);
   }
 
   @Get(':id')

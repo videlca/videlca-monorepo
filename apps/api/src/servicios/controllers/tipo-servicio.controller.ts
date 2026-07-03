@@ -23,21 +23,21 @@ export class TipoServicioController {
   // RUTA PROTEGIDA: Obtener todos los tipos de servicio
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoServicioService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoServicioService.findAll(paginationDto);
   }
   
   // RUTA PUBLICA: Obtener todos los prefijos de los tipos de servicio
   @Get('prefixes')
   @ValidateJwtAuth()
   findAllPrefixes(@Query() paginationDto: PaginationDto) {
-    return this.tipoServicioService.findAllPrefixes(paginationDto, paginationDto.pagination);
+    return this.tipoServicioService.findAllPrefixes(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS SERVICIO
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
-    return this.tipoServicioService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.tipoServicioService.findAllActives(paginationDto);
   }
 
   // RUTA PROTEGIDA: OBTENER UN TIPO SERVICIO

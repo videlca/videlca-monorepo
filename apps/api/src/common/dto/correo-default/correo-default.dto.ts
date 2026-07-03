@@ -7,14 +7,14 @@ export class CreateCorreoDefaultDto {
     @ApiProperty({ description: 'descripcion del tipo del correo', example: 'gerencia', required:true})
     @IsString({message: 'El campo descripcion debe ser un string'})
     @IsNotEmpty()
-    @Length(1, 50)
+    @Length(1, 50, {message: 'El campo descripcion debe tener entre 1 y 50 caracteres'})
     descripcion: string;
     
     @ApiProperty({ description: 'email', example: 'example@example.com', required:true})
     @IsString()
     @IsNotEmpty()
-    @IsEmail()
-    @Length(1, 100)
+    @IsEmail({}, { message: 'El correo no es válido' })
+    @Length(1, 100, { message: 'El campo email debe tener entre 1 y 100 caracteres' })
     email: string;
 
     @IsArray()

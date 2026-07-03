@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { Servicio, TipoHorarioDescripcion } from '../entities';
 
@@ -183,15 +184,15 @@ export class ServiciosService {
 
   }
   
-  async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllActives(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const servicios = await this.servicioRepository.find({
+      const [servicios, total] = await this.servicioRepository.findAndCount({
         take: limit,
         skip: offset,
         where: {
@@ -199,19 +200,43 @@ export class ServiciosService {
         }
       });
   
-      return servicios;
+      return {
+        data: servicios,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
     
-    return await this.servicioRepository.find({
+    const servicios = await this.servicioRepository.find({
       where: {
           estado: true
       }
     });
 
+    return {
+      data: servicios,
+      pagination: {
+        total: servicios.length,
+        limit: servicios.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+
   }
 
-  async findAllByPeriodo(idPeriodo: number, paginationDto: PaginationDto, pagination: boolean = true){
+  async findAllByPeriodo(idPeriodo: number, paginationDto: PaginationDto){
 
     const queryBuilder = this.servicioRepository.createQueryBuilder('servicio') 
       .leftJoin('servicio.tarifas', 'tarifa', 'tarifa.idPeriodo = :idPeriodo', { idPeriodo }) 
@@ -222,12 +247,41 @@ export class ServiciosService {
       .andWhere('servicio.estado = :estado', { estado: true }) 
       .orderBy('servicio.codigo', 'ASC') 
 
-      if (pagination) {
+      if (paginationDto.pagination === PaginationOption.TRUE) {
         const { limit = this.defaultLimit, offset = 0 } = paginationDto;
         queryBuilder.take(limit).skip(offset);
+
+        const [servicios, total] = await queryBuilder.getManyAndCount();
+
+        return {
+          data: servicios,
+          pagination: {
+            total,
+            limit,
+            offset,
+            page: Math.floor(offset / limit) + 1,
+            totalPages: Math.ceil(total / limit),
+            hasNextPage: offset + limit < total,
+            hasPreviousPage: offset > 0
+          }
+        };
+
       }
 
-    return await queryBuilder.getMany();
+    const servicios = await queryBuilder.getMany();
+
+    return {
+      data: servicios,
+      pagination: {
+        total: servicios.length,
+        limit: servicios.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
 

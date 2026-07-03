@@ -21,14 +21,14 @@ export class TipoIdentificacionController {
   // RUTA PROTEGIDA: Obtener todos los tipos de id
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoIdentificacionService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoIdentificacionService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS ID
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
-    return this.tipoIdentificacionService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.tipoIdentificacionService.findAllActives(paginationDto);
   }
 
   // RUTA PROTEGIDA: OBTENER UN TIPO ID

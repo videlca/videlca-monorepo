@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { TipoHorarioDescripcion } from '../entities';
 import { CreateTipoHorarioDescripcionDto, UpdatetipoHorarioDescripcionDto } from '../dto';
@@ -66,15 +67,15 @@ export class TipoHorarioDescripcionService {
   }
   
   // OBTENER TODOS LOS TIPO HORARIO DESCRIPCION
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposHorarioDescripcion = await this.tipoHorarioRepository.find({
+      const [tiposHorarioDescripcion, total] = await this.tipoHorarioRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -82,28 +83,52 @@ export class TipoHorarioDescripcionService {
           }
       });
   
-      return tiposHorarioDescripcion;
+      return {
+        data: tiposHorarioDescripcion,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
 
-    return await this.tipoHorarioRepository.find({
+    const tiposHorarioDescripcion = await this.tipoHorarioRepository.find({
       order: {
         descripcion: 'ASC'
       }
     });
+
+    return {
+      data: tiposHorarioDescripcion,
+      pagination: {
+        total: tiposHorarioDescripcion.length,
+        limit: tiposHorarioDescripcion.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
   
   }
   
   // OBTENER HORARIO DIRUNO Y NOCTURNO
-  async findAllHorarioDirunoNocturno(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllHorarioDirunoNocturno(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposHorarioDescripcion = await this.tipoHorarioRepository.find({
+      const [tiposHorarioDescripcion, total] = await this.tipoHorarioRepository.findAndCount({
           where: [
             {nombre: TipoHorarioInterface.DIURNO},
             {nombre: TipoHorarioInterface.NOCTURNO},
@@ -115,11 +140,22 @@ export class TipoHorarioDescripcionService {
           }
       });
   
-      return tiposHorarioDescripcion;
+      return {
+        data: tiposHorarioDescripcion,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
 
-    return await this.tipoHorarioRepository.find({
+    const tiposHorarioDescripcion = await this.tipoHorarioRepository.find({
       where: [
         {nombre: TipoHorarioInterface.DIURNO},
         {nombre: TipoHorarioInterface.NOCTURNO},
@@ -128,6 +164,19 @@ export class TipoHorarioDescripcionService {
         descripcion: 'ASC'
       }
     });
+
+    return {
+      data: tiposHorarioDescripcion,
+      pagination: {
+        total: tiposHorarioDescripcion.length,
+        limit: tiposHorarioDescripcion.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
   
   }
 

@@ -45,7 +45,7 @@ export class OrdenServicioController {
 
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.ordenServicioService.findAll(paginationDto, paginationDto.pagination);
+    return this.ordenServicioService.findAll(paginationDto);
   }
 
   @Get('inicio')

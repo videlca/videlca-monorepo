@@ -8,6 +8,7 @@ import { SendMailOptions } from '../../services/email/email.service';
 import { EstadoApp, CorreoDefault, EstadoOrdenServicio } from '../../entities';
 
 import { PaginationDto } from '../../dto';
+import { PaginationOption } from '../../interfaces/pagination.interface';
 import { EstadoAppInterface } from '../../interfaces/estado-app.interface';
 import { EstadoOrdenServicio as EstadoOrdenServicioInterface } from '../../interfaces/estado-orden-servicio.interface';
 
@@ -398,15 +399,15 @@ export class CorreoDefaultService {
     }
 
     // Obtener todos los correos default
-    async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAll(paginationDto: PaginationDto) {
 
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
 
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
 
             // Se hace la consulta de manera paginada
-            const correosDefault = await this.correoDefaultRepository.find({
+            const [correosDefault, total] = await this.correoDefaultRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 order: {
@@ -418,11 +419,22 @@ export class CorreoDefaultService {
                 }
             });
 
-            return correosDefault;
+            return {
+                data: correosDefault,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                }
+            };
 
         }
 
-        return await this.correoDefaultRepository.find({
+        const correosDefault = await this.correoDefaultRepository.find({
             relations: {
                 estados: true,
                 estadosApp: true
@@ -431,6 +443,19 @@ export class CorreoDefaultService {
                 descripcion: 'ASC'
             }
         });
+        
+        return {
+            data: correosDefault,
+            pagination: {
+                total: correosDefault.length,
+                limit: correosDefault.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
     }
 
     // Obtener todos los correos default por estado de app

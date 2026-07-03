@@ -4,6 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../common/dto';
+import { PaginationOption } from '../common/interfaces/pagination.interface';
 import { EstadoAppInterface } from '../common/interfaces/estado-app.interface';
 
 import { SendMailOptions } from '../common/services/email/email.service';
@@ -474,15 +475,15 @@ export class PeriodosService {
 
   }
 
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const periodos = await this.periodoRepository.find({
+      const [periodos, total] = await this.periodoRepository.findAndCount({
         take: limit,
         skip: offset,
         order: {
@@ -490,15 +491,39 @@ export class PeriodosService {
         },
       });
 
-      return periodos;
+      return {
+        data: periodos,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        }
+      };
 
     }    
   
-    return await this.periodoRepository.find({
+    const periodos = await this.periodoRepository.find({
       order: {
           fechaInicio: 'DESC'
       },
     });
+
+    return {
+      data: periodos,
+      pagination: {
+          total: periodos.length,
+          limit: periodos.length,
+          offset: 0,
+          page: 1,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+      }
+    };
 
   }
 

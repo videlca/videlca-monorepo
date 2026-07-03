@@ -1,14 +1,16 @@
-import { IsOptional, IsBoolean } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsOptional, IsEnum } from 'class-validator';
+import { QueryOption } from '../../../common/interfaces/query-activos.interface';
 
 export class QuerySegmentacionesDto {
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
-  includeSubSegmentaciones?: boolean;
+  @IsEnum(QueryOption, {
+    message: 'includeSubSegmentaciones debe ser "true" o "false"',
+  })
+  includeSubSegmentaciones?: QueryOption;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true')
-  @IsBoolean()
-  soloActivos?: boolean;
+  @IsEnum(QueryOption, {
+    message: 'soloActivos debe ser "true" o "false"',
+  })
+  soloActivos?: QueryOption;
 }

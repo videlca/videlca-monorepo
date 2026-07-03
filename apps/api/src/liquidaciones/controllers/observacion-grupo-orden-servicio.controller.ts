@@ -31,7 +31,7 @@ export class ObservacionesGrupoOrdenServicioController {
         @Param('idGrupoOrdenServicio', ParseIntPipe) id: number,
         @Query() paginationDto: PaginationDto
     ) {
-        return this.observacionesGrupoOrdenServicioService.findAll(id, paginationDto, paginationDto.pagination);
+        return this.observacionesGrupoOrdenServicioService.findAll(id, paginationDto);
     }
 
     // RUTA PROTEGIDA: OBTENER UNA OBSERVACION

@@ -23,7 +23,7 @@ export class TipoTarifaController {
   // RUTA PROTEGIDA: Obtener todos los tipos de tarifa
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoTarifaService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoTarifaService.findAll(paginationDto);
   }
 
   // RUTA PROTEGIDA: OBTENER UN TIPO TARIFA

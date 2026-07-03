@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
+import { PaginationOption } from '../../interfaces/pagination.interface';
+
 import { TipoCliente } from '../../entities';
 import { CreateTipoDto, UpdatetipoDto, PaginationDto } from '../../dto';
 
@@ -65,15 +67,15 @@ export class TipoClienteService {
   }
   
   // OBTENER TODOS LOS TIPO CLIENTE
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposCliente = await this.tipoClienteRepository.find({
+      const [tiposCliente, total] = await this.tipoClienteRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -81,28 +83,52 @@ export class TipoClienteService {
           }
       });
   
-      return tiposCliente;
+      return {
+          data: tiposCliente,
+          pagination: {
+              total,
+              limit,
+              offset,
+              page: Math.floor(offset / limit) + 1,
+              totalPages: Math.ceil(total / limit),
+              hasNextPage: offset + limit < total,
+              hasPreviousPage: offset > 0,
+          }
+      };
 
     }
 
-    return await this.tipoClienteRepository.find({
+    const tiposCliente =await this.tipoClienteRepository.find({
       order: {
         descripcion: 'ASC'
       }
     });
+
+    return {
+      data: tiposCliente,
+      pagination: {
+          total: tiposCliente.length,
+          limit: tiposCliente.length,
+          offset: 0,
+          page: 1,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+      }
+    };
   
   }
   
   // OBTENER TODOS LOS TIPO CLIENTE ACTIVOS
-  async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllActives(paginationDto: PaginationDto) {
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposCliente = await this.tipoClienteRepository.find({
+      const [tiposCliente, total] = await this.tipoClienteRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -113,11 +139,22 @@ export class TipoClienteService {
           }
       });
   
-      return tiposCliente;
+      return {
+          data: tiposCliente,
+          pagination: {
+              total,
+              limit,
+              offset,
+              page: Math.floor(offset / limit) + 1,
+              totalPages: Math.ceil(total / limit),
+              hasNextPage: offset + limit < total,
+              hasPreviousPage: offset > 0,
+          }
+      };
 
     }
     
-    return await this.tipoClienteRepository.find({
+    const tiposCliente = await this.tipoClienteRepository.find({
       order: {
         descripcion: 'ASC'
       },
@@ -125,6 +162,19 @@ export class TipoClienteService {
         estado: true
       }
     });
+
+    return {
+      data: tiposCliente,
+      pagination: {
+          total: tiposCliente.length,
+          limit: tiposCliente.length,
+          offset: 0,
+          page: 1,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+      }
+    };
 
   }
 

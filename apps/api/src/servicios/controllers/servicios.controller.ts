@@ -30,14 +30,14 @@ export class ServiciosController {
   @Get('periodo/:idPeriodo')
   @ValidateJwtAuth()
   findAllByPeriodo(@Param('idPeriodo') id: number, @Query() paginationDto: PaginationDto) {
-    return this.serviciosService.findAllByPeriodo(id, paginationDto, paginationDto.pagination);
+    return this.serviciosService.findAllByPeriodo(id, paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS SERVICIOS ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivos(@Query() paginationDto: PaginationDto) {
-    return this.serviciosService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.serviciosService.findAllActives(paginationDto);
   }
 
   @Get(':id')

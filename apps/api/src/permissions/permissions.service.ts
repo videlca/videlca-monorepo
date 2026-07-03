@@ -5,6 +5,7 @@ import { In, Not, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../common/dto';
+import { PaginationOption } from '../common/interfaces/pagination.interface';
 import { Roles } from '../auth/interfaces/roles.interface';
 
 
@@ -74,15 +75,15 @@ export class PermissionsService {
   
   
   // OBTENER TODOS LOS PERMISOS
-  async findAllPermissions(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllPermissions(paginationDto: PaginationDto) {
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const permisos = await this.permissionRepository.find({
+      const [permisos, total] = await this.permissionRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -90,15 +91,39 @@ export class PermissionsService {
           }
       });
   
-      return permisos;
+      return {
+        data: permisos,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
 
-    return await this.permissionRepository.find({
+    const permisos = await this.permissionRepository.find({
       order: {
         descripcion: 'ASC'
       }
     });
+
+    return {
+      data: permisos,
+      pagination: {
+        total: permisos.length,
+        limit: permisos.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+      }
+    };
 
   }
   
@@ -194,15 +219,15 @@ export class PermissionsService {
   }
 
   // OBTENER TODOS LOS ROLES
-  async findAllRole(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllRole(paginationDto: PaginationDto) {
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const roles = await this.roleRepository.find({
+      const [roles, total] = await this.roleRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -210,28 +235,52 @@ export class PermissionsService {
           }
       });
   
-      return roles;
+      return {
+        data: roles,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
     
-    return await this.roleRepository.find({
+    const roles = await this.roleRepository.find({
       order: {
         descripcion: 'ASC'
       }
     });
 
+    return {
+      data: roles,
+      pagination: {
+        total: roles.length,
+        limit: roles.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+
   }
   
   // OBTENER TODOS LOS ROLES ACTIVOS
-  async findAllRoleActivos(paginationDto: PaginationDto, pagination: boolean = true){
+  async findAllRoleActivos(paginationDto: PaginationDto){
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const roles = await this.roleRepository.find({
+      const [roles, total] = await this.roleRepository.findAndCount({
           take: limit,
           skip: offset,
           where: {
@@ -243,11 +292,22 @@ export class PermissionsService {
           },
       });
   
-      return roles;
+      return {
+        data: roles,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
     
-    return await this.roleRepository.find({
+    const roles = await this.roleRepository.find({
       where: {
         estado: true 
       },
@@ -256,20 +316,31 @@ export class PermissionsService {
       }
     });
 
+    return {
+      data: roles,
+      pagination: {
+        total: roles.length,
+        limit: roles.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+
   }
   
   // OBTENER TODOS LOS RELES CON SUS PERMISOS
-  async findAllRoleWithPermissions(paginationDto: PaginationDto, pagination: boolean = true){
+  async findAllRoleWithPermissions(paginationDto: PaginationDto){
 
-    let roles: Role[] = [];
-
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      roles = await this.roleRepository.find({
+      const [roles, total] = await this.roleRepository.findAndCount({
         take: limit,
         skip: offset,
         relations: {
@@ -283,25 +354,45 @@ export class PermissionsService {
         }
       });
 
-    }
-
-    else {
-
-      roles = await this.roleRepository.find({
-        relations: {
-          permissions: true
-        },
-        where: {
-          nombreRol: Not(Roles.SUPER_ADMIN) // Excluir el rol super admin
-        },
-        order: {
-          descripcion: 'ASC'
+      return {
+        data: roles,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
         }
-      });
+      };
 
     }
-    
-    return roles;
+
+    const roles = await this.roleRepository.find({
+      relations: {
+        permissions: true
+      },
+      where: {
+        nombreRol: Not(Roles.SUPER_ADMIN) // Excluir el rol super admin
+      },
+      order: {
+        descripcion: 'ASC'
+      }
+    });
+
+    return {
+      data: roles,
+      pagination: {
+        total: roles.length,
+        limit: roles.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
   

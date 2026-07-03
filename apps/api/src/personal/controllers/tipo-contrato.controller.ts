@@ -23,14 +23,14 @@ export class TipoContratoController {
   // RUTA PROTEGIDA: Obtener todos los tipos de contrato
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoContratoService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoContratoService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS CONTRATO ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
-    return this.tipoContratoService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.tipoContratoService.findAllActives(paginationDto);
   }
 
   // OBTENER UN TIPO CONTRATO

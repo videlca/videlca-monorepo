@@ -21,14 +21,14 @@ export class TipoClienteController {
   // RUTA PROTEGIDA: Obtener todos los tipos de cliente
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoClienteService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoClienteService.findAll(paginationDto);
   }
 
   // RUTA PUBLICA (para ver desde otra pantalla o dropdown): OBTENER TODOS LOS TIPOS CLIENTE ACTIVOS
   @Get('actives')
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
-    return this.tipoClienteService.findAllActives(paginationDto, paginationDto.pagination);
+    return this.tipoClienteService.findAllActives(paginationDto);
   }
 
   // RUTA PROTEGIDA: OBTENER UN TIPO CLIENTE

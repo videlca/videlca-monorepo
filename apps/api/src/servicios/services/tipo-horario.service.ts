@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { TipoHorario, TipoHorarioDescripcion } from '../entities';
 import { TipoHorarioDescripcionService } from './tipo-horario-descripcion.service';
@@ -163,18 +164,46 @@ export class TipoHorarioService {
 
     }
 
-    async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAll(paginationDto: PaginationDto) {
 
         const queryBuilder = this.tipoHorarioRepository.createQueryBuilder('th')
             .leftJoinAndSelect('th.idTipoHorarioDescripcion', 'thd')
             .orderBy('th.fechaVigenciaInicio', 'DESC')
         
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             queryBuilder.take(limit).skip(offset);
+
+            const [tiposHorario, total] = await queryBuilder.getManyAndCount();
+
+            return {
+                data: tiposHorario,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0
+                }
+            };
         }
         
-        return await queryBuilder.getMany();
+        const tiposHorario = await queryBuilder.getMany();
+
+        return {
+            data: tiposHorario,
+            pagination: {
+                total: tiposHorario.length,
+                limit: tiposHorario.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
 
     }
 

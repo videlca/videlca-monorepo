@@ -23,7 +23,7 @@ export class TipoUnidadTiempoController {
   // RUTA PROTEGIDA: Obtener todos los tipos de unidad tiempo
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.tipoUnidadTiempoService.findAll(paginationDto, paginationDto.pagination);
+    return this.tipoUnidadTiempoService.findAll(paginationDto);
   }
 
   // RUTA PROTEGIDA: OBTENER UN TIPO UNIDAD TIEMPO

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { TipoTarifa } from '../entities';
 
@@ -81,15 +82,15 @@ export class TipoTarifaService {
   }
   
   // OBTENER TODOS LOS TIPO TARIFA
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const tiposTarifa = await this.tipoTarifaRepository.find({
+      const [tiposTarifa, total] = await this.tipoTarifaRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -97,15 +98,39 @@ export class TipoTarifaService {
           }
       });
   
-      return tiposTarifa;
+      return {
+        data: tiposTarifa,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
 
-    return await this.tipoTarifaRepository.find({
+    const tiposTarifa = await this.tipoTarifaRepository.find({
       order: {
         descripcion: 'ASC'
       }
     });
+
+    return {
+      data: tiposTarifa,
+      pagination: {
+        total: tiposTarifa.length,
+        limit: tiposTarifa.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
   
   }
   

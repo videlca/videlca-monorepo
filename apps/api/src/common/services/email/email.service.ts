@@ -85,17 +85,20 @@ export class EmailService {
 
         const { to, subject, htmlBody, attachments } = options;
 
-        if (!to || (Array.isArray(to) && to.length === 0)) {
-            return true;
+        // Validar dominio antes de enviar
+        const emails = Array.isArray(to) ? to : [to];
+
+        if (emails.length === 0) {
+          return true;
         }
 
-        // Validar dominio antes de enviar
-        const validDomain = await this.validateEmailDomain(
-          Array.isArray(to) ? to[0] : to
-        );
-    
-        if (!validDomain) {
-          return false; // acá ya no dejas crear el correo en tu app
+        for (const email of emails) {
+          const validDomain = await this.validateEmailDomain(email);
+        
+          if (!validDomain) {
+            console.error(`Dominio inválido para: ${email}`);
+            return false;
+          }
         }
     
         try {
@@ -103,9 +106,11 @@ export class EmailService {
           const accessToken = await this.getToken();
 
           // Formatear destinatarios
-          const toRecipients = Array.isArray(to) 
-            ? to.map(email => ({ emailAddress: { address: email } })) 
-            : [{ emailAddress: { address: to } }];
+          const toRecipients = emails.map(email => ({
+            emailAddress: {
+              address: email.trim(),
+            },
+          }));
           
           // Formatear adjuntos
           let formattedAttachments = [];

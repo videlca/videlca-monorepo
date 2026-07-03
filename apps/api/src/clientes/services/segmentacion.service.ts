@@ -5,6 +5,9 @@ import { ConfigService } from '@nestjs/config';
 
 import { CreateTipoDto, UpdatetipoDto } from '../../common/dto';
 
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
+import { QueryOption } from '../../common/interfaces/query-activos.interface';
+
 import { Segmentacion, SubSegmentacion } from '../entities';
 import { CreateSegmentacionDto, UpdateSegmentacionDto, QuerySegmentacionesWithPaginationDto } from '../dto';
 
@@ -65,24 +68,24 @@ export class SegmentacionService {
     };
 
     // Incluir subsegmentaciones si se solicita
-    if (query.includeSubSegmentaciones) {
+    if (query.includeSubSegmentaciones === QueryOption.TRUE) {
       queryOptions.relations = {
         subSegmentaciones: true
       };
     }
 
     // Filtrar solo activos si se solicita
-    if (query.soloActivos) {
+    if (query.soloActivos === QueryOption.TRUE) {
       queryOptions.where.estado = true;
     }
     
-    if (query.pagination) {
+    if (query.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = query;
       
       // Se hace la consulta de manera paginada
-      const segmentaciones = await this.segmentacionRepository.find({
+      const [segmentaciones, total] = await this.segmentacionRepository.findAndCount({
           ...queryOptions,
           take: limit,
           skip: offset,
@@ -91,11 +94,35 @@ export class SegmentacionService {
           }
       });
   
-      return segmentaciones;
+      return {
+        data: segmentaciones,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        }
+      };
 
     }
 
-    return await this.segmentacionRepository.find(queryOptions);
+    const segmentaciones = await this.segmentacionRepository.find(queryOptions);
+
+    return {
+      data: segmentaciones,
+      pagination: {
+          total: segmentaciones.length,
+          limit: segmentaciones.length,
+          offset: 0,
+          page: 1,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+      }
+    };
   
   }
   

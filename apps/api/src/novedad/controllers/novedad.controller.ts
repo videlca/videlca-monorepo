@@ -15,7 +15,7 @@ export class NovedadController {
 
   @Get()
   findAll(@Query() paginationDto: PaginationDto) {
-    return this.novedadService.findAll(paginationDto, paginationDto.pagination);
+    return this.novedadService.findAll(paginationDto);
   }
 
   @Get(':id')

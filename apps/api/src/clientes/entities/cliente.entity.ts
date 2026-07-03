@@ -62,7 +62,8 @@ export class Cliente {
         () => SubSegmentacion,
         (subSegmentacion) => subSegmentacion.clientes,
         {
-            eager: true
+            eager: true,
+            nullable: true
         }
     )
     @JoinColumn({name: 'idSubSegmentacion'})

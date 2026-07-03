@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
@@ -37,15 +38,15 @@ export class OrdenServicioIdService {
     }
   
     // OBTENER TODOS ORDEN DE SERVICIO ID'S
-    async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAll(paginationDto: PaginationDto) {
     
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
     
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const ordenServicioIds = await this.OrdenServicioIdRepository.find({
+            const [ordenServicioIds, total] = await this.OrdenServicioIdRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 order: {
@@ -56,11 +57,22 @@ export class OrdenServicioIdService {
                 }
             });
         
-            return ordenServicioIds;
-    
+            return {
+                data: ordenServicioIds,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                }
+            };
+
         }
     
-        return await this.OrdenServicioIdRepository.find({
+        const ordenServicioIds = await this.OrdenServicioIdRepository.find({
             order: {
                 descripcionId: 'ASC'
             },
@@ -68,19 +80,32 @@ export class OrdenServicioIdService {
                 anulado: false
             }
         });
+
+        return {
+            data: ordenServicioIds,
+            pagination: {
+                total: ordenServicioIds.length,
+                limit: ordenServicioIds.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
         
     }
 
     // OBTENER TODOS ORDEN DE SERVICIO ID'S ANULADOS
-    async findAllAnulados(paginationDto: PaginationDto, pagination: boolean = true) {
+    async findAllAnulados(paginationDto: PaginationDto) {
     
-        if (pagination) {
+        if (paginationDto.pagination === PaginationOption.TRUE) {
     
             // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
             const { limit = this.defaultLimit, offset = 0 } = paginationDto;
             
             // Se hace la consulta de manera paginada
-            const ordenServicioIds = await this.OrdenServicioIdAnuladoRepository.find({
+            const [ordenServicioIds, total] = await this.OrdenServicioIdAnuladoRepository.findAndCount({
                 take: limit,
                 skip: offset,
                 order: {
@@ -88,15 +113,39 @@ export class OrdenServicioIdService {
                 }
             });
         
-            return ordenServicioIds;
+            return {
+                data: ordenServicioIds,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                }
+            };
     
         }
     
-        return await this.OrdenServicioIdAnuladoRepository.find({
+        const ordenServicioIds = await this.OrdenServicioIdAnuladoRepository.find({
             order: {
                 consecutivo: 'ASC'
             }
         });
+
+        return {
+            data: ordenServicioIds,
+            pagination: {
+                total: ordenServicioIds.length,
+                limit: ordenServicioIds.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
         
     }
 

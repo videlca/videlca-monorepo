@@ -15,6 +15,7 @@ import { EmailService, TipoIdentificacionService, CorreoDefaultService } from '.
 import { Roles } from '../auth/interfaces/roles.interface';
 import { SendMailOptions } from './../common/services/email/email.service';
 import { PaginationDto } from '../common/dto';
+import { PaginationOption } from '../common/interfaces/pagination.interface';
 import { EstadoAppInterface } from '../common/interfaces/estado-app.interface';
 
 import { User } from './entities/user.entity';
@@ -400,15 +401,15 @@ export class UsersService {
   }
 
   // OBTENER TODOS LOS USUARIOS REGISTRADOS EN EL APLICATIVO
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
 
-    if(pagination){
+    if(paginationDto.pagination === PaginationOption.TRUE){
     
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const users = await this.userRepository.find({
+      const [users, total] = await this.userRepository.findAndCount({
         take: limit,
         skip: offset,
         order: {
@@ -421,15 +422,39 @@ export class UsersService {
         }
       });
       
-      return users;
+      return {
+        data: users,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
 
     }
 
-    return await this.userRepository.find({
+    const users = await this.userRepository.find({
       order: {
         primerNombre: 'ASC'
       }
     });
+
+    return {
+      data: users,
+      pagination: {
+        total: users.length,
+        limit: users.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
   

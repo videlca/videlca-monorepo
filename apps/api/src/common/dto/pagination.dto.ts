@@ -1,6 +1,6 @@
-import { Transform, Type } from "class-transformer";
-import { IsBoolean, IsNumber, IsOptional, IsPositive, Min } from "class-validator";
-
+import { Type } from "class-transformer";
+import { IsEnum, IsNumber, IsOptional, IsPositive, Min, IsIn } from "class-validator";
+import { PaginationOption } from "../interfaces/pagination.interface";
 export class PaginationDto {
     
     @IsOptional()
@@ -16,7 +16,10 @@ export class PaginationDto {
     @Type(() => Number)
     offset?: number;
     
-    @IsBoolean()
-    pagination: boolean;
+    @IsOptional()
+    @IsEnum(PaginationOption, {
+      message: 'pagination debe ser "true" o "false"',
+    })
+    pagination?: PaginationOption;
 
 }

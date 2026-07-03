@@ -8,6 +8,7 @@ import { SendMailOptions } from '../../common/services/email/email.service';
 import { EmailService, TipoClienteService, TipoIdentificacionService } from '../../common/services';
 
 import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { ReporteClientesPuestosService } from '../../reportes/services';
 
@@ -51,7 +52,7 @@ export class ClientesService {
     const tipoCliente = await this.tipoClienteService.findOne(createClienteDto.idTipoCliente);
 
     // OBTENER SUB SEGMENTACION
-    const subSegmentacion = await this.subSegmentacionService.findOne(createClienteDto.idSubSegmentacion);
+    const subSegmentacion = createClienteDto.idSubSegmentacion ? await this.subSegmentacionService.findOne(createClienteDto.idSubSegmentacion) : null;
 
     try {
 
@@ -74,15 +75,15 @@ export class ClientesService {
 
   }
 
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const clientes = await this.clienteRepository.find({
+      const [clientes, total] = await this.clienteRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -90,28 +91,51 @@ export class ClientesService {
           }
       });
   
-      return clientes;
+      return {
+        data: clientes,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        }
+      };
 
     }
 
-    return await this.clienteRepository.find({
+    const clientes = await this.clienteRepository.find({
       order: {
         nombre: 'ASC'
       }
     });
 
+    return {
+      data: clientes,
+      pagination: {
+        total: clientes.length,
+        limit: clientes.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
   
-  async findAllActives(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAllActives(paginationDto: PaginationDto) {
     
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
       
       // Se hace la consulta de manera paginada
-      const clientes = await this.clienteRepository.find({
+      const [clientes, total] = await this.clienteRepository.findAndCount({
           take: limit,
           skip: offset,
           order: {
@@ -122,11 +146,22 @@ export class ClientesService {
           }
       });
   
-      return clientes;
+      return {
+        data: clientes,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        }
+      };
 
     }
     
-    return await this.clienteRepository.find({
+    const clientes= await this.clienteRepository.find({
         order: {
             nombre: 'ASC'
         },
@@ -134,6 +169,19 @@ export class ClientesService {
             estado: true
         }
     });
+
+    return {
+      data: clientes,
+      pagination: {
+        total: clientes.length,
+        limit: clientes.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
 
@@ -229,8 +277,7 @@ export class ClientesService {
   }
 
   async findFiltered(
-    filterClienteDto: FilterClienteDto,
-    pagination: boolean = true,
+    filterClienteDto: FilterClienteDto
   ) {
     
     const {
@@ -263,11 +310,41 @@ export class ClientesService {
       })
       .orderBy('cliente.nombre', 'ASC');
   
-    if (pagination) {
+    if (filterClienteDto.pagination === PaginationOption.TRUE) {
       qb.take(limit).skip(offset);
+
+      const [clientes, total] = await qb.getManyAndCount();
+
+      return {
+        data: clientes,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        },
+      };
+
     }
   
-    return await qb.getMany();
+    const clientes = await qb.getMany();
+
+    return {
+      data: clientes,
+      pagination: {
+        total: clientes.length,
+        limit: clientes.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+    
   }
 
   async downloadClientes(){
@@ -342,7 +419,7 @@ export class ClientesService {
       </div>
       `;
 
-    const emails = enviarCorreoDto.correos.map(correo => correo.email);
+    const emails = enviarCorreoDto.correos.map(correo => correo.email.trim());
 
     // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
     const options: SendMailOptions = {

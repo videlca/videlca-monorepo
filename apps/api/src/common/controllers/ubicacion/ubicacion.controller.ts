@@ -31,7 +31,7 @@ export class UbicacionController {
     // RUTA PROTEGIDA: Obtener todos los paises con sus departamentos
     @Get('pais')
     findAllPais(@Query() paginationDto: PaginationDto) {
-        return this.ubicacionService.findAllPais(paginationDto, paginationDto.pagination);
+        return this.ubicacionService.findAllPais(paginationDto);
     }
 
     // RUTA PROTEGIDA: Obtener un pais con sus departamentos
@@ -65,7 +65,7 @@ export class UbicacionController {
     @Get('departamento')
     @ValidateJwtAuth()
     findAllDepartamentos(@Query() paginationDto: PaginationDto) {
-        return this.ubicacionService.findAllDepartamentosCiudades(paginationDto, paginationDto.pagination);
+        return this.ubicacionService.findAllDepartamentosCiudades(paginationDto);
     }
 
     // RUTA PROTEGIDA: Obtener un departamento con sus ciudades
@@ -98,21 +98,21 @@ export class UbicacionController {
     // RUTA PROTEGIDA: Obtener todas las ciudades
     @Get('ciudad')
     findAllCiudades(@Query() paginationDto: PaginationDto) {
-        return this.ubicacionService.findAllCiudades(paginationDto, paginationDto.pagination);
+        return this.ubicacionService.findAllCiudades(paginationDto);
     }
 
     // RUTA PROTEGIDA: Obtener todas las ciudades activas
     @Get('ciudad/activas')
     @ValidateJwtAuth()
     findAllCiudadesActivas(@Query() paginationDto: PaginationDto) {
-        return this.ubicacionService.findAllCiudadesActivas(paginationDto, paginationDto.pagination);
+        return this.ubicacionService.findAllCiudadesActivas(paginationDto);
     }
 
     // RUTA PROTEGIDA: Obtener todas las ciudades asociadas a un departamento
     @Get('ciudad/departamento/:id')
     @ValidateJwtAuth()
     findAllCiudadesDepartamento(@Param('id', ParseIntPipe) id: number, @Query() paginationDto: PaginationDto) {
-        return this.ubicacionService.findAllCiudadesDepartamento(id, paginationDto, paginationDto.pagination);
+        return this.ubicacionService.findAllCiudadesDepartamento(id, paginationDto);
     }
 
     // RUTA PROTEGIDA: Obtener una ciudad

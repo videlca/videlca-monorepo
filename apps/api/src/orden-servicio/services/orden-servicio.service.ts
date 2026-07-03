@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
 import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
 import { User } from '../../users/entities/user.entity';
@@ -403,15 +404,15 @@ export class OrdenServicioService {
 
   }
 
-  async findAll(paginationDto: PaginationDto, pagination: boolean = true) {
+  async findAll(paginationDto: PaginationDto) {
 
-    if (pagination) {
+    if (paginationDto.pagination === PaginationOption.TRUE) {
 
       // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
 
       // Se hace la consulta de manera paginada
-      const ordenesServicio = await this.ordenServicioRepository.find({
+      const [ordenesServicio, total] = await this.ordenServicioRepository.findAndCount({
         take: limit,
         skip: offset,
         order: {
@@ -419,15 +420,39 @@ export class OrdenServicioService {
         }
       });
 
-      return ordenesServicio;
+      return {
+        data: ordenesServicio,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        }
+      };
 
     }
 
-    return await this.ordenServicioRepository.find({
+    const ordenesServicio = await this.ordenServicioRepository.find({
       order: {
         fechaInicio: 'DESC'
       }
     });
+
+    return {
+      data: ordenesServicio,
+      pagination: {
+        total: ordenesServicio.length,
+        limit: ordenesServicio.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
 
   }
 
