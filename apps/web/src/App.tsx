@@ -50,7 +50,7 @@ function RouterApp() {
   return (
     <BaseLayout>
       <RouterProvider router={router} context={{ auth, queryClient }} />
-      <Toaster position="bottom-right" richColors duration={2000} closeButton />
+      <Toaster position="bottom-right" richColors duration={6000} closeButton />
     </BaseLayout>
   );
 }
