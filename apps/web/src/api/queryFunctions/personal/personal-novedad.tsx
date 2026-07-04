@@ -47,7 +47,7 @@ export const useGetPersonalNovedad = (
   paginationParams: PaginationDto = { pagination: 'false' }
 ): UseQueryResult<ApiResponse<PaginatedResponse<Novedad[]>>, Error> => {
   return useQuery({
-    queryKey: ["personal-novedad", paginationParams],
+    queryKey: ["personal-novedad", idPersonal, paginationParams],
     queryFn: () => getPersonalNovedad(idPersonal, paginationParams),
   });
 };

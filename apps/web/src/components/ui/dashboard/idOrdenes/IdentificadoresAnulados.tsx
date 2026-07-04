@@ -55,7 +55,7 @@ export function IdentificadoresAnulados() {
 
     // Queries y mutaciones
     const { data: prefijosQuery } = usePrefijosTipoServicio();
-    const { data: idsOrdenServicio } = useGetIdsAnuladosOrdenServicio();
+    const { data: idsOrdenServicio } = useGetIdsAnuladosOrdenServicio(paginationParams);
     const {
         mutate: anularIdOrdenServicio,
         isPending: isAnulandoIdOrdenServicio,

@@ -22,13 +22,13 @@ import type { EnviarCorreoDto, PaginationDto } from "../../dtos/common";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
-export const useClientes = (): UseQueryResult<
+export const useClientes = (paginationParams: PaginationDto = { pagination: 'false' }): UseQueryResult<
   ApiResponse<PaginatedResponse<Cliente[]>>,
   Error
 > => {
   return useQuery({
-    queryKey: ["clientes"],
-    queryFn: () => getClientes({ pagination: 'false' }),
+    queryKey: ["clientes", paginationParams],
+    queryFn: () => getClientes(paginationParams),
   });
 };
 

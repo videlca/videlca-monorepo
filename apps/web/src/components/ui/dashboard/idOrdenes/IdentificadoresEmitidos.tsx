@@ -15,10 +15,10 @@ export function IdentificadoresEmitidos() {
     const [selectedOrderDetail, setSelectedOrderDetail] = useState<OrdenServicio | null>(null);
 
     // Paginación server-side
-    const { page, setPage, pageSize, setPageSize } = useServerPagination(5);
+    const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
 
     // Queries y mutaciones
-    const { data: idsOrdenServicio } = useGetIdsOrdenServicio();
+    const { data: idsOrdenServicio } = useGetIdsOrdenServicio(paginationParams);
     const { mutate: getOrdenServicio } = useGetOrdenServicioById();
 
     const columns: ColumnDef<OrdenServicioId>[] = [

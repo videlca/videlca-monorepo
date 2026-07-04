@@ -1017,8 +1017,8 @@ function RouteComponent() {
         <Table
           columns={columns}
           data={filteredOrdenesServicio ?? ordenesDeServicioQuery?.data?.data ?? []}
-          serverPagination={true}
-          totalRows={ordenesDeServicioQuery?.data?.pagination?.total ?? 0}
+          serverPagination={!filteredOrdenesServicio}
+          totalRows={filteredOrdenesServicio ? filteredOrdenesServicio.length : (ordenesDeServicioQuery?.data?.pagination?.total ?? 0)}
           currentPage={page}
           onPageChange={setPage}
           onPageSizeChange={(size) => {

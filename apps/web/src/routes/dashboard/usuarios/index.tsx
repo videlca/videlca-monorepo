@@ -208,8 +208,8 @@ function RouteComponent() {
         <Table
           data={filteredUsuarios ?? usuarios?.data?.data ?? []}
           columns={columns}
-          serverPagination={true}
-          totalRows={usuarios?.data?.pagination?.total ?? 0}
+          serverPagination={!filteredUsuarios}
+          totalRows={filteredUsuarios ? filteredUsuarios.length : (usuarios?.data?.pagination?.total ?? 0)}
           currentPage={page}
           onPageChange={setPage}
           onPageSizeChange={(size) => {

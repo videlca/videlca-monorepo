@@ -9,7 +9,7 @@ import { SimpleModal } from "../../../common/SimpleModal";
 import { useState, useEffect } from "react";
 import {
   useClienteById,
-  useClientesActivo,
+  useClientes,
   useCreateCliente,
   useDeleteCliente,
   useDescargarExcelClientes,
@@ -69,7 +69,7 @@ export function ClientesTab() {
   const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
 
   // Mutaciones y queries
-  const { data: clientes } = useClientesActivo(paginationParams);
+  const { data: clientes } = useClientes(paginationParams);
   const { mutate: getClienteById } = useClienteById();
   const { mutate: createCliente, isPending: isCreatingCliente } =
     useCreateCliente();
@@ -168,7 +168,7 @@ export function ClientesTab() {
   const handleShowEditClienteModal = (row: Row<Cliente>) => {
     const clienteRow = row.original;
     setEditingCliente(clienteRow);
-    
+
     resetEdit({
       idTipoIdentificacion: clienteRow.idTipoIdentificacion?.idTipoIdentificacion || 0,
       numeroIdentificacion: clienteRow.numeroIdentificacion || "",
@@ -292,7 +292,7 @@ export function ClientesTab() {
         <ButtonAction
           Icon={Download}
           label={isDownloadingExcel ? "Descargando..." : "Descargar Excel"}
-          onClick={() => descargarExcel(currentFilter)}
+          onClick={() => descargarExcel(undefined)}
           color="green-light"
           disabled={isDownloadingExcel}
         />
@@ -312,8 +312,8 @@ export function ClientesTab() {
       <Table
         data={filteredClientes ?? clientes?.data?.data ?? []}
         columns={columnsClientes}
-        serverPagination={true}
-        totalRows={clientes?.data?.pagination?.total ?? 0}
+        serverPagination={!filteredClientes}
+        totalRows={filteredClientes ? filteredClientes.length : (clientes?.data?.pagination?.total ?? 0)}
         currentPage={page}
         onPageChange={setPage}
         onPageSizeChange={(size) => {
@@ -492,6 +492,13 @@ export function ClientesTab() {
                   setIsEditModalOpen(false);
                   resetEdit();
                   setEditingCliente(null);
+                  if (currentFilter) {
+                    filterClientes(currentFilter, {
+                      onSuccess: (data) => {
+                        setFilteredClientes(data.data?.data ?? []);
+                      },
+                    });
+                  }
                 },
               },
             );
@@ -769,6 +776,13 @@ export function ClientesTab() {
             onSuccess: () => {
               setIsOpenDelete(false);
               setEditingCliente(null);
+              if (currentFilter) {
+                filterClientes(currentFilter, {
+                  onSuccess: (data) => {
+                    setFilteredClientes(data.data?.data ?? []);
+                  },
+                });
+              }
             },
           });
         }}
