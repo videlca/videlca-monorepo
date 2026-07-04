@@ -233,13 +233,14 @@ export class ClientesService {
       
     }
     
-    if (updateClienteDto.idSubSegmentacion){
-      
-      // OBTENER SUB SEGMENTACION
-      const subSegmentacion = await this.subSegmentacionService.findOne(updateClienteDto.idSubSegmentacion);
-
-      cliente.idSubSegmentacion = subSegmentacion;
-      
+    if (updateClienteDto.idSubSegmentacion !== undefined){
+      if (updateClienteDto.idSubSegmentacion === null) {
+        cliente.idSubSegmentacion = null;
+      } else {
+        // OBTENER SUB SEGMENTACION
+        const subSegmentacion = await this.subSegmentacionService.findOne(updateClienteDto.idSubSegmentacion);
+        cliente.idSubSegmentacion = subSegmentacion;
+      }
     }
 
     try {
