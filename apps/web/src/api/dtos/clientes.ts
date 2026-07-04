@@ -56,7 +56,7 @@ export interface CreateClienteDto {
   idTipoIdentificacion: number;
   nombre: string;
   idTipoCliente: number;
-  idSubSegmentacion: number;
+  idSubSegmentacion?: number;
 }
 
 export interface UpdateClienteDto {
@@ -64,7 +64,7 @@ export interface UpdateClienteDto {
   idTipoIdentificacion?: number;
   nombre?: string;
   idTipoCliente?: number;
-  idSubSegmentacion?: number;
+  idSubSegmentacion?: number | null;
   estado?: boolean;
 }
 

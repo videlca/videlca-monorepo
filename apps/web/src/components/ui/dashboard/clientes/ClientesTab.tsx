@@ -60,6 +60,8 @@ export function ClientesTab() {
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [isOpenEmail, setIsOpenEmail] = useState(false);
   const [isFacturacionDiferente, setIsFacturacionDiferente] = useState(false);
+  const [aplicaSegmentacionCreate, setAplicaSegmentacionCreate] = useState(true);
+  const [aplicaSegmentacionEdit, setAplicaSegmentacionEdit] = useState(true);
 
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
   const [filteredClientes, setFilteredClientes] = useState<Cliente[] | null>(null);
@@ -168,6 +170,7 @@ export function ClientesTab() {
   const handleShowEditClienteModal = (row: Row<Cliente>) => {
     const clienteRow = row.original;
     setEditingCliente(clienteRow);
+    setAplicaSegmentacionEdit(!!clienteRow.idSubSegmentacion);
 
     resetEdit({
       idTipoIdentificacion: clienteRow.idTipoIdentificacion?.idTipoIdentificacion || 0,
@@ -183,6 +186,7 @@ export function ClientesTab() {
       onSuccess: (data) => {
         if (data.data) {
           const cliente = data.data;
+          setAplicaSegmentacionEdit(!!cliente.idSubSegmentacion);
           resetEdit({
             idTipoIdentificacion: cliente.idTipoIdentificacion?.idTipoIdentificacion || 0,
             numeroIdentificacion: cliente.numeroIdentificacion || "",
@@ -366,19 +370,25 @@ export function ClientesTab() {
             resetCreate();
           }}
           updating={false}
-          onSubmit={handleSubmitCreate((data) => {
-            const { idSegmentacion, ...submitData } = data;
-            createCliente(
-              {
+        onSubmit={handleSubmitCreate((data) => {
+            const { idSegmentacion, idSubSegmentacion, ...submitData } = data;
+            const payload: any = {
                 ...submitData,
                 idTipoIdentificacion: Number(data.idTipoIdentificacion),
                 idTipoCliente: Number(data.idTipoCliente),
-                idSubSegmentacion: Number(data.idSubSegmentacion),
-              },
+            };
+
+            if (aplicaSegmentacionCreate) {
+                payload.idSubSegmentacion = Number(idSubSegmentacion);
+            }
+
+            createCliente(
+              payload,
               {
                 onSuccess: () => {
                   setIsAddModalOpen(false);
                   resetCreate();
+                  setAplicaSegmentacionCreate(true);
                 },
               },
             );
@@ -427,32 +437,42 @@ export function ClientesTab() {
               required
               {...registerCreate("idTipoCliente")}
             />
-            <InputSelect
-              label="Segmentación"
-              placeholder="Segmentación"
-              id="idSegmentacion"
-              options={
-                segmentaciones?.data?.data?.map((segmentacion) => ({
-                  id: segmentacion.idSegmentacion,
-                  descripcion: segmentacion.descripcion,
-                })) || []
-              }
-              required
-              {...registerCreate("idSegmentacion")}
+            <CheckboxForm
+              label="Aplica segmentación"
+              id="aplicaSegmentacionCreate"
+              checked={aplicaSegmentacionCreate}
+              onChange={(e) => setAplicaSegmentacionCreate(e.target.checked)}
             />
-            <InputSelect
-              label="Subsegmentación"
-              placeholder="Subsegmentación"
-              id="idSubSegmentacion"
-              options={
-                segmentacionbyId?.data?.subSegmentaciones?.map((sub) => ({
-                  id: sub.idSubSegmentacion || 0,
-                  descripcion: sub.descripcion,
-                })) || []
-              }
-              required
-              {...registerCreate("idSubSegmentacion")}
-            />
+            {aplicaSegmentacionCreate && (
+              <>
+                <InputSelect
+                  label="Segmentación"
+                  placeholder="Segmentación"
+                  id="idSegmentacion"
+                  options={
+                    segmentaciones?.data?.data?.map((segmentacion) => ({
+                      id: segmentacion.idSegmentacion,
+                      descripcion: segmentacion.descripcion,
+                    })) || []
+                  }
+                  required
+                  {...registerCreate("idSegmentacion")}
+                />
+                <InputSelect
+                  label="Subsegmentación"
+                  placeholder="Subsegmentación"
+                  id="idSubSegmentacion"
+                  options={
+                    segmentacionbyId?.data?.subSegmentaciones?.map((sub) => ({
+                      id: sub.idSubSegmentacion || 0,
+                      descripcion: sub.descripcion,
+                    })) || []
+                  }
+                  required
+                  {...registerCreate("idSubSegmentacion")}
+                />
+              </>
+            )}
           </div>
         </FormsModal>
       </SimpleModal>
@@ -475,17 +495,24 @@ export function ClientesTab() {
           }}
           updating={true}
           onSubmit={handleSubmitEdit((data) => {
-            const { idSegmentacion, ...submitData } = data;
+            const { idSegmentacion, idSubSegmentacion, ...submitData } = data;
+            const payload: any = {
+                ...submitData,
+                idTipoIdentificacion: Number(data.idTipoIdentificacion),
+                idTipoCliente: Number(data.idTipoCliente),
+                estado: String(data.estado) === "true",
+            };
+            
+            if (aplicaSegmentacionEdit) {
+                payload.idSubSegmentacion = Number(idSubSegmentacion);
+            } else {
+                payload.idSubSegmentacion = null;
+            }
+
             updateCliente(
               {
                 id: editingCliente?.idCliente || 0,
-                data: {
-                  ...submitData,
-                  idTipoIdentificacion: Number(data.idTipoIdentificacion),
-                  idTipoCliente: Number(data.idTipoCliente),
-                  idSubSegmentacion: Number(data.idSubSegmentacion),
-                  estado: String(data.estado) === "true",
-                },
+                data: payload,
               },
               {
                 onSuccess: () => {
@@ -547,33 +574,43 @@ export function ClientesTab() {
               required
               {...registerEdit("idTipoCliente")}
             />
-            <InputSelect
-              label="Segmentación"
-              placeholder="Segmentación"
-              id="idSegmentacion"
-              options={
-                segmentaciones?.data?.data?.map((segmentacion) => ({
-                  id: segmentacion.idSegmentacion,
-                  descripcion: segmentacion.descripcion,
-                })) || []
-              }
-              required
-              {...registerEdit("idSegmentacion")}
+            <CheckboxForm
+              label="Aplica segmentación"
+              id="aplicaSegmentacionEdit"
+              checked={aplicaSegmentacionEdit}
+              onChange={(e) => setAplicaSegmentacionEdit(e.target.checked)}
             />
-            <InputSelect
-              label="Subsegmentación"
-              placeholder="Subsegmentación"
-              id="idSubSegmentacion"
-              options={
-                segmentacionbyId?.data?.subSegmentaciones?.map((sub) => ({
-                  id: sub.idSubSegmentacion || 0,
-                  descripcion: sub.descripcion,
-                })) || []
-              }
-              required
-              disabled={!watchIdSegmentacionEdit}
-              {...registerEdit("idSubSegmentacion")}
-            />
+            {aplicaSegmentacionEdit && (
+              <>
+                <InputSelect
+                  label="Segmentación"
+                  placeholder="Segmentación"
+                  id="idSegmentacion"
+                  options={
+                    segmentaciones?.data?.data?.map((segmentacion) => ({
+                      id: segmentacion.idSegmentacion,
+                      descripcion: segmentacion.descripcion,
+                    })) || []
+                  }
+                  required
+                  {...registerEdit("idSegmentacion")}
+                />
+                <InputSelect
+                  label="Subsegmentación"
+                  placeholder="Subsegmentación"
+                  id="idSubSegmentacion"
+                  options={
+                    segmentacionbyId?.data?.subSegmentaciones?.map((sub) => ({
+                      id: sub.idSubSegmentacion || 0,
+                      descripcion: sub.descripcion,
+                    })) || []
+                  }
+                  required
+                  disabled={!watchIdSegmentacionEdit}
+                  {...registerEdit("idSubSegmentacion")}
+                />
+              </>
+            )}
             <InputSelectStateBoolean
               label="Estado"
               placeholder="Estado"
