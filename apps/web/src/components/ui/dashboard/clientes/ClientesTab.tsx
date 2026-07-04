@@ -166,11 +166,32 @@ export function ClientesTab() {
 
   // Handlers
   const handleShowEditClienteModal = (row: Row<Cliente>) => {
-    setEditingCliente(row.original);
-    getClienteById(row.original.idCliente, {
+    const clienteRow = row.original;
+    setEditingCliente(clienteRow);
+    
+    resetEdit({
+      idTipoIdentificacion: clienteRow.idTipoIdentificacion?.idTipoIdentificacion || 0,
+      numeroIdentificacion: clienteRow.numeroIdentificacion || "",
+      nombre: clienteRow.nombre || "",
+      idTipoCliente: clienteRow.idTipoCliente?.idTipoCliente || 0,
+      idSegmentacion: clienteRow.idSubSegmentacion?.segmentacion?.idSegmentacion || 0,
+      idSubSegmentacion: clienteRow.idSubSegmentacion?.idSubSegmentacion || 0,
+      estado: clienteRow.estado ?? true,
+    });
+
+    getClienteById(clienteRow.idCliente, {
       onSuccess: (data) => {
         if (data.data) {
-          resetEdit();
+          const cliente = data.data;
+          resetEdit({
+            idTipoIdentificacion: cliente.idTipoIdentificacion?.idTipoIdentificacion || 0,
+            numeroIdentificacion: cliente.numeroIdentificacion || "",
+            nombre: cliente.nombre || "",
+            idTipoCliente: cliente.idTipoCliente?.idTipoCliente || 0,
+            idSegmentacion: cliente.idSubSegmentacion?.segmentacion?.idSegmentacion || 0,
+            idSubSegmentacion: cliente.idSubSegmentacion?.idSubSegmentacion || 0,
+            estado: cliente.estado ?? true,
+          });
         }
       },
     });
