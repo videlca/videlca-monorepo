@@ -117,7 +117,7 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={tipoGenero?.data || []}
+          data={tipoGenero?.data?.data || []}
           columns={columns}
           enablePagination={true}
           pageSize={5}

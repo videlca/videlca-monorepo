@@ -136,11 +136,11 @@ export const CiudadTab = () => {
 
   const departamentosOptions = useMemo(
     () =>
-      departamentos?.data?.map((departamento) => ({
+      departamentos?.data?.data.map((departamento) => ({
         id: departamento.idDepartamento,
         descripcion: departamento.descripcion,
       })) || [],
-    [departamentos?.data],
+    [departamentos?.data?.data],
   );
   return (
     <>
@@ -153,7 +153,7 @@ export const CiudadTab = () => {
           />
         </div>
         <Table
-          data={ciudades?.data || []}
+          data={ciudades?.data?.data || []}
           columns={columnsCiudades}
           enablePagination={true}
           pageSize={5}

@@ -3,9 +3,9 @@ import { apiGet, axiosClient } from "../../config";
 import type { SearchPuestosDto } from "../../dtos";
 import type { CreatePuestoDto, UpdatePuestoDto } from "../../dtos/clientes";
 import type { PaginationDto } from "../../dtos/common";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 
-  export const getPuestos = async (pagination: PaginationDto): Promise<ApiResponse<Puesto[]>> => {
+  export const getPuestos = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Puesto[]>>> => {
   const response = await axiosClient.get("/locaciones", { params: pagination }).then((res) => {
     return {
       status: res.status,
@@ -20,7 +20,7 @@ import type { ApiResponse } from "../../types";
   return response;
 };
 
-export const getPuestosByCliente = async (idCliente: number, pagination: PaginationDto): Promise<ApiResponse<Puesto[]>> => {
+export const getPuestosByCliente = async (idCliente: number, pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Puesto[]>>> => {
   const response = await axiosClient.get(`/locaciones`, { params: pagination }).then((res) => {
     const clientesFiltrados = res.data.filter((cliente: Puesto) => cliente.idCliente.idCliente === idCliente);
     return {
@@ -51,11 +51,11 @@ export const getPuestoById = async (id: number): Promise<ApiResponse<Puesto | nu
   return response;
 };
 
-export const searchPuestos = async (query: SearchPuestosDto): Promise<ApiResponse<Puesto[]>> => {
-  return await apiGet<Puesto[]>(`/locaciones/search?column=${query.column}&text=${query.text}`);
+export const searchPuestos = async (query: SearchPuestosDto): Promise<ApiResponse<PaginatedResponse<Puesto[]>>> => {
+  return await apiGet<PaginatedResponse<Puesto[]>>(`/locaciones/search?column=${query.column}&text=${query.text}`);
 };
 
-export const getPuestosActivo = async (pagination: PaginationDto): Promise<ApiResponse<Puesto[]>> => {
+export const getPuestosActivo = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Puesto[]>>> => {
   const response = await axiosClient.get("/locaciones/actives", { params: pagination }).then((res) => {
     return {
       status: res.status,

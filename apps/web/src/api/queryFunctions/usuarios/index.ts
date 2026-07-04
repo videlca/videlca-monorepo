@@ -1,19 +1,20 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { createUsuario, deleteUsuario, getUsuarioByCookie, getUsuarios, updateUsuario, updateUsuarioPerfil, getFilteredUsuarios } from "../../functions/usuarios";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import type { Usuario } from "../../../types";
 import type { CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from "../../dtos";
+import type { PaginationDto } from "../../dtos/common";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
 
-export const useGetUsuarios = (): UseQueryResult<ApiResponse<Usuario[]>, Error> => {
+export const useGetUsuarios = (paginationParams: PaginationDto = { pagination: 'false' }): UseQueryResult<ApiResponse<PaginatedResponse<Usuario[]>>, Error> => {
   return useQuery({
-    queryKey: ['usuarios'],
-    queryFn: () => getUsuarios({ pagination: false }),
+    queryKey: ['usuarios', paginationParams],
+    queryFn: () => getUsuarios(paginationParams),
   })
 }
 
-export const useFilterUsuarios = (): UseMutationResult<ApiResponse<Usuario[]>, Error, any> => {
+export const useFilterUsuarios = (): UseMutationResult<ApiResponse<PaginatedResponse<Usuario[]>>, Error, any> => {
   return useMutation({
     mutationFn: (filter: any) => getFilteredUsuarios(filter),
     onError: (error) => {

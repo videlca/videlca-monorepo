@@ -7,11 +7,15 @@ import { MoreActionsButton } from "../../common/MoreActionsButton";
 import Table from "../../../common/Table";
 import type { ColumnDef } from "@tanstack/react-table";
 import { OrdenDetalles } from "../../modals/OrdenDetalles";
+import { useServerPagination } from "../../../../hooks/useServerPagination";
 
 
 export function IdentificadoresEmitidos() {
     const [isOpenDetails, setIsOpenDetails] = useState(false);
     const [selectedOrderDetail, setSelectedOrderDetail] = useState<OrdenServicio | null>(null);
+
+    // Paginación server-side
+    const { page, setPage, pageSize, setPageSize } = useServerPagination(5);
 
     // Queries y mutaciones
     const { data: idsOrdenServicio } = useGetIdsOrdenServicio();
@@ -50,12 +54,14 @@ export function IdentificadoresEmitidos() {
                         {
                             label: "Ver Orden",
                             onClick: () => {
-                                getOrdenServicio(Number(row.original.idOrdenServicioId), {
-                                    onSuccess: (data) => {
-                                        setSelectedOrderDetail(data.data as OrdenServicio);
-                                        setIsOpenDetails(true);
-                                    }
-                                });
+                                if (row.original.ordenServicio?.idOrdenServicio) {
+                                    getOrdenServicio(Number(row.original.ordenServicio.idOrdenServicio), {
+                                        onSuccess: (data) => {
+                                            setSelectedOrderDetail(data.data as OrdenServicio);
+                                            setIsOpenDetails(true);
+                                        }
+                                    });
+                                }
                             },
                         },
                     ]}
@@ -68,8 +74,16 @@ export function IdentificadoresEmitidos() {
             <div className="flex flex-col gap-8">
                 <Table
                     columns={columns}
-                    data={idsOrdenServicio?.data || []}
-                    pageSize={5}
+                    data={idsOrdenServicio?.data?.data || []}
+                    serverPagination={true}
+                    totalRows={idsOrdenServicio?.data?.pagination?.total ?? 0}
+                    currentPage={page}
+                    onPageChange={setPage}
+                    onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setPage(0);
+                    }}
+                    pageSize={pageSize}
                     enableFiltering={false}
                     enablePagination={true}
                 />

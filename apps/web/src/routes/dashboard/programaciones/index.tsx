@@ -79,13 +79,13 @@ function RouteComponent() {
   const filteredPeople = useMemo(() => {
     return selectedTipoPersonal === 0
       ? programacionPersonalQuery?.data
-      : programacionPersonalQuery?.data?.filter(
-          (p) => p.idTipoPersonal === selectedTipoPersonal,
-        );
+      : programacionPersonalQuery?.data?.data.filter(
+        (p) => p.idTipoPersonal === selectedTipoPersonal,
+      );
   }, [programacionPersonalQuery?.data, selectedTipoPersonal]);
 
   const getUniqueEventsForPerson = (personId: number) => {
-    return programacionPersonalQuery?.data?.find(
+    return programacionPersonalQuery?.data?.data.find(
       (event) => event.idPersonal === personId,
     );
   };
@@ -184,10 +184,10 @@ function RouteComponent() {
               {format(weekStart, "dd MMM", { locale: es })} -{" "}
               {format(extendedEnd, "dd MMM yyyy", { locale: es })}
             </div>
-            <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+            {/* <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
               <Users className="mr-1 h-3 w-3" />
-              {filteredPeople?.length} personal
-            </span>
+              {filteredPeople?.data?.length} personal
+            </span> */}
           </div>
 
           <div className="flex gap-2">
@@ -197,7 +197,7 @@ function RouteComponent() {
               className="w-48 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
               <option value="0">Todo el personal</option>
-              {tipoPersonalQuery?.data?.map((tipo) => (
+              {tipoPersonalQuery?.data?.data?.map((tipo) => (
                 <option key={tipo.idTipoPersonal} value={tipo.idTipoPersonal}>
                   {tipo.descripcion}
                 </option>
@@ -227,9 +227,8 @@ function RouteComponent() {
                   return (
                     <div
                       key={index}
-                      className={`border-r border-gray-300 p-3 text-center text-white last:border-r-0 ${
-                        isToday ? "bg-blue-600" : "bg-gray-50"
-                      }`}
+                      className={`border-r border-gray-300 p-3 text-center text-white last:border-r-0 ${isToday ? "bg-blue-600" : "bg-gray-50"
+                        }`}
                     >
                       <div className="text-xs font-medium tracking-wide uppercase">
                         {format(day, "EEE", { locale: es })}
@@ -249,12 +248,11 @@ function RouteComponent() {
             </div>
 
             {/* Filas de personas */}
-            {filteredPeople?.map((person, personIndex) => (
+            {filteredPeople?.data?.map((person, personIndex) => (
               <div
                 key={person.idPersonal}
-                className={`grid grid-cols-[280px_1fr] border-b border-gray-200 hover:bg-gray-50 ${
-                  personIndex % 2 === 0 ? "bg-white" : "bg-gray-25"
-                }`}
+                className={`grid grid-cols-[280px_1fr] border-b border-gray-200 hover:bg-gray-50 ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-25"
+                  }`}
               >
                 <div className="border-r border-gray-200 p-4">
                   <div className="text-sm font-semibold text-gray-900">
@@ -273,9 +271,8 @@ function RouteComponent() {
                     return (
                       <div
                         key={dayIndex}
-                        className={`relative min-h-[100px] border-r border-gray-200 pt-2 pr-2 *:space-y-2 last:border-r-0 ${
-                          isWeekend ? "bg-gray-50" : "bg-white"
-                        }`}
+                        className={`relative min-h-[100px] border-r border-gray-200 pt-2 pr-2 *:space-y-2 last:border-r-0 ${isWeekend ? "bg-gray-50" : "bg-white"
+                          }`}
                         id={`day-${dayIndex}`}
                       >
                         {getUniqueEventsForPerson(
@@ -283,7 +280,7 @@ function RouteComponent() {
                         )?.eventos?.map((event, eventIndex) => {
                           const eventType =
                             eventTypes[
-                              event.tipoEvento as keyof typeof eventTypes
+                            event.tipoEvento as keyof typeof eventTypes
                             ] || eventTypes.default;
                           const puesto = getEventPuesto(event, dayIndex);
 
@@ -311,9 +308,8 @@ function RouteComponent() {
                           return (
                             <div
                               key={event.idEvento}
-                              className={`${eventType.color} ${eventType.textColor} relative mb-1 cursor-pointer transition-all ${
-                                puesto.isMultiDay ? "font-medium" : ""
-                              }`}
+                              className={`${eventType.color} ${eventType.textColor} relative mb-1 cursor-pointer transition-all ${puesto.isMultiDay ? "font-medium" : ""
+                                }`}
                               style={{
                                 width: puesto.isMultiDay
                                   ? `calc(${puesto.width * 100}% + ${(puesto.width - 1) * 11}px)`
@@ -397,7 +393,7 @@ function RouteComponent() {
                 {
                   (
                     eventTypes[
-                      selectedEventDetails?.tipoEvento as keyof typeof eventTypes
+                    selectedEventDetails?.tipoEvento as keyof typeof eventTypes
                     ] || eventTypes.default
                   ).label
                 }

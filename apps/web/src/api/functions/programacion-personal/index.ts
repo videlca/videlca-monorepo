@@ -1,7 +1,8 @@
 import { apiGet } from "../../config";
 import type { PaginationDto } from "../../dtos/common";
-import type { ApiResponse, PersonalAsignado } from "../../types";
+import type { PersonalAsignado } from "../../types";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 
-export const getProgramacionPersonal = async (pagination: PaginationDto): Promise<ApiResponse<PersonalAsignado[]>> => {
-  return await apiGet<PersonalAsignado[]>("/programacion-personal", pagination);
+export const getProgramacionPersonal = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<PersonalAsignado[]>>> => {
+  return await apiGet<PaginatedResponse<PersonalAsignado[]>>("/programacion-personal", pagination);
 };

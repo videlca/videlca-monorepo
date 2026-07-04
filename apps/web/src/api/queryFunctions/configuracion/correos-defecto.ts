@@ -1,14 +1,14 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { createCorreoDefault, getCorreoDefaultById, getCorreosDefault } from "../../functions/configuracion";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { CorreoDefaultDto, CreateCorreoDefaultDto } from "../../dtos";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
-export const useCorreosDefault = (): UseQueryResult<ApiResponse<CreateCorreoDefaultDto[]>, Error> => {
+export const useCorreosDefault = (): UseQueryResult<ApiResponse<PaginatedResponse<CreateCorreoDefaultDto[]>>, Error> => {
   return useQuery({
     queryKey: ["correos-default"],
-    queryFn: () => getCorreosDefault({ pagination: false }),
+    queryFn: () => getCorreosDefault({ pagination: 'false' }),
   });
 };
 

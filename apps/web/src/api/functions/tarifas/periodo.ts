@@ -2,15 +2,15 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../dtos";
 import type { PaginationDto } from "../../dtos/common";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Periodo } from "../../types/periodo";
 
-export const getPeriodos = async (pagination: PaginationDto): Promise<ApiResponse<Periodo[]>> => {
-  return await apiGet<Periodo[]>("/periodos", pagination);
+export const getPeriodos = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Periodo[]>>> => {
+  return await apiGet<PaginatedResponse<Periodo[]>>("/periodos", pagination);
 };
 
-export const getPeriodosActivo = async (): Promise<ApiResponse<Periodo[]>> => {
-  return await apiGet<Periodo[]>("/periodos/activo");
+export const getPeriodosActivo = async (): Promise<ApiResponse<PaginatedResponse<Periodo[]>>> => {
+  return await apiGet<PaginatedResponse<Periodo[]>>("/periodos/activo");
 };
 
 export const getPeriodoById = async (id: number): Promise<ApiResponse<Periodo>> => {

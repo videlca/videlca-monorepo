@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { CreateObservacionGrupoOrdenServicioDto, UpdateObservacionGrupoOrdenServicioDto } from "../../dtos";
 import type { ObservacionGrupoOrdenServicio } from "../../types/orden-servicio";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import { createObservacionGrupoOrdenServicio, deleteObservacionGrupoOrdenServicio, getObservacionesGrupoOrdenServicio, updateObservacionGrupoOrdenServicio } from "../../functions/orden-servicio/observaciones-grupo";
 
 export const useCreateObservacionGrupoOrdenServicio = (): UseMutationResult<ApiResponse<ObservacionGrupoOrdenServicio>, Error, CreateObservacionGrupoOrdenServicioDto> => {
@@ -30,7 +30,7 @@ export const useCreateObservacionGrupoOrdenServicio = (): UseMutationResult<ApiR
   });
 }
 
-export const useGetObservacionesGrupoOrdenServicio = (idGrupoOrdenServicio: number): UseQueryResult<ApiResponse<ObservacionGrupoOrdenServicio[]>, Error> => {
+export const useGetObservacionesGrupoOrdenServicio = (idGrupoOrdenServicio: number): UseQueryResult<ApiResponse<PaginatedResponse<ObservacionGrupoOrdenServicio[]>>, Error> => {
   return useQuery({
     queryKey: ["observaciones-grupo-orden-servicio", idGrupoOrdenServicio],
     queryFn: () => getObservacionesGrupoOrdenServicio(idGrupoOrdenServicio),

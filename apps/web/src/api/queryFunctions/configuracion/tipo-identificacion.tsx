@@ -11,7 +11,7 @@ import {
   getTipoIdentificacionActivo,
   updateTipoIdentificacion,
 } from "../../functions/configuracion/";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoIdentificacion } from "../../../types";
 import type {
   ActualizarTipoIdentificacion,
@@ -21,22 +21,22 @@ import { queryClient } from "../../../App";
 import { toast } from "sonner";
 
 export const useTipoIdentificacion = (): UseQueryResult<
-  ApiResponse<TipoIdentificacion[]>,
+  ApiResponse<PaginatedResponse<TipoIdentificacion[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-identificacion"],
-    queryFn: () => getTipoIdentificacion({ pagination: false }),
+    queryFn: () => getTipoIdentificacion({ pagination: 'false' }),
   });
 };
 
 export const useTipoIdentificacionActivo = (): UseQueryResult<
-  ApiResponse<TipoIdentificacion[]>,
+  ApiResponse<PaginatedResponse<TipoIdentificacion[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-identificacion-activo"],
-    queryFn: () => getTipoIdentificacionActivo({ pagination: false }),
+    queryFn: () => getTipoIdentificacionActivo({ pagination: 'false' }),
   });
 };
 

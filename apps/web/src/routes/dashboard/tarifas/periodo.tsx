@@ -171,7 +171,7 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={periodos?.data || []}
+          data={periodos?.data?.data || []}
           columns={columns}
           pageSize={5}
           enableFiltering={true}

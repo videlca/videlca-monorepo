@@ -45,7 +45,7 @@ function RouteComponent() {
     <Section>
       <div className="flex flex-col gap-8">
         <Table
-          data={estadosOrden?.data || []}
+          data={estadosOrden?.data?.data || []}
           columns={columns}
           enablePagination={false}
           pageSize={5}

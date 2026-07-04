@@ -3,15 +3,15 @@ import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { UpdateTipoPersonalDto } from "../../dtos";
 import type { PaginationDto } from "../../dtos/common";
 import type { CreateTipoPersonal } from "../../types";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 
 
-export const getTipoPersonal = async (pagination: PaginationDto): Promise<ApiResponse<TipoPersonal[]>> => {
-  return await apiGet<TipoPersonal[]>("/tipo-personal", pagination )
+export const getTipoPersonal = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoPersonal[]>>> => {
+  return await apiGet<PaginatedResponse<TipoPersonal[]>>("/tipo-personal", pagination )
 };
 
-export const getTipoPersonalActivo = async (pagination: PaginationDto): Promise<ApiResponse<TipoPersonal[]>> => {
-  return await apiGet<TipoPersonal[]>("/tipo-personal/actives", pagination)
+export const getTipoPersonalActivo = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoPersonal[]>>> => {
+  return await apiGet<PaginatedResponse<TipoPersonal[]>>("/tipo-personal/actives", pagination)
 }
 
 export const createTipoPersonal = async (data: CreateTipoPersonal): Promise<ApiResponse> => {

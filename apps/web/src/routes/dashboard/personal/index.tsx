@@ -43,6 +43,7 @@ import { InputTime24H } from "../../../components/common/InputTime24H";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 import { useForm } from "react-hook-form";
 import type { ServerFilterColumn } from "../../../components/common/Table";
+import { useServerPagination } from "../../../hooks/useServerPagination";
 
 export const Route = createFileRoute("/dashboard/personal/")({
   component: RouteComponent,
@@ -59,8 +60,14 @@ function RouteComponent() {
   );
 
   const [isOpenAddNovedadModal, setIsOpenAddNovedadModal] = useState(false);
+  const [isOpenFilterPersonalModal, setIsOpenFilterPersonalModal] =
+    useState(false);
+
+  // Paginación server-side
+  const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
+
   // Queries y mutaciones
-  const { data: personal } = usePersonal();
+  const { data: personal } = usePersonal(paginationParams);
   const { data: tiposIdentificacion } = useTipoIdentificacion();
   const { data: ciudades } = useCiudadActiva();
   const { data: tiposGenero } = useTipoGenero();
@@ -296,10 +303,18 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={filteredPersonal ?? personal?.data ?? []}
+          data={filteredPersonal ?? personal?.data?.data ?? []}
           columns={columns}
+          serverPagination={true}
+          totalRows={personal?.data?.pagination?.total ?? 0}
+          currentPage={page}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
           enablePagination={true}
-          pageSize={5}
+          pageSize={pageSize}
           enableSorting={true}
           enableFiltering={true}
           filterColumns={[
@@ -310,10 +325,10 @@ function RouteComponent() {
           ] satisfies ServerFilterColumn[]}
           onServerFilter={(column, query) => {
             filterPersonal(
-              { column: column as PersonalFilterColumn, query, pagination: false },
+              { column: column as PersonalFilterColumn, query, pagination: 'false' },
               {
                 onSuccess: (data) => {
-                  setFilteredPersonal(data.data ?? []);
+                  setFilteredPersonal(data.data?.data ?? []);
                 },
               },
             );
@@ -402,7 +417,7 @@ function RouteComponent() {
                 placeholder="Género"
                 required
                 options={
-                  tiposGenero?.data?.map((genero) => ({
+                  tiposGenero?.data?.data?.map((genero) => ({
                     id: genero.idTipoGenero,
                     descripcion: genero.descripcion,
                   })) || []
@@ -415,7 +430,7 @@ function RouteComponent() {
                 placeholder="Tipo de identificación"
                 required
                 options={
-                  tiposIdentificacion?.data?.map((tipo) => ({
+                  tiposIdentificacion?.data?.data?.map((tipo) => ({
                     id: tipo.idTipoIdentificacion,
                     descripcion: tipo.descripcion,
                   })) || []
@@ -452,7 +467,7 @@ function RouteComponent() {
                 placeholder="Ciudad"
                 required
                 options={
-                  ciudades?.data?.map((ciudad) => ({
+                  ciudades?.data?.data?.map((ciudad) => ({
                     id: ciudad.idCiudad,
                     descripcion: ciudad.descripcion,
                   })) || []
@@ -479,7 +494,7 @@ function RouteComponent() {
                 placeholder="Tipo de contrato"
                 required
                 options={
-                  tiposContrato?.data?.map((contrato) => ({
+                  tiposContrato?.data?.data?.map((contrato) => ({
                     id: contrato.idTipoContrato,
                     descripcion: contrato.descripcion,
                   })) || []
@@ -519,7 +534,7 @@ function RouteComponent() {
                 placeholder="Tipo de personal"
                 required
                 options={
-                  tiposPersonal?.data?.map((personal) => ({
+                  tiposPersonal?.data?.data?.map((personal) => ({
                     id: personal.idTipoPersonal,
                     descripcion: personal.descripcion,
                   })) || []
@@ -621,7 +636,7 @@ function RouteComponent() {
                 placeholder="Género"
                 required
                 options={
-                  tiposGenero?.data?.map((genero) => ({
+                  tiposGenero?.data?.data?.map((genero) => ({
                     id: genero.idTipoGenero,
                     descripcion: genero.descripcion,
                   })) || []
@@ -634,7 +649,7 @@ function RouteComponent() {
                 placeholder="Tipo de identificación"
                 required
                 options={
-                  tiposIdentificacion?.data?.map((tipo) => ({
+                  tiposIdentificacion?.data?.data?.map((tipo) => ({
                     id: tipo.idTipoIdentificacion,
                     descripcion: tipo.descripcion,
                   })) || []
@@ -671,7 +686,7 @@ function RouteComponent() {
                 placeholder="Ciudad"
                 required
                 options={
-                  ciudades?.data?.map((ciudad) => ({
+                  ciudades?.data?.data?.map((ciudad) => ({
                     id: ciudad.idCiudad,
                     descripcion: ciudad.descripcion,
                   })) || []
@@ -698,7 +713,7 @@ function RouteComponent() {
                 placeholder="Tipo de contrato"
                 required
                 options={
-                  tiposContrato?.data?.map((contrato) => ({
+                  tiposContrato?.data?.data?.map((contrato) => ({
                     id: contrato.idTipoContrato,
                     descripcion: contrato.descripcion,
                   })) || []
@@ -738,7 +753,7 @@ function RouteComponent() {
                 placeholder="Tipo de personal"
                 required
                 options={
-                  tiposPersonal?.data?.map((personal) => ({
+                  tiposPersonal?.data?.data?.map((personal) => ({
                     id: personal.idTipoPersonal,
                     descripcion: personal.descripcion,
                   })) || []
@@ -802,7 +817,7 @@ function RouteComponent() {
               placeholder="Tipo de novedad"
               id="idTipoNovedad"
               options={
-                tiposNovedades?.data?.map((tipo) => ({
+                tiposNovedades?.data?.data?.map((tipo) => ({
                   id: tipo.idTipoNovedad,
                   descripcion: tipo.descripcion,
                 })) || []

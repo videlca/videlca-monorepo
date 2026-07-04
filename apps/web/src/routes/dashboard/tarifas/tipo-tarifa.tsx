@@ -47,7 +47,7 @@ function RouteComponent() {
   return (
     <Section>
       <Table
-        data={tipoTarifa?.data || []}
+        data={tipoTarifa?.data?.data || []}
         columns={columns}
         pageSize={5}
         enableSorting={true}

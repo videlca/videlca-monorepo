@@ -152,7 +152,7 @@ function RouteComponent() {
       </div>
       <Table
         columns={columns}
-        data={tipoServicios?.data || []}
+        data={tipoServicios?.data?.data || []}
         enablePagination={true}
         enableSorting={true}
         enableFiltering={true}

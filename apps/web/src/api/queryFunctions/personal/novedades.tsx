@@ -9,16 +9,16 @@ import {
   getNovedades,
   updateNovedad,
 } from "../../functions/personal/novedades";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Novedad } from "../../types/personal";
 import type { UpdateNovedadDto } from "../../dtos/personal";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
 
-export const useNovedades = (): UseQueryResult<ApiResponse<Novedad[]>> => {
+export const useNovedades = (): UseQueryResult<ApiResponse<PaginatedResponse<Novedad[]>>> => {
   return useQuery({
     queryKey: ["novedades"],
-    queryFn: () => getNovedades({ pagination: false }),
+    queryFn: () => getNovedades({ pagination: 'false' }),
   });
 };
 

@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import type { UpdateNovedadDto } from "../../../api/dtos/personal";
 import { useTipoNovedad } from "../../../api/queryFunctions/configuracion";
 import { useGetPersonalNovedad } from "../../../api/queryFunctions/personal";
+import { useServerPagination } from "../../../hooks/useServerPagination";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputForm } from "../../../components/common/InputForm";
 import { timeFormat } from "../../../utils/TimeFormat";
@@ -46,8 +47,11 @@ function RouteComponent() {
   const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
   const [novedad, setNovedad] = useState<Novedad | null>(null);
 
+  // Paginación server-side
+  const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
+
   // Queries y mutaciones
-  const { data: novedades } = useGetPersonalNovedad(Number(id));
+  const { data: novedades } = useGetPersonalNovedad(Number(id), paginationParams);
   const { data: tiposNovedades } = useTipoNovedad();
 
   const { mutate: updateNovedad, isPending: isLoadingUpdateNovedad } =
@@ -186,10 +190,18 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={novedades?.data || []}
+          data={novedades?.data?.data || []}
           columns={columns}
+          serverPagination={true}
+          totalRows={novedades?.data?.pagination?.total ?? 0}
+          currentPage={page}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
+          pageSize={pageSize}
           enablePagination={true}
-          pageSize={5}
           enableSorting={true}
           enableFiltering={true}
         />
@@ -217,7 +229,7 @@ function RouteComponent() {
               placeholder="Tipo de novedad"
               id="idTipoNovedad"
               options={
-                tiposNovedades?.data?.map((tipo) => ({
+                tiposNovedades?.data?.data?.map((tipo) => ({
                   id: tipo.idTipoNovedad,
                   descripcion: tipo.descripcion,
                 })) || []

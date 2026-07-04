@@ -409,7 +409,7 @@ function RouteComponent() {
                 label="Tipo de servicio *"
                 placeholder="Tipo de servicio"
                 options={
-                  tiposServicios?.data?.map((tipo) => ({
+                  tiposServicios?.data?.data?.map((tipo) => ({
                     id: tipo.idTipoServicio,
                     descripcion: tipo.descripcion,
                   })) || []
@@ -422,7 +422,7 @@ function RouteComponent() {
                 label="Tipo de horario *"
                 placeholder="Tipo de horario"
                 options={
-                  tiposHorarios?.data?.map((tipo) => ({
+                  tiposHorarios?.data?.data.map((tipo) => ({
                     id: tipo.idTipoHorarioDescripcion,
                     descripcion: tipo.nombre,
                   })) || []
@@ -446,7 +446,7 @@ function RouteComponent() {
                   label="Tipo de duración *"
                   placeholder="Tipo de duración"
                   options={
-                    tiposDuraciones?.data?.map((tipo) => ({
+                    tiposDuraciones?.data?.data?.map((tipo) => ({
                       id: tipo.idTipoDuracion,
                       descripcion: tipo.descripcion,
                     })) || []
@@ -456,7 +456,7 @@ function RouteComponent() {
                   {...registerAgregar("idTipoDuracion", {
                     onChange: (e) => {
                       if (
-                        tiposDuraciones?.data?.find(
+                        tiposDuraciones?.data?.data?.find(
                           (tipo) =>
                             tipo.idTipoDuracion === Number(e.target.value),
                         )?.descripcion === "flexible"
@@ -656,7 +656,7 @@ function RouteComponent() {
                 label="Tipo de servicio *"
                 placeholder="Tipo de servicio"
                 options={
-                  tiposServicios?.data?.map((tipo) => ({
+                  tiposServicios?.data?.data?.map((tipo) => ({
                     id: tipo.idTipoServicio,
                     descripcion: tipo.descripcion,
                   })) || []
@@ -669,7 +669,7 @@ function RouteComponent() {
                 label="Tipo de horario *"
                 placeholder="Tipo de horario"
                 options={
-                  tiposHorarios?.data?.map((tipo) => ({
+                  tiposHorarios?.data?.data?.map((tipo) => ({
                     id: tipo.idTipoHorarioDescripcion,
                     descripcion: tipo.nombre,
                   })) || []
@@ -693,7 +693,7 @@ function RouteComponent() {
                   label="Tipo de duración *"
                   placeholder="Tipo de duración"
                   options={
-                    tiposDuraciones?.data?.map((tipo) => ({
+                    tiposDuraciones?.data?.data?.map((tipo) => ({
                       id: tipo.idTipoDuracion,
                       descripcion: tipo.descripcion,
                     })) || []
@@ -703,7 +703,7 @@ function RouteComponent() {
                   {...registerEditar("idTipoDuracion", {
                     onChange: (e) => {
                       if (
-                        tiposDuraciones?.data?.find(
+                        tiposDuraciones?.data?.data?.find(
                           (tipo) =>
                             tipo.idTipoDuracion === Number(e.target.value),
                         )?.descripcion === "flexible"

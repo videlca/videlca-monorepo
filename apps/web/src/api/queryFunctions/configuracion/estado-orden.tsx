@@ -11,17 +11,17 @@ import {
 } from "../../functions/configuracion";
 import { queryClient } from "../../../App";
 import type { CreateEstadoOrdenDto, UpdateEstadoOrdenDto } from "../../dtos";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { EstadoOrden } from "../../../types";
 import { toast } from "sonner";
 
 export const useEstadoOrden = (): UseQueryResult<
-  ApiResponse<EstadoOrden[]>,
+  ApiResponse<PaginatedResponse<EstadoOrden[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["estados-orden"],
-    queryFn: () => getEstadosOrden({ pagination: false }),
+    queryFn: () => getEstadosOrden({ pagination: 'false' }),
   });
 };
 

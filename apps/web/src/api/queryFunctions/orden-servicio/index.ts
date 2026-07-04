@@ -1,10 +1,11 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { anularOrdenServicio, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio, getFilteredOrdenesServicio } from "../../functions/orden-servicio";
-import type { CreateOrdenServicioDto, EnviarCorreoDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
+import type { CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
-import type { ApiResponse, Personal } from "../../types";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
+import type { Personal } from "../../types";
 
 export const useCreateOrdenServicio = (): UseMutationResult<ApiResponse<OrdenServicio>, Error, CreateOrdenServicioDto> => {
   return useMutation({
@@ -47,14 +48,14 @@ export const useUpdateOrdenServicio = (): UseMutationResult<ApiResponse<OrdenSer
   });
 }
 
-export const useGetOrdenesServicio = (): UseQueryResult<ApiResponse<OrdenServicio[]>, Error> => {
+export const useGetOrdenesServicio = (paginationParams: PaginationDto = { pagination: 'false' }): UseQueryResult<ApiResponse<PaginatedResponse<OrdenServicio[]>>, Error> => {
   return useQuery({
-    queryKey: ["orden-servicio"],
-    queryFn: () => getOrdenesServicio({ pagination: false }),
+    queryKey: ["orden-servicio", paginationParams],
+    queryFn: () => getOrdenesServicio(paginationParams),
   });
 }
 
-export const useFilterOrdenesServicio = (): UseMutationResult<ApiResponse<OrdenServicio[]>, Error, any> => {
+export const useFilterOrdenesServicio = (): UseMutationResult<ApiResponse<PaginatedResponse<OrdenServicio[]>>, Error, any> => {
   return useMutation({
     mutationFn: (filter: any) => getFilteredOrdenesServicio(filter),
     onError: (error) => {
@@ -219,7 +220,7 @@ export const useValidarIdOrdenServicio = (): UseMutationResult<ApiResponse<Orden
 }
 
 // Validar empleados disponibles
-export const useValidarEmpleadosDisponibles = (): UseMutationResult<ApiResponse<Personal[]>, Error, ValidarEmpleadosDisponiblesDto> => {
+export const useValidarEmpleadosDisponibles = (): UseMutationResult<ApiResponse<PaginatedResponse<Personal[]>>, Error, ValidarEmpleadosDisponiblesDto> => {
   return useMutation({
     mutationKey: ["validar-empleados-disponibles"],
     mutationFn: validarEmpleadosDisponibles,

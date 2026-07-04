@@ -4,7 +4,7 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from "@tanstack/react-query";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import type { CreateNovedadDto } from "../../dtos/personal";
 import type { Novedad } from "../../types/personal";
 import {
@@ -13,6 +13,7 @@ import {
 } from "../../functions/personal";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
+import type { PaginationDto } from "../../dtos";
 
 export const useCreatePersonalNovedad = (): UseMutationResult<
   ApiResponse<Novedad>,
@@ -43,9 +44,10 @@ export const useCreatePersonalNovedad = (): UseMutationResult<
 
 export const useGetPersonalNovedad = (
   idPersonal: number,
-): UseQueryResult<ApiResponse<Novedad[]>, Error> => {
+  paginationParams: PaginationDto = { pagination: 'false' }
+): UseQueryResult<ApiResponse<PaginatedResponse<Novedad[]>>, Error> => {
   return useQuery({
-    queryKey: ["personal-novedad"],
-    queryFn: () => getPersonalNovedad(idPersonal, { pagination: false }),
+    queryKey: ["personal-novedad", paginationParams],
+    queryFn: () => getPersonalNovedad(idPersonal, paginationParams),
   });
 };

@@ -1,6 +1,6 @@
 import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
-import type { ApiResponse, Personal } from "../../types";
+import type { ApiResponse, Personal , PaginatedResponse } from "../../types/common";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 
 export const createOrdenServicio = async (data: CreateOrdenServicioDto): Promise<ApiResponse<OrdenServicio>> => {
@@ -11,12 +11,12 @@ export const updateOrdenServicio = async (id: number, data: UpdateOrdenServicioD
   return await apiPatch<OrdenServicio>(`/orden-servicio/${id}`, data);
 }
 
-export const getOrdenesServicio = async (pagination: PaginationDto): Promise<ApiResponse<OrdenServicio[]>> => {
-  return await apiGet<OrdenServicio[]>("/orden-servicio", pagination);
+export const getOrdenesServicio = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<OrdenServicio[]>>> => {
+  return await apiGet<PaginatedResponse<OrdenServicio[]>>("/orden-servicio", pagination);
 }
 
-export const getFilteredOrdenesServicio = async (filter: any): Promise<ApiResponse<OrdenServicio[]>> => {
-  return await apiGet<OrdenServicio[]>("/orden-servicio/filter", filter);
+export const getFilteredOrdenesServicio = async (filter: any): Promise<ApiResponse<PaginatedResponse<OrdenServicio[]>>> => {
+  return await apiGet<PaginatedResponse<OrdenServicio[]>>("/orden-servicio/filter", filter);
 }
 
 export const getOrdenServicioById = async (id: number): Promise<ApiResponse<OrdenServicio>> => {

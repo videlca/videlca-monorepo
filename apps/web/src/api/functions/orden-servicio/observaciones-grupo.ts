@@ -1,5 +1,5 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { CreateObservacionGrupoOrdenServicioDto, UpdateObservacionGrupoOrdenServicioDto } from "../../dtos";
 import type { ObservacionGrupoOrdenServicio } from "../../types/orden-servicio";
 
@@ -7,8 +7,8 @@ export const createObservacionGrupoOrdenServicio = async (data: CreateObservacio
   return await apiPost<ObservacionGrupoOrdenServicio>("/observaciones-grupo-orden-servicio", data);
 }
 
-export const getObservacionesGrupoOrdenServicio = async (idGrupoOrdenServicio: number): Promise<ApiResponse<ObservacionGrupoOrdenServicio[]>> => {
-  return await apiGet<ObservacionGrupoOrdenServicio[]>(`/observaciones-grupo-orden-servicio/obtener-comentarios/${idGrupoOrdenServicio}?pagination`);
+export const getObservacionesGrupoOrdenServicio = async (idGrupoOrdenServicio: number): Promise<ApiResponse<PaginatedResponse<ObservacionGrupoOrdenServicio[]>>> => {
+  return await apiGet<PaginatedResponse<ObservacionGrupoOrdenServicio[]>>(`/observaciones-grupo-orden-servicio/obtener-comentarios/${idGrupoOrdenServicio}?pagination=true`);
 }
 
 export const updateObservacionGrupoOrdenServicio = async (idGrupoOrdenServicio: number, data: UpdateObservacionGrupoOrdenServicioDto): Promise<ApiResponse<ObservacionGrupoOrdenServicio>> => {

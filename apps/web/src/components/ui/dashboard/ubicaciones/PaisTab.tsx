@@ -85,7 +85,7 @@ export const PaisTab = () => {
           />
         </div>
         <Table
-          data={paises?.data || []}
+          data={paises?.data?.data || []}
           columns={columnsPaises}
           enablePagination={true}
           pageSize={5}

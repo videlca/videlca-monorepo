@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { CreateObservacionOrdenServicioDto, UpdateObservacionOrdenServicioDto } from "../../dtos";
 import type { ObservacionOrdenServicio } from "../../types/orden-servicio";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 
 export const useCreateObservacionOrdenServicio = (): UseMutationResult<ApiResponse<ObservacionOrdenServicio>, Error, CreateObservacionOrdenServicioDto> => {
   return useMutation({
@@ -30,7 +30,7 @@ export const useCreateObservacionOrdenServicio = (): UseMutationResult<ApiRespon
   });
 }
 
-export const useGetObservacionesOrdenServicio = (idOrdenServicio: number): UseQueryResult<ApiResponse<ObservacionOrdenServicio[]>, Error> => {
+export const useGetObservacionesOrdenServicio = (idOrdenServicio: number): UseQueryResult<ApiResponse<PaginatedResponse<ObservacionOrdenServicio[]>>, Error> => {
   return useQuery({
     queryKey: ["observaciones-orden-servicio", idOrdenServicio],
     queryFn: () => getObservacionesOrdenServicio(idOrdenServicio),

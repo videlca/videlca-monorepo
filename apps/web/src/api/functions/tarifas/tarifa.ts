@@ -1,7 +1,7 @@
 import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 import type { EnviarCorreoDto, PaginationDto } from "../../dtos/common";
 import type { CreateTarifaDto, SaveTarifaDto, UpdateTarifaDto } from "../../dtos/tarifas";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Tarifa } from "../../types/periodo";
 
 export const createTarifa = async (data: CreateTarifaDto): Promise<ApiResponse> => {
@@ -12,12 +12,12 @@ export const saveTarifas = async (data: SaveTarifaDto): Promise<ApiResponse> => 
   return await apiPost<Tarifa>("/tarifas/guardar-tarifas", data);
 };
 
-export const getTarifasByPeriodo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<Tarifa[]>> => {
-  return await apiGet<Tarifa[]>(`/tarifas/periodo/${idPeriodo}`, pagination);
+export const getTarifasByPeriodo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Tarifa[]>>> => {
+  return await apiGet<PaginatedResponse<Tarifa[]>>(`/tarifas/periodo/${idPeriodo}`, pagination);
 };
 
-export const getTarifasActivo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<Tarifa[]>> => {
-  return await apiGet<Tarifa[]>(`/tarifas/actives/${idPeriodo}`, pagination);
+export const getTarifasActivo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Tarifa[]>>> => {
+  return await apiGet<PaginatedResponse<Tarifa[]>>(`/tarifas/actives/${idPeriodo}`, pagination);
 };
 
 export const getTarifaById = async (id: number): Promise<ApiResponse<Tarifa>> => {
@@ -34,15 +34,15 @@ export const deleteTarifa = async (id: number): Promise<ApiResponse> => {
 
 export const getTarifasPeriodoActivo = async (
   pagination: PaginationDto,
-): Promise<ApiResponse<Tarifa[]>> => {
-  return await apiGet<Tarifa[]>(`/tarifas/periodo-activo`, pagination);
+): Promise<ApiResponse<PaginatedResponse<Tarifa[]>>> => {
+  return await apiGet<PaginatedResponse<Tarifa[]>>(`/tarifas/periodo-activo`, pagination);
 };
 
 export const getTarifasPeriodoActivoByIdTipoServicio = async (
   idTipoServicio: number,
   pagination: PaginationDto,
-): Promise<ApiResponse<Tarifa[]>> => {
-  return await apiGet<Tarifa[]>(`/tarifas/periodo-activo-facturacion/${idTipoServicio}`, pagination);
+): Promise<ApiResponse<PaginatedResponse<Tarifa[]>>> => {
+  return await apiGet<PaginatedResponse<Tarifa[]>>(`/tarifas/periodo-activo-facturacion/${idTipoServicio}`, pagination);
 };
 
 // generacion de archivos

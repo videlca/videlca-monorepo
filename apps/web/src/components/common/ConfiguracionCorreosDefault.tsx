@@ -142,13 +142,13 @@ export function ConfiguracionCorreosDefault({
       correos?.map((correoGroup) =>
         correoGroup.email === email
           ? {
-              ...correoGroup,
-              estados: checked
-                ? [...(correoGroup.estados || []), idEstadoOrdenServicio]
-                : (correoGroup.estados || []).filter(
-                    (id) => id !== idEstadoOrdenServicio,
-                  ),
-            }
+            ...correoGroup,
+            estados: checked
+              ? [...(correoGroup.estados || []), idEstadoOrdenServicio]
+              : (correoGroup.estados || []).filter(
+                (id) => id !== idEstadoOrdenServicio,
+              ),
+          }
           : correoGroup,
       ),
     );
@@ -163,13 +163,13 @@ export function ConfiguracionCorreosDefault({
       correos.map((correoGroup) =>
         correoGroup.email === email
           ? {
-              ...correoGroup,
-              estadosApp: checked
-                ? [...(correoGroup.estadosApp || []), idEstadoApp]
-                : (correoGroup.estadosApp || []).filter(
-                    (id) => id !== idEstadoApp,
-                  ),
-            }
+            ...correoGroup,
+            estadosApp: checked
+              ? [...(correoGroup.estadosApp || []), idEstadoApp]
+              : (correoGroup.estadosApp || []).filter(
+                (id) => id !== idEstadoApp,
+              ),
+          }
           : correoGroup,
       ),
     );
@@ -254,9 +254,8 @@ export function ConfiguracionCorreosDefault({
                       onClick={() => toggleEmailStates(correo.email)}
                     >
                       <ChevronDown
-                        className={`h-4 w-4 transition-transform duration-200 ${
-                          expandedEmails.has(correo.email) ? "rotate-180" : ""
-                        }`}
+                        className={`h-4 w-4 transition-transform duration-200 ${expandedEmails.has(correo.email) ? "rotate-180" : ""
+                          }`}
                       />
                     </button>
                     <button
@@ -282,7 +281,7 @@ export function ConfiguracionCorreosDefault({
                   </label>
 
                   <div className="grid grid-cols-2 gap-2">
-                    {estadosOrdenServicio?.data
+                    {estadosOrdenServicio?.data?.data
                       ?.filter((estado) => estado.estado) // Solo estados activos
                       .map((estado) => (
                         <div
@@ -321,7 +320,7 @@ export function ConfiguracionCorreosDefault({
                   <>
                     <hr className="mt-2 border-b border-gray-200" />
                     <div className="mt-2 grid grid-cols-2 gap-2">
-                      {estadosApp?.data?.map((estado) => (
+                      {estadosApp?.data?.data?.map((estado) => (
                         <div
                           key={estado.nombre}
                           className="flex items-start space-x-2 rounded-md p-2 hover:bg-gray-50"
@@ -361,10 +360,10 @@ export function ConfiguracionCorreosDefault({
             ))}
         {(correos?.length === 0 ||
           correos.flatMap((correoGroup) => correoGroup).length === 0) && (
-          <div className="rounded-md border border-gray-200 bg-gray-50 p-2 py-10 text-center text-sm text-gray-500">
-            No hay correos configurados
-          </div>
-        )}
+            <div className="rounded-md border border-gray-200 bg-gray-50 p-2 py-10 text-center text-sm text-gray-500">
+              No hay correos configurados
+            </div>
+          )}
       </div>
     </div>
   );

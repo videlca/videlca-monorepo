@@ -47,6 +47,16 @@ interface TableProps<TData, TValues> {
   onServerFilterClear?: () => void;
   /** Whether the server filter request is in progress */
   serverFilterLoading?: boolean;
+  /** Server-side pagination: enables manual pagination controlled by the parent */
+  serverPagination?: boolean;
+  /** Server-side pagination: total number of rows in the backend */
+  totalRows?: number;
+  /** Server-side pagination: current page index (0-based) */
+  currentPage?: number;
+  /** Server-side pagination: callback when page changes */
+  onPageChange?: (page: number) => void;
+  /** Server-side pagination: callback when page size changes */
+  onPageSizeChange?: (size: number) => void;
 }
 
 const Table = <TData, TValues>({
@@ -65,6 +75,11 @@ const Table = <TData, TValues>({
   onServerFilter,
   onServerFilterClear,
   serverFilterLoading = false,
+  serverPagination = false,
+  totalRows = 0,
+  currentPage = 0,
+  onPageChange,
+  onPageSizeChange,
 }: TableProps<TData, TValues>) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
@@ -88,12 +103,14 @@ const Table = <TData, TValues>({
     [onServerFilter],
   );
 
+  const serverPageCount = serverPagination ? Math.ceil(totalRows / pageSize) : undefined;
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: serverPagination ? undefined : getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -104,6 +121,7 @@ const Table = <TData, TValues>({
       columnFilters,
       rowSelection,
       columnVisibility,
+      ...(serverPagination ? { pagination: { pageIndex: currentPage, pageSize } } : {}),
     },
     initialState: {
       pagination: {
@@ -111,7 +129,8 @@ const Table = <TData, TValues>({
       },
     },
     enableSorting,
-    manualPagination: !enablePagination,
+    manualPagination: serverPagination || !enablePagination,
+    ...(serverPagination ? { pageCount: serverPageCount } : {}),
     enableColumnFilters: enableFiltering,
     enableMultiRowSelection: false,
   });
@@ -354,22 +373,37 @@ const Table = <TData, TValues>({
           <div className="flex items-center gap-2 text-sm text-gray-700">
             <span>
               Mostrando{" "}
-              {table.getState().pagination.pageIndex *
-                table.getState().pagination.pageSize +
-                1}{" "}
-              to{" "}
-              {Math.min(
-                (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
-                table.getFilteredRowModel().rows.length,
-              )}{" "}
-              de {table.getFilteredRowModel().rows.length} resultados
+              {serverPagination
+                ? currentPage * pageSize + 1
+                : table.getState().pagination.pageIndex *
+                  table.getState().pagination.pageSize +
+                  1}{" "}
+              a{" "}
+              {serverPagination
+                ? Math.min((currentPage + 1) * pageSize, totalRows)
+                : Math.min(
+                    (table.getState().pagination.pageIndex + 1) *
+                    table.getState().pagination.pageSize,
+                    table.getFilteredRowModel().rows.length,
+                  )}{" "}
+              de{" "}
+              {serverPagination
+                ? totalRows
+                : table.getFilteredRowModel().rows.length}{" "}
+              resultados
             </span>
           </div>
           <div className="flex items-center gap-2">
             <select
-              value={table.getState().pagination.pageSize}
-              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              value={serverPagination ? pageSize : table.getState().pagination.pageSize}
+              onChange={(e) => {
+                const newSize = Number(e.target.value);
+                if (serverPagination && onPageSizeChange) {
+                  onPageSizeChange(newSize);
+                } else {
+                  table.setPageSize(newSize);
+                }
+              }}
               className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value={0} disabled>
@@ -382,19 +416,37 @@ const Table = <TData, TValues>({
               ))}
             </select>
             <button
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              onClick={() => {
+                if (serverPagination && onPageChange) {
+                  onPageChange(currentPage - 1);
+                } else {
+                  table.previousPage();
+                }
+              }}
+              disabled={serverPagination ? currentPage <= 0 : !table.getCanPreviousPage()}
               className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Anterior
             </button>
             <span className="text-sm text-gray-700">
-              Página {table.getState().pagination.pageIndex + 1} de{" "}
-              {table.getPageCount()}
+              Página{" "}
+              {serverPagination
+                ? currentPage + 1
+                : table.getState().pagination.pageIndex + 1}{" "}
+              de{" "}
+              {serverPagination
+                ? (serverPageCount || 1)
+                : table.getPageCount()}
             </span>
             <button
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
+              onClick={() => {
+                if (serverPagination && onPageChange) {
+                  onPageChange(currentPage + 1);
+                } else {
+                  table.nextPage();
+                }
+              }}
+              disabled={serverPagination ? currentPage >= (serverPageCount || 1) - 1 : !table.getCanNextPage()}
               className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Siguiente

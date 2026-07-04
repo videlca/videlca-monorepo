@@ -325,7 +325,7 @@ export function SegmentacionTab() {
         />
       </div>
       <Table
-        data={segmentaciones?.data || []}
+        data={segmentaciones?.data?.data || []}
         columns={columnsSegmentacion}
         enablePagination={true}
         pageSize={5}
@@ -623,11 +623,10 @@ export function SegmentacionTab() {
                                       {subSeg.descripcion}
                                     </span>
                                     <span
-                                      className={`rounded-full px-2 py-1 text-xs ${
-                                        subSeg.estado
+                                      className={`rounded-full px-2 py-1 text-xs ${subSeg.estado
                                           ? "bg-green-100 text-green-800"
                                           : "bg-red-100 text-red-800"
-                                      }`}
+                                        }`}
                                     >
                                       {subSeg.estado ? "Activa" : "Inactiva"}
                                     </span>

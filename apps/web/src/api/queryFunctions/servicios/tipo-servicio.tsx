@@ -14,28 +14,28 @@ import {
   updateTipoServicio,
 } from "../../functions/servicios";
 import type { TipoServicio } from "../../types/servicio";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { CreateTipoServicioDto, UpdateTipoServicioDto } from "../../dtos";
 
 export const useTipoServicios = (): UseQueryResult<
-  ApiResponse<TipoServicio[]>,
+  ApiResponse<PaginatedResponse<TipoServicio[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-servicios"],
-    queryFn: () => getTipoServicios({ pagination: false }),
+    queryFn: () => getTipoServicios({ pagination: 'false' }),
   });
 };
 
 export const useTipoServiciosActivo = (): UseQueryResult<
-  ApiResponse<TipoServicio[]>,
+  ApiResponse<PaginatedResponse<TipoServicio[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-servicios-activo"],
-    queryFn: () => getTipoServiciosActivo({ pagination: false }),
+    queryFn: () => getTipoServiciosActivo({ pagination: 'false' }),
   });
 };
 
@@ -45,7 +45,7 @@ export const usePrefijosTipoServicio = (): UseQueryResult<
 > => {
   return useQuery({
     queryKey: ["prefijos-tipo-servicio"],
-    queryFn: () => getPrefijosTipoServicio({ pagination: false }),
+    queryFn: () => getPrefijosTipoServicio({ pagination: 'false' }),
   });
 };
 

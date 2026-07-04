@@ -44,6 +44,7 @@ import { InputSelectStateBoolean } from "../../../common/InputSelectState";
 import { CheckboxForm } from "../../../common/CheckboxForm";
 import { FormsModal } from "../../modals/FormsModal";
 import { FormSection } from "../../../common/FormSection";
+import { useServerPagination } from "../../../../hooks/useServerPagination";
 import { ConfiguracionCorreo } from "../../../common/ConfiguracionCorreo";
 import { useNavigate } from "@tanstack/react-router";
 import { MoreActionsButton } from "../../common/MoreActionsButton";
@@ -64,8 +65,11 @@ export function ClientesTab() {
   const [filteredClientes, setFilteredClientes] = useState<Cliente[] | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FilterClienteDto | undefined>(undefined);
 
+  // Paginación server-side
+  const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
+
   // Mutaciones y queries
-  const { data: clientes } = useClientesActivo();
+  const { data: clientes } = useClientesActivo(paginationParams);
   const { mutate: getClienteById } = useClienteById();
   const { mutate: createCliente, isPending: isCreatingCliente } =
     useCreateCliente();
@@ -285,11 +289,19 @@ export function ClientesTab() {
         />
       </div>
       <Table
-        data={filteredClientes ?? clientes?.data ?? []}
+        data={filteredClientes ?? clientes?.data?.data ?? []}
         columns={columnsClientes}
+        serverPagination={true}
+        totalRows={clientes?.data?.pagination?.total ?? 0}
+        currentPage={page}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
         enableSorting={true}
         enablePagination={true}
-        pageSize={5}
+        pageSize={pageSize}
         enableFiltering={true}
         filterColumns={[
           { label: "Número de identificación", value: ClienteFilterColumn.NUMERO_IDENTIFICACION },
@@ -304,7 +316,7 @@ export function ClientesTab() {
             filter,
             {
               onSuccess: (data) => {
-                setFilteredClientes(data.data ?? []);
+                setFilteredClientes(data.data?.data ?? []);
               },
             },
           );
@@ -357,7 +369,7 @@ export function ClientesTab() {
               placeholder="Tipo de identificación"
               id="idTipoIdentificacion"
               options={
-                tipoIdentificacion?.data?.map((tipo) => ({
+                tipoIdentificacion?.data?.data?.map((tipo) => ({
                   id: tipo.idTipoIdentificacion,
                   descripcion: tipo.descripcion,
                 })) || []
@@ -386,7 +398,7 @@ export function ClientesTab() {
               placeholder="Tipo de cliente"
               id="idTipoCliente"
               options={
-                tipoCliente?.data?.map((tipo) => ({
+                tipoCliente?.data?.data?.map((tipo) => ({
                   id: tipo.idTipoCliente,
                   descripcion: tipo.descripcion,
                 })) || []
@@ -399,7 +411,7 @@ export function ClientesTab() {
               placeholder="Segmentación"
               id="idSegmentacion"
               options={
-                segmentaciones?.data?.map((segmentacion) => ({
+                segmentaciones?.data?.data?.map((segmentacion) => ({
                   id: segmentacion.idSegmentacion,
                   descripcion: segmentacion.descripcion,
                 })) || []
@@ -470,7 +482,7 @@ export function ClientesTab() {
               placeholder="Tipo de identificación"
               id="idTipoIdentificacion"
               options={
-                tipoIdentificacion?.data?.map((tipo) => ({
+                tipoIdentificacion?.data?.data?.map((tipo) => ({
                   id: tipo.idTipoIdentificacion,
                   descripcion: tipo.descripcion,
                 })) || []
@@ -499,7 +511,7 @@ export function ClientesTab() {
               placeholder="Tipo de cliente"
               id="idTipoCliente"
               options={
-                tipoCliente?.data?.map((tipo) => ({
+                tipoCliente?.data?.data?.map((tipo) => ({
                   id: tipo.idTipoCliente,
                   descripcion: tipo.descripcion,
                 })) || []
@@ -512,7 +524,7 @@ export function ClientesTab() {
               placeholder="Segmentación"
               id="idSegmentacion"
               options={
-                segmentaciones?.data?.map((segmentacion) => ({
+                segmentaciones?.data?.data?.map((segmentacion) => ({
                   id: segmentacion.idSegmentacion,
                   descripcion: segmentacion.descripcion,
                 })) || []
@@ -595,7 +607,7 @@ export function ClientesTab() {
                   placeholder="Ciudad"
                   id="idCiudad"
                   options={
-                    ciudades?.data?.map((ciudad) => ({
+                    ciudades?.data?.data?.map((ciudad) => ({
                       id: ciudad.idCiudad,
                       descripcion: ciudad.descripcion,
                     })) || []
@@ -657,7 +669,7 @@ export function ClientesTab() {
                       placeholder="Responsable facturación"
                       id="idClienteFacturacion"
                       options={
-                        clientes?.data?.map((cliente) => ({
+                        clientes?.data?.data?.map((cliente) => ({
                           id: cliente.idCliente,
                           descripcion: cliente.nombre,
                         })) || []

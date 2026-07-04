@@ -1,18 +1,18 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { TipoNovedad } from "../../types/personal";
 import type { PaginationDto } from "../../dtos/common";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 
-export const getTipoNovedad = async (pagination: PaginationDto): Promise<ApiResponse<TipoNovedad[]>> => {
-  return await apiGet<TipoNovedad[]>("/tipo-novedad", pagination);
+export const getTipoNovedad = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoNovedad[]>>> => {
+  return await apiGet<PaginatedResponse<TipoNovedad[]>>("/tipo-novedad", pagination);
 };
 
 export const getTipoNovedadById = async (id: number): Promise<ApiResponse<TipoNovedad>> => {
   return await apiGet<TipoNovedad>(`/tipo-novedad/${id}`);
 };
 
-export const getTipoNovedadActivo = async (pagination: PaginationDto): Promise<ApiResponse<TipoNovedad[]>> => {
-  return await apiGet<TipoNovedad[]>("/tipo-novedad/actives", pagination);
+export const getTipoNovedadActivo = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoNovedad[]>>> => {
+  return await apiGet<PaginatedResponse<TipoNovedad[]>>("/tipo-novedad/actives", pagination);
 }
 
 export const createTipoNovedad = async (data: { descripcion: string }): Promise<ApiResponse> => {

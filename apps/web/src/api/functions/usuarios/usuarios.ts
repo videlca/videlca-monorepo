@@ -2,9 +2,9 @@ import type { Usuario } from "../../../types";
 import { axiosClient } from "../../config";
 import type { CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from "../../dtos";
 import type { PaginationDto } from "../../dtos/common";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 
-export const getUsuarios = async (pagination: PaginationDto): Promise<ApiResponse<Usuario[]>> => {
+export const getUsuarios = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Usuario[]>>> => {
   const response = await axiosClient.get('/users', { params: pagination }).then((res) => {
     return {
       status: res.status,
@@ -19,7 +19,7 @@ export const getUsuarios = async (pagination: PaginationDto): Promise<ApiRespons
   return response
 };
 
-export const getFilteredUsuarios = async (filter: any): Promise<ApiResponse<Usuario[]>> => {
+export const getFilteredUsuarios = async (filter: any): Promise<ApiResponse<PaginatedResponse<Usuario[]>>> => {
   const response = await axiosClient.get('/users/filter', { params: filter }).then((res) => {
     return {
       status: res.status,

@@ -1,10 +1,10 @@
 import type { TipoIdentificacion } from "../../../types";
 import { apiDelete, axiosClient } from "../../config";
 import type { ActualizarTipoIdentificacion, CreateTipoIdentificacion } from "../../types";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { PaginationDto } from "../../dtos/common";
 
-export const getTipoIdentificacion = async (pagination: PaginationDto): Promise<ApiResponse<TipoIdentificacion[]>> => {
+export const getTipoIdentificacion = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoIdentificacion[]>>> => {
   const response = await axiosClient.get("/tipo-id", { params: pagination }).then((res) => {
     return {
       status: res.status,
@@ -19,7 +19,7 @@ export const getTipoIdentificacion = async (pagination: PaginationDto): Promise<
   return response;
 };
 
-export const getTipoIdentificacionActivo = async (pagination: PaginationDto): Promise<ApiResponse<TipoIdentificacion[]>> => {
+export const getTipoIdentificacionActivo = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoIdentificacion[]>>> => {
   const response = await axiosClient.get("/tipo-id/actives", { params: pagination }).then((res) => {
     return {
       status: res.status,

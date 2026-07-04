@@ -13,40 +13,40 @@ import {
   getServiciosByPeriodo,
   updateServicio,
 } from "../../functions/servicios";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Servicio } from "../../types/servicio";
 import type { CreateServicioDto, UpdateServicioDto } from "../../dtos";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
 
 export const useServicios = (): UseQueryResult<
-  ApiResponse<Servicio[]>,
+  ApiResponse<PaginatedResponse<Servicio[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["servicios"],
-    queryFn: () => getServicios({ pagination: false }),
+    queryFn: () => getServicios({ pagination: 'false' }),
   });
 };
 
 export const useServiciosByPeriodo = (
   idPeriodo: number,
-): UseQueryResult<ApiResponse<Servicio[]>, Error> => {
+): UseQueryResult<ApiResponse<PaginatedResponse<Servicio[]>>, Error> => {
   return useQuery({
     queryKey: ["servicios-by-periodo", idPeriodo],
-    queryFn: () => getServiciosByPeriodo(idPeriodo, { pagination: false }),
+    queryFn: () => getServiciosByPeriodo(idPeriodo, { pagination: 'false' }),
     // refetchOnMount: "always",
     // staleTime: 0,
   });
 };
 
 export const useServiciosActivo = (): UseQueryResult<
-  ApiResponse<Servicio[]>,
+  ApiResponse<PaginatedResponse<Servicio[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["servicios-activo"],
-    queryFn: () => getServiciosActivo({ pagination: false }),
+    queryFn: () => getServiciosActivo({ pagination: 'false' }),
   });
 };
 

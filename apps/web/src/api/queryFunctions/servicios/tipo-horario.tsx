@@ -11,19 +11,19 @@ import {
   getTipoHorarios,
   updateTipoHorario,
 } from "../../functions/servicios";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoHorario } from "../../types/servicio";
 import { toast } from "sonner";
 import type { CreateTipoHorarioDto, UpdateTipoHorarioDto } from "../../dtos";
 import { queryClient } from "../../../App";
 
 export const useTipoHorarios = (): UseQueryResult<
-  ApiResponse<TipoHorario[]>,
+  ApiResponse<PaginatedResponse<TipoHorario[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-horarios"],
-    queryFn: () => getTipoHorarios({ pagination: false }),
+    queryFn: () => getTipoHorarios({ pagination: 'false' }),
   });
 };
 

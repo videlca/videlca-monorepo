@@ -151,7 +151,7 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={tipoPersonal?.data || []}
+          data={tipoPersonal?.data?.data || []}
           columns={columns}
           enablePagination={true}
           pageSize={5}

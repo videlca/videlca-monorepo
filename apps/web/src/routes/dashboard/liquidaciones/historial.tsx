@@ -149,7 +149,7 @@ function RouteComponent() {
         </div>
       </div>
 
-      {liquidaciones?.data?.length === 0 && (
+      {liquidaciones?.data?.data?.length === 0 && (
         <div className="py-12 text-center">
           <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
             <FileTextIcon className="h-12 w-12 text-gray-400" />
@@ -160,17 +160,17 @@ function RouteComponent() {
         </div>
       )}
 
-      {liquidaciones?.data?.length && liquidaciones?.data?.length > 0 ? (
+      {liquidaciones?.data?.data?.length && liquidaciones?.data?.data?.length > 0 ? (
         <>
           <div className="mb-4 flex justify-between">
             <div className="mb-2 flex-col items-start justify-between gap-2">
               <h2 className="text-xl font-semibold">
-                Resultados ({liquidaciones?.data?.length} grupos encontrados)
+                Resultados ({liquidaciones?.data?.data?.length} grupos encontrados)
               </h2>
             </div>
           </div>
           <div className="space-y-4">
-            {liquidaciones?.data?.map((group) => (
+            {liquidaciones?.data?.data?.map((group) => (
               <div
                 key={group.idGrupoLiquidacion}
                 className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
@@ -267,7 +267,7 @@ function RouteComponent() {
           groupLiquidacionSelected || ({} as GruposLiquidaciones)
         }
         setSelectedOrderDetail={setGroupLiquidacionSelected}
-        observacionesQueryData={observacionesQueryData?.data || []}
+        observacionesQueryData={observacionesQueryData?.data?.data || []}
       />
 
       <EnvioCorreos

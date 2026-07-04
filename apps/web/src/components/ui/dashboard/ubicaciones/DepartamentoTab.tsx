@@ -124,11 +124,11 @@ export const DepartamentoTab = () => {
 
   const paisOptions = useMemo(
     () =>
-      paises?.data?.map((pais) => ({
+      paises?.data?.data.map((pais) => ({
         id: pais.idPais,
         descripcion: pais.descripcion,
       })) || [],
-    [paises?.data],
+    [paises?.data?.data],
   );
 
   return (
@@ -142,7 +142,7 @@ export const DepartamentoTab = () => {
           />
         </div>
         <Table
-          data={departamentos?.data || []}
+          data={departamentos?.data?.data || []}
           columns={columnsDepartamentos}
           enablePagination={true}
           pageSize={5}

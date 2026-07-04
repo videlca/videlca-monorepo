@@ -11,29 +11,29 @@ import {
   getTipoContratoActivo,
   updateTipoContrato,
 } from "../../functions/configuracion/tipo-contrato";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoContrato } from "../../types";
 import type { ActualizarTipoContrato, CreateTipoContrato } from "../../dtos";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
 export const useTipoContrato = (): UseQueryResult<
-  ApiResponse<TipoContrato[]>,
+  ApiResponse<PaginatedResponse<TipoContrato[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-contrato"],
-    queryFn: () => getTipoContrato({ pagination: false }),
+    queryFn: () => getTipoContrato({ pagination: 'false' }),
   });
 };
 
 export const useTipoContratoActivo = (): UseQueryResult<
-  ApiResponse<TipoContrato[]>,
+  ApiResponse<PaginatedResponse<TipoContrato[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-contrato-activo"],
-    queryFn: () => getTipoContratoActivo({ pagination: false }),
+    queryFn: () => getTipoContratoActivo({ pagination: 'false' }),
   });
 };
 

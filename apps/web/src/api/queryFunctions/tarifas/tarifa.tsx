@@ -22,7 +22,7 @@ import type {
   SaveTarifaDto,
   UpdateTarifaDto,
 } from "../../dtos/tarifas";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Tarifa } from "../../types/periodo";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
@@ -30,19 +30,19 @@ import type { EnviarCorreoDto } from "../../dtos/common";
 
 export const useTarifas = (
   idPeriodo: number,
-): UseQueryResult<ApiResponse<Tarifa[]>, Error> => {
+): UseQueryResult<ApiResponse<PaginatedResponse<Tarifa[]>>, Error> => {
   return useQuery({
     queryKey: ["tarifas"],
-    queryFn: () => getTarifasByPeriodo(idPeriodo, { pagination: false }),
+    queryFn: () => getTarifasByPeriodo(idPeriodo, { pagination: 'false' }),
   });
 };
 
 export const useTarifasActivo = (
   idPeriodo: number,
-): UseQueryResult<ApiResponse<Tarifa[]>, Error> => {
+): UseQueryResult<ApiResponse<PaginatedResponse<Tarifa[]>>, Error> => {
   return useQuery({
     queryKey: ["tarifas-activo", idPeriodo],
-    queryFn: () => getTarifasActivo(idPeriodo, { pagination: false }),
+    queryFn: () => getTarifasActivo(idPeriodo, { pagination: 'false' }),
   });
 };
 
@@ -104,17 +104,17 @@ export const useGuardarTarifas = (): UseMutationResult<
 };
 
 export const useTarifasPeriodoActivo = (): UseQueryResult<
-  ApiResponse<Tarifa[]>,
+  ApiResponse<PaginatedResponse<Tarifa[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tarifas-periodo-activo"],
-    queryFn: () => getTarifasPeriodoActivo({ pagination: false }),
+    queryFn: () => getTarifasPeriodoActivo({ pagination: 'false' }),
   });
 };
 
 export const useTarifasPeriodoActivoByIdTipoServicio = (): UseMutationResult<
-  ApiResponse<Tarifa[]>,
+  ApiResponse<PaginatedResponse<Tarifa[]>>,
   Error,
   number
 > => {
@@ -122,7 +122,7 @@ export const useTarifasPeriodoActivoByIdTipoServicio = (): UseMutationResult<
     mutationKey: ["tarifas-periodo-activo-id-tipo-servicio"],
     mutationFn: (idTipoServicio: number) =>
       getTarifasPeriodoActivoByIdTipoServicio(idTipoServicio, {
-        pagination: false,
+        pagination: 'false',
       }),
   });
 };

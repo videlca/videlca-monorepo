@@ -631,7 +631,7 @@ function RouteComponent() {
                 <InputSelect
                   label="Tipo de tarifa"
                   options={
-                    tiposTarifa?.data?.map((tipo) => ({
+                    tiposTarifa?.data?.data.map((tipo) => ({
                       id: tipo.idTipoTarifa,
                       descripcion: tipo.nombre,
                     })) || []

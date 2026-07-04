@@ -139,7 +139,7 @@ function RouteComponent() {
         </div>
       </div>
 
-      {(liquidaciones?.data?.length === 0 || isErrorLiquidaciones) && (
+      {(liquidaciones?.data?.data?.length === 0 || isErrorLiquidaciones) && (
         <div className="py-12 text-center">
           <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
             {isErrorLiquidaciones ? (
@@ -156,12 +156,12 @@ function RouteComponent() {
         </div>
       )}
 
-      {liquidaciones?.data?.length && liquidaciones?.data?.length > 0 ? (
+      {liquidaciones?.data?.data?.length && liquidaciones?.data?.data?.length > 0 ? (
         <div className="space-y-4 rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
           <div className="mb-8 flex justify-between">
             <div className="mb-2 flex-col items-start justify-between gap-2">
               <h2 className="text-xl font-semibold">
-                Resultados ({liquidaciones?.data?.length} órdenes encontradas)
+                Resultados ({liquidaciones?.data?.data?.length} órdenes encontradas)
               </h2>
               <p className="text-sm text-gray-500">
                 {selectedOrders?.length > 0
@@ -173,13 +173,13 @@ function RouteComponent() {
               <ButtonAction
                 onClick={() => {
                   setSelectedOrders(
-                    liquidaciones?.data?.map(
+                    liquidaciones?.data?.data?.map(
                       (order) => order.idOrdenServicio || 0,
                     ) || [],
                   );
                 }}
                 disabled={
-                  selectedOrders?.length === liquidaciones?.data?.length
+                  selectedOrders?.length === liquidaciones?.data?.data?.length
                 }
                 Icon={CheckIcon}
                 label="Seleccionar Todos"
@@ -199,7 +199,7 @@ function RouteComponent() {
           </div>
 
           <div className="mb-6 grid grid-cols-1 gap-2">
-            {liquidaciones?.data?.map((order, index) => (
+            {liquidaciones?.data?.data?.map((order, index) => (
               <div
                 key={index}
                 onClick={() => {
@@ -216,11 +216,10 @@ function RouteComponent() {
                     ]);
                   }
                 }}
-                className={`cursor-pointer rounded-lg border px-4 py-2 transition-all hover:shadow-md ${
-                  selectedOrders.includes(order.idOrdenServicio || 0)
+                className={`cursor-pointer rounded-lg border px-4 py-2 transition-all hover:shadow-md ${selectedOrders.includes(order.idOrdenServicio || 0)
                     ? "border-blue-400 bg-blue-100/40 shadow-sm"
                     : "border-gray-300 bg-white hover:border-gray-500"
-                }`}
+                  }`}
               >
                 <div className="mb-3 flex items-start justify-between">
                   <h3 className="font-semibold text-gray-900">

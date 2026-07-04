@@ -1,10 +1,10 @@
 import type { TipoCliente } from "../../../types";
 import { apiDelete, axiosClient } from "../../config";
 import type { ActualizarTipoCliente, CreateTipoCliente } from "../../types";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { PaginationDto } from "../../dtos/common";
 
-export const getTipoCliente = async (pagination: PaginationDto): Promise<ApiResponse<TipoCliente[]>> => {
+export const getTipoCliente = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoCliente[]>>> => {
   const response = await axiosClient.get("/tipo-cliente", { params: pagination }).then((res) => {
     return {
       status: res.status,

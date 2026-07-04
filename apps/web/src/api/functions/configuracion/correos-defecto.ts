@@ -1,10 +1,10 @@
 import { apiGet, apiPost } from "../../config";
 import type { CorreoDefaultDto, CreateCorreoDefaultDto, PaginationDto } from "../../dtos";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 
-export const getCorreosDefault = async (pagination: PaginationDto): Promise<ApiResponse<CreateCorreoDefaultDto[]>> => {
-  const route = pagination.pagination ? `/correo-default?pagination=true` : "/correo-default?pagination";
-  return await apiGet<CreateCorreoDefaultDto[]>(route);
+export const getCorreosDefault = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<CreateCorreoDefaultDto[]>>> => {
+  const route = pagination.pagination ? `/correo-default?pagination=true` : "/correo-default?pagination=false";
+  return await apiGet<PaginatedResponse<CreateCorreoDefaultDto[]>>(route);
 };
 
 export const createCorreoDefault = async (correos: CorreoDefaultDto): Promise<ApiResponse<CreateCorreoDefaultDto>> => {

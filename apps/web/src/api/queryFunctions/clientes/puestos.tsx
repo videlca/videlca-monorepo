@@ -14,7 +14,7 @@ import {
   searchPuestos,
   updatePuesto,
 } from "../../functions/clientes/puestos";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Puesto } from "../../../types";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
@@ -24,19 +24,19 @@ import type {
   UpdatePuestoDto,
 } from "../../dtos";
 
-export const usePuestos = (): UseQueryResult<ApiResponse<Puesto[]>, Error> => {
+export const usePuestos = (): UseQueryResult<ApiResponse<PaginatedResponse<Puesto[]>>, Error> => {
   return useQuery({
     queryKey: ["puestos"],
-    queryFn: () => getPuestos({ pagination: false }),
+    queryFn: () => getPuestos({ pagination: 'false' }),
   });
 };
 
 export const usePuestosByCliente = (
   idCliente: number,
-): UseQueryResult<ApiResponse<Puesto[]>, Error> => {
+): UseQueryResult<ApiResponse<PaginatedResponse<Puesto[]>>, Error> => {
   return useQuery({
     queryKey: ["puestos-by-cliente"],
-    queryFn: () => getPuestosByCliente(idCliente, { pagination: false }),
+    queryFn: () => getPuestosByCliente(idCliente, { pagination: 'false' }),
   });
 };
 export const usePuestoById = (): UseMutationResult<
@@ -63,18 +63,18 @@ export const usePuestoById = (): UseMutationResult<
 };
 
 export const usePuestosActivo = (): UseQueryResult<
-  ApiResponse<Puesto[]>,
+  ApiResponse<PaginatedResponse<Puesto[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["puestos-activo"],
-    queryFn: () => getPuestosActivo({ pagination: false }),
+    queryFn: () => getPuestosActivo({ pagination: 'false' }),
   });
 };
 
 export const useSearchPuestos = (
   query: SearchPuestosDto,
-): UseQueryResult<ApiResponse<Puesto[]>, Error> => {
+): UseQueryResult<ApiResponse<PaginatedResponse<Puesto[]>>, Error> => {
   return useQuery({
     queryKey: ["puestos-search", query.column, query.text],
     queryFn: () => searchPuestos(query),

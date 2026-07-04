@@ -62,6 +62,7 @@ import { useGetNextIdOrdenServicio } from "../../../api/queryFunctions/orden-ser
 import { printBase64PDF } from "../../../utils/printBase64File";
 import { queryClient } from "../../../App";
 import type { ServerFilterColumn } from "../../../components/common/Table";
+import { useServerPagination } from "../../../hooks/useServerPagination";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/")({
   component: RouteComponent,
@@ -104,9 +105,14 @@ function RouteComponent() {
 
   const { mutate: filterOrdenesServicio, isPending: isFilteringOrdenesServicio } = useFilterOrdenesServicio();
   const [filteredOrdenesServicio, setFilteredOrdenesServicio] = useState<OrdenServicio[] | null>(null);
+  const [ordenServicioEditData, setOrdenServicioEditData] =
+    useState<OrdenServicio | null>(null);
+
+  // Paginación server-side
+  const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
 
   // Queries y mutaciones
-  const { data: ordenesDeServicioQuery } = useGetOrdenesServicio();
+  const { data: ordenesDeServicioQuery } = useGetOrdenesServicio(paginationParams);
   const { data: tipoServiciosQuery } = useTipoServiciosActivo();
   const { data: nextIdOrdenServicioQuery } = useGetNextIdOrdenServicio();
 
@@ -873,9 +879,9 @@ function RouteComponent() {
           <SeleccionarServicio
             selectedServices={selectedServices}
             tarifasPeriodoActivoByIdTipoServicioData={
-              tarifasPeriodoActivoByIdTipoServicioData?.data || []
+              tarifasPeriodoActivoByIdTipoServicioData?.data?.data || []
             }
-            tipoServiciosQuery={tipoServiciosQuery?.data || []}
+            tipoServiciosQuery={tipoServiciosQuery?.data?.data || []}
             handleSelectedServices={handleSelectedServices}
             setConfiguracionServicioTarifa={setConfiguracionServicioTarifa}
           />
@@ -910,7 +916,7 @@ function RouteComponent() {
       case 6: { // antes paso 7
         const tarifasDetalleCreate = configuracionServicioTarifa
           .map((config) =>
-            (tarifasPeriodoActivoByIdTipoServicioData?.data || []).find(
+            (tarifasPeriodoActivoByIdTipoServicioData?.data?.data ?? []).find(
               (t) => t.idTarifa === config.idTarifa,
             ),
           )
@@ -1010,8 +1016,16 @@ function RouteComponent() {
         </div>
         <Table
           columns={columns}
-          data={filteredOrdenesServicio ?? ordenesDeServicioQuery?.data ?? []}
-          pageSize={5}
+          data={filteredOrdenesServicio ?? ordenesDeServicioQuery?.data?.data ?? []}
+          serverPagination={true}
+          totalRows={ordenesDeServicioQuery?.data?.pagination?.total ?? 0}
+          currentPage={page}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
+          pageSize={pageSize}
           enableFiltering={true}
           enablePagination={true}
           filterColumns={[
@@ -1025,7 +1039,7 @@ function RouteComponent() {
               { column: column as OrdenServicioFilterColumn, query, pagination: false },
               {
                 onSuccess: (data) => {
-                  setFilteredOrdenesServicio(data.data ?? []);
+                  setFilteredOrdenesServicio(data.data?.data ?? []);
                 },
               },
             );
@@ -1252,7 +1266,7 @@ function RouteComponent() {
         }}
         selectedOrderDetail={selectedOrderDetail || ({} as OrdenServicio)}
         setSelectedOrderDetail={setSelectedOrderDetail}
-        observacionesQueryData={observacionesQueryData?.data || []}
+        observacionesQueryData={observacionesQueryData?.data?.data || []}
       />
 
       <ConfirmarDelete

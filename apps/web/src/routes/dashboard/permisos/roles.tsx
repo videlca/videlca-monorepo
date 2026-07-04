@@ -149,7 +149,7 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={roles?.data || []}
+          data={roles?.data?.data ?? []}
           columns={columns}
           enablePagination={false}
           pageSize={5}
@@ -191,9 +191,9 @@ function RouteComponent() {
                   (Se pueden seleccionar múltiples módulos)
                 </span>
               </p>
-              {modulos?.data && (
+              {modulos?.data?.data && (
                 <div className="grid grid-cols-2 gap-2">
-                  {modulos.data.map((modulo) => {
+                  {modulos.data.data.map((modulo) => {
                     const isSelected = selectedPermissions.includes(modulo.id);
 
                     const toggleSelection = () => {
@@ -209,11 +209,10 @@ function RouteComponent() {
                     return (
                       <label
                         key={modulo.id}
-                        className={`relative max-h-20 min-h-14 cursor-pointer gap-2 rounded-md border p-4 transition-all duration-200 ${
-                          isSelected
+                        className={`relative max-h-20 min-h-14 cursor-pointer gap-2 rounded-md border p-4 transition-all duration-200 ${isSelected
                             ? "border-blue-400 bg-blue-50"
                             : "border-gray-200"
-                        }`}
+                          }`}
                         htmlFor={modulo.id.toString()}
                         tabIndex={0}
                         role="checkbox"

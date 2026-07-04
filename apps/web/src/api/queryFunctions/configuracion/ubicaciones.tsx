@@ -18,7 +18,7 @@ import {
   updateDepartamento,
   updatePais,
 } from "../../functions/configuracion/";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Ciudad, Departamento, Pais } from "../../../types";
 import { queryClient } from "../../../App";
 import type {
@@ -32,10 +32,10 @@ import type {
 import { toast } from "sonner";
 
 // Paises
-export const usePais = (): UseQueryResult<ApiResponse<Pais[]>, Error> => {
+export const usePais = (): UseQueryResult<ApiResponse<PaginatedResponse<Pais[]>>, Error> => {
   return useQuery({
     queryKey: ["pais"],
-    queryFn: () => getPais({ pagination: false }),
+    queryFn: () => getPais({ pagination: 'false' }),
   });
 };
 
@@ -89,12 +89,12 @@ export const useActualizarPais = (): UseMutationResult<
 // Departamentos
 
 export const useDepartamento = (): UseQueryResult<
-  ApiResponse<Departamento[]>,
+  ApiResponse<PaginatedResponse<Departamento[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["departamento"],
-    queryFn: () => getDepartamento({ pagination: false }),
+    queryFn: () => getDepartamento({ pagination: 'false' }),
   });
 };
 
@@ -168,15 +168,15 @@ export const useEliminarDepartamento = (): UseMutationResult<
   });
 };
 // Ciudades
-export const useCiudad = (): UseQueryResult<ApiResponse<Ciudad[]>, Error> => {
+export const useCiudad = (): UseQueryResult<ApiResponse<PaginatedResponse<Ciudad[]>>, Error> => {
   return useQuery({
     queryKey: ["ciudad"],
-    queryFn: () => getCiudad({ pagination: false }),
+    queryFn: () => getCiudad({ pagination: 'false' }),
   });
 };
 
 export const useCiudadActiva = (): UseQueryResult<
-  ApiResponse<Ciudad[]>,
+  ApiResponse<PaginatedResponse<Ciudad[]>>,
   Error
 > => {
   return useQuery({

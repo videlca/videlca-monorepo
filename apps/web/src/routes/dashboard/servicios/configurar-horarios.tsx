@@ -99,12 +99,12 @@ function RouteComponent() {
       idTipoHorarioDescripcion: Number(data.idTipoHorarioDescripcion),
       horaInicio:
         data.horaInicio.includes(":") &&
-        data.horaInicio.split(":").length === 2
+          data.horaInicio.split(":").length === 2
           ? `${data.horaInicio}:00`
           : data.horaInicio,
       horaFin:
         data.horaFin.includes(":") &&
-        data.horaFin.split(":").length === 2
+          data.horaFin.split(":").length === 2
           ? `${data.horaFin}:00`
           : data.horaFin,
       fechaVigenciaInicio: new Date(
@@ -113,8 +113,8 @@ function RouteComponent() {
       fechaVigenciaFin: isIndefinido
         ? null
         : new Date(
-            data.fechaVigenciaFin || "",
-          ).toISOString(),
+          data.fechaVigenciaFin || "",
+        ).toISOString(),
     };
 
     crearTipoHorario(formattedData, {
@@ -149,8 +149,8 @@ function RouteComponent() {
       fechaVigenciaFin: isIndefinido
         ? null
         : new Date(
-            data.fechaVigenciaFin || "",
-          ).toISOString(),
+          data.fechaVigenciaFin || "",
+        ).toISOString(),
     };
 
     editarTipoHorario(
@@ -244,7 +244,7 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={tipoHorarios?.data || []}
+          data={tipoHorarios?.data?.data || []}
           columns={columns}
           pageSize={5}
           enableSorting={true}
@@ -274,7 +274,7 @@ function RouteComponent() {
               placeholder="Selecciona un tipo de horario"
               id="idTipoHorarioDescripcion"
               options={
-                tipoHorarioDescripcionDiurnoNocturno?.data?.map((tipo) => ({
+                tipoHorarioDescripcionDiurnoNocturno?.data?.data.map((tipo) => ({
                   id: tipo.idTipoHorarioDescripcion,
                   descripcion: tipo.nombre,
                 })) || []
@@ -351,7 +351,7 @@ function RouteComponent() {
               placeholder="Selecciona un tipo de horario"
               id="idTipoHorarioDescripcion"
               options={
-                tipoHorarioDescripcionDiurnoNocturno?.data?.map((tipo) => ({
+                tipoHorarioDescripcionDiurnoNocturno?.data?.data.map((tipo) => ({
                   id: tipo.idTipoHorarioDescripcion,
                   descripcion: tipo.nombre,
                 })) || []

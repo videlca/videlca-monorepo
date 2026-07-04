@@ -242,7 +242,7 @@ export function PuestosTab() {
         />
       </div> */}
       <Table
-        data={puestos?.data || []}
+        data={puestos?.data?.data || []}
         columns={columnsPuestos}
         enablePagination={true}
         pageSize={5}
@@ -303,7 +303,7 @@ export function PuestosTab() {
                   placeholder="Cliente"
                   id="idCliente"
                   options={
-                    clientes?.data?.map((cliente) => ({
+                    clientes?.data?.data.map((cliente) => ({
                       id: cliente.idCliente,
                       descripcion: cliente.nombre,
                     })) || []
@@ -331,7 +331,7 @@ export function PuestosTab() {
                       placeholder="Responsable facturación"
                       id="idClienteFacturacion"
                       options={
-                        clientes?.data?.map((cliente) => ({
+                        clientes?.data?.data.map((cliente) => ({
                           id: cliente.idCliente,
                           descripcion: cliente.nombre,
                         })) || []
@@ -346,7 +346,7 @@ export function PuestosTab() {
                   placeholder="Ciudad"
                   id="idCiudad"
                   options={
-                    ciudades?.data?.map((ciudad) => ({
+                    ciudades?.data?.data.map((ciudad) => ({
                       id: ciudad.idCiudad,
                       descripcion: ciudad.descripcion,
                     })) || []
@@ -549,7 +549,7 @@ export function PuestosTab() {
                       </label>
 
                       <div className="grid grid-cols-2 gap-2">
-                        {estadosOrdenServicio?.data
+                        {estadosOrdenServicio?.data?.data
                           ?.filter((estado) => estado.estado) // Solo estados activos
                           .map((estado, index) => (
                             <div

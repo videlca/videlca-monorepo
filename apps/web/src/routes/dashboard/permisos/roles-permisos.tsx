@@ -48,7 +48,7 @@ function RouteComponent() {
   };
 
   const grantAllModules = () => {
-    setGrantedModules(modulosData?.data?.map((m) => m.id.toString()) || []);
+    setGrantedModules(modulosData?.data?.data?.map((m) => m.id.toString()) || []);
   };
 
   const revokeAllModules = () => {
@@ -89,7 +89,7 @@ function RouteComponent() {
               Roles del Sistema
             </h3>
             <div className="space-y-2">
-              {rolesData?.data?.map((role) => {
+              {rolesData?.data?.data?.map((role) => {
                 const roleModuleCount =
                   selectedRole?.id === role.id
                     ? grantedModules.length
@@ -106,15 +106,14 @@ function RouteComponent() {
                         permissions: role.permissions,
                       })
                     }
-                    className={`w-full rounded-lg border p-3 text-left transition-colors ${
-                      selectedRole?.id === role.id
-                        ? "border-blue-200 bg-blue-50 text-blue-900"
-                        : "border-gray-200 bg-gray-50 hover:bg-gray-100"
-                    }`}
+                    className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedRole?.id === role.id
+                      ? "border-blue-200 bg-blue-50 text-blue-900"
+                      : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+                      }`}
                   >
                     <div className="font-medium">{role.nombreRol}</div>
                     <div className="mt-2 text-xs text-gray-500">
-                      {roleModuleCount} de {modulosData?.data?.length} módulos
+                      {roleModuleCount} de {modulosData?.data?.data?.length} módulos
                     </div>
                   </button>
                 );
@@ -133,17 +132,16 @@ function RouteComponent() {
                       Acceso a Módulos: {selectedRole?.nombreRol}
                     </h2>
                     <p className="mt-2 text-sm text-gray-500">
-                      {grantedModules.length} de {modulosData?.data?.length}{" "}
+                      {grantedModules.length} de {modulosData?.data?.data?.length}{" "}
                       módulos
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span
-                      className={`rounded-full px-3 py-1 text-sm font-medium ${
-                        hasChanges
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-green-100 text-green-800"
-                      }`}
+                      className={`rounded-full px-3 py-1 text-sm font-medium ${hasChanges
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-green-100 text-green-800"
+                        }`}
                     >
                       {hasChanges ? "Cambios pendientes" : "Guardado"}
                     </span>
@@ -178,7 +176,7 @@ function RouteComponent() {
 
               <div className="p-6">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {modulosData?.data?.map((module) => {
+                  {modulosData?.data?.data?.map((module) => {
                     const hasAccess = grantedModules.includes(
                       module.id.toString(),
                     );
@@ -186,19 +184,17 @@ function RouteComponent() {
                     return (
                       <div
                         key={module.id}
-                        className={`cursor-pointer rounded-lg border-2 p-6 transition-all duration-200 hover:shadow-md ${
-                          hasAccess
-                            ? "border-green-300 bg-green-50 shadow-sm"
-                            : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
-                        }`}
+                        className={`cursor-pointer rounded-lg border-2 p-6 transition-all duration-200 hover:shadow-md ${hasAccess
+                          ? "border-green-300 bg-green-50 shadow-sm"
+                          : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
+                          }`}
                         onClick={() => toggleModuleAccess(module.id.toString())}
                       >
                         <div
-                          className={`mb-2 flex h-6 w-6 items-center justify-center rounded-full border-2 ${
-                            hasAccess
-                              ? "border-green-500 bg-green-500"
-                              : "border-gray-300"
-                          }`}
+                          className={`mb-2 flex h-6 w-6 items-center justify-center rounded-full border-2 ${hasAccess
+                            ? "border-green-500 bg-green-500"
+                            : "border-gray-300"
+                            }`}
                         >
                           {hasAccess && (
                             <Check className="h-4 w-4 text-white" />

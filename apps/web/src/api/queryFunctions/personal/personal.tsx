@@ -13,24 +13,26 @@ import {
   updatePersonal,
   getFilteredPersonal,
 } from "../../functions/personal";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Personal } from "../../types/personal";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
 import type { CreatePersonalDto, UpdatePersonalDto } from "../../dtos/personal";
 
-export const usePersonal = (): UseQueryResult<
-  ApiResponse<Personal[]>,
+import type { PaginationDto } from "../../dtos/common";
+
+export const usePersonal = (paginationParams: PaginationDto = { pagination: 'false' }): UseQueryResult<
+  ApiResponse<PaginatedResponse<Personal[]>>,
   Error
 > => {
-  return useQuery<ApiResponse<Personal[]>, Error>({
-    queryKey: ["personal"],
-    queryFn: () => getPersonal({ pagination: false }),
+  return useQuery<ApiResponse<PaginatedResponse<Personal[]>>, Error>({
+    queryKey: ["personal", paginationParams],
+    queryFn: () => getPersonal(paginationParams),
   });
 };
 
 export const useFilterPersonal = (): UseMutationResult<
-  ApiResponse<Personal[]>,
+  ApiResponse<PaginatedResponse<Personal[]>>,
   Error,
   any
 > => {
@@ -54,12 +56,12 @@ export const usePersonalById = (): UseMutationResult<
 };
 
 export const usePersonalActivo = (): UseQueryResult<
-  ApiResponse<Personal[]>,
+  ApiResponse<PaginatedResponse<Personal[]>>,
   Error
 > => {
-  return useQuery<ApiResponse<Personal[]>, Error>({
+  return useQuery<ApiResponse<PaginatedResponse<Personal[]>>, Error>({
     queryKey: ["personal-activo"],
-    queryFn: () => getPersonalActivo({ pagination: false }),
+    queryFn: () => getPersonalActivo({ pagination: 'false' }),
   });
 };
 

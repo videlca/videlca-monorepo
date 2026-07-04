@@ -13,6 +13,7 @@ import { InputForm } from "../../../common/InputForm";
 import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 import type { ColumnDef } from "@tanstack/react-table";
 import { usePrefijosTipoServicio } from "../../../../api/queryFunctions/servicios";
+import { useServerPagination } from "../../../../hooks/useServerPagination";
 
 
 export function IdentificadoresAnulados() {
@@ -48,6 +49,9 @@ export function IdentificadoresAnulados() {
             motivo: "",
         },
     });
+
+    // Paginación server-side
+    const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
 
     // Queries y mutaciones
     const { data: prefijosQuery } = usePrefijosTipoServicio();
@@ -109,11 +113,11 @@ export function IdentificadoresAnulados() {
                             onClick: () => {
                                 setIsOpenEdit(true);
                                 setIdOrdenServicioId(row.original.id);
-                                const prefijo = row.original.descripcionId.includes("-") 
-                                    ? row.original.descripcionId.split("-")[0] 
+                                const prefijo = row.original.descripcionId.includes("-")
+                                    ? row.original.descripcionId.split("-")[0]
                                     : row.original.descripcionId;
-                                const consecutivo = row.original.consecutivo 
-                                    ? row.original.consecutivo.toString() 
+                                const consecutivo = row.original.consecutivo
+                                    ? row.original.consecutivo.toString()
                                     : (row.original.descripcionId.split("-")[1] || "");
                                 setValueEdit("descripcionId", prefijo);
                                 setValueEdit("consecutivo", consecutivo);
@@ -148,8 +152,16 @@ export function IdentificadoresAnulados() {
                 </div>
                 <Table
                     columns={columns}
-                    data={idsOrdenServicio?.data || []}
-                    pageSize={5}
+                    data={idsOrdenServicio?.data?.data || []}
+                    serverPagination={true}
+                    totalRows={idsOrdenServicio?.data?.pagination?.total ?? 0}
+                    currentPage={page}
+                    onPageChange={setPage}
+                    onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setPage(0);
+                    }}
+                    pageSize={pageSize}
                     enableFiltering={false}
                     enablePagination={true}
                 />
@@ -197,7 +209,7 @@ export function IdentificadoresAnulados() {
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">Seleccione un prefijo</option>
-                                    {prefijosQuery?.data?.map((prefijo) => (
+                                    {prefijosQuery?.data?.data?.map((prefijo) => (
                                         <option key={prefijo.prefijo} value={prefijo.prefijo}>
                                             {prefijo.prefijo}
                                         </option>
@@ -261,7 +273,7 @@ export function IdentificadoresAnulados() {
                                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">Seleccione un prefijo</option>
-                                    {prefijosQuery?.data?.map((prefijo) => (
+                                    {prefijosQuery?.data?.data?.map((prefijo) => (
                                         <option key={prefijo.prefijo} value={prefijo.prefijo}>
                                             {prefijo.prefijo}
                                         </option>

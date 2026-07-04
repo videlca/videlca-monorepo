@@ -12,24 +12,24 @@ import {
   getPeriodosActivo,
   updatePeriodo,
 } from "../../functions/tarifas/periodo";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Periodo } from "../../types/periodo";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../dtos";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
 export const usePeriodos = (): UseQueryResult<
-  ApiResponse<Periodo[]>,
+  ApiResponse<PaginatedResponse<Periodo[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["periodos"],
-    queryFn: () => getPeriodos({ pagination: false }),
+    queryFn: () => getPeriodos({ pagination: 'false' }),
   });
 };
 
 export const usePeriodosActivo = (): UseQueryResult<
-  ApiResponse<Periodo[]>,
+  ApiResponse<PaginatedResponse<Periodo[]>>,
   Error
 > => {
   return useQuery({

@@ -122,7 +122,7 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={tipoContrato?.data || []}
+          data={tipoContrato?.data?.data || []}
           columns={columns}
           enablePagination={true}
           pageSize={5}

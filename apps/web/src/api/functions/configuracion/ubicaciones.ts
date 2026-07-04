@@ -1,12 +1,12 @@
 import { apiDelete, axiosClient } from "../../config";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Ciudad, Departamento, Pais } from "../../../types";
 import type { CreateCiudadDto, CreateDepartamentoDto, CreatePaisDto, UpdateCiudadDto, UpdateDepartamentoDto, UpdatePaisDto } from "../../dtos/configuracion";
 import type { PaginationDto } from "../../dtos/common";
 
 
 // Paises
-export const getPais = async (pagination: PaginationDto): Promise<ApiResponse<Pais[]>> => {
+export const getPais = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Pais[]>>> => {
   const response = await axiosClient.get("/ubicacion/pais", { params: pagination }).then((res) => {
     return {
       status: res.status,
@@ -52,7 +52,7 @@ export const updatePais = async (id: number, data: UpdatePaisDto): Promise<ApiRe
 };
 
 // Departamentos
-export const getDepartamento = async (pagination: PaginationDto): Promise<ApiResponse<Departamento[]>> => {
+export const getDepartamento = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Departamento[]>>> => {
   const response = await axiosClient.get("/ubicacion/departamento", { params: pagination }).then((res) => {
     return {
       status: res.status,
@@ -102,7 +102,7 @@ export const deleteDepartamento = async (id: number): Promise<ApiResponse> => {
 };
 
 // Ciudades
-export const getCiudad = async (pagination: PaginationDto): Promise<ApiResponse<Ciudad[]>> => {
+export const getCiudad = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Ciudad[]>>> => {
   const response = await axiosClient.get("/ubicacion/ciudad", { params: pagination }).then((res) => {
     return {
       status: res.status,
@@ -117,8 +117,8 @@ export const getCiudad = async (pagination: PaginationDto): Promise<ApiResponse<
   return response;
 };
 
-export const getCiudadActiva = async (): Promise<ApiResponse<Ciudad[]>> => {
-  const response = await axiosClient.get("/ubicacion/ciudad/activas", { params: { pagination: false } }).then((res) => {
+export const getCiudadActiva = async (): Promise<ApiResponse<PaginatedResponse<Ciudad[]>>> => {
+  const response = await axiosClient.get("/ubicacion/ciudad/activas", { params: { pagination: 'false' } }).then((res) => {
     return {
       status: res.status,
       data: res.data,

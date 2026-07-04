@@ -1,17 +1,17 @@
 import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
 import type { OrdenServicio } from "../../types/orden-servicio";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { GruposLiquidaciones } from "../../types/liquidaciones";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 import type { EnviarCorreoDto } from "../../dtos";
 
-export const getLiquidacionesPorMes = async (anio: number, mes: number): Promise<ApiResponse<OrdenServicio[]>> => {
-  return await apiGet<OrdenServicio[]>(`/liquidaciones/ordenes-por-mes?anio=${anio}&mes=${mes}`);
+export const getLiquidacionesPorMes = async (anio: number, mes: number): Promise<ApiResponse<PaginatedResponse<OrdenServicio[]>>> => {
+  return await apiGet<PaginatedResponse<OrdenServicio[]>>(`/liquidaciones/ordenes-por-mes?anio=${anio}&mes=${mes}`);
 };
 
-export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number): Promise<ApiResponse<GruposLiquidaciones[]>> => {
-  return await apiGet<GruposLiquidaciones[]>(`/liquidaciones/historial-liquidaciones-aprobadas?anio=${anio}&mes=${mes}`);
+export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number): Promise<ApiResponse<PaginatedResponse<GruposLiquidaciones[]>>> => {
+  return await apiGet<PaginatedResponse<GruposLiquidaciones[]>>(`/liquidaciones/historial-liquidaciones-aprobadas?anio=${anio}&mes=${mes}`);
 };
 
 export const crearLiquidacionMensual = async (data: CrearGrupoMensualDto): Promise<ApiResponse<OrdenServicio>> => {
@@ -20,8 +20,8 @@ export const crearLiquidacionMensual = async (data: CrearGrupoMensualDto): Promi
 
 // Grupos de liquidaciones
 
-export const getGruposLiquidaciones = async (): Promise<ApiResponse<GruposLiquidaciones[]>> => {
-  return await apiGet<GruposLiquidaciones[]>(`/aprobacion-liquidacion-orden-servicio/buscar-grupos-liquidaciones`);
+export const getGruposLiquidaciones = async (): Promise<ApiResponse<PaginatedResponse<GruposLiquidaciones[]>>> => {
+  return await apiGet<PaginatedResponse<GruposLiquidaciones[]>>(`/aprobacion-liquidacion-orden-servicio/buscar-grupos-liquidaciones`);
 };
 
 export const aprobarGrupoLiquidacion = async (idGrupoLiquidacion: number): Promise<ApiResponse<GruposLiquidaciones>> => {

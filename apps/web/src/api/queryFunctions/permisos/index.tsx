@@ -13,24 +13,24 @@ import {
   getRolesWithPermissions,
   updateRole,
 } from "../../functions/permisos";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Rol } from "../../../types";
 import type { CreateRoleDto, UpdateRoleDto } from "../../dtos";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
 import type { RolesWithPermissions } from "../../types/permisos";
 
-export const useActiveRoles = (): UseQueryResult<ApiResponse<Rol[]>, Error> => {
+export const useActiveRoles = (): UseQueryResult<ApiResponse<PaginatedResponse<Rol[]>>, Error> => {
   return useQuery({
     queryKey: ["active-roles"],
-    queryFn: () => getActiveRoles({ pagination: false }),
+    queryFn: () => getActiveRoles({ pagination: 'false' }),
   });
 };
 
-export const useRoles = (): UseQueryResult<ApiResponse<Rol[]>, Error> => {
+export const useRoles = (): UseQueryResult<ApiResponse<PaginatedResponse<Rol[]>>, Error> => {
   return useQuery({
     queryKey: ["roles"],
-    queryFn: () => getRoles({ pagination: false }),
+    queryFn: () => getRoles({ pagination: 'false' }),
   });
 };
 
@@ -111,12 +111,12 @@ export const useDeleteRole = (): UseMutationResult<
 };
 
 export const useGetRolesWithPermissions = (): UseQueryResult<
-  ApiResponse<RolesWithPermissions>,
+  ApiResponse<PaginatedResponse<RolesWithPermissions>>,
   Error
 > => {
   return useQuery({
     queryKey: ["roles-with-permissions"],
-    queryFn: () => getRolesWithPermissions({ pagination: false }),
+    queryFn: () => getRolesWithPermissions({ pagination: 'false' }),
   });
 };
 

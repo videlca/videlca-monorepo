@@ -15,20 +15,20 @@ import {
   getFilteredClientes,
   updateCliente,
 } from "../../functions/clientes/clientes";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import type { Cliente } from "../../../types";
 import type { CreateClienteDto, FilterClienteDto, UpdateClienteDto } from "../../dtos/clientes";
-import type { EnviarCorreoDto } from "../../dtos/common";
+import type { EnviarCorreoDto, PaginationDto } from "../../dtos/common";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
 export const useClientes = (): UseQueryResult<
-  ApiResponse<Cliente[]>,
+  ApiResponse<PaginatedResponse<Cliente[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["clientes"],
-    queryFn: () => getClientes({ pagination: false }),
+    queryFn: () => getClientes({ pagination: 'false' }),
   });
 };
 
@@ -52,13 +52,13 @@ export const useClienteById = (): UseMutationResult<
   });
 };
 
-export const useClientesActivo = (): UseQueryResult<
-  ApiResponse<Cliente[]>,
+export const useClientesActivo = (paginationParams: PaginationDto = { pagination: 'false' }): UseQueryResult<
+  ApiResponse<PaginatedResponse<Cliente[]>>,
   Error
 > => {
   return useQuery({
-    queryKey: ["clientes-activo"],
-    queryFn: () => getClientesActivo({ pagination: false }),
+    queryKey: ["clientes-activo", paginationParams],
+    queryFn: () => getClientesActivo(paginationParams),
   });
 };
 
@@ -183,7 +183,7 @@ export const useEnviarExcelClientes = (): UseMutationResult<
 };
 
 export const useFilterClientes = (): UseMutationResult<
-  ApiResponse<Cliente[]>,
+  ApiResponse<PaginatedResponse<Cliente[]>>,
   Error,
   FilterClienteDto
 > => {

@@ -45,7 +45,7 @@ function RouteComponent() {
   const handleAddCorreoDefault = () => {
     setIsOpenAddCorreoDefault(true);
     // Transform API response to CreateCorreoDefaultDto format
-    const apiData = correosDefault?.data as unknown as CorreoDefaultResponse[];
+    const apiData = correosDefault?.data?.data as unknown as CorreoDefaultResponse[];
     const transformedData: CreateCorreoDefaultDto[] =
       apiData?.map((correo) => ({
         descripcion: correo.descripcion,
@@ -103,7 +103,7 @@ function RouteComponent() {
         </div>
         <Table
           data={
-            (correosDefault?.data as unknown as CorreoDefaultResponse[]) || []
+            (correosDefault?.data?.data as unknown as CorreoDefaultResponse[]) || []
           }
           columns={columns}
           enablePagination={true}

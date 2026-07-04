@@ -244,7 +244,7 @@ export function RouteComponent() {
         />
       </div>
       <Table
-        data={puestos?.data || []}
+        data={puestos?.data?.data || []}
         columns={columnsPuestos}
         enablePagination={true}
         pageSize={5}
@@ -304,7 +304,7 @@ export function RouteComponent() {
                   placeholder="Ciudad"
                   id="idCiudad"
                   options={
-                    ciudades?.data?.map((ciudad) => ({
+                    ciudades?.data?.data.map((ciudad) => ({
                       id: ciudad.idCiudad,
                       descripcion: ciudad.descripcion,
                     })) || []
@@ -366,7 +366,7 @@ export function RouteComponent() {
                       placeholder="Cliente facturación"
                       id="idClienteFacturacion"
                       options={
-                        clientes?.data?.map((cliente) => ({
+                        clientes?.data?.data.map((cliente) => ({
                           id: cliente.idCliente,
                           descripcion: cliente.nombre,
                         })) || []

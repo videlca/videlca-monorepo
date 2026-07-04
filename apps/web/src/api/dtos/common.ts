@@ -1,7 +1,7 @@
 export interface PaginationDto {
-  limit?: number
-  offset?: number
-  pagination?: boolean | null
+  limit?: number;
+  offset?: number;
+  pagination?: 'true' | 'false';
 }
 
 // enviar pdf por correo

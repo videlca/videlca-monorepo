@@ -1,24 +1,24 @@
 import type { Cliente } from "../../../types";
 import type { PaginationDto, EnviarCorreoDto } from "../../dtos/common";
 import type { CreateClienteDto, UpdateClienteDto, FilterClienteDto } from "../../dtos/clientes";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 
 
-export const getClientes = async (pagination: PaginationDto): Promise<ApiResponse<Cliente[]>> => {
-  return await apiGet<Cliente[]>("/clientes", pagination);
+export const getClientes = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Cliente[]>>> => {
+  return await apiGet<PaginatedResponse<Cliente[]>>("/clientes", pagination);
 };
 
-export const getFilteredClientes = async (filter: FilterClienteDto): Promise<ApiResponse<Cliente[]>> => {
-  return await apiGet<Cliente[]>("/clientes/filter", filter);
+export const getFilteredClientes = async (filter: FilterClienteDto): Promise<ApiResponse<PaginatedResponse<Cliente[]>>> => {
+  return await apiGet<PaginatedResponse<Cliente[]>>("/clientes/filter", filter);
 };
 
 export const getClienteById = async (id: number): Promise<ApiResponse<Cliente | null>> => {
   return await apiGet<Cliente>(`/clientes/${id}`);
 };
 
-export const getClientesActivo = async (pagination: PaginationDto): Promise<ApiResponse<Cliente[]>> => {
-  return await apiGet<Cliente[]>("/clientes/actives", pagination);
+export const getClientesActivo = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Cliente[]>>> => {
+  return await apiGet<PaginatedResponse<Cliente[]>>("/clientes/actives", pagination);
 };
 
 export const createCliente = async (data: CreateClienteDto): Promise<ApiResponse> => {
@@ -35,7 +35,7 @@ export const deleteCliente = async (id: number): Promise<ApiResponse> => {
 
 export const descargarExcelClientes = async (filter?: FilterClienteDto): Promise<{ blob: Blob; filename: string }> => {
   let url = "/clientes/descargar-clientes";
-  
+
   if (filter?.column && filter?.query) {
     const params = new URLSearchParams({
       column: filter.column,

@@ -123,7 +123,7 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={tipoNovedad?.data || []}
+          data={tipoNovedad?.data?.data || []}
           columns={columns}
           enablePagination={true}
           pageSize={5}

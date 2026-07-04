@@ -33,7 +33,7 @@ function RouteComponent() {
     <Section>
       <div className="flex flex-col gap-8">
         <Table
-          data={tipoHorarioDescripcion?.data || []}
+          data={tipoHorarioDescripcion?.data?.data || []}
           columns={columns}
           pageSize={10}
           enableSorting={true}

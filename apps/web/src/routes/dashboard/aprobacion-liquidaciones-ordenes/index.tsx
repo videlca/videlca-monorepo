@@ -89,7 +89,7 @@ function RouteComponent() {
         <p className="text-sm text-gray-500">
           Selecciona un grupo para aprobar la liquidación de las órdenes.
         </p>
-        {groups?.data?.length === 0 ? (
+        {groups?.data?.data?.length === 0 ? (
           <div className="py-12 text-center">
             <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
               <FileTextIcon className="h-12 w-12 text-gray-400" />
@@ -103,7 +103,7 @@ function RouteComponent() {
           </div>
         ) : (
           <div className="space-y-4">
-            {groups?.data?.map((group) => (
+            {groups?.data?.data?.map((group) => (
               <div
                 key={group.idGrupoLiquidacion}
                 className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
@@ -115,7 +115,7 @@ function RouteComponent() {
                         <span className="font-medium">Descripción:</span>{" "}
                         {group.descripcion} <br />
                         <span className="font-medium">Órdenes:</span>{" "}
-                        {group.liquidaciones.length}
+                        {group.liquidaciones?.length || 0}
                         <br />
                         <span className="font-medium">Creado:</span>{" "}
                         {new Date(group.fechaCreacion).toLocaleDateString(
@@ -217,7 +217,7 @@ function RouteComponent() {
         }}
         selectedOrderDetail={selectedGroupOrder || ({} as GruposLiquidaciones)}
         setSelectedOrderDetail={setSelectedGroupOrder}
-        observacionesQueryData={observacionesQueryData?.data || []}
+        observacionesQueryData={observacionesQueryData?.data?.data || []}
       />
 
       <EnvioCorreos

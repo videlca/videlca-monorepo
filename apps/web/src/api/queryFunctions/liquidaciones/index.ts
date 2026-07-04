@@ -1,6 +1,6 @@
 import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, enviarCorreoArchivoLiquidacion, generarArchivoExcelLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial } from "../../functions/liquidaciones"
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
@@ -9,7 +9,7 @@ import type { GruposLiquidaciones } from "../../types";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 import type { EnviarCorreoDto } from "../../dtos/common";
 
-export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<OrdenServicio[]>, Error> => {
+export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<PaginatedResponse<OrdenServicio[]>>, Error> => {
   return useQuery({
     queryKey: ["liquidaciones-por-mes"],
     queryFn: () => getLiquidacionesPorMes(anio, mes),
@@ -17,7 +17,7 @@ export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: bo
   });
 };
 
-export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
+export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<PaginatedResponse<GruposLiquidaciones[]>>, Error> => {
   return useQuery({
     queryKey: ["liquidaciones-por-mes-historial"],
     queryFn: () => getLiquidacionesPorMesHistorial(anio, mes),
@@ -44,7 +44,7 @@ export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<Orde
 
 // Grupos de liquidaciones
 
-export const useGetGruposLiquidaciones = (): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
+export const useGetGruposLiquidaciones = (): UseQueryResult<ApiResponse<PaginatedResponse<GruposLiquidaciones[]>>, Error> => {
   queryClient.invalidateQueries({ queryKey: ["grupos-liquidaciones"] });
   return useQuery({
     queryKey: ["grupos-liquidaciones"],

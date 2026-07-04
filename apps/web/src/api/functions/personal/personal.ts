@@ -1,23 +1,23 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { CreatePersonalDto, UpdatePersonalDto } from "../../dtos/personal";
 import type { PaginationDto } from "../../dtos/common";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Personal } from "../../types/personal";
 
-export const getPersonal = async (pagination: PaginationDto): Promise<ApiResponse<Personal[]>> => {
-  return await apiGet<Personal[]>("/personal", pagination);
+export const getPersonal = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Personal[]>>> => {
+  return await apiGet<PaginatedResponse<Personal[]>>("/personal", pagination);
 };
 
-export const getFilteredPersonal = async (filter: any): Promise<ApiResponse<Personal[]>> => {
-  return await apiGet<Personal[]>("/personal/filter", filter);
+export const getFilteredPersonal = async (filter: any): Promise<ApiResponse<PaginatedResponse<Personal[]>>> => {
+  return await apiGet<PaginatedResponse<Personal[]>>("/personal/filter", filter);
 };
 
 export const getPersonalById = async (id: number): Promise<ApiResponse<Personal>> => {
   return await apiGet<Personal>(`/personal/${id}`);
 };
 
-export const getPersonalActivo = async (pagination: PaginationDto): Promise<ApiResponse<Personal[]>> => {
-  return await apiGet<Personal[]>("/personal/actives", pagination);
+export const getPersonalActivo = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Personal[]>>> => {
+  return await apiGet<PaginatedResponse<Personal[]>>("/personal/actives", pagination);
 };
 
 export const createPersonal = async (data: CreatePersonalDto): Promise<ApiResponse> => {

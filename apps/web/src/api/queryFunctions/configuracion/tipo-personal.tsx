@@ -7,7 +7,7 @@ import {
   getTipoPersonalActivo,
   updateTipoPersonal,
 } from "../../functions/configuracion/tipo-personal";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoPersonal } from "../../../types";
 import type { CreateTipoPersonal } from "../../types";
 import { queryClient } from "../../../App";
@@ -15,22 +15,22 @@ import type { UpdateTipoPersonalDto } from "../../dtos";
 import { toast } from "sonner";
 
 export const useTipoPersonal = (): UseQueryResult<
-  ApiResponse<TipoPersonal[]>,
+  ApiResponse<PaginatedResponse<TipoPersonal[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-personal"],
-    queryFn: () => getTipoPersonal({ pagination: false }),
+    queryFn: () => getTipoPersonal({ pagination: 'false' }),
   });
 };
 
 export const useTipoPersonalActivo = (): UseQueryResult<
-  ApiResponse<TipoPersonal[]>,
+  ApiResponse<PaginatedResponse<TipoPersonal[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-personal-activo"],
-    queryFn: () => getTipoPersonalActivo({ pagination: false }),
+    queryFn: () => getTipoPersonalActivo({ pagination: 'false' }),
   });
 };
 

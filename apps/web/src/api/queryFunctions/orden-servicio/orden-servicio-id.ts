@@ -1,22 +1,22 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { anularOrdenServicioId, deleteIdOrdenServicio, getIdsAnuladosOrdenServicio, getIdsOrdenServicio, getNextIdOrdenServicio, updateIdOrdenServicio } from "../../functions/orden-servicio/orden-servicio-id";
-import type { ApiResponse } from "../../types";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { OrdenServicioId, OrdenServicioIdAnulados } from "../../types/orden-servicio";
 import type { AnularIdOrdenServicioDto, UpdateOrdenServicioIdDto } from "../../dtos";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
-export const useGetIdsOrdenServicio = (): UseQueryResult<ApiResponse<OrdenServicioId[]>, Error> => {
+export const useGetIdsOrdenServicio = (): UseQueryResult<ApiResponse<PaginatedResponse<OrdenServicioId[]>>, Error> => {
   return useQuery({
     queryKey: ["ids-orden-servicio"],
-    queryFn: () => getIdsOrdenServicio({ pagination: false }),
+    queryFn: () => getIdsOrdenServicio({ pagination: 'false' }),
   });
 }
 
-export const useGetIdsAnuladosOrdenServicio = (): UseQueryResult<ApiResponse<OrdenServicioIdAnulados[]>, Error> => {
+export const useGetIdsAnuladosOrdenServicio = (): UseQueryResult<ApiResponse<PaginatedResponse<OrdenServicioIdAnulados[]>>, Error> => {
   return useQuery({
     queryKey: ["ids-anulados-orden-servicio"],
-    queryFn: () => getIdsAnuladosOrdenServicio({ pagination: false }),
+    queryFn: () => getIdsAnuladosOrdenServicio({ pagination: 'false' }),
   });
 }
 

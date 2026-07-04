@@ -233,7 +233,7 @@ function RouteComponent() {
 
   // Filtrar servicios según búsqueda y filtros
   const serviciosFiltrados =
-    servicios?.data?.filter((servicio) => {
+    servicios?.data?.data.filter((servicio) => {
       const matchSearch =
         !searchTerm ||
         servicio.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -262,11 +262,10 @@ function RouteComponent() {
             {" "}
             Periodo {periodo?.data?.anioInicio}{" "}
             <p
-              className={`ml-2 w-fit rounded-full px-3 py-1.5 text-sm font-semibold ${
-                periodo?.data?.periodoActivoFacturacion
-                  ? "bg-green-200 text-green-700"
-                  : "bg-red-200 text-red-700"
-              }`}
+              className={`ml-2 w-fit rounded-full px-3 py-1.5 text-sm font-semibold ${periodo?.data?.periodoActivoFacturacion
+                ? "bg-green-200 text-green-700"
+                : "bg-red-200 text-red-700"
+                }`}
             >
               {periodo?.data?.periodoActivoFacturacion
                 ? "Activo para facturación"
@@ -346,7 +345,7 @@ function RouteComponent() {
               className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             >
               <option value="">Todos los tipos</option>
-              {tiposServicios?.data?.map((tipo) => (
+              {tiposServicios?.data?.data.map((tipo) => (
                 <option key={tipo.idTipoServicio} value={tipo.idTipoServicio}>
                   {tipo.nombre}
                 </option>
@@ -392,7 +391,7 @@ function RouteComponent() {
                         <span className="font-semibold capitalize">
                           Tipo de Tarifa:{" "}
                           {
-                            tiposTarifa?.data?.find(
+                            tiposTarifa?.data?.data.find(
                               (t) => t.idTipoTarifa === sc.idTipoTarifa,
                             )?.nombre
                           }
@@ -486,7 +485,7 @@ function RouteComponent() {
                                 <InputSelect
                                   label="Tipo de tarifa:"
                                   options={
-                                    tiposTarifa?.data?.map((tipo) => ({
+                                    tiposTarifa?.data?.data.map((tipo) => ({
                                       id: tipo.idTipoTarifa,
                                       descripcion: tipo.nombre,
                                     })) || []

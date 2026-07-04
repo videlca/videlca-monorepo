@@ -1,13 +1,14 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { ActualizarTipoContrato, CreateTipoContrato, PaginationDto } from "../../dtos";
-import type { ApiResponse, TipoContrato } from "../../types";
+import type { TipoContrato } from "../../types";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 
-export const getTipoContrato = async (pagination: PaginationDto): Promise<ApiResponse<TipoContrato[]>> => {
-  return await apiGet<TipoContrato[]>("/tipo-contrato", pagination);
+export const getTipoContrato = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoContrato[]>>> => {
+  return await apiGet<PaginatedResponse<TipoContrato[]>>("/tipo-contrato", pagination);
 };
 
-export const getTipoContratoActivo = async (pagination: PaginationDto): Promise<ApiResponse<TipoContrato[]>> => {
-  return await apiGet<TipoContrato[]>("/tipo-contrato/actives", pagination);
+export const getTipoContratoActivo = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoContrato[]>>> => {
+  return await apiGet<PaginatedResponse<TipoContrato[]>>("/tipo-contrato/actives", pagination);
 };
 
 export const createTipoContrato = async (data: CreateTipoContrato): Promise<ApiResponse<TipoContrato>> => {

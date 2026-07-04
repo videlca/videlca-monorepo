@@ -26,6 +26,7 @@ import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 import type { ServerFilterColumn } from "../../../components/common/Table";
+import { useServerPagination } from "../../../hooks/useServerPagination";
 
 export const Route = createFileRoute("/dashboard/usuarios/")({
   component: RouteComponent,
@@ -37,8 +38,12 @@ function RouteComponent() {
   const [isModalEditUsuario, setIsModalEditUsuario] = useState(false);
   const [isModalOpenEliminar, setIsModalOpenEliminar] = useState(false);
   const [idSelectedUsuario, setIdSelectedUsuario] = useState(0);
+  
+  // Paginación server-side
+  const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
+
   // Queries y Mutations
-  const { data: usuarios } = useGetUsuarios();
+  const { data: usuarios } = useGetUsuarios(paginationParams);
   const { mutate: crearUsuario, isPending: isCreatingUsuario } =
     useCreateUsuario();
   const { mutate: editarUsuario, isPending: isEditingUsuario } =
@@ -201,10 +206,18 @@ function RouteComponent() {
           />
         </div>
         <Table
-          data={filteredUsuarios ?? usuarios?.data ?? []}
+          data={filteredUsuarios ?? usuarios?.data?.data ?? []}
           columns={columns}
+          serverPagination={true}
+          totalRows={usuarios?.data?.pagination?.total ?? 0}
+          currentPage={page}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
           enablePagination={true}
-          pageSize={5}
+          pageSize={pageSize}
           enableSorting={true}
           enableFiltering={true}
           filterColumns={[
@@ -215,10 +228,10 @@ function RouteComponent() {
           ] satisfies ServerFilterColumn[]}
           onServerFilter={(column, query) => {
             filterUsuarios(
-              { column: column as UserFilterColumn, query, pagination: false },
+              { column: column as UserFilterColumn, query, pagination: 'false' },
               {
                 onSuccess: (data) => {
-                  setFilteredUsuarios(data.data ?? []);
+                  setFilteredUsuarios(data.data?.data ?? []);
                 },
               },
             );
@@ -300,7 +313,7 @@ function RouteComponent() {
               placeholder="Tipo de identificación"
               id="idTipoIdentificacion"
               options={
-                tiposIdentificacion?.data?.map((tipo) => ({
+                tiposIdentificacion?.data?.data?.map((tipo) => ({
                   id: tipo.idTipoIdentificacion,
                   descripcion: tipo.descripcion,
                 })) || []
@@ -321,7 +334,7 @@ function RouteComponent() {
               placeholder="Rol"
               id="idRol"
               options={
-                roles?.data?.map((role) => ({
+                roles?.data?.data?.map((role) => ({
                   id: role.id,
                   descripcion: role.nombreRol,
                 })) || []
@@ -363,7 +376,7 @@ function RouteComponent() {
               placeholder="Rol"
               id="idRol"
               options={
-                roles?.data?.map((role) => ({
+                roles?.data?.data?.map((role) => ({
                   id: role.id,
                   descripcion: role.nombreRol,
                 })) || []

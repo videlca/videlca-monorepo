@@ -9,19 +9,19 @@ import {
   getTipoNovedad,
   updateTipoNovedad,
 } from "../../functions/configuracion/";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoNovedad } from "../../../types";
 import type { ActualizarTipoNovedad, CreateTipoNovedad } from "../../types";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
 
 export const useTipoNovedad = (): UseQueryResult<
-  ApiResponse<TipoNovedad[]>,
+  ApiResponse<PaginatedResponse<TipoNovedad[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-novedad"],
-    queryFn: () => getTipoNovedad({ pagination: false }),
+    queryFn: () => getTipoNovedad({ pagination: 'false' }),
   });
 };
 

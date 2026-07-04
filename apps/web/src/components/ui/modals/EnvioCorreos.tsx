@@ -38,7 +38,7 @@ export const EnvioCorreos = ({
   const [emails, setEmails] = useState<CorreosDto[]>([]);
 
   const { data: correosDefault } = useCorreosDefault();
-  const correos = correosDefault?.data?.map((correo) => correo.email) || [];
+  const correos = correosDefault?.data?.data?.map((correo) => correo.email) || [];
 
   const handleSendEmail = () => {
     const correoData: EnviarCorreoDto = { correos: emails };

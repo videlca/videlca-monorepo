@@ -1,19 +1,19 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { getTipoTarifa, updateTipoTarifa } from "../../functions/tarifas";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoTarifa } from "../../types/periodo";
 import type { UpdateTipoTarifaDto } from "../../dtos/tarifas";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
 export const useTipoTarifa = (): UseQueryResult<
-  ApiResponse<TipoTarifa[]>,
+  ApiResponse<PaginatedResponse<TipoTarifa[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-tarifa"],
-    queryFn: () => getTipoTarifa({ pagination: false }),
+    queryFn: () => getTipoTarifa({ pagination: 'false' }),
   });
 };
 

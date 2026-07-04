@@ -1,23 +1,23 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { CreateServicioDto, UpdateServicioDto } from "../../dtos";
 import type { PaginationDto } from "../../dtos/common";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Servicio } from "../../types/servicio";
 
-export const getServicios = async (pagination: PaginationDto): Promise<ApiResponse<Servicio[]>> => {
-  return await apiGet<Servicio[]>(`/servicios`, pagination);
+export const getServicios = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Servicio[]>>> => {
+  return await apiGet<PaginatedResponse<Servicio[]>>(`/servicios`, pagination);
 };
 
-export const getServiciosByPeriodo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<Servicio[]>> => {
-  return await apiGet<Servicio[]>(`/servicios/periodo/${idPeriodo}`, pagination);
+export const getServiciosByPeriodo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Servicio[]>>> => {
+  return await apiGet<PaginatedResponse<Servicio[]>>(`/servicios/periodo/${idPeriodo}`, pagination);
 };
 
 export const getServicioById = async (id: number): Promise<ApiResponse<Servicio>> => {
   return await apiGet<Servicio>(`/servicios/${id}`);
 };
 
-export const getServiciosActivo = async (pagination: PaginationDto): Promise<ApiResponse<Servicio[]>> => {
-  return await apiGet<Servicio[]>("/servicios/actives", pagination);
+export const getServiciosActivo = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Servicio[]>>> => {
+  return await apiGet<PaginatedResponse<Servicio[]>>("/servicios/actives", pagination);
 }
 
 export const createServicio = async (data: CreateServicioDto): Promise<ApiResponse> => {

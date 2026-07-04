@@ -10,19 +10,19 @@ import {
   getTipoCliente,
   updateTipoCliente,
 } from "../../functions/configuracion";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoCliente } from "../../../types";
 import type { ActualizarTipoCliente, CreateTipoCliente } from "../../types";
 import { queryClient } from "../../../App";
 import { toast } from "sonner";
 
 export const useTipoCliente = (): UseQueryResult<
-  ApiResponse<TipoCliente[]>,
+  ApiResponse<PaginatedResponse<TipoCliente[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["tipo-cliente"],
-    queryFn: () => getTipoCliente({ pagination: false }),
+    queryFn: () => getTipoCliente({ pagination: 'false' }),
   });
 };
 

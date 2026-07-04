@@ -21,17 +21,17 @@ import type {
   UpdateSegmentacionDto,
 } from "../../dtos";
 import { queryClient } from "../../../App";
-import type { ApiResponse } from "../../types/common";
+import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Segmentacion, SubSegmentacion } from "../../../types";
 import { toast } from "sonner";
 
 export const useSegmentaciones = (): UseQueryResult<
-  ApiResponse<Segmentacion[]>,
+  ApiResponse<PaginatedResponse<Segmentacion[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["segmentaciones"],
-    queryFn: () => getSegmentaciones({ pagination: false }),
+    queryFn: () => getSegmentaciones({ pagination: 'false' }),
   });
 };
 
@@ -130,12 +130,12 @@ export const useEliminarSegmentacion = (): UseMutationResult<
 
 // Subsegmentaciones
 export const useSubSegmentaciones = (): UseQueryResult<
-  ApiResponse<SubSegmentacion[]>,
+  ApiResponse<PaginatedResponse<SubSegmentacion[]>>,
   Error
 > => {
   return useQuery({
     queryKey: ["subsegmentaciones"],
-    queryFn: () => getSubSegmentaciones({ pagination: false }),
+    queryFn: () => getSubSegmentaciones({ pagination: 'false' }),
   });
 };
 
