@@ -140,6 +140,24 @@ export interface GetDashboardInicioDto {
   months: MonthsAvailable;
 }
 
+export interface ReportesInicioResponse {
+  rango: { from: string; to: string };
+
+  totales: {
+    totalOrdenes: number;
+    ordenesTerminadas: number;
+  };
+
+  /** Ej: { "INICIADO": 5, "TERMINADO": 3, "PROGRAMADO": 2 } */
+  distribucionEstados: Record<string, number>;
+
+  /** Ej: { "enero": { "INICIADO": 3, "TERMINADO": 1 }, "febrero": { ... } } */
+  ordenesPorMes: Record<string, Record<string, number>>;
+
+  topServicios: { nombre: string; total: number }[];
+  topClientes: { nombre: string; total: number }[];
+}
+
 // Filter
 export enum OrdenServicioFilterColumn {
   NUMERO_ORDEN = 'numeroOrden',

@@ -1,25 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
-  AlertCircle,
-  BarChart as BarChartIcon,
   Building2,
-  Calendar,
   CheckCircle,
-  Clock,
-  DollarSign,
-  Download,
   FileText,
+  Loader2,
   TrendingUp,
-  Users,
+  Wrench,
 } from "lucide-react";
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -35,336 +29,342 @@ export const Route = createFileRoute("/dashboard/")({
   notFoundComponent: () => <div>Not Found</div>,
 });
 
-const ordenesData = [
-  {
-    mes: "Ene",
-    generadas: 45,
-    liquidadas: 38,
-    completadas: 35,
-    porLiquidar: 7,
-  },
-  {
-    mes: "Feb",
-    generadas: 52,
-    liquidadas: 41,
-    completadas: 39,
-    porLiquidar: 11,
-  },
-  {
-    mes: "Mar",
-    generadas: 48,
-    liquidadas: 44,
-    completadas: 42,
-    porLiquidar: 4,
-  },
-  {
-    mes: "Abr",
-    generadas: 61,
-    liquidadas: 55,
-    completadas: 53,
-    porLiquidar: 6,
-  },
-  {
-    mes: "May",
-    generadas: 55,
-    liquidadas: 48,
-    completadas: 46,
-    porLiquidar: 7,
-  },
-  {
-    mes: "Jun",
-    generadas: 67,
-    liquidadas: 59,
-    completadas: 57,
-    porLiquidar: 8,
-  },
+const MESES_OPTIONS: { label: string; value: MonthsAvailable }[] = [
+  { label: "Mes actual", value: 0 },
+  { label: "3 meses", value: 3 },
+  { label: "6 meses", value: 6 },
+  { label: "12 meses", value: 12 },
 ];
 
-const ingresosMensuales = [
-  { mes: "Ene", ingresos: 15600000, proyectado: 16000000 },
-  { mes: "Feb", ingresos: 18200000, proyectado: 17500000 },
-  { mes: "Mar", ingresos: 17800000, proyectado: 18000000 },
-  { mes: "Abr", ingresos: 21400000, proyectado: 20000000 },
-  { mes: "May", ingresos: 19600000, proyectado: 19000000 },
-  { mes: "Jun", ingresos: 23100000, proyectado: 22000000 },
-];
+const COLORES_ESTADO: Record<string, string> = {
+  INICIADO: "#3B82F6",
+  TERMINADO: "#10B981",
+  PROGRAMADO: "#F59E0B",
+  POR_INICIAR: "#8B5CF6",
+  POR_TERMINAR: "#EF4444",
+  CANCELADA: "#6B7280",
+  ANULADA: "#DC2626",
+};
 
-const estadosOrdenes = [
-  { name: "Completadas", value: 342, color: "#10B981" },
-  { name: "Activas", value: 89, color: "#3B82F6" },
-  { name: "Pendientes", value: 43, color: "#F59E0B" },
-  { name: "Canceladas", value: 12, color: "#EF4444" },
-];
-
-const serviciosMasUsados = [
-  { servicio: "Control de Acceso 24/7", ordenes: 156, ingresos: 23400000 },
-  { servicio: "Videovigilancia Remota", ordenes: 89, ingresos: 17800000 },
-  { servicio: "Patrullaje Perimetral", ordenes: 67, ingresos: 8040000 },
-  { servicio: "Supervisión de Seguridad", ordenes: 45, ingresos: 8100000 },
-  { servicio: "Seguridad para Eventos", ordenes: 29, ingresos: 14500000 },
-];
-
-const clientesTop = [
-  { cliente: "Inversiones Plaza S.A.S", ordenes: 34, valor: 5100000 },
-  { cliente: "Corporación Norte Ltda", ordenes: 28, valor: 4200000 },
-  { cliente: "Administración Los Pinos", ordenes: 22, valor: 2640000 },
-  { cliente: "Eventos & Convenciones S.A.S", ordenes: 18, valor: 9000000 },
-  { cliente: "Centro Comercial Andino", ordenes: 15, valor: 2250000 },
-];
+const LABEL_ESTADO: Record<string, string> = {
+  INICIADO: "Iniciado",
+  TERMINADO: "Terminado",
+  PROGRAMADO: "Programado",
+  POR_INICIAR: "Por Iniciar",
+  POR_TERMINAR: "Por Terminar",
+  CANCELADA: "Cancelada",
+  ANULADA: "Anulada",
+};
 
 function RouteComponent() {
   const [selectedPeriod, setSelectedPeriod] = useState<MonthsAvailable>(0);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  const { data: response, isLoading } = useGetDashboardInicio({
+    months: selectedPeriod,
+  });
+
+  const data = response?.data;
 
   const formatNumber = (value: number) => {
     return new Intl.NumberFormat("es-CO").format(value);
   };
 
-  const totalOrdenes = estadosOrdenes.reduce(
-    (sum, item) => sum + item.value,
-    0,
-  );
-  const totalIngresos = ingresosMensuales.reduce(
-    (sum, item) => sum + item.ingresos,
-    0,
-  );
-  const promedioMensual = Math.round(totalIngresos / ingresosMensuales.length);
-  const ordenesCompletadas =
-    estadosOrdenes.find((item) => item.name === "Completadas")?.value || 0;
-  const tasaCompletacion = Math.round(
-    (ordenesCompletadas / totalOrdenes) * 100,
-  );
+  // --- Datos para la dona ---
+  const dataDona = data
+    ? Object.entries(data.distribucionEstados).map(([name, value]) => ({
+        name: LABEL_ESTADO[name] || name,
+        rawName: name,
+        value,
+      }))
+    : [];
 
-  const exportReport = () => {
-    // Simular exportación
-  };
+  // --- Datos para barras por mes (stacked) ---
+  const estados = data
+    ? [...new Set(Object.values(data.ordenesPorMes).flatMap(Object.keys))]
+    : [];
 
-  const { data: dashboardInicioQuery } = useGetDashboardInicio({
-    months: selectedPeriod,
-  });
-  console.log(dashboardInicioQuery);
+  const dataBarras = data
+    ? Object.entries(data.ordenesPorMes).map(([mes, estadosMap]) => ({
+        mes: mes.charAt(0).toUpperCase() + mes.slice(1),
+        ...estadosMap,
+      }))
+    : [];
+
+  // --- Cálculos ---
+  const totalOrdenes = data?.totales.totalOrdenes ?? 0;
+  const ordenesTerminadas = data?.totales.ordenesTerminadas ?? 0;
+  const tasaCompletacion =
+    totalOrdenes > 0 ? Math.round((ordenesTerminadas / totalOrdenes) * 100) : 0;
 
   return (
     <div className="h-full space-y-6 overflow-y-auto p-6">
-      {/* Page Header */}
+      {/* Page Header — Selector de período */}
       <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-3">
           <select
             value={selectedPeriod}
             onChange={(e) =>
-              setSelectedPeriod(e.target.value as unknown as MonthsAvailable)
+              setSelectedPeriod(Number(e.target.value) as MonthsAvailable)
             }
             className="rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
           >
-            <option value={0}>Todos los meses</option>
-            <option value={3}>Últimos 3 meses</option>
-            <option value={6}>Últimos 6 meses</option>
-            <option value={12}>Últimos 12 meses</option>
+            {MESES_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
+        {data?.rango && (
+          <p className="text-sm text-gray-500">
+            {new Date(data.rango.from).toLocaleDateString("es-CO")} —{" "}
+            {new Date(data.rango.to).toLocaleDateString("es-CO")}
+          </p>
+        )}
       </div>
 
-      {/* Métricas Principales */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Órdenes</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {formatNumber(totalOrdenes)}
-              </p>
-              <p className="mt-1 text-sm text-green-600">
-                <TrendingUp size={14} className="mr-1 inline" />
-                +12% vs mes anterior
-              </p>
-            </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-              <FileText size={24} className="text-blue-600" />
-            </div>
-          </div>
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 size={32} className="animate-spin text-blue-500" />
+          <span className="ml-3 text-gray-500">Cargando reportes…</span>
         </div>
+      )}
 
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Órdenes Completadas
-              </p>
-              <p className="text-3xl font-bold text-gray-900">
-                {formatNumber(ordenesCompletadas)}
-              </p>
-              <p className="mt-1 text-sm text-green-600">
-                <CheckCircle size={14} className="mr-1 inline" />
-                {tasaCompletacion}% tasa de completación
-              </p>
+      {!isLoading && data && (
+        <>
+          {/* Métricas Principales */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Total Órdenes */}
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Órdenes
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {formatNumber(totalOrdenes)}
+                  </p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+                  <FileText size={24} className="text-blue-600" />
+                </div>
+              </div>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
-              <CheckCircle size={24} className="text-green-600" />
+
+            {/* Órdenes Terminadas */}
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">
+                    Órdenes Terminadas
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {formatNumber(ordenesTerminadas)}
+                  </p>
+                  <p className="mt-1 text-sm text-green-600">
+                    <CheckCircle size={14} className="mr-1 inline" />
+                    {tasaCompletacion}% tasa de completación
+                  </p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
+                  <CheckCircle size={24} className="text-green-600" />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Gráficos Principales */}
-      <div className="lg:grid-col-3 grid grid-cols-1 gap-6">
-        {/* Gráfico de Órdenes por Mes */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Órdenes por Mes
-            </h3>
-          </div>
-          <div className="h-[300px] min-h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={ordenesData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="generadas" fill="#3B82F6" name="Generadas" />
-                <Bar dataKey="liquidadas" fill="#10B981" name="Liquidadas" />
-                <Bar dataKey="completadas" fill="#8B5CF6" name="Completadas" />
-                <Bar dataKey="porLiquidar" fill="#F59E0B" name="Por Liquidar" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+          {/* Gráficos Principales */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-1">
+            {/* Gráfico de Órdenes por Mes — Stacked */}
+            {dataBarras.length > 0 && (
+              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                  Órdenes por Mes
+                </h3>
+                <div className="h-[300px] min-h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={dataBarras}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="mes" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend
+                        formatter={(value: string) =>
+                          LABEL_ESTADO[value] || value
+                        }
+                      />
+                      {estados.map((estado) => (
+                        <Bar
+                          key={estado}
+                          dataKey={estado}
+                          stackId="a"
+                          fill={COLORES_ESTADO[estado] || "#999"}
+                        />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
 
-        {/* Gráfico de Estados */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
-            Distribución por Estado
-          </h3>
-          <div className="h-[300px] min-h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={estadosOrdenes}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {estadosOrdenes.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+            {/* Gráfico de Distribución por Estado — Dona */}
+            {dataDona.length > 0 && (
+              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                  Distribución por Estado
+                </h3>
+                <div className="h-[300px] min-h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={dataDona}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={120}
+                        paddingAngle={5}
+                        dataKey="value"
+                        nameKey="name"
+                      >
+                        {dataDona.map((entry) => (
+                          <Cell
+                            key={entry.rawName}
+                            fill={
+                              COLORES_ESTADO[entry.rawName] || "#999"
+                            }
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => [
+                          formatNumber(value as number),
+                          "Órdenes",
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                {/* Leyenda manual */}
+                <div className="mt-4 flex flex-wrap justify-center gap-4">
+                  {dataDona.map((item) => (
+                    <div
+                      key={item.rawName}
+                      className="flex items-center space-x-2"
+                    >
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{
+                          backgroundColor:
+                            COLORES_ESTADO[item.rawName] || "#999",
+                        }}
+                      />
+                      <span className="text-sm text-gray-600">
+                        {item.name} ({item.value})
+                      </span>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value) => [
-                    formatNumber(value as number),
-                    "Órdenes",
-                  ]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 flex flex-wrap justify-center gap-4">
-            {estadosOrdenes.map((item, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <div
-                  className="h-3 w-3 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-sm text-gray-600">{item.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Tablas de Análisis */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Servicios Más Utilizados */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
-            Servicios Más Utilizados
-          </h3>
-          <div className="space-y-4">
-            {serviciosMasUsados.map((servicio, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
-              >
-                <div className="mr-4 min-w-0 flex-1">
-                  <h4 className="truncate font-medium text-gray-900">
-                    {servicio.servicio}
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {servicio.ordenes} órdenes
-                  </p>
-                </div>
-                <div className="flex-shrink-0 text-right">
-                  <p className="font-semibold text-gray-900">
-                    {formatCurrency(servicio.ingresos)}
-                  </p>
-                  <p className="text-sm text-gray-600">Ingresos</p>
                 </div>
               </div>
-            ))}
+            )}
           </div>
-        </div>
 
-        {/* Top Clientes */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
-            Top Clientes
-          </h3>
-          <div className="space-y-4">
-            {clientesTop.map((cliente, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
-              >
-                <div className="mr-4 flex min-w-0 flex-1 items-center space-x-3">
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100">
-                    <Building2 size={16} className="text-blue-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="truncate font-medium text-gray-900">
-                      {cliente.cliente}
-                    </h4>
-                    <p className="text-sm text-gray-600">
-                      {cliente.ordenes} órdenes
-                    </p>
-                  </div>
-                </div>
-                <div className="flex-shrink-0 text-right">
-                  <p className="font-semibold text-gray-900">
-                    {formatCurrency(cliente.valor)}
-                  </p>
-                </div>
+          {/* Top Servicios y Top Clientes */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Top Servicios */}
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center space-x-2">
+                <Wrench size={20} className="text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Top Servicios
+                </h3>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Métricas Adicionales */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center space-x-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
-              <Users size={20} className="text-indigo-600" />
+              <div className="space-y-3">
+                {data.topServicios.length === 0 && (
+                  <p className="text-sm text-gray-400">Sin datos</p>
+                )}
+                {data.topServicios.map((item, index) => {
+                  const maxTotal = data.topServicios[0]?.total || 1;
+                  const pct = Math.round((item.total / maxTotal) * 100);
+                  return (
+                    <div
+                      key={item.nombre}
+                      className="relative overflow-hidden rounded-lg bg-gray-50 p-3"
+                    >
+                      {/* Barra de progreso de fondo */}
+                      <div
+                        className="absolute inset-y-0 left-0 bg-blue-100"
+                        style={{ width: `${pct}%` }}
+                      />
+                      <div className="relative flex items-center justify-between">
+                        <div className="mr-4 min-w-0 flex-1">
+                          <h4 className="truncate font-medium text-gray-900">
+                            {index + 1}. {item.nombre}
+                          </h4>
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          <p className="font-semibold text-gray-900">
+                            {item.total}
+                          </p>
+                          <p className="text-xs text-gray-500">órdenes</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Personal Activo</h3>
-              <p className="text-sm text-gray-600">En órdenes actuales</p>
+
+            {/* Top Clientes */}
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center space-x-2">
+                <Building2 size={20} className="text-indigo-600" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Top Clientes
+                </h3>
+              </div>
+              <div className="space-y-3">
+                {data.topClientes.length === 0 && (
+                  <p className="text-sm text-gray-400">Sin datos</p>
+                )}
+                {data.topClientes.map((item, index) => {
+                  const maxTotal = data.topClientes[0]?.total || 1;
+                  const pct = Math.round((item.total / maxTotal) * 100);
+                  return (
+                    <div
+                      key={item.nombre}
+                      className="relative overflow-hidden rounded-lg bg-gray-50 p-3"
+                    >
+                      <div
+                        className="absolute inset-y-0 left-0 bg-indigo-100"
+                        style={{ width: `${pct}%` }}
+                      />
+                      <div className="relative flex items-center justify-between">
+                        <div className="mr-4 flex min-w-0 flex-1 items-center space-x-3">
+                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100">
+                            <Building2 size={16} className="text-indigo-600" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="truncate font-medium text-gray-900">
+                              {index + 1}. {item.nombre}
+                            </h4>
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          <p className="font-semibold text-gray-900">
+                            {item.total}
+                          </p>
+                          <p className="text-xs text-gray-500">órdenes</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900">156</p>
-          <p className="mt-1 text-sm text-blue-600">89% de capacidad</p>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
