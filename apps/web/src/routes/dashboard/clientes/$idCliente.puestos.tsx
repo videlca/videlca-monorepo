@@ -24,6 +24,8 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
 import { InputForm } from "../../../components/common/InputForm";
+import type { ServerFilterColumn } from "../../../components/common/Table";
+import { LocacionFilterColumn } from "../../../api/dtos/clientes";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
@@ -65,7 +67,7 @@ export function RouteComponent() {
     handleSubmit: handleSubmitEdit,
     reset: resetEditForm,
     setValue: setValueEdit,
-
+    formState: { errors: errorsEdit },
   } = useForm<UpdatePuestoDto>({
     defaultValues: {
       idCliente: 0,
@@ -250,6 +252,12 @@ export function RouteComponent() {
         pageSize={5}
         enableSorting={true}
         enableFiltering={true}
+        filterColumns={[
+          { label: "Nombre", value: "nombre" },
+          { label: "Dirección", value: "direccion" },
+          { label: "Cliente", value: "idCliente.nombre" },
+          { label: "Ciudad", value: "idCiudad.descripcion" },
+        ]}
       />
 
       {/* Modal para editar puesto */}
@@ -404,18 +412,33 @@ export function RouteComponent() {
                 <InputForm
                   label="Teléfono*"
                   placeholder="Teléfono"
-                  type="text"
+                  type="tel"
                   id="telefono"
+                  prefix="+57"
+                  error={errorsEdit.telefono?.message}
                   required
-                  {...registerEdit("telefono")}
+                  {...registerEdit("telefono", {
+                    required: "El teléfono es requerido",
+                    pattern: {
+                      value: /^[0-9]{7,15}$/,
+                      message: "Número de teléfono inválido (7-15 dígitos)",
+                    },
+                  })}
                 />
                 <InputForm
                   label="Teléfono 2"
                   placeholder="Teléfono 2"
-                  type="text"
+                  type="tel"
                   id="segundoTelefono"
+                  prefix="+57"
+                  error={errorsEdit.segundoTelefono?.message}
                   required={false}
-                  {...registerEdit("segundoTelefono")}
+                  {...registerEdit("segundoTelefono", {
+                    pattern: {
+                      value: /^[0-9]{7,15}$/,
+                      message: "Número de teléfono inválido (7-15 dígitos)",
+                    },
+                  })}
                 />
               </div>
             </FormSection>

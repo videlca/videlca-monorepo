@@ -83,3 +83,19 @@ export interface FilterClienteDto {
   offset?: number;
   pagination?: boolean;
 }
+
+// Filter Locacion
+export enum LocacionFilterColumn {
+  NOMBRE = 'nombre',
+  DIRECCION = 'direccion',
+  CLIENTE = 'cliente',
+  CIUDAD = 'ciudad',
+}
+
+export interface FilterLocacionDto {
+  column: LocacionFilterColumn;
+  query: string;
+  limit?: number;
+  offset?: number;
+  pagination?: boolean;
+}

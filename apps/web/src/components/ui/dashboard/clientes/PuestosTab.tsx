@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Table from "../../../common/Table";
+import type { ServerFilterColumn } from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
 import type { Puesto } from "../../../../types";
 import { SimpleModal } from "../../../common/SimpleModal";
@@ -16,12 +17,14 @@ import { ConfirmarDelete } from "../../modals/ConfirmarDelete";
 import {
   useClientesActivo,
   useDeletePuesto,
+  useFilterPuestos,
   usePuestoById,
   usePuestos,
   useUpdatePuesto,
 } from "../../../../api/queryFunctions/clientes";
 
-import type { CreateCorreoDto, UpdatePuestoDto } from "../../../../api/dtos";
+import type { CreateCorreoDto, FilterLocacionDto, UpdatePuestoDto } from "../../../../api/dtos";
+import { LocacionFilterColumn } from "../../../../api/dtos/clientes";
 import {
   useCiudad,
   useEstadoOrden,
@@ -52,6 +55,8 @@ export function PuestosTab() {
   });
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
   const [idPuestoSelected, setIdPuestoSelected] = useState<number | null>(null);
+  const [filteredPuestos, setFilteredPuestos] = useState<Puesto[] | null>(null);
+  const [currentFilter, setCurrentFilter] = useState<FilterLocacionDto | undefined>(undefined);
 
   // Mutaciones y Queries
   const { data: puestos } = usePuestos();
@@ -63,6 +68,8 @@ export function PuestosTab() {
     useUpdatePuesto();
   const { mutate: getPuestoById } = usePuestoById();
   const { mutate: deletePuesto } = useDeletePuesto();
+  const { mutate: filterPuestos, isPending: isFilteringPuestos } =
+    useFilterPuestos();
 
   // Formulario con react-hook-form
   const {
@@ -70,6 +77,7 @@ export function PuestosTab() {
     handleSubmit: handleSubmitEdit,
     reset: resetEdit,
     setValue: setValueEdit,
+    formState: { errors: errorsEdit },
   } = useForm<UpdatePuestoDto>({
     defaultValues: {
       idCliente: 0,
@@ -177,25 +185,6 @@ export function PuestosTab() {
       accessorKey: "acciones",
       header: "Acciones",
       cell: ({ row }) => (
-        // <div className="flex gap-2">
-        //   <ButtonAction
-        //     Icon={PencilIcon}
-        //     label="Editar"
-        //     onClick={() => {
-        //       handleShowEditPuestoModal(row);
-        //       setIdPuestoSelected(row.original.idLocacion);
-        //     }}
-        //   />
-        //   <ButtonAction
-        //     Icon={TrashIcon}
-        //     label="Eliminar"
-        //     onClick={() => {
-        //       setIdPuestoSelected(row.original.idLocacion);
-        //       setIsOpenDelete(true);
-        //     }}
-        //     color="red"
-        //   />
-        // </div>
         <MoreActionsButton
           menuId={`actions-${row.original.idLocacion}`}
           actions={[
@@ -242,12 +231,35 @@ export function PuestosTab() {
         />
       </div> */}
       <Table
-        data={puestos?.data?.data || []}
+        data={filteredPuestos ?? puestos?.data?.data ?? []}
         columns={columnsPuestos}
         enablePagination={true}
         pageSize={5}
         enableSorting={true}
         enableFiltering={true}
+        filterColumns={[
+          { label: "Nombre", value: LocacionFilterColumn.NOMBRE },
+          { label: "Dirección", value: LocacionFilterColumn.DIRECCION },
+          { label: "Cliente", value: LocacionFilterColumn.CLIENTE },
+          { label: "Ciudad", value: LocacionFilterColumn.CIUDAD },
+        ] satisfies ServerFilterColumn[]}
+        onServerFilter={(column, query) => {
+          const filter = { column: column as LocacionFilterColumn, query, pagination: false };
+          setCurrentFilter(filter);
+          filterPuestos(
+            filter,
+            {
+              onSuccess: (data) => {
+                setFilteredPuestos(data.data?.data ?? []);
+              },
+            },
+          );
+        }}
+        onServerFilterClear={() => {
+          setFilteredPuestos(null);
+          setCurrentFilter(undefined);
+        }}
+        serverFilterLoading={isFilteringPuestos}
       />
 
       {/* Modal para editar puesto */}
@@ -278,6 +290,13 @@ export function PuestosTab() {
               {
                 onSuccess: () => {
                   handleCloseEditPuesto();
+                  if (currentFilter) {
+                    filterPuestos(currentFilter, {
+                      onSuccess: (data) => {
+                        setFilteredPuestos(data.data?.data ?? []);
+                      },
+                    });
+                  }
                 },
               },
             );
@@ -416,18 +435,33 @@ export function PuestosTab() {
                 <InputForm
                   label="Teléfono*"
                   placeholder="Teléfono"
-                  type="text"
+                  type="tel"
                   id="telefono"
+                  prefix="+57"
+                  error={errorsEdit.telefono?.message}
                   required
-                  {...registerEdit("telefono")}
+                  {...registerEdit("telefono", {
+                    required: "El teléfono es requerido",
+                    pattern: {
+                      value: /^[0-9]{7,15}$/,
+                      message: "Número de teléfono inválido (7-15 dígitos)",
+                    },
+                  })}
                 />
                 <InputForm
                   label="Teléfono 2"
                   placeholder="Teléfono 2"
-                  type="text"
+                  type="tel"
                   id="segundoTelefono"
+                  prefix="+57"
+                  error={errorsEdit.segundoTelefono?.message}
                   required={false}
-                  {...registerEdit("segundoTelefono")}
+                  {...registerEdit("segundoTelefono", {
+                    pattern: {
+                      value: /^[0-9]{7,15}$/,
+                      message: "Número de teléfono inválido (7-15 dígitos)",
+                    },
+                  })}
                 />
               </div>
             </FormSection>

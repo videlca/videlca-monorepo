@@ -219,7 +219,7 @@ export function ConfiguracionCorreo({
                 </label>
 
                 <div className="grid grid-cols-2 gap-2">
-                  {estadosOrdenServicio?.data
+                  {estadosOrdenServicio?.data?.data
                     ?.filter((estado) => estado.estado) // Solo estados activos
                     .map((estado) => (
                       <div

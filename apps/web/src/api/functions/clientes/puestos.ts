@@ -1,7 +1,7 @@
 import type { Puesto } from "../../../types";
 import { apiGet, axiosClient } from "../../config";
 import type { SearchPuestosDto } from "../../dtos";
-import type { CreatePuestoDto, UpdatePuestoDto } from "../../dtos/clientes";
+import type { CreatePuestoDto, FilterLocacionDto, UpdatePuestoDto } from "../../dtos/clientes";
 import type { PaginationDto } from "../../dtos/common";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 
@@ -22,10 +22,17 @@ import type { ApiResponse , PaginatedResponse } from "../../types/common";
 
 export const getPuestosByCliente = async (idCliente: number, pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Puesto[]>>> => {
   const response = await axiosClient.get(`/locaciones`, { params: pagination }).then((res) => {
-    const clientesFiltrados = res.data.filter((cliente: Puesto) => cliente.idCliente.idCliente === idCliente);
+    const clientesFiltrados = res.data.data.filter((cliente: Puesto) => cliente.idCliente.idCliente === idCliente);
     return {
       status: res.status,
-      data: clientesFiltrados,
+      data: {
+        data: clientesFiltrados,
+        pagination: {
+          ...res.data.pagination,
+          total: clientesFiltrados.length,
+          limit: clientesFiltrados.length,
+        }
+      },
     };
   }).catch((error) => {
     return {
@@ -53,6 +60,10 @@ export const getPuestoById = async (id: number): Promise<ApiResponse<Puesto | nu
 
 export const searchPuestos = async (query: SearchPuestosDto): Promise<ApiResponse<PaginatedResponse<Puesto[]>>> => {
   return await apiGet<PaginatedResponse<Puesto[]>>(`/locaciones/search?column=${query.column}&text=${query.text}`);
+};
+
+export const getFilteredPuestos = async (filter: FilterLocacionDto): Promise<ApiResponse<PaginatedResponse<Puesto[]>>> => {
+  return await apiGet<PaginatedResponse<Puesto[]>>("/locaciones/filter", filter);
 };
 
 export const getPuestosActivo = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Puesto[]>>> => {

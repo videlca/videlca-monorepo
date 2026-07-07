@@ -134,6 +134,7 @@ export function ClientesTab() {
     handleSubmit: handleSubmitAddPuesto,
     reset: resetAddPuesto,
     setValue: setValueAddPuesto,
+    formState: { errors: errorsAddPuesto },
   } = useForm<CreatePuestoDto>({
     defaultValues: {
       idCliente: 0,
@@ -771,18 +772,33 @@ export function ClientesTab() {
                 <InputForm
                   label="Teléfono*"
                   placeholder="Teléfono"
-                  type="text"
+                  type="tel"
                   id="telefono"
+                  prefix="+57"
+                  error={errorsAddPuesto.telefono?.message}
                   required
-                  {...registerAddPuesto("telefono")}
+                  {...registerAddPuesto("telefono", {
+                    required: "El teléfono es requerido",
+                    pattern: {
+                      value: /^[0-9]{7,15}$/,
+                      message: "Número de teléfono inválido (7-15 dígitos)",
+                    },
+                  })}
                 />
                 <InputForm
                   label="Teléfono 2"
                   placeholder="Teléfono 2"
-                  type="text"
+                  type="tel"
                   id="segundoTelefono"
+                  prefix="+57"
+                  error={errorsAddPuesto.segundoTelefono?.message}
                   required={false}
-                  {...registerAddPuesto("segundoTelefono")}
+                  {...registerAddPuesto("segundoTelefono", {
+                    pattern: {
+                      value: /^[0-9]{7,15}$/,
+                      message: "Número de teléfono inválido (7-15 dígitos)",
+                    },
+                  })}
                 />
               </div>
             </FormSection>

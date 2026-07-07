@@ -7,6 +7,7 @@ import {
 import {
   createPuesto,
   deletePuesto,
+  getFilteredPuestos,
   getPuestoById,
   getPuestos,
   getPuestosActivo,
@@ -20,6 +21,7 @@ import { queryClient } from "../../../App";
 import { toast } from "sonner";
 import type {
   CreatePuestoDto,
+  FilterLocacionDto,
   SearchPuestosDto,
   UpdatePuestoDto,
 } from "../../dtos";
@@ -154,6 +156,19 @@ export const useDeletePuesto = (): UseMutationResult<
     },
     onError: (error) => {
       toast.error(error.message || "Error al eliminar puesto");
+    },
+  });
+};
+
+export const useFilterPuestos = (): UseMutationResult<
+  ApiResponse<PaginatedResponse<Puesto[]>>,
+  Error,
+  FilterLocacionDto
+> => {
+  return useMutation({
+    mutationFn: (filter: FilterLocacionDto) => getFilteredPuestos(filter),
+    onError: (error) => {
+      toast.error(error.message || "Error al filtrar puestos");
     },
   });
 };
