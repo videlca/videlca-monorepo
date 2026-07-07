@@ -12,6 +12,7 @@ export { CreateLocacionDto } from "./locacion/create-locacion.dto";
 export { UpdateLocacionDto } from "./locacion/update-locacion.dto";
 export { CreateCorreoDto } from "./locacion/create-locacion.dto";
 export { LocacionSearchDto } from "./locacion/search-location.dto";
+export { FilterLocacionDto, LocacionFilterColumn } from './locacion/filter-locacion.dto';
 
 // QUERY SEGMENTACIONES
 export { QuerySegmentacionesWithPaginationDto } from "./query-segmentacion/query-segmentaciones-with-pagination.dto";
