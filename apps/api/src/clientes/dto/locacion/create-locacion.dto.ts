@@ -79,7 +79,7 @@ export class CreateLocacionDto {
   @IsPositive({ message: 'El valor del campo dias de anticipacion debe ser un numero positivo' })
   @Min(1, { message: 'El valor del campo dias de anticipacion debe ser minimo 1' })
   @Max(10, { message: 'El valor del campo dias de anticipacion debe ser maximo 10' })
-  diasAnticipacionNotificacion: number;
+  diasAnticipaticionNotificacion: number;
 
   @IsNumber({}, { message: 'El valor del campo Cliente no puede estar vacio' })
   @IsPositive({ message: 'El valor del campo Cliente no puede estar vacio' })
