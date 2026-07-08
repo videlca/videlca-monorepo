@@ -13,7 +13,7 @@ import { PaginationOption } from '../../common/interfaces/pagination.interface';
 import { Locacion, Correo } from '../entities';
 import { ClientesService } from '../services';
 
-import { CreateLocacionDto, UpdateLocacionDto, CreateCorreoDto, LocacionSearchDto } from '../dto';
+import { CreateLocacionDto, UpdateLocacionDto, CreateCorreoDto, LocacionSearchDto, FilterLocacionDto, LocacionFilterColumn } from '../dto';
 
 @Injectable()
 export class LocacionService {
@@ -414,6 +414,77 @@ export class LocacionService {
         }
     
         return qb.getMany();
+
+    }
+
+    // Filtrar locaciones por columna y valor
+    async findFiltered(filterLocacionDto: FilterLocacionDto) {
+
+        const {
+            column,
+            query,
+            limit = this.defaultLimit,
+            offset = 0,
+        } = filterLocacionDto;
+
+        const columnMap: Record<LocacionFilterColumn, string> = {
+            [LocacionFilterColumn.NOMBRE]: 'locacion.nombre',
+            [LocacionFilterColumn.DIRECCION]: 'locacion.direccion',
+            [LocacionFilterColumn.CLIENTE]: 'cliente.nombre',
+            [LocacionFilterColumn.CIUDAD]: 'ciudad.descripcion',
+        };
+
+        const dbColumn = columnMap[column];
+
+        if (!dbColumn) {
+            throw new BadRequestException('Columna de filtro no permitida');
+        }
+
+        const qb = this.locacionRepository
+            .createQueryBuilder('locacion')
+            .leftJoinAndSelect('locacion.idCliente', 'cliente')
+            .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
+            .leftJoinAndSelect('locacion.idCiudad', 'ciudad')
+            .leftJoinAndSelect('locacion.correos', 'correos')
+            .leftJoinAndSelect('correos.estados', 'estados')
+            .where(`${dbColumn} LIKE :query`, {
+                query: `%${query}%`,
+            })
+            .orderBy('locacion.nombre', 'ASC');
+
+        if (filterLocacionDto.pagination === PaginationOption.TRUE) {
+            qb.take(limit).skip(offset);
+
+            const [locaciones, total] = await qb.getManyAndCount();
+
+            return {
+                data: locaciones,
+                pagination: {
+                    total,
+                    limit,
+                    offset,
+                    page: Math.floor(offset / limit) + 1,
+                    totalPages: Math.ceil(total / limit),
+                    hasNextPage: offset + limit < total,
+                    hasPreviousPage: offset > 0,
+                },
+            };
+        }
+
+        const locaciones = await qb.getMany();
+
+        return {
+            data: locaciones,
+            pagination: {
+                total: locaciones.length,
+                limit: locaciones.length,
+                offset: 0,
+                page: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false,
+            }
+        };
 
     }
 
