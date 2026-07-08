@@ -10,7 +10,7 @@ import { ClientesService } from '../services';
 import { CreateClienteDto, UpdateClienteDto, FilterClienteDto, ClienteFilterColumn } from '../dto';
 
 @Controller('clientes')
-// @AppAuth(DescriptionRoutes.CLIENTE) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
+@AppAuth(DescriptionRoutes.CLIENTE) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class ClientesController {
 
   constructor(private readonly clientesService: ClientesService) {}
