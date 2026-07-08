@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 import * as cookieParser from 'cookie-parser';
@@ -20,8 +20,27 @@ async function main() {
       transform: true,
       transformOptions: {
         enableImplicitConversion: true
-      }
-    })
+      },
+      exceptionFactory: (errors) => {
+        const messages: string[] = [];
+  
+        const extract = (errs: any[]) => {
+          for (const err of errs) {
+            if (err.constraints) {
+              messages.push(...Object.values(err.constraints) as string[]);
+            }
+  
+            if (err.children?.length) {
+              extract(err.children);
+            }
+          }
+        };
+  
+        extract(errors);
+  
+        return new BadRequestException(messages);
+      },
+    }),
   );
 
   const config = new DocumentBuilder()
