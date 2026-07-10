@@ -1,4 +1,5 @@
 import React from "react";
+import { toast } from "sonner";
 
 interface InputFormProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -27,6 +28,8 @@ export const InputForm = React.forwardRef<HTMLInputElement, InputFormProps>(
       error,
       prefix,
       Icon,
+      onChange,
+      onKeyDown,
       ...rest
     },
     ref,
@@ -53,7 +56,6 @@ export const InputForm = React.forwardRef<HTMLInputElement, InputFormProps>(
             ref={ref}
             type={type}
             id={id}
-            max={type === "number" ? "9999" : undefined}
             min={type === "number" && !allowNegative ? "0" : undefined}
             required={required}
             maxLength={maxLength}
@@ -62,6 +64,32 @@ export const InputForm = React.forwardRef<HTMLInputElement, InputFormProps>(
             disabled={disabled}
             autoComplete="off"
             spellCheck="false"
+            onChange={(e) => {
+              if (type === "number" && maxLength && e.target.value.length > maxLength) {
+                e.target.value = e.target.value.slice(0, maxLength);
+                toast.error(`Solo se permiten hasta ${maxLength} caracteres en este campo.`);
+              }
+              if (onChange) {
+                onChange(e);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (type === "number") {
+                const invalidChars = ["e", "E", "+"];
+                if (!allowNegative) {
+                  invalidChars.push("-");
+                }
+                if (rest.step !== "any" && !rest.step?.toString().includes(".")) {
+                  invalidChars.push(".", ",");
+                }
+                if (invalidChars.includes(e.key)) {
+                  e.preventDefault();
+                }
+              }
+              if (onKeyDown) {
+                onKeyDown(e);
+              }
+            }}
             {...rest}
           />
         </div>

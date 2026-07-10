@@ -395,6 +395,8 @@ export function PuestosTab() {
                   type="number"
                   id="latitud"
                   required
+                  step="any"
+                  maxLength={10}
                   allowNegative={true}
                   {...registerEdit("latitud")}
                 />
@@ -404,6 +406,8 @@ export function PuestosTab() {
                   type="number"
                   id="longitud"
                   required
+                  step="any"
+                  maxLength={10}
                   allowNegative={true}
                   {...registerEdit("longitud")}
                 />
@@ -435,32 +439,28 @@ export function PuestosTab() {
                 <InputForm
                   label="Teléfono*"
                   placeholder="Teléfono"
-                  type="tel"
+                  type="number"
                   id="telefono"
                   prefix="+57"
+                  maxLength={10}
+                  allowNegative={false}
                   error={errorsEdit.telefono?.message}
                   required
                   {...registerEdit("telefono", {
                     required: "El teléfono es requerido",
-                    pattern: {
-                      value: /^[0-9]{7,15}$/,
-                      message: "Número de teléfono inválido (7-15 dígitos)",
-                    },
+                    valueAsNumber: true,
                   })}
                 />
                 <InputForm
                   label="Teléfono 2"
                   placeholder="Teléfono 2"
-                  type="tel"
+                  type="number"
                   id="segundoTelefono"
                   prefix="+57"
-                  error={errorsEdit.segundoTelefono?.message}
-                  required={false}
+                  maxLength={10}
+                  allowNegative={false}
                   {...registerEdit("segundoTelefono", {
-                    pattern: {
-                      value: /^[0-9]{7,15}$/,
-                      message: "Número de teléfono inválido (7-15 dígitos)",
-                    },
+                    valueAsNumber: true,
                   })}
                 />
               </div>

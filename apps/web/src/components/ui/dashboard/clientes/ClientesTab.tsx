@@ -371,16 +371,16 @@ export function ClientesTab() {
             resetCreate();
           }}
           updating={false}
-        onSubmit={handleSubmitCreate((data) => {
+          onSubmit={handleSubmitCreate((data) => {
             const { idSegmentacion, idSubSegmentacion, ...submitData } = data;
             const payload: any = {
-                ...submitData,
-                idTipoIdentificacion: Number(data.idTipoIdentificacion),
-                idTipoCliente: Number(data.idTipoCliente),
+              ...submitData,
+              idTipoIdentificacion: Number(data.idTipoIdentificacion),
+              idTipoCliente: Number(data.idTipoCliente),
             };
 
             if (aplicaSegmentacionCreate) {
-                payload.idSubSegmentacion = Number(idSubSegmentacion);
+              payload.idSubSegmentacion = Number(idSubSegmentacion);
             }
 
             createCliente(
@@ -498,16 +498,16 @@ export function ClientesTab() {
           onSubmit={handleSubmitEdit((data) => {
             const { idSegmentacion, idSubSegmentacion, ...submitData } = data;
             const payload: any = {
-                ...submitData,
-                idTipoIdentificacion: Number(data.idTipoIdentificacion),
-                idTipoCliente: Number(data.idTipoCliente),
-                estado: String(data.estado) === "true",
+              ...submitData,
+              idTipoIdentificacion: Number(data.idTipoIdentificacion),
+              idTipoCliente: Number(data.idTipoCliente),
+              estado: String(data.estado) === "true",
             };
-            
+
             if (aplicaSegmentacionEdit) {
-                payload.idSubSegmentacion = Number(idSubSegmentacion);
+              payload.idSubSegmentacion = Number(idSubSegmentacion);
             } else {
-                payload.idSubSegmentacion = null;
+              payload.idSubSegmentacion = null;
             }
 
             updateCliente(
@@ -703,6 +703,8 @@ export function ClientesTab() {
                   type="number"
                   id="latitud"
                   required
+                  step="any"
+                  maxLength={10}
                   allowNegative={true}
                   {...registerAddPuesto("latitud")}
                 />
@@ -712,6 +714,8 @@ export function ClientesTab() {
                   type="number"
                   id="longitud"
                   required
+                  step="any"
+                  maxLength={10}
                   allowNegative={true}
                   {...registerAddPuesto("longitud")}
                 />
@@ -772,32 +776,30 @@ export function ClientesTab() {
                 <InputForm
                   label="Teléfono*"
                   placeholder="Teléfono"
-                  type="tel"
+                  type="number"
                   id="telefono"
                   prefix="+57"
+                  maxLength={10}
                   error={errorsAddPuesto.telefono?.message}
+                  allowNegative={false}
                   required
                   {...registerAddPuesto("telefono", {
                     required: "El teléfono es requerido",
-                    pattern: {
-                      value: /^[0-9]{7,15}$/,
-                      message: "Número de teléfono inválido (7-15 dígitos)",
-                    },
+                    valueAsNumber: true,
                   })}
                 />
                 <InputForm
                   label="Teléfono 2"
                   placeholder="Teléfono 2"
-                  type="tel"
+                  type="number"
                   id="segundoTelefono"
                   prefix="+57"
+                  maxLength={10}
+                  allowNegative={false}
                   error={errorsAddPuesto.segundoTelefono?.message}
                   required={false}
                   {...registerAddPuesto("segundoTelefono", {
-                    pattern: {
-                      value: /^[0-9]{7,15}$/,
-                      message: "Número de teléfono inválido (7-15 dígitos)",
-                    },
+                    valueAsNumber: true,
                   })}
                 />
               </div>

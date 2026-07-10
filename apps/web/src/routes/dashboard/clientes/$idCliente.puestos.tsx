@@ -24,8 +24,6 @@ import { SimpleModal } from "../../../components/common/SimpleModal";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
 import { InputForm } from "../../../components/common/InputForm";
-import type { ServerFilterColumn } from "../../../components/common/Table";
-import { LocacionFilterColumn } from "../../../api/dtos/clientes";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
@@ -342,8 +340,10 @@ export function RouteComponent() {
                   type="number"
                   id="latitud"
                   required
+                  step="any"
+                  maxLength={10}
                   allowNegative={true}
-                  {...registerEdit("latitud", { valueAsNumber: true })}
+                  {...registerEdit("latitud")}
                 />
                 <InputForm
                   label="Longitud*"
@@ -351,8 +351,10 @@ export function RouteComponent() {
                   type="number"
                   id="longitud"
                   required
+                  step="any"
+                  maxLength={10}
                   allowNegative={true}
-                  {...registerEdit("longitud", { valueAsNumber: true })}
+                  {...registerEdit("longitud")}
                 />
                 <div className="md:col-span-2">
                   <CheckboxForm
@@ -412,32 +414,30 @@ export function RouteComponent() {
                 <InputForm
                   label="Teléfono*"
                   placeholder="Teléfono"
-                  type="tel"
+                  type="number"
                   id="telefono"
                   prefix="+57"
+                  maxLength={10}
                   error={errorsEdit.telefono?.message}
+                  allowNegative={false}
                   required
                   {...registerEdit("telefono", {
                     required: "El teléfono es requerido",
-                    pattern: {
-                      value: /^[0-9]{7,15}$/,
-                      message: "Número de teléfono inválido (7-15 dígitos)",
-                    },
+                    valueAsNumber: true,
                   })}
                 />
                 <InputForm
                   label="Teléfono 2"
                   placeholder="Teléfono 2"
-                  type="tel"
+                  type="number"
                   id="segundoTelefono"
                   prefix="+57"
+                  maxLength={10}
                   error={errorsEdit.segundoTelefono?.message}
+                  allowNegative={false}
                   required={false}
                   {...registerEdit("segundoTelefono", {
-                    pattern: {
-                      value: /^[0-9]{7,15}$/,
-                      message: "Número de teléfono inválido (7-15 dígitos)",
-                    },
+                    valueAsNumber: true,
                   })}
                 />
               </div>
