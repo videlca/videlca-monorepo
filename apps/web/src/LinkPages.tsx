@@ -156,12 +156,12 @@ export const linksSideBar: LinksSideBar = {
       description: "tipo-tarifa",
       icon: <DollarSignIcon className="h-6 w-6" />,
     },
-    // {
-    //   to: "/dashboard/tarifas/comparativa-periodos",
-    //   label: "Comparativa de Periodos",
-    //   description: "comparativa-periodos",
-    //   icon: <ChartColumn className="h-6 w-6" />,
-    // },
+    {
+      to: "/dashboard/tarifas/comparativa-periodos",
+      label: "Comparativa de Periodos",
+      description: "comparativa-periodos",
+      icon: <ChartColumn className="h-6 w-6" />,
+    },
   ],
   "ordenes-servicio": [
     {

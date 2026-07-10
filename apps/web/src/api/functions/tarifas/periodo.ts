@@ -3,7 +3,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../dtos";
 import type { PaginationDto } from "../../dtos/common";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
-import type { Periodo } from "../../types/periodo";
+import type { Periodo, ComparativaPeriodosResponse } from "../../types/periodo";
 
 export const getPeriodos = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Periodo[]>>> => {
   return await apiGet<PaginatedResponse<Periodo[]>>("/periodos", pagination);
@@ -27,4 +27,14 @@ export const updatePeriodo = async (id: number, data: UpdatePeriodoDto): Promise
 
 export const deletePeriodo = async (id: number): Promise<ApiResponse> => {
   return await apiDelete<Periodo>(`/periodos/${id}`);
+};
+
+export const getComparativaPeriodos = async (
+  periodoA: number,
+  periodoB: number,
+): Promise<ApiResponse<ComparativaPeriodosResponse>> => {
+  return await apiGet<ComparativaPeriodosResponse>("/periodos/comparativa", {
+    periodoA,
+    periodoB,
+  });
 };

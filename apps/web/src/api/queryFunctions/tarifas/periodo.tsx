@@ -7,13 +7,14 @@ import {
 import {
   createPeriodo,
   deletePeriodo,
+  getComparativaPeriodos,
   getPeriodoById,
   getPeriodos,
   getPeriodosActivo,
   updatePeriodo,
 } from "../../functions/tarifas/periodo";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
-import type { Periodo } from "../../types/periodo";
+import type { ComparativaPeriodosResponse, Periodo } from "../../types/periodo";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../dtos";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
@@ -111,5 +112,16 @@ export const useEliminarPeriodo = (): UseMutationResult<
     onError: (error) => {
       toast.error(error.message || "Error al eliminar el periodo");
     },
+  });
+};
+
+export const useComparativaPeriodos = (
+  periodoA: number | null,
+  periodoB: number | null,
+): UseQueryResult<ApiResponse<ComparativaPeriodosResponse>, Error> => {
+  return useQuery({
+    queryKey: ["comparativa-periodos", periodoA, periodoB],
+    queryFn: () => getComparativaPeriodos(periodoA!, periodoB!),
+    enabled: !!periodoA && !!periodoB && periodoA !== periodoB,
   });
 };

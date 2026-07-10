@@ -46,3 +46,55 @@ export interface TipoTarifa {
   };
   cantidadTiempo?: number;
 }
+
+// Comparativa de periodos
+export interface ComparativaPeriodosResponse {
+  periodoA: ComparativaPeriodoInfo;
+  periodoB: ComparativaPeriodoInfo;
+  resumen: {
+    cantidadServicios: ComparativaDiferencia;
+    valorTotalTarifas: ComparativaDiferencia;
+  };
+  comparativa: {
+    serviciosNuevos: ComparativaServicio[];
+    serviciosEliminados: ComparativaServicio[];
+    serviciosConCambioPrecio: ComparativaCambioPrecio[];
+    ordenesPorServicio: ComparativaOrdenes[];
+  };
+}
+
+export interface ComparativaPeriodoInfo {
+  idPeriodo: number;
+  nombre: string;
+  fechaInicio: string;
+  fechaFin: string;
+}
+
+export interface ComparativaDiferencia {
+  periodoA: number;
+  periodoB: number;
+  diferencia: number;
+}
+
+export interface ComparativaServicio {
+  idServicio: number;
+  nombreServicio: string;
+  precio: number;
+  cantidadOrdenes: number;
+}
+
+export interface ComparativaCambioPrecio {
+  idServicio: number;
+  nombreServicio: string;
+  precioAnterior: number;
+  precioNuevo: number;
+  diferencia: number;
+}
+
+export interface ComparativaOrdenes {
+  idServicio: number;
+  nombreServicio: string;
+  periodoA: { cantidadOrdenes: number };
+  periodoB: { cantidadOrdenes: number };
+  diferencia: number;
+}
