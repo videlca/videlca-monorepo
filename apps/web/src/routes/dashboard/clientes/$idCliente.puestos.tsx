@@ -139,7 +139,7 @@ export function RouteComponent() {
     },
     {
       accessorKey: "nombre",
-      header: "Nombre de la puesto",
+      header: "Nombre del puesto",
     },
     {
       accessorKey: "idCiudad.descripcion",
