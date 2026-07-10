@@ -9,12 +9,12 @@ import {
   XIcon,
 } from "lucide-react";
 import type { Puesto } from "../../../types";
-import { useSearchPuestos } from "../../../api/queryFunctions/clientes";
+import { useFilterPuestos } from "../../../api/queryFunctions/clientes";
 import { useEffect, useState } from "react";
 import { SimpleModal } from "../SimpleModal";
 import { ButtonAction } from "../ButtonAction";
 import { useNavigate } from "@tanstack/react-router";
-import type { ColumnaPuesto } from "../../../api/dtos";
+import { LocacionFilterColumn } from "../../../api/dtos/clientes";
 import type { UseFormSetValue } from "react-hook-form";
 
 export const SeleccionarPuestoCliente = ({
@@ -29,7 +29,10 @@ export const SeleccionarPuestoCliente = ({
   const [isOpenCreatePuesto, setIsOpenCreatePuesto] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
-  const [searchColumn, setSearchColumn] = useState<ColumnaPuesto>("nombre");
+  const [searchColumn, setSearchColumn] = useState<LocacionFilterColumn>(
+    LocacionFilterColumn.NOMBRE,
+  );
+  const [filteredPuestos, setFilteredPuestos] = useState<Puesto[]>();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -39,10 +42,27 @@ export const SeleccionarPuestoCliente = ({
     return () => clearTimeout(timer);
   }, [searchText]);
 
-  const { data: puestosSearchQuery } = useSearchPuestos({
-    column: searchColumn,
-    text: debouncedSearchText,
-  });
+  const { mutate: filterPuestos } = useFilterPuestos();
+
+  useEffect(() => {
+    if (debouncedSearchText.trim().length > 0) {
+      filterPuestos(
+        {
+          column: searchColumn,
+          query: debouncedSearchText,
+          pagination: false,
+        },
+        {
+          onSuccess: (data) => {
+            setFilteredPuestos(data.data?.data);
+          },
+        },
+      );
+    } else {
+      setFilteredPuestos(undefined);
+    }
+  }, [debouncedSearchText, searchColumn, filterPuestos]);
+
   const navigate = useNavigate();
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -62,7 +82,10 @@ export const SeleccionarPuestoCliente = ({
           <select
             id="search"
             value={searchColumn}
-            onChange={(e) => setSearchColumn(e.target.value as ColumnaPuesto)}
+            onChange={(e) => {
+              setSearchColumn(e.target.value as LocacionFilterColumn);
+              setValue("idLocacion", 0);
+            }}
             className="w-full rounded-md border border-gray-300 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
             <option value="" disabled>
@@ -71,6 +94,7 @@ export const SeleccionarPuestoCliente = ({
             <option value="nombre">Nombre</option>
             <option value="direccion">Dirección</option>
             <option value="cliente">Cliente</option>
+            <option value="ciudad">Ciudad</option>
           </select>
         </div>
         <div className="relative flex-2">
@@ -80,14 +104,17 @@ export const SeleccionarPuestoCliente = ({
             placeholder="Buscar por nombre del cliente, puesto o dirección..."
             className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+            onChange={(e) => {
+              setSearchText(e.target.value);
+              setValue("idLocacion", 0);
+            }}
           />
         </div>
       </div>
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-700">
-          Puestos encontrados ({puestosSearchQuery?.data?.length || 0})
+          Puestos encontrados ({filteredPuestos?.length || 0})
         </p>
         <div className="justify-end">
           <button
@@ -101,7 +128,7 @@ export const SeleccionarPuestoCliente = ({
       </div>
 
       <div className="max-h-80 min-h-40 space-y-3 overflow-y-auto">
-        {puestosSearchQuery?.data?.map((puesto) => (
+        {filteredPuestos?.map((puesto) => (
           <div
             key={puesto.idLocacion}
             className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
@@ -152,12 +179,12 @@ export const SeleccionarPuestoCliente = ({
             </div>
           </div>
         ))}
-        {puestosSearchQuery?.data?.length === 0 && (
+        {filteredPuestos?.length === 0 && (
           <p className="text-center text-sm text-gray-500">
             No se encontraron puestos.
           </p>
         )}
-        {puestosSearchQuery?.data === undefined && (
+        {filteredPuestos === undefined && (
           <p className="text-center text-sm text-gray-500">
             Seleccione una columna y un texto para buscar puestos.
           </p>
