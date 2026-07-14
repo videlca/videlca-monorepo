@@ -16,6 +16,7 @@ import {
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { ComparativaPeriodosResponse, Periodo } from "../../types/periodo";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../dtos";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
@@ -61,11 +62,11 @@ export const useCrearPeriodo = (): UseMutationResult<
         toast.success("Periodo creado correctamente");
         queryClient.invalidateQueries({ queryKey: ["periodos"] });
       } else {
-        throw new Error(data.message || "Error al crear el periodo");
+        showErrorToast(data.message, "Error al crear el periodo");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear el periodo");
+      showErrorToast(error.message, "Error al crear el periodo");
     },
   });
 };
@@ -84,11 +85,11 @@ export const useActualizarPeriodo = (): UseMutationResult<
         toast.success("Periodo actualizado correctamente");
         queryClient.invalidateQueries({ queryKey: ["periodos"] });
       } else {
-        throw new Error(data.message || "Error al actualizar el periodo");
+        showErrorToast(data.message, "Error al actualizar el periodo");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar el periodo");
+      showErrorToast(error.message, "Error al actualizar el periodo");
     },
   });
 };
@@ -106,11 +107,11 @@ export const useEliminarPeriodo = (): UseMutationResult<
         toast.success("Periodo eliminado correctamente");
         queryClient.invalidateQueries({ queryKey: ["periodos"] });
       } else {
-        throw new Error(data.message || "Error al eliminar el periodo");
+        showErrorToast(data.message, "Error al eliminar el periodo");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar el periodo");
+      showErrorToast(error.message, "Error al eliminar el periodo");
     },
   });
 };

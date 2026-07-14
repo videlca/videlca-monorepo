@@ -19,6 +19,7 @@ import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import type { Cliente } from "../../../types";
 import type { CreateClienteDto, FilterClienteDto, UpdateClienteDto } from "../../dtos/clientes";
 import type { EnviarCorreoDto, PaginationDto } from "../../dtos/common";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
@@ -43,11 +44,11 @@ export const useClienteById = (): UseMutationResult<
       if (data.status === 200 || data.status === 201) {
         queryClient.setQueryData(["cliente", id], data.data);
       } else {
-        throw new Error(data.message || "Error al obtener cliente");
+        showErrorToast(data.message, "Error al obtener cliente");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al obtener cliente");
+      showErrorToast(error.message, "Error al obtener cliente");
     },
   });
 };
@@ -77,11 +78,11 @@ export const useCreateCliente = (): UseMutationResult<
           description: "El cliente ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear cliente");
+        showErrorToast(data.message, "Error al crear cliente");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear cliente");
+      showErrorToast(error.message, "Error al crear cliente");
     },
   });
 };
@@ -102,11 +103,11 @@ export const useUpdateCliente = (): UseMutationResult<
           description: "El cliente ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar cliente");
+        showErrorToast(data.message, "Error al actualizar cliente");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar cliente");
+      showErrorToast(error.message, "Error al actualizar cliente");
     },
   });
 };
@@ -126,11 +127,11 @@ export const useDeleteCliente = (): UseMutationResult<
           description: "El cliente ha sido eliminado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar cliente");
+        showErrorToast(data.message, "Error al eliminar cliente");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar cliente");
+      showErrorToast(error.message, "Error al eliminar cliente");
     },
   });
 };
@@ -155,7 +156,7 @@ export const useDescargarExcelClientes = (): UseMutationResult<
       toast.success("Excel descargado correctamente");
     },
     onError: (error) => {
-      toast.error(error.message || "Error al descargar el Excel de clientes");
+      showErrorToast(error.message, "Error al descargar el Excel de clientes");
     },
   });
 };
@@ -173,11 +174,11 @@ export const useEnviarExcelClientes = (): UseMutationResult<
           description: "El Excel de clientes y puestos fue enviado al correo indicado",
         });
       } else {
-        throw new Error(data.message || "Error al enviar el correo");
+        showErrorToast(data.message, "Error al enviar el correo");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al enviar el Excel de clientes por correo");
+      showErrorToast(error.message, "Error al enviar el Excel de clientes por correo");
     },
   });
 };
@@ -190,7 +191,7 @@ export const useFilterClientes = (): UseMutationResult<
   return useMutation({
     mutationFn: (filter: FilterClienteDto) => getFilteredClientes(filter),
     onError: (error) => {
-      toast.error(error.message || "Error al filtrar clientes");
+      showErrorToast(error.message, "Error al filtrar clientes");
     },
   });
 };

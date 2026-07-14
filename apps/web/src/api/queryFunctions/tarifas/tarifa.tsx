@@ -24,6 +24,7 @@ import type {
 } from "../../dtos/tarifas";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Tarifa } from "../../types/periodo";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { EnviarCorreoDto } from "../../dtos/common";
@@ -70,11 +71,11 @@ export const useCrearTarifa = (): UseMutationResult<
           queryKey: ["tarifas", data.data.idPeriodo],
         });
       } else {
-        throw new Error(data.message || "Error al crear la tarifa");
+        showErrorToast(data.message, "Error al crear la tarifa");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear la tarifa");
+      showErrorToast(error.message, "Error al crear la tarifa");
     },
   });
 };
@@ -94,11 +95,11 @@ export const useGuardarTarifas = (): UseMutationResult<
           queryKey: ["tarifas", data.data.idPeriodo],
         });
       } else {
-        throw new Error(data.message || "Error al guardar las tarifas");
+        showErrorToast(data.message, "Error al guardar las tarifas");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al guardar las tarifas");
+      showErrorToast(error.message, "Error al guardar las tarifas");
     },
   });
 };
@@ -143,7 +144,7 @@ export const useActualizarTarifa = (): UseMutationResult<
       //     queryKey: ["tarifas", data.data.idPeriodo],
       //   });
       // } else {
-      //   throw new Error(data.message || "Error al actualizar la tarifa");
+      //   showErrorToast(data.message, "Error al actualizar la tarifa");
       // }
       // TODO: revisar esto
       toast.success("Tarifa actualizada correctamente");
@@ -152,7 +153,7 @@ export const useActualizarTarifa = (): UseMutationResult<
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar la tarifa");
+      showErrorToast(error.message, "Error al actualizar la tarifa");
     },
   });
 };
@@ -172,7 +173,7 @@ export const useEliminarTarifa = (): UseMutationResult<
       //     queryKey: ["tarifas", data.data.idPeriodo],
       //   });
       // } else {
-      //   throw new Error(data.message || "Error al eliminar la tarifa");
+      //   showErrorToast(data.message, "Error al eliminar la tarifa");
       // }
       // TODO: revisar esto
       toast.success("Tarifa eliminada correctamente");
@@ -181,7 +182,7 @@ export const useEliminarTarifa = (): UseMutationResult<
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar la tarifa");
+      showErrorToast(error.message, "Error al eliminar la tarifa");
     },
   });
 };
@@ -202,11 +203,11 @@ export const useEnviarExcelPorCorreo = (): UseMutationResult<
           queryKey: ["enviar-excel-por-correo"],
         });
       } else {
-        throw new Error(data.message || "Error al enviar el Excel por correo");
+        showErrorToast(data.message, "Error al enviar el Excel por correo");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al enviar el Excel por correo");
+      showErrorToast(error.message, "Error al enviar el Excel por correo");
     },
   });
 };
@@ -233,7 +234,7 @@ export const useDescargarExcel = (): UseMutationResult<
       toast.success("Excel descargado correctamente");
     },
     onError: (error) => {
-      toast.error(error.message || "Error al descargar el Excel");
+      showErrorToast(error.message, "Error al descargar el Excel");
     },
   });
 };

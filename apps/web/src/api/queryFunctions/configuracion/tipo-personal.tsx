@@ -12,6 +12,7 @@ import type { TipoPersonal } from "../../../types";
 import type { CreateTipoPersonal } from "../../types";
 import { queryClient } from "../../../App";
 import type { UpdateTipoPersonalDto } from "../../dtos";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useTipoPersonal = (): UseQueryResult<
@@ -48,11 +49,11 @@ export const useCrearTipoPersonal = (): UseMutationResult<
           description: "El tipo de personal ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear tipo de personal");
+        showErrorToast(data.message, "Error al crear tipo de personal");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear tipo de personal");
+      showErrorToast(error.message, "Error al crear tipo de personal");
     },
   });
 };
@@ -72,11 +73,11 @@ export const useActualizarTipoPersonal = (): UseMutationResult<
           description: "El tipo de personal ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar tipo de personal");
+        showErrorToast(data.message, "Error al actualizar tipo de personal");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar tipo de personal");
+      showErrorToast(error.message, "Error al actualizar tipo de personal");
     },
   });
 };
@@ -95,11 +96,11 @@ export const useEliminarTipoPersonal = (): UseMutationResult<
           description: "El tipo de personal ha sido eliminado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar tipo de personal");
+        showErrorToast(data.message, "Error al eliminar tipo de personal");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar tipo de personal");
+      showErrorToast(error.message, "Error al eliminar tipo de personal");
     },
   });
 };

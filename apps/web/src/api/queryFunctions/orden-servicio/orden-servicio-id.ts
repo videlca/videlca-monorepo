@@ -1,8 +1,9 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { anularOrdenServicioId, deleteIdOrdenServicio, getIdsAnuladosOrdenServicio, getIdsOrdenServicio, getNextIdOrdenServicio, updateIdOrdenServicio } from "../../functions/orden-servicio/orden-servicio-id";
-import type { ApiResponse , PaginatedResponse } from "../../types/common";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import type { OrdenServicioId, OrdenServicioIdAnulados } from "../../types/orden-servicio";
 import type { AnularIdOrdenServicioDto, UpdateOrdenServicioIdDto, PaginationDto } from "../../dtos";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
@@ -25,7 +26,7 @@ export const useUpdateIdOrdenServicio = (): UseMutationResult<ApiResponse<any>, 
     mutationFn: async ({ id, data }) => {
       const response = await updateIdOrdenServicio(id, data);
       if (response.status !== 200 && response.status !== 201) {
-        throw new Error(response.message || "Error al actualizar el identificador de orden de servicio");
+        showErrorToast(response.message, "Error al actualizar el identificador de orden de servicio");
       }
       return response;
     },
@@ -39,7 +40,7 @@ export const useUpdateIdOrdenServicio = (): UseMutationResult<ApiResponse<any>, 
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar el identificador de orden de servicio");
+      showErrorToast(error.message, "Error al actualizar el identificador de orden de servicio");
     },
   });
 }
@@ -51,7 +52,7 @@ export const useAnularIdOrdenServicio = (): UseMutationResult<ApiResponse<OrdenS
     mutationFn: async (data) => {
       const response = await anularOrdenServicioId(data);
       if (response.status !== 200 && response.status !== 201) {
-        throw new Error(response.message || "Error al anular el identificador de la orden de servicio");
+        showErrorToast(response.message, "Error al anular el identificador de la orden de servicio");
       }
       return response;
     },
@@ -65,7 +66,7 @@ export const useAnularIdOrdenServicio = (): UseMutationResult<ApiResponse<OrdenS
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Error al anular el identificador de la orden de servicio");
+      showErrorToast(error.message, "Error al anular el identificador de la orden de servicio");
     },
   });
 }
@@ -75,7 +76,7 @@ export const useDeleteIdOrdenServicio = (): UseMutationResult<ApiResponse<any>, 
     mutationFn: async ({ id }) => {
       const response = await deleteIdOrdenServicio(id);
       if (response.status !== 200 && response.status !== 201) {
-        throw new Error(response.message || "Error al eliminar el identificador de orden de servicio");
+        showErrorToast(response.message, "Error al eliminar el identificador de orden de servicio");
       }
       return response;
     },
@@ -89,7 +90,7 @@ export const useDeleteIdOrdenServicio = (): UseMutationResult<ApiResponse<any>, 
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar el identificador de orden de servicio");
+      showErrorToast(error.message, "Error al eliminar el identificador de orden de servicio");
     },
   });
 }

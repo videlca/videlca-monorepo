@@ -14,6 +14,7 @@ import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoCliente } from "../../../types";
 import type { ActualizarTipoCliente, CreateTipoCliente } from "../../types";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useTipoCliente = (): UseQueryResult<
@@ -40,11 +41,11 @@ export const useCrearTipoCliente = (): UseMutationResult<
           description: "El tipo de cliente ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear tipo de cliente");
+        showErrorToast(data.message, "Error al crear tipo de cliente");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear tipo de cliente");
+      showErrorToast(error.message, "Error al crear tipo de cliente");
     },
   });
 };
@@ -64,11 +65,11 @@ export const useActualizarTipoCliente = (): UseMutationResult<
           description: "El tipo de cliente ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar tipo de cliente");
+        showErrorToast(data.message, "Error al actualizar tipo de cliente");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar tipo de cliente");
+      showErrorToast(error.message, "Error al actualizar tipo de cliente");
     },
   });
 };
@@ -87,11 +88,11 @@ export const useEliminarTipoCliente = (): UseMutationResult<
           description: "El tipo de cliente ha sido eliminado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar tipo de cliente");
+        showErrorToast(data.message, "Error al eliminar tipo de cliente");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar tipo de cliente");
+      showErrorToast(error.message, "Error al eliminar tipo de cliente");
     },
   });
 };

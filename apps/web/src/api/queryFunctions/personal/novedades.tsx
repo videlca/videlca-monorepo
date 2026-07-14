@@ -13,6 +13,7 @@ import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Novedad } from "../../types/personal";
 import type { UpdateNovedadDto } from "../../dtos/personal";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useNovedades = (): UseQueryResult<ApiResponse<PaginatedResponse<Novedad[]>>> => {
@@ -36,11 +37,11 @@ export const useUpdateNovedad = (): UseMutationResult<
         queryClient.invalidateQueries({ queryKey: ["personal-novedad"] });
         toast.success("Novedad actualizada correctamente");
       } else {
-        throw new Error(data.message || "Error al actualizar la novedad");
+        showErrorToast(data.message, "Error al actualizar la novedad");
       }
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error.message);
     },
   });
 };
@@ -59,11 +60,11 @@ export const useDeleteNovedad = (): UseMutationResult<
         queryClient.invalidateQueries({ queryKey: ["personal-novedad"] });
         toast.success("Novedad eliminada correctamente");
       } else {
-        throw new Error(data.message || "Error al eliminar la novedad");
+        showErrorToast(data.message, "Error al eliminar la novedad");
       }
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error.message);
     },
   });
 };

@@ -13,6 +13,7 @@ import {
 } from "../../functions/servicios";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoHorario } from "../../types/servicio";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import type { CreateTipoHorarioDto, UpdateTipoHorarioDto } from "../../dtos";
 import { queryClient } from "../../../App";
@@ -39,11 +40,11 @@ export const useTipoHorariosById = (): UseMutationResult<
       if (data.status === 200 || data.status === 201) {
         toast.success("Tipo horario obtenido correctamente");
       } else {
-        throw new Error(data.message || "Error al obtener el tipo horario");
+        showErrorToast(data.message, "Error al obtener el tipo horario");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al obtener el tipo horario");
+      showErrorToast(error.message, "Error al obtener el tipo horario");
     },
   });
 };
@@ -61,11 +62,11 @@ export const useCreateTipoHorario = (): UseMutationResult<
         toast.success("Tipo horario creado correctamente");
         queryClient.invalidateQueries({ queryKey: ["tipo-horarios"] });
       } else {
-        throw new Error(data.message || "Error al crear el tipo horario");
+        showErrorToast(data.message, "Error al crear el tipo horario");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear el tipo horario");
+      showErrorToast(error.message, "Error al crear el tipo horario");
     },
   });
 };
@@ -84,11 +85,11 @@ export const useUpdateTipoHorario = (): UseMutationResult<
         toast.success("Tipo horario actualizado correctamente");
         queryClient.invalidateQueries({ queryKey: ["tipo-horarios"] });
       } else {
-        throw new Error(data.message || "Error al actualizar el tipo horario");
+        showErrorToast(data.message, "Error al actualizar el tipo horario");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar el tipo horario");
+      showErrorToast(error.message, "Error al actualizar el tipo horario");
     },
   });
 };
@@ -106,11 +107,11 @@ export const useDeleteTipoHorario = (): UseMutationResult<
         toast.success("Tipo horario eliminado correctamente");
         queryClient.invalidateQueries({ queryKey: ["tipo-horarios"] });
       } else {
-        throw new Error(data.message || "Error al eliminar el tipo horario");
+        showErrorToast(data.message, "Error al eliminar el tipo horario");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar el tipo horario");
+      showErrorToast(error.message, "Error al eliminar el tipo horario");
     },
   });
 };

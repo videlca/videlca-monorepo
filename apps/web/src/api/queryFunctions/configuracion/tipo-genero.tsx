@@ -13,6 +13,7 @@ import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoGenero } from "../../../types";
 import type { ActualizarTipoGenero, CreateTipoGenero } from "../../types";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useTipoGenero = (): UseQueryResult<
@@ -39,11 +40,11 @@ export const useCrearTipoGenero = (): UseMutationResult<
           description: "El tipo de género ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear tipo de género");
+        showErrorToast(data.message, "Error al crear tipo de género");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear tipo de género");
+      showErrorToast(error.message, "Error al crear tipo de género");
     },
   });
 };
@@ -63,11 +64,11 @@ export const useActualizarTipoGenero = (): UseMutationResult<
           description: "El tipo de género ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar tipo de género");
+        showErrorToast(data.message, "Error al actualizar tipo de género");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar tipo de género");
+      showErrorToast(error.message, "Error al actualizar tipo de género");
     },
   });
 };

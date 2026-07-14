@@ -1,6 +1,6 @@
 export interface ApiResponse<T = any> {
   status?: number
-  message?: string
+  message?: string | string[]
   data?: T
 }
 

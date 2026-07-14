@@ -11,13 +11,14 @@ import {
   getTipoIdentificacionActivo,
   updateTipoIdentificacion,
 } from "../../functions/configuracion/";
-import type { ApiResponse , PaginatedResponse } from "../../types/common";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import type { TipoIdentificacion } from "../../../types";
 import type {
   ActualizarTipoIdentificacion,
   CreateTipoIdentificacion,
 } from "../../types";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useTipoIdentificacion = (): UseQueryResult<
@@ -55,13 +56,11 @@ export const useCrearTipoIdentificacion = (): UseMutationResult<
           description: "El tipo de identificación ha sido creado correctamente",
         });
       } else {
-        throw new Error(
-          data.message || "Error al crear tipo de identificación",
-        );
+        showErrorToast(data.message, "Error al crear tipo de identificación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear tipo de identificación");
+      showErrorToast(error.message, "Error al crear tipo de identificación");
     },
   });
 };
@@ -87,9 +86,7 @@ export const useActualizarTipoIdentificacion = (): UseMutationResult<
             "El tipo de identificación ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(
-          data.message || "Error al actualizar tipo de identificación",
-        );
+        showErrorToast(data.message, "Error al actualizar tipo de identificación");
       }
     },
     onError: (error) => {
@@ -115,13 +112,11 @@ export const useEliminarTipoIdentificacion = (): UseMutationResult<
             "El tipo de identificación ha sido eliminado correctamente",
         });
       } else {
-        throw new Error(
-          data.message || "Error al eliminar tipo de identificación",
-        );
+        showErrorToast(data.message, "Error al eliminar tipo de identificación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar tipo de identificación");
+      showErrorToast(error.message, "Error al eliminar tipo de identificación");
     },
   });
 };

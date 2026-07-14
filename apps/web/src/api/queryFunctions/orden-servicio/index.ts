@@ -3,6 +3,7 @@ import { anularOrdenServicio, cancelarOrdenServicio, createOrdenServicio, delete
 import type { CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
 import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
 import type { ApiResponse, PaginatedResponse } from "../../types/common";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { Personal } from "../../types";
@@ -20,11 +21,11 @@ export const useCreateOrdenServicio = (): UseMutationResult<ApiResponse<OrdenSer
           queryKey: ["next-id-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al crear la orden de servicio");
+        showErrorToast(data.message, "Error al crear la orden de servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear la orden de servicio");
+      showErrorToast(error.message, "Error al crear la orden de servicio");
     },
   });
 }
@@ -39,11 +40,11 @@ export const useUpdateOrdenServicio = (): UseMutationResult<ApiResponse<OrdenSer
           queryKey: ["orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al actualizar la orden de servicio");
+        showErrorToast(data.message, "Error al actualizar la orden de servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar la orden de servicio");
+      showErrorToast(error.message, "Error al actualizar la orden de servicio");
     },
   });
 }
@@ -59,7 +60,7 @@ export const useFilterOrdenesServicio = (): UseMutationResult<ApiResponse<Pagina
   return useMutation({
     mutationFn: (filter: any) => getFilteredOrdenesServicio(filter),
     onError: (error) => {
-      toast.error(error.message || "Error al filtrar ordenes de servicio");
+      showErrorToast(error.message, "Error al filtrar ordenes de servicio");
     },
   });
 }
@@ -74,11 +75,11 @@ export const useGetOrdenServicioById = (): UseMutationResult<ApiResponse<OrdenSe
           queryKey: ["orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al obtener la orden de servicio");
+        showErrorToast(data.message, "Error al obtener la orden de servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al obtener la orden de servicio");
+      showErrorToast(error.message, "Error al obtener la orden de servicio");
     },
   });
 }
@@ -93,11 +94,11 @@ export const useCancelarOrdenServicio = (): UseMutationResult<ApiResponse<any>, 
           queryKey: ["orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al cancelar la orden de servicio");
+        showErrorToast(data.message, "Error al cancelar la orden de servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al cancelar la orden de servicio");
+      showErrorToast(error.message, "Error al cancelar la orden de servicio");
     },
   });
 }
@@ -112,11 +113,11 @@ export const useAnularOrdenServicio = (): UseMutationResult<ApiResponse<any>, Er
           queryKey: ["orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al anular la orden de servicio");
+        showErrorToast(data.message, "Error al anular la orden de servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al anular la orden de servicio");
+      showErrorToast(error.message, "Error al anular la orden de servicio");
     },
   });
 }
@@ -134,11 +135,11 @@ export const useDeleteOrdenServicio = (): UseMutationResult<ApiResponse<any>, Er
           queryKey: ["next-id-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al eliminar la orden de servicio");
+        showErrorToast(data.message, "Error al eliminar la orden de servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar la orden de servicio");
+      showErrorToast(error.message, "Error al eliminar la orden de servicio");
     },
   });
 }
@@ -153,11 +154,11 @@ export const useValidateFechasOrdenServicio = (): UseMutationResult<ApiResponse<
           queryKey: ["orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al validar los horarios");
+        showErrorToast(data.message, "Error al validar los horarios");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al validar los horarios");
+      showErrorToast(error.message, "Error al validar los horarios");
     },
   });
 }
@@ -172,11 +173,11 @@ export const useUpdateValidateFechasOrdenServicio = (): UseMutationResult<ApiRes
           queryKey: ["orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al actualizar las fechas validadas");
+        showErrorToast(data.message, "Error al actualizar las fechas validadas");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar las fechas validadas");
+      showErrorToast(error.message, "Error al actualizar las fechas validadas");
     },
   });
 }
@@ -190,11 +191,11 @@ export const useGetPrecioOrdenServicio = (): UseMutationResult<ApiResponse<any>,
           queryKey: ["orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al obtener el precio de la orden de servicio");
+        showErrorToast(data.message, "Error al obtener el precio de la orden de servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al obtener el precio de la orden de servicio");
+      showErrorToast(error.message, "Error al obtener el precio de la orden de servicio");
     },
   });
 }
@@ -210,11 +211,11 @@ export const useValidarIdOrdenServicio = (): UseMutationResult<ApiResponse<Orden
           queryKey: ["identificadores-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al validar el identificador de la orden de servicio");
+        showErrorToast(data.message, "Error al validar el identificador de la orden de servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al validar el identificador de la orden de servicio");
+      showErrorToast(error.message, "Error al validar el identificador de la orden de servicio");
     },
   });
 }
@@ -231,11 +232,11 @@ export const useValidarEmpleadosDisponibles = (): UseMutationResult<ApiResponse<
           queryKey: ["validar-empleados-disponibles"],
         });
       } else {
-        throw new Error(data.message || "Error al validar los empleados disponibles");
+        showErrorToast(data.message, "Error al validar los empleados disponibles");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al validar los empleados disponibles");
+      showErrorToast(error.message, "Error al validar los empleados disponibles");
     },
   });
 }
@@ -250,11 +251,11 @@ export const useValidarHorarioServicioOrdenServicio = (): UseMutationResult<ApiR
           queryKey: ["validar-horario-servicio-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al validar los horarios");
+        showErrorToast(data.message, "Error al validar los horarios");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al validar los horarios");
+      showErrorToast(error.message, "Error al validar los horarios");
     },
   });
 }
@@ -269,11 +270,11 @@ export const useValidarRangoHorarioPersonalOrdenServicio = (): UseMutationResult
           queryKey: ["validar-rango-horario-personal-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al validar el rango horario personal");
+        showErrorToast(data.message, "Error al validar el rango horario personal");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al validar el rango horario personal");
+      showErrorToast(error.message, "Error al validar el rango horario personal");
     },
   });
 }
@@ -290,11 +291,11 @@ export const useEnviarPdfPorCorreo = (): UseMutationResult<ApiResponse<any>, Err
           queryKey: ["enviar-pdf-por-correo"],
         });
       } else {
-        throw new Error(data.message || "Error al enviar el PDF por correo");
+        showErrorToast(data.message, "Error al enviar el PDF por correo");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al enviar el PDF por correo");
+      showErrorToast(error.message, "Error al enviar el PDF por correo");
     },
   });
 }
@@ -317,7 +318,7 @@ export const useDescargarPdf = (): UseMutationResult<{ blob: Blob; filename: str
       toast.success("PDF descargado correctamente");
     },
     onError: (error) => {
-      toast.error(error.message || "Error al descargar el PDF");
+      showErrorToast(error.message, "Error al descargar el PDF");
     },
   });
 }
@@ -333,11 +334,11 @@ export const useImprimirPdf = (): UseMutationResult<ApiResponse<{ file: string, 
           queryKey: ["imprimir-pdf"],
         });
       } else {
-        throw new Error(data.message || "Error al imprimir el PDF");
+        showErrorToast(data.message, "Error al imprimir el PDF");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al imprimir el PDF");
+      showErrorToast(error.message, "Error al imprimir el PDF");
     },
   });
 }

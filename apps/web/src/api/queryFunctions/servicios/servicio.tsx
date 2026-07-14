@@ -17,6 +17,7 @@ import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Servicio } from "../../types/servicio";
 import type { CreateServicioDto, UpdateServicioDto } from "../../dtos";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useServicios = (): UseQueryResult<
@@ -74,11 +75,11 @@ export const useCreateServicio = (): UseMutationResult<
         toast.success("Servicio creado correctamente");
         queryClient.invalidateQueries({ queryKey: ["servicios"] });
       } else {
-        throw new Error(data.message || "Error al crear el servicio");
+        showErrorToast(data.message, "Error al crear el servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear el servicio");
+      showErrorToast(error.message, "Error al crear el servicio");
     },
   });
 };
@@ -97,11 +98,11 @@ export const useUpdateServicio = (): UseMutationResult<
         toast.success("Servicio actualizado correctamente");
         queryClient.invalidateQueries({ queryKey: ["servicios"] });
       } else {
-        throw new Error(data.message || "Error al actualizar el servicio");
+        showErrorToast(data.message, "Error al actualizar el servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar el servicio");
+      showErrorToast(error.message, "Error al actualizar el servicio");
     },
   });
 };
@@ -119,7 +120,7 @@ export const useDeleteServicio = (): UseMutationResult<
         toast.success("Servicio eliminado correctamente");
         queryClient.invalidateQueries({ queryKey: ["servicios"] });
       } else {
-        throw new Error(data.message || "Error al eliminar el servicio");
+        showErrorToast(data.message, "Error al eliminar el servicio");
       }
     },
   });

@@ -17,6 +17,7 @@ import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Rol } from "../../../types";
 import type { CreateRoleDto, UpdateRoleDto } from "../../dtos";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import type { RolesWithPermissions } from "../../types/permisos";
 
@@ -49,11 +50,11 @@ export const useCreateRole = (): UseMutationResult<
           description: "El rol ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear rol");
+        showErrorToast(data.message, "Error al crear rol");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear rol");
+      showErrorToast(error.message, "Error al crear rol");
     },
   });
 };
@@ -76,11 +77,11 @@ export const useUpdateRole = (): UseMutationResult<
           description: "El rol ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar rol");
+        showErrorToast(data.message, "Error al actualizar rol");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar rol");
+      showErrorToast(error.message, "Error al actualizar rol");
     },
   });
 };
@@ -101,11 +102,11 @@ export const useDeleteRole = (): UseMutationResult<
           description: "El rol ha sido eliminado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar rol");
+        showErrorToast(data.message, "Error al eliminar rol");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar rol");
+      showErrorToast(error.message, "Error al eliminar rol");
     },
   });
 };

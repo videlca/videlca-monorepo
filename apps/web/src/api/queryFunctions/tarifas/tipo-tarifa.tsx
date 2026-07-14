@@ -4,6 +4,7 @@ import { getTipoTarifa, updateTipoTarifa } from "../../functions/tarifas";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoTarifa } from "../../types/periodo";
 import type { UpdateTipoTarifaDto } from "../../dtos/tarifas";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
@@ -32,11 +33,11 @@ export const useActualizarTipoTarifa = (): UseMutationResult<
           description: "El tipo de tarifa ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar tipo de tarifa");
+        showErrorToast(data.message, "Error al actualizar tipo de tarifa");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar tipo de tarifa");
+      showErrorToast(error.message, "Error al actualizar tipo de tarifa");
     },
   });
 };

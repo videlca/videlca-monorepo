@@ -5,6 +5,7 @@ import type { Usuario } from "../../../types";
 import type { CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from "../../dtos";
 import type { PaginationDto } from "../../dtos/common";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useGetUsuarios = (paginationParams: PaginationDto = { pagination: 'false' }): UseQueryResult<ApiResponse<PaginatedResponse<Usuario[]>>, Error> => {
@@ -18,13 +19,13 @@ export const useFilterUsuarios = (): UseMutationResult<ApiResponse<PaginatedResp
   return useMutation({
     mutationFn: (filter: any) => getFilteredUsuarios(filter),
     onError: (error) => {
-      toast.error(error.message || "Error al filtrar usuarios");
+      showErrorToast(error.message, "Error al filtrar usuarios");
     },
   });
 };
 
 export const useCreateUsuario = (): UseMutationResult<ApiResponse, Error, CreateUserDto> => {
-  return useMutation({ 
+  return useMutation({
     mutationFn: (data: CreateUserDto) => createUsuario(data),
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
@@ -33,11 +34,11 @@ export const useCreateUsuario = (): UseMutationResult<ApiResponse, Error, Create
           description: 'El usuario ha sido creado correctamente'
         })
       } else {
-        throw new Error(data.message || 'Error al crear usuario')
+        showErrorToast(data.message, "Error al crear usuario");
       }
     },
     onError: (error) => {
-      toast.error(error.message || 'Error al crear usuario')
+      showErrorToast(error.message, "Error al crear usuario");
     }
   })
 }
@@ -52,11 +53,11 @@ export const useUpdateUsuario = (): UseMutationResult<ApiResponse, Error, { id: 
           description: 'El usuario ha sido actualizado correctamente'
         })
       } else {
-        throw new Error(data.message || 'Error al actualizar usuario')
+        showErrorToast(data.message, "Error al actualizar usuario");
       }
     },
     onError: (error) => {
-      toast.error(error.message || 'Error al actualizar usuario')
+      showErrorToast(error.message, "Error al actualizar usuario");
     }
   })
 }
@@ -71,11 +72,11 @@ export const useDeleteUsuario = (): UseMutationResult<ApiResponse, Error, { id: 
           description: 'El usuario ha sido eliminado correctamente'
         })
       } else {
-        throw new Error(data.message || 'Error al eliminar usuario')
+        showErrorToast(data.message, "Error al eliminar usuario");
       }
     },
     onError: (error) => {
-      toast.error(error.message || 'Error al eliminar usuario')
+      showErrorToast(error.message, "Error al eliminar usuario");
     }
   })
 }
@@ -98,11 +99,11 @@ export const useUpdateUsuarioPerfil = (): UseMutationResult<ApiResponse, Error, 
           description: 'El usuario ha sido actualizado correctamente'
         })
       } else {
-        throw new Error(data.message || 'Error al actualizar usuario')
+        showErrorToast(data.message, "Error al actualizar usuario");
       }
     },
     onError: (error) => {
-      toast.error(error.message || 'Error al actualizar usuario')
+      showErrorToast(error.message, "Error al actualizar usuario");
     }
   })
 }

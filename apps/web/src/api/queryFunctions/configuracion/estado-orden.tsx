@@ -13,6 +13,7 @@ import { queryClient } from "../../../App";
 import type { CreateEstadoOrdenDto, UpdateEstadoOrdenDto } from "../../dtos";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { EstadoOrden } from "../../../types";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useEstadoOrden = (): UseQueryResult<
@@ -39,11 +40,11 @@ export const useCrearEstadoOrden = (): UseMutationResult<
           description: "El estado de orden ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear estado de orden");
+        showErrorToast(data.message, "Error al crear estado de orden");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear estado de orden");
+      showErrorToast(error.message, "Error al crear estado de orden");
     },
   });
 };
@@ -63,11 +64,11 @@ export const useActualizarEstadoOrden = (): UseMutationResult<
           description: "El estado de orden ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar estado de orden");
+        showErrorToast(data.message, "Error al actualizar estado de orden");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar estado de orden");
+      showErrorToast(error.message, "Error al actualizar estado de orden");
     },
   });
 };

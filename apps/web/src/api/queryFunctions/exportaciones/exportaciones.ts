@@ -3,6 +3,7 @@ import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { GruposLiquidaciones } from "../../types";
 import { generarArchivoExcel, getGruposLiquidacionesExportaciones, enviarCorreoArchivo, type Exportacion } from "../../functions/exportaciones";
 import type { FiltroGrupoLiquidacionDto } from "../../dtos/exportaciones";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import type { EnviarCorreoDto } from "../../dtos/common";
 import { queryClient } from "../../../App";
@@ -34,7 +35,7 @@ export const useGenerarReporteArchivo = (archivo: Exportacion): UseMutationResul
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Error al generar el reporte consolidacion");
+      showErrorToast(error.message, "Error al generar el reporte consolidacion");
     },
   });
 };
@@ -50,11 +51,11 @@ export const useEnviarCorreoExportacion = (archivo: Exportacion): UseMutationRes
           queryKey: ["enviar-correo-exportacion"],
         });
       } else {
-        throw new Error(data.message || "Error al enviar el correo de exportacion");
+        showErrorToast(data.message, "Error al enviar el correo de exportacion");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al enviar el correo de exportacion");
+      showErrorToast(error.message, "Error al enviar el correo de exportacion");
     },
   });
 };

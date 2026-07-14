@@ -16,6 +16,7 @@ import {
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Personal } from "../../types/personal";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import type { CreatePersonalDto, UpdatePersonalDto } from "../../dtos/personal";
 
@@ -39,7 +40,7 @@ export const useFilterPersonal = (): UseMutationResult<
   return useMutation({
     mutationFn: (filter: any) => getFilteredPersonal(filter),
     onError: (error) => {
-      toast.error(error.message || "Error al filtrar personal");
+      showErrorToast(error.message, "Error al filtrar personal");
     },
   });
 };
@@ -78,11 +79,11 @@ export const useCreatePersonal = (): UseMutationResult<
         queryClient.invalidateQueries({ queryKey: ["personal"] });
         toast.success("Personal creado correctamente");
       } else {
-        throw new Error(data.message || "Error al crear el personal");
+        showErrorToast(data.message, "Error al crear el personal");
       }
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error.message);
     },
   });
 };
@@ -104,11 +105,11 @@ export const useUpdatePersonal = (): UseMutationResult<
         queryClient.invalidateQueries({ queryKey: ["personal"] });
         toast.success("Personal actualizado correctamente");
       } else {
-        throw new Error(data.message || "Error al actualizar el personal");
+        showErrorToast(data.message, "Error al actualizar el personal");
       }
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error.message);
     },
   });
 };
@@ -126,11 +127,11 @@ export const useDeletePersonal = (): UseMutationResult<
         queryClient.invalidateQueries({ queryKey: ["personal"] });
         toast.success("Personal eliminado correctamente");
       } else {
-        throw new Error(data.message || "Error al eliminar el personal");
+        showErrorToast(data.message, "Error al eliminar el personal");
       }
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error.message);
     },
   });
 };

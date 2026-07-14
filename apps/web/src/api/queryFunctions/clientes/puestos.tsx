@@ -18,6 +18,7 @@ import {
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Puesto } from "../../../types";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import type {
   CreatePuestoDto,
@@ -55,11 +56,11 @@ export const usePuestoById = (): UseMutationResult<
           description: "El puesto ha sido obtenido correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al obtener puesto");
+        showErrorToast(data.message, "Error al obtener puesto");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al obtener puesto");
+      showErrorToast(error.message, "Error al obtener puesto");
     },
   });
 };
@@ -100,11 +101,11 @@ export const useCreatePuesto = (): UseMutationResult<
           description: "El puesto ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear puesto");
+        showErrorToast(data.message, "Error al crear puesto");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear puesto");
+      showErrorToast(error.message, "Error al crear puesto");
     },
   });
 };
@@ -126,11 +127,11 @@ export const useUpdatePuesto = (): UseMutationResult<
           description: "El puesto ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar puesto");
+        showErrorToast(data.message, "Error al actualizar puesto");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar puesto");
+      showErrorToast(error.message, "Error al actualizar puesto");
     },
   });
 };
@@ -151,11 +152,11 @@ export const useDeletePuesto = (): UseMutationResult<
           description: "El puesto ha sido eliminado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar puesto");
+        showErrorToast(data.message, "Error al eliminar puesto");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar puesto");
+      showErrorToast(error.message, "Error al eliminar puesto");
     },
   });
 };
@@ -168,7 +169,7 @@ export const useFilterPuestos = (): UseMutationResult<
   return useMutation({
     mutationFn: (filter: FilterLocacionDto) => getFilteredPuestos(filter),
     onError: (error) => {
-      toast.error(error.message || "Error al filtrar puestos");
+      showErrorToast(error.message, "Error al filtrar puestos");
     },
   });
 };

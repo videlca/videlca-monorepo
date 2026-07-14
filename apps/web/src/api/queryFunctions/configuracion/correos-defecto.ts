@@ -2,6 +2,7 @@ import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } fr
 import { createCorreoDefault, getCorreoDefaultById, getCorreosDefault } from "../../functions/configuracion";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { CorreoDefaultDto, CreateCorreoDefaultDto } from "../../dtos";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
@@ -20,11 +21,11 @@ export const useCreateCorreoDefault = (): UseMutationResult<ApiResponse<CreateCo
         queryClient.invalidateQueries({ queryKey: ["correos-default"] });
         toast.success("Correos default creados correctamente");
       } else {
-        throw new Error(data.message || "Error al crear correos default");
+        showErrorToast(data.message, "Error al crear correos default");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear correos default");
+      showErrorToast(error.message, "Error al crear correos default");
     },
   });
 };

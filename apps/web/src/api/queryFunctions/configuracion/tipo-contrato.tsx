@@ -14,6 +14,7 @@ import {
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoContrato } from "../../types";
 import type { ActualizarTipoContrato, CreateTipoContrato } from "../../dtos";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
@@ -51,11 +52,11 @@ export const useCrearTipoContrato = (): UseMutationResult<
           description: "El tipo de contrato ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear tipo de contrato");
+        showErrorToast(data.message, "Error al crear tipo de contrato");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear tipo de contrato");
+      showErrorToast(error.message, "Error al crear tipo de contrato");
     },
   });
 };
@@ -75,11 +76,11 @@ export const useActualizarTipoContrato = (): UseMutationResult<
           description: "El tipo de contrato ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar tipo de contrato");
+        showErrorToast(data.message, "Error al actualizar tipo de contrato");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar tipo de contrato");
+      showErrorToast(error.message, "Error al actualizar tipo de contrato");
     },
   });
 };
@@ -98,11 +99,11 @@ export const useEliminarTipoContrato = (): UseMutationResult<
           description: "El tipo de contrato ha sido eliminado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar tipo de contrato");
+        showErrorToast(data.message, "Error al eliminar tipo de contrato");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar tipo de contrato");
+      showErrorToast(error.message, "Error al eliminar tipo de contrato");
     },
   });
 };

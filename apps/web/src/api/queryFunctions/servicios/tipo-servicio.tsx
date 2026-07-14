@@ -15,6 +15,7 @@ import {
 } from "../../functions/servicios";
 import type { TipoServicio } from "../../types/servicio";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { CreateTipoServicioDto, UpdateTipoServicioDto } from "../../dtos";
@@ -61,11 +62,11 @@ export const useTipoServiciosById = (): UseMutationResult<
       if (data.status === 200 || data.status === 201) {
         toast.success("Tipo servicio obtenido correctamente");
       } else {
-        throw new Error(data.message || "Error al obtener el tipo servicio");
+        showErrorToast(data.message, "Error al obtener el tipo servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al obtener el tipo servicio");
+      showErrorToast(error.message, "Error al obtener el tipo servicio");
     },
   });
 };
@@ -83,11 +84,11 @@ export const useCreateTipoServicio = (): UseMutationResult<
         toast.success("Tipo servicio creado correctamente");
         queryClient.invalidateQueries({ queryKey: ["tipo-servicios"] });
       } else {
-        throw new Error(data.message || "Error al crear el tipo servicio");
+        showErrorToast(data.message, "Error al crear el tipo servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear el tipo servicio");
+      showErrorToast(error.message, "Error al crear el tipo servicio");
     },
   });
 };
@@ -106,11 +107,11 @@ export const useUpdateTipoServicio = (): UseMutationResult<
         toast.success("Tipo servicio actualizado correctamente");
         queryClient.invalidateQueries({ queryKey: ["tipo-servicios"] });
       } else {
-        throw new Error(data.message || "Error al actualizar el tipo servicio");
+        showErrorToast(data.message, "Error al actualizar el tipo servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar el tipo servicio");
+      showErrorToast(error.message, "Error al actualizar el tipo servicio");
     },
   });
 };
@@ -128,11 +129,11 @@ export const useDeleteTipoServicio = (): UseMutationResult<
         toast.success("Tipo servicio eliminado correctamente");
         queryClient.invalidateQueries({ queryKey: ["tipo-servicios"] });
       } else {
-        throw new Error(data.message || "Error al eliminar el tipo servicio");
+        showErrorToast(data.message, "Error al eliminar el tipo servicio");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar el tipo servicio");
+      showErrorToast(error.message, "Error al eliminar el tipo servicio");
     },
   });
 };

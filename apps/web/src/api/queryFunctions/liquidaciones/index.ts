@@ -2,6 +2,7 @@ import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMens
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { OrdenServicio } from "../../types/orden-servicio";
@@ -33,11 +34,11 @@ export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<Orde
         toast.success("Liquidación mensual creada correctamente");
         queryClient.invalidateQueries({ queryKey: ["liquidaciones-por-mes"] });
       } else {
-        throw new Error(data.message || "Error al crear la liquidación mensual");
+        showErrorToast(data.message, "Error al crear la liquidación mensual");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear la liquidación mensual");
+      showErrorToast(error.message, "Error al crear la liquidación mensual");
     },
   });
 };
@@ -60,11 +61,11 @@ export const useAprobarGrupoLiquidacion = (): UseMutationResult<ApiResponse<Grup
         toast.success("Grupo de liquidación aprobado correctamente");
         queryClient.invalidateQueries({ queryKey: ["grupos-liquidaciones"] });
       } else {
-        throw new Error(data.message || "Error al aprobar el grupo de liquidación");
+        showErrorToast(data.message, "Error al aprobar el grupo de liquidación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al aprobar el grupo de liquidación");
+      showErrorToast(error.message, "Error al aprobar el grupo de liquidación");
     },
   });
 };
@@ -77,11 +78,11 @@ export const useDesintegrarGrupoLiquidacion = (): UseMutationResult<ApiResponse<
         toast.success("Grupo de liquidación desintegrado correctamente");
         queryClient.invalidateQueries({ queryKey: ["grupos-liquidaciones"] });
       } else {
-        throw new Error(data.message || "Error al desintegrar el grupo de liquidación");
+        showErrorToast(data.message, "Error al desintegrar el grupo de liquidación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al desintegrar el grupo de liquidación");
+      showErrorToast(error.message, "Error al desintegrar el grupo de liquidación");
     },
   });
 };
@@ -94,11 +95,11 @@ export const useCambiarEstadoExportacion = (): UseMutationResult<ApiResponse<Gru
         toast.success("Estado de exportación cambiado correctamente");
         queryClient.invalidateQueries({ queryKey: ["grupos-liquidaciones-exportaciones"] });
       } else {
-        throw new Error(data.message || "Error al cambiar el estado de exportación");
+        showErrorToast(data.message, "Error al cambiar el estado de exportación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al cambiar el estado de exportación");
+      showErrorToast(error.message, "Error al cambiar el estado de exportación");
     },
   });
 };
@@ -123,7 +124,7 @@ export const useGenerarReporteArchivoLiquidacion = (): UseMutationResult<{ blob:
       });
     },
     onError: (error) => {
-      toast.error(error.message || "Error al generar el reporte consolidacion");
+      showErrorToast(error.message, "Error al generar el reporte consolidacion");
     },
   });
 };
@@ -139,11 +140,11 @@ export const useEnviarCorreoArchivoLiquidacion = (): UseMutationResult<ApiRespon
           queryKey: ["enviar-correo-liquidacion"],
         });
       } else {
-        throw new Error(data.message || "Error al enviar el correo de liquidacion");
+        showErrorToast(data.message, "Error al enviar el correo de liquidacion");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al enviar el correo de liquidacion");
+      showErrorToast(error.message, "Error al enviar el correo de liquidacion");
     },
   });
 };

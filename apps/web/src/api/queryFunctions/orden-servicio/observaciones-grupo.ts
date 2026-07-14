@@ -1,4 +1,5 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { CreateObservacionGrupoOrdenServicioDto, UpdateObservacionGrupoOrdenServicioDto } from "../../dtos";
@@ -21,11 +22,11 @@ export const useCreateObservacionGrupoOrdenServicio = (): UseMutationResult<ApiR
           queryKey: ["observaciones-grupo-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al agregar la observación");
+        showErrorToast(data.message, "Error al agregar la observación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al agregar la observación");
+      showErrorToast(error.message, "Error al agregar la observación");
     },
   });
 }
@@ -54,11 +55,11 @@ export const useUpdateObservacionGrupoOrdenServicio = (): UseMutationResult<ApiR
           queryKey: ["observaciones-grupo-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al actualizar la observación");
+        showErrorToast(data.message, "Error al actualizar la observación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar la observación");
+      showErrorToast(error.message, "Error al actualizar la observación");
     },
   });
 }
@@ -78,11 +79,11 @@ export const useDeleteObservacionGrupoOrdenServicio = (): UseMutationResult<ApiR
           queryKey: ["observaciones-grupo-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al eliminar la observación");
+        showErrorToast(data.message, "Error al eliminar la observación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar la observación");
+      showErrorToast(error.message, "Error al eliminar la observación");
     },
   });
 }

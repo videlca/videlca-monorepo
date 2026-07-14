@@ -17,6 +17,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { queryClient } from "../../../App";
 import { useAuth } from "../../../context/AuthContext";
 import type { ApiResponse } from "../../types/common";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useLogin = (): UseMutationResult<
@@ -37,11 +38,11 @@ export const useLogin = (): UseMutationResult<
         });
         navigate({ to: "/dashboard", replace: true });
       } else {
-        throw new Error(data.message || "Error al iniciar sesión");
+        showErrorToast(data.message, "Error al iniciar sesión");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al iniciar sesión");
+      showErrorToast(error.message, "Error al iniciar sesión");
     },
   });
 };
@@ -61,7 +62,7 @@ export const useLogout = (): UseMutationResult<ApiResponse, Error, void> => {
       navigate({ to: "/" });
     },
     onError: (error) => {
-      toast.error(error.message || "Error al iniciar sesión");
+      showErrorToast(error.message, "Error al iniciar sesión");
     },
   });
 };
@@ -80,11 +81,11 @@ export const useRecoverPassword = (): UseMutationResult<
           description: "Se ha enviado un correo para recuperar su contraseña",
         });
       } else {
-        throw new Error(data.message || "Error al recuperar contraseña");
+        showErrorToast(data.message, "Error al recuperar contraseña");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al recuperar contraseña");
+      showErrorToast(error.message, "Error al recuperar contraseña");
     },
   });
 };
@@ -117,11 +118,11 @@ export const useUpdatePassword = (): UseMutationResult<
         });
         navigate({ to: "/", replace: true });
       } else {
-        throw new Error(data.message || "Error al actualizar contraseña");
+        showErrorToast(data.message, "Error al actualizar contraseña");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar contraseña");
+      showErrorToast(error.message, "Error al actualizar contraseña");
     },
   });
 };
@@ -144,11 +145,11 @@ export const useConfirmarCuenta = (): UseMutationResult<
         });
         navigate({ to: "/", replace: true });
       } else {
-        throw new Error(data.message || "Error al confirmar cuenta");
+        showErrorToast(data.message, "Error al confirmar cuenta");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al confirmar cuenta");
+      showErrorToast(error.message, "Error al confirmar cuenta");
     },
   });
 };

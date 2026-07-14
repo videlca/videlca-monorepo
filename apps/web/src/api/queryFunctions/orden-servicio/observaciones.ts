@@ -1,5 +1,6 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { createObservacionOrdenServicio, deleteObservacionOrdenServicio, getObservacionesOrdenServicio, updateObservacionOrdenServicio } from "../../functions/orden-servicio/observaciones";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { CreateObservacionOrdenServicioDto, UpdateObservacionOrdenServicioDto } from "../../dtos";
@@ -21,11 +22,11 @@ export const useCreateObservacionOrdenServicio = (): UseMutationResult<ApiRespon
           queryKey: ["observaciones-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al agregar la observación");
+        showErrorToast(data.message, "Error al agregar la observación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al agregar la observación");
+      showErrorToast(error.message, "Error al agregar la observación");
     },
   });
 }
@@ -54,11 +55,11 @@ export const useUpdateObservacionOrdenServicio = (): UseMutationResult<ApiRespon
           queryKey: ["observaciones-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al actualizar la observación");
+        showErrorToast(data.message, "Error al actualizar la observación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar la observación");
+      showErrorToast(error.message, "Error al actualizar la observación");
     },
   });
 }
@@ -78,11 +79,11 @@ export const useDeleteObservacionOrdenServicio = (): UseMutationResult<ApiRespon
           queryKey: ["observaciones-orden-servicio"],
         });
       } else {
-        throw new Error(data.message || "Error al eliminar la observación");
+        showErrorToast(data.message, "Error al eliminar la observación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar la observación");
+      showErrorToast(error.message, "Error al eliminar la observación");
     },
   });
 }

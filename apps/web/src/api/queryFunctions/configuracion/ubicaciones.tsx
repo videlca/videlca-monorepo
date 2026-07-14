@@ -29,6 +29,7 @@ import type {
   UpdatePaisDto,
   UpdateCiudadDto,
 } from "../../dtos/configuracion";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 // Paises
@@ -53,11 +54,11 @@ export const useCrearPais = (): UseMutationResult<
           description: "El país ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear país");
+        showErrorToast(data.message, "Error al crear país");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar país");
+      showErrorToast(error.message, "Error al actualizar país");
     },
   });
 };
@@ -77,11 +78,11 @@ export const useActualizarPais = (): UseMutationResult<
           description: "El país ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar país");
+        showErrorToast(data.message, "Error al actualizar país");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar país");
+      showErrorToast(error.message, "Error al actualizar país");
     },
   });
 };
@@ -112,11 +113,11 @@ export const useCrearDepartamento = (): UseMutationResult<
           description: "El departamento ha sido creado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear departamento");
+        showErrorToast(data.message, "Error al crear departamento");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear departamento");
+      showErrorToast(error.message, "Error al crear departamento");
     },
   });
 };
@@ -136,11 +137,11 @@ export const useActualizarDepartamento = (): UseMutationResult<
           description: "El departamento ha sido actualizado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar departamento");
+        showErrorToast(data.message, "Error al actualizar departamento");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar departamento");
+      showErrorToast(error.message, "Error al actualizar departamento");
     },
   });
 };
@@ -159,11 +160,11 @@ export const useEliminarDepartamento = (): UseMutationResult<
           description: "El departamento ha sido eliminado correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar departamento");
+        showErrorToast(data.message, "Error al eliminar departamento");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar departamento");
+      showErrorToast(error.message, "Error al eliminar departamento");
     },
   });
 };
@@ -199,11 +200,11 @@ export const useCrearCiudad = (): UseMutationResult<
           description: "La ciudad ha sido creada correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear ciudad");
+        showErrorToast(data.message, "Error al crear ciudad");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear ciudad");
+      showErrorToast(error.message, "Error al crear ciudad");
     },
   });
 };
@@ -223,11 +224,11 @@ export const useActualizarCiudad = (): UseMutationResult<
           description: "La ciudad ha sido actualizada correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar ciudad");
+        showErrorToast(data.message, "Error al actualizar ciudad");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar ciudad");
+      showErrorToast(error.message, "Error al actualizar ciudad");
     },
   });
 };
@@ -246,11 +247,11 @@ export const useEliminarCiudad = (): UseMutationResult<
           description: "La ciudad ha sido eliminada correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar ciudad");
+        showErrorToast(data.message, "Error al eliminar ciudad");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar ciudad");
+      showErrorToast(error.message, "Error al eliminar ciudad");
     },
   });
 };

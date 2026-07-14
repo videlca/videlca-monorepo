@@ -23,6 +23,7 @@ import type {
 import { queryClient } from "../../../App";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Segmentacion, SubSegmentacion } from "../../../types";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 
 export const useSegmentaciones = (): UseQueryResult<
@@ -49,11 +50,11 @@ export const useSegmentacionById = (): UseMutationResult<
           description: "La segmentación ha sido obtenida correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al obtener segmentación");
+        showErrorToast(data.message, "Error al obtener segmentación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al obtener segmentación");
+      showErrorToast(error.message, "Error al obtener segmentación");
     },
   });
 };
@@ -72,11 +73,11 @@ export const useCrearSegmentacion = (): UseMutationResult<
           description: "La segmentación ha sido creada correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear segmentación");
+        showErrorToast(data.message, "Error al crear segmentación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear segmentación");
+      showErrorToast(error.message, "Error al crear segmentación");
     },
   });
 };
@@ -96,11 +97,11 @@ export const useActualizarSegmentacion = (): UseMutationResult<
           description: "La segmentación ha sido actualizada correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar segmentación");
+        showErrorToast(data.message, "Error al actualizar segmentación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar segmentación");
+      showErrorToast(error.message, "Error al actualizar segmentación");
     },
   });
 };
@@ -119,11 +120,11 @@ export const useEliminarSegmentacion = (): UseMutationResult<
           description: "La segmentación ha sido eliminada correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar segmentación");
+        showErrorToast(data.message, "Error al eliminar segmentación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar segmentación");
+      showErrorToast(error.message, "Error al eliminar segmentación");
     },
   });
 };
@@ -159,11 +160,11 @@ export const useCrearSubSegmentacion = (): UseMutationResult<
           description: "La subsegmentación ha sido creada correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al crear subsegmentación");
+        showErrorToast(data.message, "Error al crear subsegmentación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al crear subsegmentación");
+      showErrorToast(error.message, "Error al crear subsegmentación");
     },
   });
 };
@@ -188,11 +189,11 @@ export const useActualizarSubSegmentacion = (): UseMutationResult<
           description: "La subsegmentación ha sido actualizada correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al actualizar subsegmentación");
+        showErrorToast(data.message, "Error al actualizar subsegmentación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al actualizar subsegmentación");
+      showErrorToast(error.message, "Error al actualizar subsegmentación");
     },
   });
 };
@@ -211,11 +212,11 @@ export const useEliminarSubSegmentacion = (): UseMutationResult<
           description: "La subsegmentación ha sido eliminada correctamente",
         });
       } else {
-        throw new Error(data.message || "Error al eliminar subsegmentación");
+        showErrorToast(data.message, "Error al eliminar subsegmentación");
       }
     },
     onError: (error) => {
-      toast.error(error.message || "Error al eliminar subsegmentación");
+      showErrorToast(error.message, "Error al eliminar subsegmentación");
     },
   });
 };

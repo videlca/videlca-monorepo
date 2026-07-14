@@ -12,6 +12,7 @@ import {
   getPersonalNovedad,
 } from "../../functions/personal";
 import { queryClient } from "../../../App";
+import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import type { PaginationDto } from "../../dtos";
 
@@ -33,11 +34,11 @@ export const useCreatePersonalNovedad = (): UseMutationResult<
         queryClient.invalidateQueries({ queryKey: ["personal-novedad"] });
         toast.success("Novedad creada correctamente");
       } else {
-        throw new Error(data.message || "Error al crear la novedad");
+        showErrorToast(data.message, "Error al crear la novedad");
       }
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error.message);
     },
   });
 };
