@@ -29,6 +29,7 @@ import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 import { ConfiguracionCorreo } from "../../../components/common/ConfiguracionCorreo";
 import { CheckboxForm } from "../../../components/common/CheckboxForm";
+import { CoordinateInput } from "../../../components/common/CoordinateInput";
 
 export const Route = createFileRoute("/dashboard/clientes/$idCliente/puestos")({
   component: RouteComponent,
@@ -73,8 +74,8 @@ export function RouteComponent() {
       nombre: "",
       idCiudad: 0,
       direccion: "",
-      latitud: 0,
-      longitud: 0,
+      latitud: "",
+      longitud: "",
       primerNombreResponsable: "",
       primerApellidoResponsable: "",
       telefono: "",
@@ -103,8 +104,8 @@ export function RouteComponent() {
             nombre: data.data.nombre,
             idCiudad: data.data.idCiudad.idCiudad,
             direccion: data.data.direccion,
-            latitud: data.data.latitud,
-            longitud: data.data.longitud,
+            latitud: data.data.latitud.toString(),
+            longitud: data.data.longitud.toString(),
             primerNombreResponsable: data.data.primerNombreResponsable,
             primerApellidoResponsable: data.data.primerApellidoResponsable,
             telefono: data.data.telefono,
@@ -327,33 +328,31 @@ export function RouteComponent() {
                   {...registerEdit("direccion")}
                 />
                 <InputForm
-                  label="Días de anticipación de notificación*"
+                  label="Días de anticipación de notificación* (máximo 10 días)"
                   placeholder="Días de anticipación de notificación"
                   type="number"
+                  max={10}
+                  maxLength={2}
                   id="diasAnticipaticionNotificacion"
                   required
                   {...registerEdit("diasAnticipaticionNotificacion", { valueAsNumber: true })}
                 />
-                <InputForm
+                <CoordinateInput
                   label="Latitud*"
                   placeholder="Latitud"
-                  type="number"
                   id="latitud"
                   required
-                  step="any"
+                  minLength={2}
                   maxLength={10}
-                  allowNegative={true}
                   {...registerEdit("latitud")}
                 />
-                <InputForm
+                <CoordinateInput
                   label="Longitud*"
                   placeholder="Longitud"
-                  type="number"
                   id="longitud"
                   required
-                  step="any"
+                  minLength={2}
                   maxLength={10}
-                  allowNegative={true}
                   {...registerEdit("longitud")}
                 />
                 <div className="md:col-span-2">

@@ -29,6 +29,7 @@ import type {
   UpdateClienteDto,
 } from "../../../../api/dtos/clientes";
 import { InputForm } from "../../../common/InputForm";
+import { CoordinateInput } from "../../../common/CoordinateInput";
 import {
   useCiudad,
   useTipoCliente,
@@ -142,8 +143,8 @@ export function ClientesTab() {
       idClienteFacturacion: null,
       idCiudad: 0,
       direccion: "",
-      latitud: 0,
-      longitud: 0,
+      latitud: "",
+      longitud: "",
       primerNombreResponsable: "",
       primerApellidoResponsable: "",
       telefono: "",
@@ -690,33 +691,31 @@ export function ClientesTab() {
                   {...registerAddPuesto("direccion")}
                 />
                 <InputForm
-                  label="Días de anticipación de notificación*"
+                  label="Días de anticipación de notificación* (máximo 10 días)"
                   placeholder="Días de anticipación de notificación"
                   type="number"
                   id="diasAnticipaticionNotificacion"
+                  maxLength={2}
                   required
+                  max={10}
                   {...registerAddPuesto("diasAnticipaticionNotificacion")}
                 />
-                <InputForm
+                <CoordinateInput
                   label="Latitud*"
                   placeholder="Latitud"
-                  type="number"
                   id="latitud"
                   required
-                  step="any"
+                  minLength={2}
                   maxLength={10}
-                  allowNegative={true}
                   {...registerAddPuesto("latitud")}
                 />
-                <InputForm
+                <CoordinateInput
                   label="Longitud*"
                   placeholder="Longitud"
-                  type="number"
                   id="longitud"
                   required
-                  step="any"
+                  minLength={2}
                   maxLength={10}
-                  allowNegative={true}
                   {...registerAddPuesto("longitud")}
                 />
                 <div className="md:col-span-2">

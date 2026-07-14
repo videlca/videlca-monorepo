@@ -26,8 +26,8 @@ export interface CreatePuestoDto {
   nombre: string;
   idCiudad: number;
   direccion: string;
-  latitud: number;
-  longitud: number;
+  latitud: string;
+  longitud: string;
   primerNombreResponsable: string;
   primerApellidoResponsable: string;
   telefono: string;
