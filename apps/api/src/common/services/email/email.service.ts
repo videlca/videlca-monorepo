@@ -83,94 +83,96 @@ export class EmailService {
     // ENVIAR EMAIL
     async sendEmail( options: SendMailOptions ): Promise<boolean> {
 
-        const { to, subject, htmlBody, attachments } = options;
+        return true;
 
-        // Validar dominio antes de enviar
-        const emails = Array.isArray(to) ? to : [to];
+        // const { to, subject, htmlBody, attachments } = options;
 
-        if (emails.length === 0) {
-          return true;
-        }
+        // // Validar dominio antes de enviar
+        // const emails = Array.isArray(to) ? to : [to];
 
-        for (const email of emails) {
-          const validDomain = await this.validateEmailDomain(email);
+        // if (emails.length === 0) {
+        //   return true;
+        // }
+
+        // for (const email of emails) {
+        //   const validDomain = await this.validateEmailDomain(email);
         
-          if (!validDomain) {
-            console.error(`Dominio inválido para: ${email}`);
-            return false;
-          }
-        }
+        //   if (!validDomain) {
+        //     console.error(`Dominio inválido para: ${email}`);
+        //     return false;
+        //   }
+        // }
     
-        try {
-          // Obtener token de acceso
-          const accessToken = await this.getToken();
+        // try {
+        //   // Obtener token de acceso
+        //   const accessToken = await this.getToken();
 
-          // Formatear destinatarios
-          const toRecipients = emails.map(email => ({
-            emailAddress: {
-              address: email.trim(),
-            },
-          }));
+        //   // Formatear destinatarios
+        //   const toRecipients = emails.map(email => ({
+        //     emailAddress: {
+        //       address: email.trim(),
+        //     },
+        //   }));
           
-          // Formatear adjuntos
-          let formattedAttachments = [];
-          if (attachments && attachments.length > 0) {
-              formattedAttachments = attachments.map(att => {
-                  let contentBytes = "";
-                  if (Buffer.isBuffer(att.content)) {
-                      contentBytes = att.content.toString("base64");
-                  } else {
-                      // Si es un string, lo convertimos a base64 (Graph API lo requiere en base64)
-                      contentBytes = Buffer.from(att.content).toString("base64");
-                  }
+        //   // Formatear adjuntos
+        //   let formattedAttachments = [];
+        //   if (attachments && attachments.length > 0) {
+        //       formattedAttachments = attachments.map(att => {
+        //           let contentBytes = "";
+        //           if (Buffer.isBuffer(att.content)) {
+        //               contentBytes = att.content.toString("base64");
+        //           } else {
+        //               // Si es un string, lo convertimos a base64 (Graph API lo requiere en base64)
+        //               contentBytes = Buffer.from(att.content).toString("base64");
+        //           }
                   
-                  return {
-                      "@odata.type": "#microsoft.graph.fileAttachment",
-                      name: att.filename,
-                      contentType: att.contentType || "application/octet-stream",
-                      contentBytes: contentBytes
-                  };
-              });
-          }
+        //           return {
+        //               "@odata.type": "#microsoft.graph.fileAttachment",
+        //               name: att.filename,
+        //               contentType: att.contentType || "application/octet-stream",
+        //               contentBytes: contentBytes
+        //           };
+        //       });
+        //   }
 
 
-          const emailSender = this.username;
-          // Enviar correo usando Microsoft Graph
-          const response = await fetch(`https://graph.microsoft.com/v1.0/users/${emailSender}/sendMail`, {
-              method: "POST",
-              headers: {
-                  "Authorization": `Bearer ${accessToken}`,
-                  "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                  message: {
-                      subject: subject,
-                      body: {
-                          contentType: "HTML",
-                          content: htmlBody
-                      },
-                      toRecipients: toRecipients,
-                      attachments: formattedAttachments.length > 0 ? formattedAttachments : undefined
-                  },
-                  // saveToSentItems: "true"
-              })
-          });
+        //   const emailSender = this.username;
+        //   // Enviar correo usando Microsoft Graph
+        //   const response = await fetch(`https://graph.microsoft.com/v1.0/users/${emailSender}/sendMail`, {
+        //       method: "POST",
+        //       headers: {
+        //           "Authorization": `Bearer ${accessToken}`,
+        //           "Content-Type": "application/json"
+        //       },
+        //       body: JSON.stringify({
+        //           message: {
+        //               subject: subject,
+        //               body: {
+        //                   contentType: "HTML",
+        //                   content: htmlBody
+        //               },
+        //               toRecipients: toRecipients,
+        //               attachments: formattedAttachments.length > 0 ? formattedAttachments : undefined
+        //           },
+        //           // saveToSentItems: "true"
+        //       })
+        //   });
 
-          if (!response.ok) {
-              const errorData = await response.json();
-              console.error("Error al enviar email via Graph API:", errorData);
-              return false;
-          }
+        //   if (!response.ok) {
+        //       const errorData = await response.json();
+        //       console.error("Error al enviar email via Graph API:", errorData);
+        //       return false;
+        //   }
           
-          // Si se envia el correo con exito
-          return true;
+        //   // Si se envia el correo con exito
+        //   return true;
     
-        } catch ( error ) {
-          console.error("Excepción al enviar email:", error);
-          // Si ocurre un error al enviar el correo 
-          return false;
+        // } catch ( error ) {
+        //   console.error("Excepción al enviar email:", error);
+        //   // Si ocurre un error al enviar el correo 
+        //   return false;
     
-        }
+        // }
     
     }
 
