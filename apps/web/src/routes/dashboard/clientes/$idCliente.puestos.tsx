@@ -391,7 +391,7 @@ export function RouteComponent() {
                   placeholder="Latitud"
                   id="latitud"
                   required={false}
-                  maxLength={10}
+                  maxLength={13}
                   {...registerAddPuesto("latitud")}
                 />
                 <CoordinateInput
@@ -399,7 +399,7 @@ export function RouteComponent() {
                   placeholder="Longitud"
                   id="longitud"
                   required={false}
-                  maxLength={10}
+                  maxLength={13}
                   {...registerAddPuesto("longitud")}
                 />
                 <div className="md:col-span-2">
@@ -585,7 +585,7 @@ export function RouteComponent() {
                   placeholder="Latitud"
                   id="latitud"
                   required={false}
-                  maxLength={10}
+                  maxLength={13}
                   {...registerEdit("latitud")}
                 />
                 <CoordinateInput
@@ -593,7 +593,7 @@ export function RouteComponent() {
                   placeholder="Longitud"
                   id="longitud"
                   required={false}
-                  maxLength={10}
+                  maxLength={13}
                   {...registerEdit("longitud")}
                 />
                 <div className="md:col-span-2">

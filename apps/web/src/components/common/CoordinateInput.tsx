@@ -62,8 +62,8 @@ export const CoordinateInput = React.forwardRef<
       // Allow Ctrl/Cmd combinations (copy, paste, select all, etc.)
       if (e.ctrlKey || e.metaKey) return;
 
-      // Allow: digits, minus sign, dot
-      const allowedChars = /^[0-9\-.]$/;
+      // Allow: digits, minus sign, plus sign, dot
+      const allowedChars = /^[0-9\-.+]$/;
       if (!allowedChars.test(e.key)) {
         e.preventDefault();
         return;
@@ -72,15 +72,15 @@ export const CoordinateInput = React.forwardRef<
       const input = e.currentTarget;
       const currentValue = input.value;
 
-      // Prevent minus sign if not at the start
-      if (e.key === "-") {
+      // Prevent minus/plus sign if not at the start
+      if (e.key === "-" || e.key === "+") {
         if (input.selectionStart !== 0) {
           e.preventDefault();
           return;
         }
-        // Prevent duplicate minus sign (unless it's selected and being replaced)
+        // Prevent duplicate signs (unless it's selected and being replaced)
         if (
-          currentValue.includes("-") &&
+          (currentValue.includes("-") || currentValue.includes("+")) &&
           input.selectionStart === input.selectionEnd
         ) {
           e.preventDefault();
@@ -118,14 +118,16 @@ export const CoordinateInput = React.forwardRef<
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      // Sanitize pasted content: keep only digits, minus, and dot
+      // Sanitize pasted content: keep only digits, minus, plus, and dot
       const raw = e.target.value;
-      let sanitized = raw.replace(/[^0-9\-.]/g, "");
+      let sanitized = raw.replace(/[^0-9\-.+]/g, "");
 
-      // Ensure minus is only at the start
+      // Ensure minus/plus is only at the start
       const hasMinus = sanitized.startsWith("-");
-      sanitized = sanitized.replace(/-/g, "");
+      const hasPlus = sanitized.startsWith("+");
+      sanitized = sanitized.replace(/[-+]/g, "");
       if (hasMinus) sanitized = "-" + sanitized;
+      else if (hasPlus) sanitized = "+" + sanitized;
 
       // Ensure only one dot
       const parts = sanitized.split(".");

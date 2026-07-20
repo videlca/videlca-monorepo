@@ -725,7 +725,7 @@ export function ClientesTab() {
                   placeholder="Latitud"
                   id="latitud"
                   required={false}
-                  maxLength={10}
+                  maxLength={13}
                   {...registerAddPuesto("latitud")}
                 />
                 <CoordinateInput
@@ -733,7 +733,7 @@ export function ClientesTab() {
                   placeholder="Longitud"
                   id="longitud"
                   required={false}
-                  maxLength={10}
+                  maxLength={13}
                   {...registerAddPuesto("longitud")}
                 />
                 <div className="md:col-span-2">

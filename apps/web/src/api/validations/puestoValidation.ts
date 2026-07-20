@@ -27,13 +27,29 @@ export const updatePuestoSchema = yup.object({
     .string()
     .optional()
     .transform((value) => (!value || value.trim() === "" ? "0" : value))
-    .max(10, "La latitud debe tener máximo 10 caracteres"),
+    .test(
+      "max-digits-latitud",
+      "La latitud debe tener máximo 13 dígitos",
+      (value) => {
+        if (!value) return true;
+        const digits = value.replace(/[^0-9]/g, "");
+        return digits.length <= 13;
+      }
+    ),
 
   longitud: yup
     .string()
     .optional()
     .transform((value) => (!value || value.trim() === "" ? "0" : value))
-    .max(10, "La longitud debe tener máximo 10 caracteres"),
+    .test(
+      "max-digits-longitud",
+      "La longitud debe tener máximo 13 dígitos",
+      (value) => {
+        if (!value) return true;
+        const digits = value.replace(/[^0-9]/g, "");
+        return digits.length <= 13;
+      }
+    ),
 
   primerNombreResponsable: yup
     .string()
@@ -121,13 +137,29 @@ export const createPuestoSchema = yup.object({
     .string()
     .optional()
     .transform((value) => (!value || value.trim() === "" ? "0" : value))
-    .max(10, "La latitud debe tener máximo 10 caracteres"),
+    .test(
+      "max-digits-latitud",
+      "La latitud debe tener máximo 13 dígitos",
+      (value) => {
+        if (!value) return true;
+        const digits = value.replace(/[^0-9]/g, "");
+        return digits.length <= 13;
+      }
+    ),
 
   longitud: yup
     .string()
     .optional()
     .transform((value) => (!value || value.trim() === "" ? "0" : value))
-    .max(10, "La longitud debe tener máximo 10 caracteres"),
+    .test(
+      "max-digits-longitud",
+      "La longitud debe tener máximo 13 dígitos",
+      (value) => {
+        if (!value) return true;
+        const digits = value.replace(/[^0-9]/g, "");
+        return digits.length <= 13;
+      }
+    ),
 
   primerNombreResponsable: yup
     .string()
