@@ -31,12 +31,14 @@ import {
 } from "../../../../api/queryFunctions/configuracion";
 import { InputForm } from "../../../common/InputForm";
 import { InputSelect } from "../../../common/InputSelect";
-import { toast } from "sonner";
+import { showErrorToast } from "../../../../api/utils/toastError";
 import { FormsModal } from "../../modals/FormsModal";
 import { FormSection } from "../../../common/FormSection";
 import { MoreActionsButton } from "../../common/MoreActionsButton";
 import { CheckboxForm } from "../../../common/CheckboxForm";
 import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { updatePuestoSchema } from "../../../../api/validations/puestoValidation";
 import { CoordinateInput } from "../../../common/CoordinateInput";
 
 export function PuestosTab() {
@@ -72,14 +74,14 @@ export function PuestosTab() {
   const { mutate: filterPuestos, isPending: isFilteringPuestos } =
     useFilterPuestos();
 
-  // Formulario con react-hook-form
+  // Formulario con react-hook-form + yup
   const {
     register: registerEdit,
     handleSubmit: handleSubmitEdit,
     reset: resetEdit,
     setValue: setValueEdit,
-    formState: { errors: errorsEdit },
   } = useForm<UpdatePuestoDto>({
+    resolver: yupResolver(updatePuestoSchema) as any,
     defaultValues: {
       idCliente: 0,
       nombre: "",
@@ -289,18 +291,23 @@ export function PuestosTab() {
                 },
               },
               {
-                onSuccess: () => {
-                  handleCloseEditPuesto();
-                  if (currentFilter) {
-                    filterPuestos(currentFilter, {
-                      onSuccess: (data) => {
-                        setFilteredPuestos(data.data?.data ?? []);
-                      },
-                    });
+                onSuccess: (resData) => {
+                  if (resData.status === 200 || resData.status === 201) {
+                    handleCloseEditPuesto();
+                    if (currentFilter) {
+                      filterPuestos(currentFilter, {
+                        onSuccess: (filterData) => {
+                          setFilteredPuestos(filterData.data?.data ?? []);
+                        },
+                      });
+                    }
                   }
                 },
               },
             );
+          }, (errors) => {
+            const messages = Object.values(errors).map((err) => err?.message).filter(Boolean) as string[];
+            showErrorToast(messages, "Errores de validación");
           })}
         >
           <div className="flex flex-col gap-4">
@@ -386,27 +393,24 @@ export function PuestosTab() {
                   label="Días de anticipación de notificación* (máximo 10 días)"
                   placeholder="Días de anticipación de notificación"
                   type="number"
-                  max={10}
                   maxLength={2}
                   id="diasAnticipaticionNotificacion"
                   required
                   {...registerEdit("diasAnticipaticionNotificacion")}
                 />
                 <CoordinateInput
-                  label="Latitud*"
+                  label="Latitud"
                   placeholder="Latitud"
                   id="latitud"
-                  required
-                  minLength={2}
+                  required={false}
                   maxLength={10}
                   {...registerEdit("latitud")}
                 />
                 <CoordinateInput
-                  label="Longitud*"
+                  label="Longitud"
                   placeholder="Longitud"
                   id="longitud"
-                  required
-                  minLength={2}
+                  required={false}
                   maxLength={10}
                   {...registerEdit("longitud")}
                 />
@@ -438,29 +442,23 @@ export function PuestosTab() {
                 <InputForm
                   label="Teléfono*"
                   placeholder="Teléfono"
-                  type="number"
+                  type="text"
                   id="telefono"
                   prefix="+57"
                   maxLength={10}
                   allowNegative={false}
-                  error={errorsEdit.telefono?.message}
                   required
-                  {...registerEdit("telefono", {
-                    required: "El teléfono es requerido",
-                    valueAsNumber: true,
-                  })}
+                  {...registerEdit("telefono")}
                 />
                 <InputForm
                   label="Teléfono 2"
                   placeholder="Teléfono 2"
-                  type="number"
+                  type="text"
                   id="segundoTelefono"
                   prefix="+57"
                   maxLength={10}
                   allowNegative={false}
-                  {...registerEdit("segundoTelefono", {
-                    valueAsNumber: true,
-                  })}
+                  {...registerEdit("segundoTelefono")}
                 />
               </div>
             </FormSection>
@@ -651,9 +649,11 @@ export function PuestosTab() {
         text="¿Estás seguro de querer eliminar este puesto?"
         onDelete={() => {
           deletePuesto(idPuestoSelected as number, {
-            onSuccess: () => {
-              setIsOpenDelete(false);
-              setIdPuestoSelected(null);
+            onSuccess: (resData) => {
+              if (resData.status === 200 || resData.status === 201) {
+                setIsOpenDelete(false);
+                setIdPuestoSelected(null);
+              }
             },
           });
         }}

@@ -50,6 +50,10 @@ import { ConfiguracionCorreo } from "../../../common/ConfiguracionCorreo";
 import { useNavigate } from "@tanstack/react-router";
 import { MoreActionsButton } from "../../common/MoreActionsButton";
 import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { createClienteSchema, updateClienteSchema } from "../../../../api/validations/clienteValidation";
+import { createPuestoSchema } from "../../../../api/validations/puestoValidation";
+import { showErrorToast } from "../../../../api/utils/toastError";
 
 export function ClientesTab() {
   const navigate = useNavigate({ from: "/dashboard/clientes" });
@@ -96,13 +100,14 @@ export function ClientesTab() {
   const { data: segmentaciones } = useSegmentaciones();
   const { data: ciudades } = useCiudad();
 
-  // Formularios con react-hook-form
+  // Formularios con react-hook-form + yup
   const {
     register: registerCreate,
     handleSubmit: handleSubmitCreate,
     reset: resetCreate,
     watch: watchCreate,
   } = useForm<CreateClienteDto & { idSegmentacion: number }>({
+    resolver: yupResolver(createClienteSchema) as any,
     defaultValues: {
       idTipoIdentificacion: 0,
       numeroIdentificacion: "",
@@ -119,6 +124,7 @@ export function ClientesTab() {
     reset: resetEdit,
     watch: watchEdit,
   } = useForm<UpdateClienteDto & { idSegmentacion: number }>({
+    resolver: yupResolver(updateClienteSchema) as any,
     defaultValues: {
       idTipoIdentificacion: 0,
       numeroIdentificacion: "",
@@ -135,8 +141,8 @@ export function ClientesTab() {
     handleSubmit: handleSubmitAddPuesto,
     reset: resetAddPuesto,
     setValue: setValueAddPuesto,
-    formState: { errors: errorsAddPuesto },
   } = useForm<CreatePuestoDto>({
+    resolver: yupResolver(createPuestoSchema) as any,
     defaultValues: {
       idCliente: 0,
       nombre: "",
@@ -387,13 +393,18 @@ export function ClientesTab() {
             createCliente(
               payload,
               {
-                onSuccess: () => {
-                  setIsAddModalOpen(false);
-                  resetCreate();
-                  setAplicaSegmentacionCreate(true);
+                onSuccess: (resData) => {
+                  if (resData.status === 200 || resData.status === 201) {
+                    setIsAddModalOpen(false);
+                    resetCreate();
+                    setAplicaSegmentacionCreate(true);
+                  }
                 },
               },
             );
+          }, (errors) => {
+            const messages = Object.values(errors).map((err) => err?.message).filter(Boolean) as string[];
+            showErrorToast(messages, "Errores de validación");
           })}
         >
           <div className="flex flex-col gap-4">
@@ -517,20 +528,25 @@ export function ClientesTab() {
                 data: payload,
               },
               {
-                onSuccess: () => {
-                  setIsEditModalOpen(false);
-                  resetEdit();
-                  setEditingCliente(null);
-                  if (currentFilter) {
-                    filterClientes(currentFilter, {
-                      onSuccess: (data) => {
-                        setFilteredClientes(data.data?.data ?? []);
-                      },
-                    });
+                onSuccess: (resData) => {
+                  if (resData.status === 200 || resData.status === 201) {
+                    setIsEditModalOpen(false);
+                    resetEdit();
+                    setEditingCliente(null);
+                    if (currentFilter) {
+                      filterClientes(currentFilter, {
+                        onSuccess: (filterData) => {
+                          setFilteredClientes(filterData.data?.data ?? []);
+                        },
+                      });
+                    }
                   }
                 },
               },
             );
+          }, (errors) => {
+            const messages = Object.values(errors).map((err) => err?.message).filter(Boolean) as string[];
+            showErrorToast(messages, "Errores de validación");
           })}
         >
           <div className="flex flex-col gap-4">
@@ -647,11 +663,16 @@ export function ClientesTab() {
                 idClienteFacturacion: isFacturacionDiferente ? Number(data.idClienteFacturacion) : null,
               },
               {
-                onSuccess: () => {
-                  handleCloseAddPuesto();
+                onSuccess: (resData) => {
+                  if (resData.status === 200 || resData.status === 201) {
+                    handleCloseAddPuesto();
+                  }
                 },
               },
             );
+          }, (errors) => {
+            const messages = Object.values(errors).map((err) => err?.message).filter(Boolean) as string[];
+            showErrorToast(messages, "Errores de validación");
           })}
         >
           <div className="flex flex-col gap-4">
@@ -697,24 +718,21 @@ export function ClientesTab() {
                   id="diasAnticipaticionNotificacion"
                   maxLength={2}
                   required
-                  max={10}
                   {...registerAddPuesto("diasAnticipaticionNotificacion")}
                 />
                 <CoordinateInput
-                  label="Latitud*"
+                  label="Latitud"
                   placeholder="Latitud"
                   id="latitud"
-                  required
-                  minLength={2}
+                  required={false}
                   maxLength={10}
                   {...registerAddPuesto("latitud")}
                 />
                 <CoordinateInput
-                  label="Longitud*"
+                  label="Longitud"
                   placeholder="Longitud"
                   id="longitud"
-                  required
-                  minLength={2}
+                  required={false}
                   maxLength={10}
                   {...registerAddPuesto("longitud")}
                 />
@@ -775,31 +793,24 @@ export function ClientesTab() {
                 <InputForm
                   label="Teléfono*"
                   placeholder="Teléfono"
-                  type="number"
+                  type="text"
                   id="telefono"
                   prefix="+57"
                   maxLength={10}
-                  error={errorsAddPuesto.telefono?.message}
                   allowNegative={false}
                   required
-                  {...registerAddPuesto("telefono", {
-                    required: "El teléfono es requerido",
-                    valueAsNumber: true,
-                  })}
+                  {...registerAddPuesto("telefono")}
                 />
                 <InputForm
                   label="Teléfono 2"
                   placeholder="Teléfono 2"
-                  type="number"
+                  type="text"
                   id="segundoTelefono"
                   prefix="+57"
                   maxLength={10}
                   allowNegative={false}
-                  error={errorsAddPuesto.segundoTelefono?.message}
                   required={false}
-                  {...registerAddPuesto("segundoTelefono", {
-                    valueAsNumber: true,
-                  })}
+                  {...registerAddPuesto("segundoTelefono")}
                 />
               </div>
             </FormSection>
@@ -827,15 +838,17 @@ export function ClientesTab() {
         text="¿Estás seguro de querer eliminar este cliente?"
         onDelete={() => {
           deleteCliente(editingCliente?.idCliente || 0, {
-            onSuccess: () => {
-              setIsOpenDelete(false);
-              setEditingCliente(null);
-              if (currentFilter) {
-                filterClientes(currentFilter, {
-                  onSuccess: (data) => {
-                    setFilteredClientes(data.data?.data ?? []);
-                  },
-                });
+            onSuccess: (resData) => {
+              if (resData.status === 200 || resData.status === 201) {
+                setIsOpenDelete(false);
+                setEditingCliente(null);
+                if (currentFilter) {
+                  filterClientes(currentFilter, {
+                    onSuccess: (filterData) => {
+                      setFilteredClientes(filterData.data?.data ?? []);
+                    },
+                  });
+                }
               }
             },
           });

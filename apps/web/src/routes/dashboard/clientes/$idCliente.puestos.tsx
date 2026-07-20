@@ -4,21 +4,25 @@ import {
   useParams,
 } from "@tanstack/react-router";
 import { useState } from "react";
-import type { CreateCorreoDto, UpdatePuestoDto } from "../../../api/dtos";
+import type { CreateCorreoDto, UpdatePuestoDto, CreatePuestoDto } from "../../../api/dtos";
 import {
   useClientesActivo,
   useDeletePuesto,
   usePuestoById,
   usePuestosByCliente,
   useUpdatePuesto,
+  useCreatePuesto,
 } from "../../../api/queryFunctions/clientes";
 import { useCiudad } from "../../../api/queryFunctions/configuracion";
 import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { updatePuestoSchema, createPuestoSchema } from "../../../api/validations/puestoValidation";
+import { showErrorToast } from "../../../api/utils/toastError";
 import type { Puesto } from "../../../types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { ArrowLeftIcon, Building2, Mail, User } from "lucide-react";
+import { ArrowLeftIcon, Building2, Mail, User, PlusIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
@@ -42,6 +46,7 @@ export function RouteComponent() {
   // Estados
   const navigate = useNavigate({ from: "/dashboard/clientes" });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddPuestoModalOpen, setIsAddPuestoModalOpen] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
   const [idPuestoSelected, setIdPuestoSelected] = useState<number | null>(null);
@@ -54,10 +59,36 @@ export function RouteComponent() {
 
   const { mutate: updatePuesto, isPending: isUpdatingPuesto } =
     useUpdatePuesto();
+  const { mutate: createPuesto, isPending: isCreatingPuesto } =
+    useCreatePuesto();
   const { mutate: getPuestoById } = usePuestoById();
   const { mutate: deletePuesto } = useDeletePuesto();
 
   // Formularios
+
+  const {
+    register: registerAddPuesto,
+    handleSubmit: handleSubmitAddPuesto,
+    reset: resetAddPuesto,
+    setValue: setValueAddPuesto,
+  } = useForm<CreatePuestoDto>({
+    resolver: yupResolver(createPuestoSchema) as any,
+    defaultValues: {
+      idCliente: Number(idCliente),
+      nombre: "",
+      idClienteFacturacion: null,
+      idCiudad: 0,
+      direccion: "",
+      latitud: "",
+      longitud: "",
+      primerNombreResponsable: "",
+      primerApellidoResponsable: "",
+      telefono: "",
+      segundoTelefono: "",
+      diasAnticipaticionNotificacion: 0,
+      correos: [],
+    },
+  });
 
   // TODO: Agregar correos
 
@@ -66,8 +97,8 @@ export function RouteComponent() {
     handleSubmit: handleSubmitEdit,
     reset: resetEditForm,
     setValue: setValueEdit,
-    formState: { errors: errorsEdit },
   } = useForm<UpdatePuestoDto>({
+    resolver: yupResolver(updatePuestoSchema) as any,
     defaultValues: {
       idCliente: 0,
       idClienteFacturacion: null,
@@ -86,6 +117,13 @@ export function RouteComponent() {
   });
 
   // Handlers
+
+  const handleCloseAddPuesto = () => {
+    setIsAddPuestoModalOpen(false);
+    resetAddPuesto();
+    setCorreos([]);
+    setIsFacturacionDiferente(false);
+  };
 
   const handleShowEditPuestoModal = (row: Row<Puesto>) => {
     getPuestoById(row.original.idLocacion, {
@@ -127,6 +165,7 @@ export function RouteComponent() {
     setIsEditModalOpen(false);
     resetEditForm();
     setCorreos([]);
+    setIsFacturacionDiferente(false);
   };
 
   const columnsPuestos: ColumnDef<Puesto>[] = [
@@ -234,15 +273,22 @@ export function RouteComponent() {
     <div className="space-y-4">
       <div className="flex justify-between">
         <h1 className="text-2xl font-bold">Puestos cliente</h1>
-        <ButtonAction
-          Icon={ArrowLeftIcon}
-          label="Volver"
-          onClick={() => {
-            navigate({
-              to: "/dashboard/clientes",
-            });
-          }}
-        />
+        <div className="flex gap-2">
+          <ButtonAction
+            Icon={ArrowLeftIcon}
+            label="Volver"
+            onClick={() => {
+              navigate({
+                to: "/dashboard/clientes",
+              });
+            }}
+          />
+          <ButtonAction
+            Icon={PlusIcon}
+            label="Agregar puesto"
+            onClick={() => setIsAddPuestoModalOpen(true)}
+          />
+        </div>
       </div>
       <Table
         data={puestos?.data?.data || []}
@@ -258,6 +304,200 @@ export function RouteComponent() {
           { label: "Ciudad", value: "idCiudad.descripcion" },
         ]}
       />
+
+      <SimpleModal
+        isOpen={isAddPuestoModalOpen}
+        onClose={() => {
+          handleCloseAddPuesto();
+        }}
+        title="Agregar puesto"
+        size="4xl"
+      >
+        <FormsModal
+          isLoading={isCreatingPuesto}
+          onCancel={() => {
+            handleCloseAddPuesto();
+          }}
+          updating={false}
+          onSubmit={handleSubmitAddPuesto((data) => {
+            createPuesto(
+              {
+                ...data,
+                idCiudad: Number(data.idCiudad),
+                correos: correos,
+                idClienteFacturacion: isFacturacionDiferente ? Number(data.idClienteFacturacion) : null,
+                idCliente: Number(idCliente),
+              },
+              {
+                onSuccess: (resData) => {
+                  if (resData.status === 200 || resData.status === 201) {
+                    handleCloseAddPuesto();
+                  }
+                },
+              },
+            );
+          }, (errors) => {
+            const messages = Object.values(errors).map((err) => err?.message).filter(Boolean) as string[];
+            showErrorToast(messages, "Errores de validación");
+          })}
+        >
+          <div className="flex flex-col gap-4">
+            <FormSection
+              title="Información del puesto"
+              description="Información del puesto"
+              Icon={Building2}
+            >
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <InputForm
+                  label="Nombre*"
+                  placeholder="Nombre"
+                  type="text"
+                  id="nombre"
+                  required
+                  {...registerAddPuesto("nombre")}
+                />
+                <InputSelect
+                  label="Ciudad*"
+                  placeholder="Ciudad"
+                  id="idCiudad"
+                  options={
+                    ciudades?.data?.data?.map((ciudad) => ({
+                      id: ciudad.idCiudad,
+                      descripcion: ciudad.descripcion,
+                    })) || []
+                  }
+                  required
+                  {...registerAddPuesto("idCiudad")}
+                />
+                <InputForm
+                  label="Dirección*"
+                  placeholder="Dirección"
+                  type="text"
+                  id="direccion"
+                  required
+                  {...registerAddPuesto("direccion")}
+                />
+                <InputForm
+                  label="Días de anticipación de notificación* (máximo 10 días)"
+                  placeholder="Días de anticipación de notificación"
+                  type="number"
+                  id="diasAnticipaticionNotificacion"
+                  maxLength={2}
+                  required
+                  {...registerAddPuesto("diasAnticipaticionNotificacion")}
+                />
+                <CoordinateInput
+                  label="Latitud"
+                  placeholder="Latitud"
+                  id="latitud"
+                  required={false}
+                  maxLength={10}
+                  {...registerAddPuesto("latitud")}
+                />
+                <CoordinateInput
+                  label="Longitud"
+                  placeholder="Longitud"
+                  id="longitud"
+                  required={false}
+                  maxLength={10}
+                  {...registerAddPuesto("longitud")}
+                />
+                <div className="md:col-span-2">
+                  <CheckboxForm
+                    label="El responsable de facturación es diferente al cliente."
+                    id="isFacturacionDiferente"
+                    checked={isFacturacionDiferente}
+                    onChange={(e) => {
+                      setIsFacturacionDiferente(e.target.checked);
+                      if (!e.target.checked) {
+                        setValueAddPuesto("idClienteFacturacion", null);
+                      }
+                    }}
+                  />
+                </div>
+                {isFacturacionDiferente && (
+                  <div className="md:col-span-2">
+                    <InputSelect
+                      label="Responsable facturación*"
+                      placeholder="Responsable facturación"
+                      id="idClienteFacturacion"
+                      options={
+                        clientes?.data?.data?.map((cliente) => ({
+                          id: cliente.idCliente,
+                          descripcion: cliente.nombre,
+                        })) || []
+                      }
+                      required
+                      {...registerAddPuesto("idClienteFacturacion")}
+                    />
+                  </div>
+                )}
+              </div>
+            </FormSection>
+            <FormSection
+              title="Información de contacto"
+              description="Información de contacto"
+              Icon={User}
+            >
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <InputForm
+                  label="Primer nombre responsable*"
+                  placeholder="Primer nombre responsable"
+                  type="text"
+                  id="primerNombreResponsable"
+                  required
+                  {...registerAddPuesto("primerNombreResponsable")}
+                />
+                <InputForm
+                  label="Primer apellido responsable*"
+                  placeholder="Primer apellido responsable"
+                  type="text"
+                  id="primerApellidoResponsable"
+                  required
+                  {...registerAddPuesto("primerApellidoResponsable")}
+                />
+                <InputForm
+                  label="Teléfono*"
+                  placeholder="Teléfono"
+                  type="text"
+                  id="telefono"
+                  prefix="+57"
+                  maxLength={10}
+                  allowNegative={false}
+                  required
+                  {...registerAddPuesto("telefono")}
+                />
+                <InputForm
+                  label="Teléfono 2"
+                  placeholder="Teléfono 2"
+                  type="text"
+                  id="segundoTelefono"
+                  prefix="+57"
+                  maxLength={10}
+                  allowNegative={false}
+                  required={false}
+                  {...registerAddPuesto("segundoTelefono")}
+                />
+              </div>
+            </FormSection>
+            <FormSection
+              title="Correos electrónicos"
+              description="Correos electrónicos"
+              Icon={Mail}
+              Details={
+                <p className="text-sm font-medium text-gray-900">
+                  Correos configurados ({correos.length || 0})
+                </p>
+              }
+            >
+              <ConfiguracionCorreo
+                correos={correos}
+                onCorreosChange={setCorreos}
+              />
+            </FormSection>
+          </div>
+        </FormsModal>
+      </SimpleModal>
 
       {/* Modal para editar puesto */}
       <SimpleModal
@@ -283,12 +523,16 @@ export function RouteComponent() {
                 },
               },
               {
-                onSuccess: () => {
-                  handleCloseEditPuesto();
-
+                onSuccess: (resData) => {
+                  if (resData.status === 200 || resData.status === 201) {
+                    handleCloseEditPuesto();
+                  }
                 },
               },
             );
+          }, (errors) => {
+            const messages = Object.values(errors).map((err) => err?.message).filter(Boolean) as string[];
+            showErrorToast(messages, "Errores de validación");
           })}
         >
           <div className="flex flex-col gap-4">
@@ -317,7 +561,7 @@ export function RouteComponent() {
                     })) || []
                   }
                   required
-                  {...registerEdit("idCiudad", { valueAsNumber: true })}
+                  {...registerEdit("idCiudad")}
                 />
                 <InputForm
                   label="Dirección*"
@@ -331,27 +575,24 @@ export function RouteComponent() {
                   label="Días de anticipación de notificación* (máximo 10 días)"
                   placeholder="Días de anticipación de notificación"
                   type="number"
-                  max={10}
                   maxLength={2}
                   id="diasAnticipaticionNotificacion"
                   required
-                  {...registerEdit("diasAnticipaticionNotificacion", { valueAsNumber: true })}
+                  {...registerEdit("diasAnticipaticionNotificacion")}
                 />
                 <CoordinateInput
-                  label="Latitud*"
+                  label="Latitud"
                   placeholder="Latitud"
                   id="latitud"
-                  required
-                  minLength={2}
+                  required={false}
                   maxLength={10}
                   {...registerEdit("latitud")}
                 />
                 <CoordinateInput
-                  label="Longitud*"
+                  label="Longitud"
                   placeholder="Longitud"
                   id="longitud"
-                  required
-                  minLength={2}
+                  required={false}
                   maxLength={10}
                   {...registerEdit("longitud")}
                 />
@@ -413,31 +654,24 @@ export function RouteComponent() {
                 <InputForm
                   label="Teléfono*"
                   placeholder="Teléfono"
-                  type="number"
+                  type="text"
                   id="telefono"
                   prefix="+57"
                   maxLength={10}
-                  error={errorsEdit.telefono?.message}
                   allowNegative={false}
                   required
-                  {...registerEdit("telefono", {
-                    required: "El teléfono es requerido",
-                    valueAsNumber: true,
-                  })}
+                  {...registerEdit("telefono")}
                 />
                 <InputForm
                   label="Teléfono 2"
                   placeholder="Teléfono 2"
-                  type="number"
+                  type="text"
                   id="segundoTelefono"
                   prefix="+57"
                   maxLength={10}
-                  error={errorsEdit.segundoTelefono?.message}
                   allowNegative={false}
                   required={false}
-                  {...registerEdit("segundoTelefono", {
-                    valueAsNumber: true,
-                  })}
+                  {...registerEdit("segundoTelefono")}
                 />
               </div>
             </FormSection>
