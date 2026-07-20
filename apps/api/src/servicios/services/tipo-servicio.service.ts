@@ -7,7 +7,7 @@ import { PaginationDto } from '../../common/dto';
 import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { TipoServicio } from '../entities';
-import { CreateTipoServicioDto, UpdateTipoServicioDto } from '../dto';
+import { CreateTipoServicioDto, UpdateTipoServicioDto, FilterTipoServicioDto, TipoServicioFilterColumn } from '../dto';
 
 @Injectable()
 export class TipoServicioService {
@@ -246,6 +246,69 @@ export class TipoServicioService {
       }
     };
 
+  }
+
+  // FILTRAR TIPOS DE SERVICIO
+  async findFiltered(filterTipoServicioDto: FilterTipoServicioDto) {
+    const {
+      column,
+      query,
+      limit = this.defaultLimit,
+      offset = 0,
+    } = filterTipoServicioDto;
+
+    const columnMap: Record<TipoServicioFilterColumn, string> = {
+      [TipoServicioFilterColumn.NOMBRE]: 'tipoServicio.nombre',
+      [TipoServicioFilterColumn.DESCRIPCION]: 'tipoServicio.descripcion',
+      [TipoServicioFilterColumn.PREFIJO]: 'tipoServicio.prefijo',
+    };
+
+    const dbColumn = columnMap[column];
+
+    if (!dbColumn) {
+      throw new BadRequestException('Columna de filtro no permitida');
+    }
+
+    const qb = this.tipoServicioRepository
+      .createQueryBuilder('tipoServicio')
+      .where(`${dbColumn} LIKE :query`, {
+        query: `%${query}%`,
+      })
+      .orderBy('tipoServicio.descripcion', 'ASC');
+
+    if (filterTipoServicioDto.pagination === PaginationOption.TRUE) {
+      qb.take(limit).skip(offset);
+
+      const [tiposServicio, total] = await qb.getManyAndCount();
+
+      return {
+        data: tiposServicio,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        },
+      };
+    }
+
+    const tiposServicio = await qb.getMany();
+
+    return {
+      data: tiposServicio,
+      pagination: {
+        total: tiposServicio.length,
+        limit: tiposServicio.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      },
+    };
   }
 
   // EDITAR UN TIPO SERVICIO

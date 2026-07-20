@@ -6,7 +6,7 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { PaginationDto } from '../../common/dto';
 
 import { TipoServicioService } from '../services';
-import { CreateTipoServicioDto, UpdateTipoServicioDto } from '../dto';
+import { CreateTipoServicioDto, UpdateTipoServicioDto, FilterTipoServicioDto } from '../dto';
 
 @Controller('tipo-servicio')
 @AppAuth(DescriptionRoutes.SERVICIOS) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -38,6 +38,12 @@ export class TipoServicioController {
   @ValidateJwtAuth()
   findAllActivas(@Query() paginationDto: PaginationDto) {
     return this.tipoServicioService.findAllActives(paginationDto);
+  }
+
+  // RUTA PROTEGIDA: Filtrar tipos de servicio
+  @Get('filter')
+  findFiltered(@Query() filterTipoServicioDto: FilterTipoServicioDto) {
+    return this.tipoServicioService.findFiltered(filterTipoServicioDto);
   }
 
   // RUTA PROTEGIDA: OBTENER UN TIPO SERVICIO
