@@ -1,11 +1,15 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "../../config";
-import type { CreateTipoServicioDto, UpdateTipoServicioDto } from "../../dtos";
+import type { CreateTipoServicioDto, UpdateTipoServicioDto, FilterTipoServicioDto } from "../../dtos";
 import type { PaginationDto } from "../../dtos/common";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { TipoServicio } from "../../types/servicio";
 
 export const getTipoServicios = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<TipoServicio[]>>> => {
   return await apiGet<PaginatedResponse<TipoServicio[]>>("/tipo-servicio", pagination);
+};
+
+export const getFilteredTipoServicios = async (filter: FilterTipoServicioDto): Promise<ApiResponse<PaginatedResponse<TipoServicio[]>>> => {
+  return await apiGet<PaginatedResponse<TipoServicio[]>>("/tipo-servicio/filter", filter);
 };
 
 export const getTipoServicioById = async (id: number): Promise<ApiResponse<TipoServicio>> => {

@@ -9,6 +9,20 @@ export interface UpdateTipoServicioDto extends Partial<CreateTipoServicioDto> {
   estado?: boolean;
 }
 
+export enum TipoServicioFilterColumn {
+  NOMBRE = 'nombre',
+  DESCRIPCION = 'descripcion',
+  PREFIJO = 'prefijo',
+}
+
+export interface FilterTipoServicioDto {
+  column: TipoServicioFilterColumn;
+  query: string;
+  limit?: number;
+  offset?: number;
+  pagination?: boolean;
+}
+
 export interface CreateServicioDto {
   codigo: string;
   descripcion: string;

@@ -7,6 +7,7 @@ import {
 import {
   createTipoServicio,
   deleteTipoServicio,
+  getFilteredTipoServicios,
   getPrefijosTipoServicio,
   getTipoServicioById,
   getTipoServicios,
@@ -14,19 +15,19 @@ import {
   updateTipoServicio,
 } from "../../functions/servicios";
 import type { TipoServicio } from "../../types/servicio";
-import type { ApiResponse , PaginatedResponse } from "../../types/common";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
-import type { CreateTipoServicioDto, UpdateTipoServicioDto } from "../../dtos";
+import type { CreateTipoServicioDto, UpdateTipoServicioDto, FilterTipoServicioDto } from "../../dtos";
+import type { PaginationDto } from "../../dtos/common";
 
-export const useTipoServicios = (): UseQueryResult<
-  ApiResponse<PaginatedResponse<TipoServicio[]>>,
-  Error
-> => {
+export const useTipoServicios = (
+  paginationParams: PaginationDto = { pagination: "false" }
+): UseQueryResult<ApiResponse<PaginatedResponse<TipoServicio[]>>, Error> => {
   return useQuery({
-    queryKey: ["tipo-servicios"],
-    queryFn: () => getTipoServicios({ pagination: 'false' }),
+    queryKey: ["tipo-servicios", paginationParams],
+    queryFn: () => getTipoServicios(paginationParams),
   });
 };
 
@@ -36,7 +37,7 @@ export const useTipoServiciosActivo = (): UseQueryResult<
 > => {
   return useQuery({
     queryKey: ["tipo-servicios-activo"],
-    queryFn: () => getTipoServiciosActivo({ pagination: 'false' }),
+    queryFn: () => getTipoServiciosActivo({ pagination: "false" }),
   });
 };
 
@@ -46,7 +47,7 @@ export const usePrefijosTipoServicio = (): UseQueryResult<
 > => {
   return useQuery({
     queryKey: ["prefijos-tipo-servicio"],
-    queryFn: () => getPrefijosTipoServicio({ pagination: 'false' }),
+    queryFn: () => getPrefijosTipoServicio({ pagination: "false" }),
   });
 };
 
@@ -134,6 +135,19 @@ export const useDeleteTipoServicio = (): UseMutationResult<
     },
     onError: (error) => {
       showErrorToast(error.message, "Error al eliminar el tipo servicio");
+    },
+  });
+};
+
+export const useFilterTipoServicio = (): UseMutationResult<
+  ApiResponse<PaginatedResponse<TipoServicio[]>>,
+  Error,
+  FilterTipoServicioDto
+> => {
+  return useMutation({
+    mutationFn: (filter: FilterTipoServicioDto) => getFilteredTipoServicios(filter),
+    onError: (error) => {
+      showErrorToast(error.message, "Error al filtrar tipos de servicio");
     },
   });
 };

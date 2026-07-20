@@ -4,18 +4,21 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { PlusIcon } from "lucide-react";
 import { Section } from "../../../components/ui/dashboard/Section";
-import Table from "../../../components/common/Table";
+import Table, { type ServerFilterColumn } from "../../../components/common/Table";
 import {
   useCreateTipoServicio,
   useDeleteTipoServicio,
+  useFilterTipoServicio,
   useTipoServicios,
   useUpdateTipoServicio,
 } from "../../../api/queryFunctions/servicios/tipo-servicio";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { useState } from "react";
-import type {
-  CreateTipoServicioDto,
-  UpdateTipoServicioDto,
+import {
+  type CreateTipoServicioDto,
+  type UpdateTipoServicioDto,
+  TipoServicioFilterColumn,
+  type FilterTipoServicioDto,
 } from "../../../api/dtos";
 import { useForm } from "react-hook-form";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
@@ -25,6 +28,7 @@ import { CheckboxForm } from "../../../components/common/CheckboxForm";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
+import { useServerPagination } from "../../../hooks/useServerPagination";
 
 export const Route = createFileRoute("/dashboard/servicios/tipo-servicio")({
   component: RouteComponent,
@@ -38,13 +42,21 @@ function RouteComponent() {
     useState(false);
   const [idTipoServicio, setIdTipoServicio] = useState(0);
 
+  const [filteredTipoServicios, setFilteredTipoServicios] = useState<TipoServicio[] | null>(null);
+  const [currentFilter, setCurrentFilter] = useState<FilterTipoServicioDto | undefined>(undefined);
+
+  // Paginación server-side
+  const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
+
   // Queries y Mutaciones
-  const { data: tipoServicios } = useTipoServicios();
+  const { data: tipoServicios } = useTipoServicios(paginationParams);
   const { mutate: crearTipoServicio, isPending: isLoadingCrearTipoServicio } =
     useCreateTipoServicio();
   const { mutate: editarTipoServicio, isPending: isLoadingEditarTipoServicio } =
     useUpdateTipoServicio();
   const { mutate: eliminarTipoServicio } = useDeleteTipoServicio();
+  const { mutate: filterTipoServicio, isPending: isFilteringTipoServicios } =
+    useFilterTipoServicio();
 
   // Formularios
   const {
@@ -152,10 +164,45 @@ function RouteComponent() {
       </div>
       <Table
         columns={columns}
-        data={tipoServicios?.data?.data || []}
-        enablePagination={true}
+        data={filteredTipoServicios ?? tipoServicios?.data?.data ?? []}
+        serverPagination={!filteredTipoServicios}
+        totalRows={
+          filteredTipoServicios
+            ? filteredTipoServicios.length
+            : (tipoServicios?.data?.pagination?.total ?? 0)
+        }
+        currentPage={page}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(0);
+        }}
         enableSorting={true}
+        enablePagination={true}
+        pageSize={pageSize}
         enableFiltering={true}
+        filterColumns={[
+          { label: "Nombre", value: TipoServicioFilterColumn.NOMBRE },
+          { label: "Descripción", value: TipoServicioFilterColumn.DESCRIPCION },
+          { label: "Prefijo", value: TipoServicioFilterColumn.PREFIJO },
+        ] satisfies ServerFilterColumn[]}
+        onServerFilter={(column, query) => {
+          const filter = { column: column as TipoServicioFilterColumn, query, pagination: false };
+          setCurrentFilter(filter);
+          filterTipoServicio(
+            filter,
+            {
+              onSuccess: (data) => {
+                setFilteredTipoServicios(data.data?.data ?? []);
+              },
+            },
+          );
+        }}
+        onServerFilterClear={() => {
+          setFilteredTipoServicios(null);
+          setCurrentFilter(undefined);
+        }}
+        serverFilterLoading={isFilteringTipoServicios}
       />
       <SimpleModal
         isOpen={isOpenAddTipoServicio}
@@ -235,6 +282,13 @@ function RouteComponent() {
                 onSuccess: () => {
                   setIsOpenEditTipoServicio(false);
                   resetEditar();
+                  if (currentFilter) {
+                    filterTipoServicio(currentFilter, {
+                      onSuccess: (filterData) => {
+                        setFilteredTipoServicios(filterData.data?.data ?? []);
+                      },
+                    });
+                  }
                 },
               },
             );
