@@ -47,10 +47,13 @@ const yearsOptions = Array.from({ length: 10 }, (_, i) => {
   return { id: year, descripcion: year.toString() };
 });
 
+const currentYear = getYear(new Date()).toString();
+const currentMonth = (new Date().getMonth() + 1).toString();
+
 function RouteComponent() {
   const [hiddenGroups, setHiddenGroups] = useState<Set<number>>(new Set());
-  const [searchMonth, setSearchMonth] = useState<string>("");
-  const [searchYear, setSearchYear] = useState<string>("");
+  const [searchMonth, setSearchMonth] = useState<string>(currentMonth);
+  const [searchYear, setSearchYear] = useState<string>(currentYear);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isOpenEmail, setIsOpenEmail] = useState(false);
   const [groupIdSelected, setGroupIdSelected] = useState<number | null>(null);
@@ -72,6 +75,12 @@ function RouteComponent() {
     Number(searchMonth),
     isSearching,
   );
+
+  const liquidacionesData = Array.isArray(liquidaciones?.data)
+    ? liquidaciones.data
+    : Array.isArray(liquidaciones?.data?.data)
+      ? liquidaciones.data.data
+      : [];
 
   // Archivos de liquidaciones
   const { mutate: generarReporteArchivoLiquidacion } =
@@ -149,7 +158,7 @@ function RouteComponent() {
         </div>
       </div>
 
-      {liquidaciones?.data?.data?.length === 0 && (
+      {isSearching && !isLoadingLiquidaciones && liquidacionesData.length === 0 && (
         <div className="py-12 text-center">
           <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
             <FileTextIcon className="h-12 w-12 text-gray-400" />
@@ -160,17 +169,17 @@ function RouteComponent() {
         </div>
       )}
 
-      {liquidaciones?.data?.data?.length && liquidaciones?.data?.data?.length > 0 ? (
+      {isSearching && !isLoadingLiquidaciones && liquidacionesData.length > 0 ? (
         <>
           <div className="mb-4 flex justify-between">
             <div className="mb-2 flex-col items-start justify-between gap-2">
               <h2 className="text-xl font-semibold">
-                Resultados ({liquidaciones?.data?.data?.length} grupos encontrados)
+                Resultados ({liquidacionesData.length} grupos encontrados)
               </h2>
             </div>
           </div>
           <div className="space-y-4">
-            {liquidaciones?.data?.data?.map((group) => (
+            {liquidacionesData.map((group) => (
               <div
                 key={group.idGrupoLiquidacion}
                 className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
@@ -182,12 +191,10 @@ function RouteComponent() {
                         <span className="font-medium">Descripción:</span>{" "}
                         {group.descripcion} <br />
                         <span className="font-medium">Órdenes:</span>{" "}
-                        {group.liquidaciones.length}
+                        {group.liquidaciones?.length || 0}
                         <br />
                         <span className="font-medium">Creado:</span>{" "}
-                        {new Date(group.fechaCreacion).toLocaleDateString(
-                          "es-ES",
-                        )}
+                        {group.fechaCreacion ? new Date(group.fechaCreacion).toLocaleDateString("es-ES") : ""}
                       </div>
                       <div className="flex flex-wrap items-center gap-0 md:gap-4">
                         <ButtonOrdenes

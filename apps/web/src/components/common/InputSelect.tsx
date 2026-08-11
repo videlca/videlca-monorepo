@@ -121,8 +121,8 @@ export const InputSelect = React.forwardRef<HTMLSelectElement, InputSelectProps>
           disabled={disabled}
           {...rest}
         >
-          {/* Include a 0 or empty string value for placeholder depending on original logic */}
-          <option value={0} disabled hidden>
+          {/* Include an empty string value for placeholder */}
+          <option value="" disabled hidden>
             {placeholder}
           </option>
           {options.map((option) => (

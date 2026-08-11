@@ -10,17 +10,17 @@ import type { GruposLiquidaciones } from "../../types";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 import type { EnviarCorreoDto } from "../../dtos/common";
 
-export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<PaginatedResponse<OrdenServicio[]>>, Error> => {
+export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<OrdenServicio[]>, Error> => {
   return useQuery({
-    queryKey: ["liquidaciones-por-mes"],
+    queryKey: ["liquidaciones-por-mes", anio, mes],
     queryFn: () => getLiquidacionesPorMes(anio, mes),
     enabled: !!anio && !!mes && enabled,
   });
 };
 
-export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<PaginatedResponse<GruposLiquidaciones[]>>, Error> => {
+export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
   return useQuery({
-    queryKey: ["liquidaciones-por-mes-historial"],
+    queryKey: ["liquidaciones-por-mes-historial", anio, mes],
     queryFn: () => getLiquidacionesPorMesHistorial(anio, mes),
     enabled: !!anio && !!mes && enabled,
   });

@@ -43,9 +43,12 @@ const yearsOptions = Array.from({ length: 10 }, (_, i) => {
   return { id: year, descripcion: year.toString() };
 });
 
+const currentYear = getYear(new Date()).toString();
+const currentMonth = (new Date().getMonth() + 1).toString();
+
 function RouteComponent() {
-  const [searchMonth, setSearchMonth] = useState<string>("");
-  const [searchYear, setSearchYear] = useState<string>("");
+  const [searchMonth, setSearchMonth] = useState<string>(currentMonth);
+  const [searchYear, setSearchYear] = useState<string>(currentYear);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
 
@@ -61,6 +64,12 @@ function RouteComponent() {
     Number(searchMonth),
     isSearching,
   );
+
+  const liquidacionesData = Array.isArray(liquidaciones?.data)
+    ? liquidaciones.data
+    : Array.isArray(liquidaciones?.data?.data)
+      ? liquidaciones.data.data
+      : [];
 
   const {
     mutateAsync: crearLiquidacionMensual,
@@ -139,7 +148,7 @@ function RouteComponent() {
         </div>
       </div>
 
-      {(liquidaciones?.data?.data?.length === 0 || isErrorLiquidaciones) && (
+      {isSearching && !isLoadingLiquidaciones && (liquidacionesData.length === 0 || isErrorLiquidaciones) && (
         <div className="py-12 text-center">
           <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
             {isErrorLiquidaciones ? (
@@ -156,12 +165,12 @@ function RouteComponent() {
         </div>
       )}
 
-      {liquidaciones?.data?.data?.length && liquidaciones?.data?.data?.length > 0 ? (
+      {isSearching && !isLoadingLiquidaciones && liquidacionesData.length > 0 ? (
         <div className="space-y-4 rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
           <div className="mb-8 flex justify-between">
             <div className="mb-2 flex-col items-start justify-between gap-2">
               <h2 className="text-xl font-semibold">
-                Resultados ({liquidaciones?.data?.data?.length} órdenes encontradas)
+                Resultados ({liquidacionesData.length} órdenes encontradas)
               </h2>
               <p className="text-sm text-gray-500">
                 {selectedOrders?.length > 0
@@ -173,13 +182,13 @@ function RouteComponent() {
               <ButtonAction
                 onClick={() => {
                   setSelectedOrders(
-                    liquidaciones?.data?.data?.map(
+                    liquidacionesData.map(
                       (order) => order.idOrdenServicio || 0,
                     ) || [],
                   );
                 }}
                 disabled={
-                  selectedOrders?.length === liquidaciones?.data?.data?.length
+                  selectedOrders?.length === liquidacionesData.length
                 }
                 Icon={CheckIcon}
                 label="Seleccionar Todos"
@@ -199,7 +208,7 @@ function RouteComponent() {
           </div>
 
           <div className="mb-6 grid grid-cols-1 gap-2">
-            {liquidaciones?.data?.data?.map((order, index) => (
+            {liquidacionesData.map((order, index) => (
               <div
                 key={index}
                 onClick={() => {
@@ -223,7 +232,7 @@ function RouteComponent() {
               >
                 <div className="mb-3 flex items-start justify-between">
                   <h3 className="font-semibold text-gray-900">
-                    {order.ordenServicioId.descripcionId}
+                    {order.ordenServicioId?.descripcionId}
                   </h3>
                   <span
                     className={`rounded-full border px-2 py-1 text-xs capitalize ${getStatusColor(order.idEstadoOrdenServicio?.nombre || "")}`}
@@ -235,7 +244,7 @@ function RouteComponent() {
                   <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">Cliente:</span>
                     <p className="text-gray-900">
-                      {order.idLocacion?.idCliente.nombre}
+                      {order.idLocacion?.idCliente?.nombre}
                     </p>
                   </div>
 
