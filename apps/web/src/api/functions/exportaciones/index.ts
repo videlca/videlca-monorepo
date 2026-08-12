@@ -12,8 +12,8 @@ export type Exportacion =
   "generar-anexos-facturacion" |
   "enviar-anexos-facturacion"
 
-export const getGruposLiquidacionesExportaciones = async (params: FiltroGrupoLiquidacionDto): Promise<ApiResponse<PaginatedResponse<GruposLiquidaciones[]>>> => {
-  return await apiGet<PaginatedResponse<GruposLiquidaciones[]>>(`/exportacion/buscar-por-campo?campo=${params.campo}&valor=${params.valor}`);
+export const getGruposLiquidacionesExportaciones = async (params: FiltroGrupoLiquidacionDto): Promise<ApiResponse<GruposLiquidaciones[]>> => {
+  return await apiGet<GruposLiquidaciones[]>(`/exportacion/buscar-por-campo?campo=${params.campo}&valor=${params.valor}`);
 };
 
 export const generarArchivoExcel = async (idGrupoLiquidacion: number, archivo: Exportacion): Promise<{ blob: Blob; filename: string }> => {

@@ -60,7 +60,7 @@ function RouteComponent() {
       {activeTab === "Generar" && (
         <OrdenesTab
           tipo="generacion_anexo"
-          data={groups?.data?.data || []}
+          data={groups?.data || []}
           handleFileAction={handlegenerarReporteAnexoFacturacion}
           mutationEmail={enviarCorreoExportacionAnexoFacturacion}
           envioCorreoPending={envioCorreoPending}
@@ -69,7 +69,7 @@ function RouteComponent() {
       {activeTab === "Archivos generados" && (
         <OrdenesTab
           tipo="generacion_anexo"
-          data={groups?.data?.data || []}
+          data={groups?.data || []}
           handleFileAction={handlegenerarReporteAnexoFacturacion}
           mutationEmail={enviarCorreoExportacionAnexoFacturacion}
           envioCorreoPending={envioCorreoPending}

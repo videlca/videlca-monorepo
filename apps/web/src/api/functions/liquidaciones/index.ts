@@ -20,8 +20,8 @@ export const crearLiquidacionMensual = async (data: CrearGrupoMensualDto): Promi
 
 // Grupos de liquidaciones
 
-export const getGruposLiquidaciones = async (): Promise<ApiResponse<PaginatedResponse<GruposLiquidaciones[]>>> => {
-  return await apiGet<PaginatedResponse<GruposLiquidaciones[]>>(`/aprobacion-liquidacion-orden-servicio/buscar-grupos-liquidaciones`);
+export const getGruposLiquidaciones = async (): Promise<ApiResponse<GruposLiquidaciones[]>> => {
+  return await apiGet<GruposLiquidaciones[]>(`/aprobacion-liquidacion-orden-servicio/buscar-grupos-liquidaciones`);
 };
 
 export const aprobarGrupoLiquidacion = async (idGrupoLiquidacion: number): Promise<ApiResponse<GruposLiquidaciones>> => {

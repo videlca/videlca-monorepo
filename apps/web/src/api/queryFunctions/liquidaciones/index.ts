@@ -45,8 +45,7 @@ export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<Orde
 
 // Grupos de liquidaciones
 
-export const useGetGruposLiquidaciones = (): UseQueryResult<ApiResponse<PaginatedResponse<GruposLiquidaciones[]>>, Error> => {
-  queryClient.invalidateQueries({ queryKey: ["grupos-liquidaciones"] });
+export const useGetGruposLiquidaciones = (): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
   return useQuery({
     queryKey: ["grupos-liquidaciones"],
     queryFn: () => getGruposLiquidaciones(),

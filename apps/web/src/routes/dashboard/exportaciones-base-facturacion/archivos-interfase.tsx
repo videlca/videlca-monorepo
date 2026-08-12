@@ -59,7 +59,7 @@ function RouteComponent() {
       {activeTab === "Generar" && (
         <OrdenesTab
           tipo="generacion_interfase"
-          data={groups?.data?.data || []}
+          data={groups?.data || []}
           handleFileAction={handleGenerarReporteConsolidacion}
           mutationEmail={enviarCorreoExportacionInterfase}
           envioCorreoPending={envioCorreoPending}
@@ -68,7 +68,7 @@ function RouteComponent() {
       {activeTab === "Archivos generados" && (
         <OrdenesTab
           tipo="generacion_interfase"
-          data={groups?.data?.data || []}
+          data={groups?.data || []}
           handleFileAction={handleGenerarReporteConsolidacion}
           mutationEmail={enviarCorreoExportacionInterfase}
           envioCorreoPending={envioCorreoPending}

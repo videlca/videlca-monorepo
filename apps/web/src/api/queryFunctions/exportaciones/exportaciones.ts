@@ -1,5 +1,5 @@
 import { useMutation, useQuery, type UseMutationResult } from "@tanstack/react-query";
-import type { ApiResponse , PaginatedResponse } from "../../types/common";
+import type { ApiResponse } from "../../types/common";
 import type { GruposLiquidaciones } from "../../types";
 import { generarArchivoExcel, getGruposLiquidacionesExportaciones, enviarCorreoArchivo, type Exportacion } from "../../functions/exportaciones";
 import type { FiltroGrupoLiquidacionDto } from "../../dtos/exportaciones";
@@ -9,7 +9,7 @@ import type { EnviarCorreoDto } from "../../dtos/common";
 import { queryClient } from "../../../App";
 
 export const useGetGruposLiquidacionesExportaciones = (params: FiltroGrupoLiquidacionDto) => {
-  return useQuery<ApiResponse<PaginatedResponse<GruposLiquidaciones[]>>>({
+  return useQuery<ApiResponse<GruposLiquidaciones[]>>({
     queryKey: ["grupos-liquidaciones-exportaciones", params.campo, params.valor],
     queryFn: () => getGruposLiquidacionesExportaciones(params),
     enabled: !!params.valor,
