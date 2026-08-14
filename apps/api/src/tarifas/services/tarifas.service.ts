@@ -13,17 +13,25 @@ import { EnviarCorreoDto, PaginationDto } from '../../common/dto';
 import { PaginationOption } from '../../common/interfaces/pagination.interface';
 import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
-import { Tarifa } from '../entities';
+import { TipoHorarioInterface } from '../../servicios/interfaces/tipo-horario.interface';
+import { TipoDuracionInterface } from '../../servicios/interfaces/tipo-duracion.interface';
+import { TipoTarifaInterface } from '../interfaces/tipo-tarifa.interface';
 
-import { CreateTarifaDto, UpdateTarifaDto, SaveTarifaDto } from '../dto';
+import { Tarifa } from '../entities';
+import { Servicio } from '../../servicios/entities';
+import { Periodo } from '../../periodos/entities/periodo.entity';
+
+import { CreateTarifaDto, UpdateTarifaDto, SaveTarifaDto, CalcularPreciosTarifaDto } from '../dto';
 import { TipoTarifaService } from './tipo-tarifa.service';
+import { TarifaHoraService } from './tarifa-hora.service';
+import { TarifaHoraDescripcionService } from './tarifa-hora-descripcion.service';
 
 @Injectable()
 export class TarifasService {
 
   private readonly logger = new Logger('TarifasService');
 
-  private defaultLimit: number; // valor de la cantidad por defecto que se va a retornar en una consulta 
+  private defaultLimit: number; // valor de la cantidad por defecto que se va a retornar en una consulta
 
   constructor(
     @InjectRepository(Tarifa)
@@ -33,12 +41,161 @@ export class TarifasService {
     private readonly servicioService: ServiciosService,
     @Inject(forwardRef(() => PeriodosService))
     private readonly periodoService: PeriodosService,
+    private readonly tarifaHoraService: TarifaHoraService,
+    private readonly tarifaHoraDescripcionService: TarifaHoraDescripcionService,
     private readonly emailService: EmailService, // Servicio de email para envio de correos
     private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
     private readonly reporteTarifasService: ReporteTarifasService, // Servicio para generar reportes
     private readonly configService: ConfigService,
   ) {
     this.defaultLimit = this.configService.get<number>('defaultLimit');
+  }
+
+  // CALCULAR EL PRECIO DE LA TARIFA DE UN GRUPO DE SERVICIOS PARA UN PERIODO, A PARTIR DE LAS TARIFAS POR HORA (tarifa_hora) DE ESE PERIODO
+  // No persiste nada, solo retorna una propuesta de precio (o indica que debe ingresarse manualmente) para que luego se guarde con create/guardar-tarifas
+  async calcularPreciosServicios(calcularPreciosTarifaDto: CalcularPreciosTarifaDto) {
+
+    const { idPeriodo, idsServicios } = calcularPreciosTarifaDto;
+
+    // VALIDAR QUE EL PERIODO EXISTA
+    await this.periodoService.findOne(idPeriodo);
+
+    const calculados = [];
+    const manuales = [];
+
+    for (const idServicio of idsServicios) {
+
+      const servicio = await this.servicioService.findOne(idServicio);
+
+      const resultado = await this.calcularPrecioServicio(idPeriodo, servicio);
+
+      if (resultado.calculado) {
+        calculados.push(resultado);
+      } else {
+        manuales.push(resultado);
+      }
+
+    }
+
+    return { calculados, manuales };
+
+  }
+
+  private async calcularPrecioServicio(idPeriodo: number, servicio: Servicio) {
+
+    const base = {
+      idServicio: servicio.idServicio,
+      codigo: servicio.codigo,
+      descripcion: servicio.descripcion,
+      idTipoHorarioDescripcion: servicio.idTipoHorarioDescripcion.idTipoHorarioDescripcion,
+      tipoHorario: servicio.idTipoHorarioDescripcion.nombre,
+      idTipoDuracion: servicio.idTipoDuracion.idTipoDuracion,
+      tipoDuracion: servicio.idTipoDuracion.descripcion,
+      idTipoTarifa: servicio.idTipoTarifa.idTipoTarifa,
+      tipoTarifa: servicio.idTipoTarifa.nombre,
+      dominical: servicio.dominical,
+    };
+
+    const manual = (mensaje: string) => ({
+      ...base,
+      calculado: false,
+      mensaje,
+      costosDirectos: null,
+      seguroVida: null,
+      costosDirectosSeguroVida: null,
+      aui: null,
+      precioAntesIva: null,
+      iva: null,
+      precioTotal: null,
+    });
+
+    // SI EL SERVICIO SE COBRA "POR SERVICIO", NO IMPORTA SU HORARIO NI DURACION, EL PRECIO SIEMPRE ES MANUAL
+    if (servicio.idTipoTarifa.nombre == TipoTarifaInterface.SERVICIO) {
+      return manual('El servicio se cobra "por servicio", el precio (costos directos, seguro vida y aui) debe ingresarse manualmente');
+    }
+
+    // DIA COMPLETO (24 HORAS): EL PRECIO NO SE PUEDE CALCULAR, SE INGRESA MANUAL TAL CUAL LO VA A COBRAR
+    if (servicio.idTipoHorarioDescripcion.nombre == TipoHorarioInterface.DIA_COMPLETO) {
+
+      const nota = servicio.idTipoTarifa.nombre == TipoTarifaInterface.MES
+        ? 'debe ingresar el valor total por 30 dias'
+        : 'debe ingresar el valor del turno (24 horas)';
+
+      return manual(`El horario es dia completo (24 horas), el precio debe ingresarse manualmente. Como el tipo de tarifa es "${servicio.idTipoTarifa.nombre}", ${nota}`);
+
+    }
+
+    // MIXTO + POR SERVICIO ya se filtro arriba. MIXTO + POR HORA: EL PRECIO SOLO SE CONOCE AL CREAR LA ORDEN DE SERVICIO (se desconoce cuantas horas seran de dia y cuantas de noche)
+    if (servicio.idTipoHorarioDescripcion.nombre == TipoHorarioInterface.MIXTO) {
+      return manual('El horario es mixto, el precio real se calcula al momento de crear la orden de servicio; por ahora debe ingresarse un valor manualmente');
+    }
+
+    // DIURNO O NOCTURNO: SE CALCULA A PARTIR DE LA TARIFA HORA DEL PERIODO
+    const diurno = servicio.idTipoHorarioDescripcion.nombre == TipoHorarioInterface.DIURNO;
+
+    const tarifaHoraDescripcion = await this.tarifaHoraDescripcionService.findOneByTipo(diurno, servicio.dominical);
+
+    const valorHora = await this.tarifaHoraService.findOneByPeriodoYDescripcion(idPeriodo, tarifaHoraDescripcion.idTarifaHoraDescripcion);
+
+    if (!valorHora) {
+      return manual(`No se ha configurado el valor de la tarifa hora "${tarifaHoraDescripcion.nombre}" para este periodo`);
+    }
+
+    let multiplicador: number;
+
+    if (servicio.idTipoDuracion.descripcion == TipoDuracionInterface.FIJA) {
+
+      if (servicio.idTipoTarifa.nombre != TipoTarifaInterface.MES && servicio.idTipoTarifa.nombre != TipoTarifaInterface.TURNO) {
+        return manual(`El tipo de tarifa "${servicio.idTipoTarifa.nombre}" no es valido para una duracion fija, debe ser mensual o por turno`);
+      }
+
+      multiplicador = servicio.idTipoTarifa.nombre == TipoTarifaInterface.MES
+        ? servicio.horasFijas * 30
+        : servicio.horasFijas;
+
+    } else {
+
+      if (servicio.idTipoTarifa.nombre != TipoTarifaInterface.HORA) {
+        return manual(`El tipo de tarifa "${servicio.idTipoTarifa.nombre}" no es valido para una duracion flexible, debe ser por hora`);
+      }
+
+      // El precio se deja como el valor unitario de la hora, la cantidad real de horas se multiplica al crear la orden de servicio
+      multiplicador = 1;
+
+    }
+
+    // BASE: costos directos, seguro vida y aui (los mismos 3 campos que el usuario ingresaria manualmente, aca se obtienen del valor hora del periodo)
+    const costosDirectos = Number(valorHora.costosDirectos) * multiplicador;
+    const seguroVida = Number(valorHora.seguroVida ?? 0) * multiplicador;
+    const aui = Number(valorHora.aui) * multiplicador;
+
+    return {
+      ...base,
+      calculado: true,
+      mensaje: `Calculado con la tarifa hora "${tarifaHoraDescripcion.nombre}" del periodo`,
+      ...this.calcularTotalesTarifa(costosDirectos, seguroVida, aui),
+    };
+
+  }
+
+  // A PARTIR DE COSTOS DIRECTOS, SEGURO VIDA Y AUI (ya sea calculados o ingresados manualmente), CALCULA EL RESTO DE CAMPOS DE UNA TARIFA
+  private calcularTotalesTarifa(costosDirectos: number, seguroVida: number, aui: number) {
+
+    const costosDirectosSeguroVida = costosDirectos + seguroVida;
+    const precioAntesIva = costosDirectosSeguroVida + aui;
+    const iva = Math.round(precioAntesIva * 0.19); // IVA del 19%
+    const precioTotal = Math.round(precioAntesIva + iva);
+
+    return {
+      costosDirectos,
+      seguroVida,
+      costosDirectosSeguroVida,
+      aui,
+      precioAntesIva,
+      iva,
+      precioTotal,
+    };
+
   }
 
   async bulkCreate(bulkCreateTarifaDto: SaveTarifaDto) {
@@ -142,7 +299,6 @@ export class TarifasService {
 
       const tarifa = this.tarifaRepository.create({
         ...createTarifaDto,
-        idTipoTarifa: tipoTarifa,
         idServicio: servicio,
         idPeriodo: periodo
       });
@@ -311,14 +467,22 @@ export class TarifasService {
 
       const [tarifas, total] = await queryBuilder.getManyAndCount();
 
+      // LOS SERVICIOS DE HORARIO MIXTO CON TARIFA POR HORA NO TIENEN FILA EN LA TABLA TARIFA (su precio se calcula al crear la orden),
+      // se agregan solo en la primera pagina para que tambien queden disponibles para seleccionar en la orden de servicio
+      const serviciosVirtuales = offset === 0
+        ? await this.obtenerServiciosVirtualesMixtoPorHora(idTipoServicio, periodoActivoFacturacion, tarifas)
+        : [];
+
+      const total2 = total + serviciosVirtuales.length;
+
       return {
-        data: tarifas,
+        data: [...tarifas, ...serviciosVirtuales],
         pagination: {
-          total,
+          total: total2,
           limit,
           offset,
           page: Math.floor(offset / limit) + 1,
-          totalPages: Math.ceil(total / limit),
+          totalPages: Math.ceil(total2 / limit),
           hasNextPage: offset + limit < total,
           hasPreviousPage: offset > 0
         }
@@ -328,11 +492,15 @@ export class TarifasService {
 
     const tarifas = await queryBuilder.getMany();
 
+    const serviciosVirtuales = await this.obtenerServiciosVirtualesMixtoPorHora(idTipoServicio, periodoActivoFacturacion, tarifas);
+
+    const data = [...tarifas, ...serviciosVirtuales];
+
     return {
-      data: tarifas,
+      data,
       pagination: {
-        total: tarifas.length,
-        limit: tarifas.length,
+        total: data.length,
+        limit: data.length,
         offset: 0,
         page: 1,
         totalPages: 1,
@@ -340,6 +508,36 @@ export class TarifasService {
         hasPreviousPage: false,
       }
     };
+
+  }
+
+  // CONSTRUYE ENTRADAS "VIRTUALES" (SIN FILA REAL EN LA TABLA TARIFA) PARA LOS SERVICIOS DE HORARIO MIXTO CON TARIFA POR HORA,
+  // PARA QUE TAMBIEN APAREZCAN COMO DISPONIBLES AL SELECCIONAR EL SERVICIO DE UNA ORDEN. Su precio se calcula al crear la orden de servicio.
+  private async obtenerServiciosVirtualesMixtoPorHora(idTipoServicio: number, periodoActivoFacturacion: Periodo, tarifasExistentes: Tarifa[]) {
+
+    const serviciosMixtoPorHora = await this.servicioService.findAllMixtoPorHora(idTipoServicio);
+
+    const idsServiciosConTarifa = new Set(tarifasExistentes.map(tarifa => tarifa.idServicio.idServicio));
+
+    return serviciosMixtoPorHora
+      .filter(servicio => !idsServiciosConTarifa.has(servicio.idServicio))
+      .map(servicio => ({
+        idTarifa: null,
+        idPeriodo: periodoActivoFacturacion,
+        idServicio: servicio,
+        idTipoTarifa: servicio.idTipoTarifa,
+        costosDirectos: null,
+        seguroVida: null,
+        costosDirectosSeguroVida: null,
+        aui: null,
+        precioAntesIva: null,
+        iva: null,
+        precioTotal: null,
+        estado: true,
+        fechaCreacion: null,
+        fechaActualizacion: null,
+        calculadoEnOrden: true, // indica que este servicio no tiene una tarifa guardada, su precio se calcula al crear la orden de servicio
+      }));
 
   }
 
@@ -390,15 +588,6 @@ export class TarifasService {
     const tarifa = await this.tarifaRepository.preload({ idTarifa: id, ...tarifaData });
 
     if (!tarifa) throw new NotFoundException(`Tarifa con id "${id}" no encontrado`);
-
-    if (updateTarifaDto.idTipoTarifa) {
-
-      // OBTENER TIPO DE TARIFA
-      const tipoTarifa = await this.tipoTarifaService.findOne(idTipoTarifa);
-
-      tarifa.idTipoTarifa = tipoTarifa;
-
-    }
 
     if (updateTarifaDto.idServicio) {
 

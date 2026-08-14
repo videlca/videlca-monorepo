@@ -35,7 +35,9 @@ import {
 
   EstadoAppService, // Estados de la aplicacion
 
-  CorreoDefaultService // Correos por default
+  CorreoDefaultService, // Correos por default
+
+  FestivosService // Dias festivos (API externa)
 } from './services';
 
 import { 
@@ -86,10 +88,11 @@ import {
     UbicacionService,
     EstadoOrdenServicioService,
     EstadoAppService,
-    CorreoDefaultService
+    CorreoDefaultService,
+    FestivosService
   ],
   exports: [
-    TypeOrmModule, 
+    TypeOrmModule,
     EmailService,
     PrinterService,
     TipoIdentificacionService,
@@ -97,7 +100,8 @@ import {
     UbicacionService,
     EstadoOrdenServicioService,
     EstadoAppService,
-    CorreoDefaultService
+    CorreoDefaultService,
+    FestivosService
   ]
 })
 export class CommonModule {}

@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 import { Max, Min } from "class-validator";
 import { TipoServicio, TipoDuracion, TipoHorarioDescripcion } from ".";
-import { Tarifa } from '../../tarifas/entities';
+import { Tarifa, TipoTarifa } from '../../tarifas/entities';
 
 @Entity({name: 'servicio'})
 export class Servicio {
@@ -60,6 +60,17 @@ export class Servicio {
     @JoinColumn({name: 'idTipoHorarioDescripcion'})
     idTipoHorarioDescripcion: TipoHorarioDescripcion;
 
+    // tipo tarifa -> relacion
+    @ManyToOne(
+        () => TipoTarifa,
+        (tipoTarifa) => tipoTarifa.servicios,
+        {
+            eager: true
+        }
+    )
+    @JoinColumn({name: 'idTipoTarifa'})
+    idTipoTarifa: TipoTarifa;
+
     @Column({ 
         type: 'int',
         name: 'horasFijas',
@@ -87,6 +98,14 @@ export class Servicio {
     @Min(1)
     @Max(24)
     horasMaximas: number;
+
+    // dominical
+    @Column({
+        type: 'boolean',
+        name: 'dominical',
+        default: false
+    })
+    dominical: boolean;
 
     // estado
     @Column({

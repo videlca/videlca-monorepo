@@ -7,19 +7,25 @@ import { DescriptionRoutes } from '../../auth/interfaces';
 import { EnviarCorreoDto, PaginationDto } from '../../common/dto';
 
 import { TarifasService } from '../services/tarifas.service';
-import { CreateTarifaDto, UpdateTarifaDto, SaveTarifaDto } from '../dto';
+import { CreateTarifaDto, UpdateTarifaDto, SaveTarifaDto, CalcularPreciosTarifaDto } from '../dto';
 
 @Controller('tarifas')
 @AppAuth(DescriptionRoutes.TARIFAS) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
 export class TarifasController {
   constructor(private readonly tarifasService: TarifasService) {}
-  
+
   // RUTA PROTEGIDA: Crear tarifa para un periodo
   @Post()
   create(@Body() createTarifaDto: CreateTarifaDto) {
     return this.tarifasService.create(createTarifaDto);
   }
-  
+
+  // RUTA PROTEGIDA: calcular el precio de la tarifa de los servicios seleccionados para un periodo, usando las tarifas por hora de ese periodo
+  @Post('calcular-precios')
+  calcularPrecios(@Body() calcularPreciosTarifaDto: CalcularPreciosTarifaDto) {
+    return this.tarifasService.calcularPreciosServicios(calcularPreciosTarifaDto);
+  }
+
   // RUTA PROTEGIDA (para ver desde otra pantalla o dropdown): OBTENER TODOS LAS TARIFAS DE UN PERIODO
   @Get('periodo/:idPeriodo')
   findAllByPeriodo(@Param('idPeriodo', ParseIntPipe) id: number) {

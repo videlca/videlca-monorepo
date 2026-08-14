@@ -1,7 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { Periodo } from "../../periodos/entities/periodo.entity";
 import { Servicio } from "../../servicios/entities";
-import { TipoTarifa } from "./tipo-tarifa.entity";
 import { OrdenServicioTarifa } from "../../orden-servicio/entities/orden-servicio-tarifa.entity";
 import { LiquidacionServicioOrdenServicio } from "../../liquidaciones/entities/liquidacion_servicio_orden_servicio.entity";
 
@@ -35,17 +34,6 @@ export class Tarifa {
     )
     @JoinColumn({name: 'idServicio'})
     idServicio: Servicio;
-    
-    // tipo tarifa -> relacion
-    @ManyToOne(
-        () => TipoTarifa,
-        (tipoTarifa) => tipoTarifa.tarifas,
-        {
-            eager: true
-        }
-    )
-    @JoinColumn({name: 'idTipoTarifa'})
-    idTipoTarifa: TipoTarifa;
 
     // COSTOS DIRECTOS
     @Column({

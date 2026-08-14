@@ -8,6 +8,7 @@ import { PermissionsModule } from '../permissions/permissions.module';
 import { UsersModule } from '../users/users.module';
 import { ClientesModule } from '../clientes/clientes.module';
 import { TarifasModule } from '../tarifas/tarifas.module';
+import { PeriodosModule } from '../periodos/periodos.module';
 import { ServiciosModule } from '../servicios/servicios.module';
 import { PersonalModule } from '../personal/personal.module';
 import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
@@ -53,6 +54,7 @@ import {
     UsersModule,
     ClientesModule,
     TarifasModule,
+    PeriodosModule,
     ServiciosModule,
     PersonalModule,
     LiquidacionesModule,

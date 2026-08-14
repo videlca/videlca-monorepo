@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMan
 import { Max, Min } from "class-validator";
 import { TipoUnidadTiempo } from "./tipo-unidad-tiempo.entity";
 import { Tarifa } from '../entities';
-
+import { Servicio } from '../../servicios/entities/servicio.entity';
 
 @Entity({name: 'tipo_tarifa'})
 export class TipoTarifa {
@@ -54,11 +54,11 @@ export class TipoTarifa {
         default: true
     })
     estado: boolean;
-
+    
     @OneToMany(
-        () => Tarifa, 
-        (tarifa) => tarifa.idTipoTarifa, 
+        () => Servicio, 
+        (servicio) => servicio.idTipoTarifa, 
     )
-    tarifas: Tarifa[];
+    servicios: Servicio[];
 
 }

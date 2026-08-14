@@ -252,11 +252,14 @@ export class LiquidacionesService {
       for (const tarifa of ordenServicioLiquidar.tarifas ?? []) {
       
         const precioOrden: PrecioOrdenDto = {
-          idTarifa: tarifa.idTarifa.idTarifa,
-          horaInicio: tarifa.horaInicio,
-          horaFin: tarifa.horaFin,
           fechaInicio: desde,
           fechaFin: hasta,
+          servicios: [{
+            idTarifa: tarifa.idTarifa.idTarifa,
+            idServicio: tarifa.idTarifa.idServicio.idServicio,
+            horaInicio: tarifa.horaInicio,
+            horaFin: tarifa.horaFin,
+          }],
         };
 
         const {
@@ -334,11 +337,14 @@ export class LiquidacionesService {
       for (const tarifa of ordenServicioLiquidar.tarifas ?? []) {
       
         const precioOrden: PrecioOrdenDto = {
-          idTarifa: tarifa.idTarifa.idTarifa,
-          horaInicio: tarifa.horaInicio,
-          horaFin: tarifa.horaFin,
           fechaInicio: desde,
           fechaFin: hasta,
+          servicios: [{
+            idTarifa: tarifa.idTarifa.idTarifa,
+            idServicio: tarifa.idTarifa.idServicio.idServicio,
+            horaInicio: tarifa.horaInicio,
+            horaFin: tarifa.horaFin,
+          }],
         };
 
         const {

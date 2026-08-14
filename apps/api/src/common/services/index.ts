@@ -13,3 +13,5 @@ export { EstadoOrdenServicioService } from "./estado-orden-servicio/estado-orden
 export { EstadoAppService } from "./estado-app/estado-app.service";
 
 export { PrinterService } from "./printer/printer.service";
+
+export { FestivosService } from "./festivos/festivos.service";

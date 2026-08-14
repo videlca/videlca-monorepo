@@ -9,11 +9,23 @@ import { ServiciosModule } from '../servicios/servicios.module';
 import { ReportesModule } from '../reportes/reportes.module';
 import { CommonModule } from '../common/common.module';
 
-import { Tarifa, TipoTarifa, TipoUnidadTiempo } from './entities';
+import { Tarifa, TipoTarifa, TipoUnidadTiempo, TarifaHora, TarifaHoraDescripcion } from './entities';
 
-import { TarifasService, TipoTarifaService, TipoUnidadTiempoService } from './services';
+import {
+  TarifasService,
+  TipoTarifaService,
+  TipoUnidadTiempoService,
+  TarifaHoraService,
+  TarifaHoraDescripcionService
+} from './services';
 
-import { TarifasController, TipoTarifaController, TipoUnidadTiempoController } from './controllers';
+import {
+  TarifasController,
+  TipoTarifaController,
+  TipoUnidadTiempoController,
+  TarifaHoraController,
+  TarifaHoraDescripcionController
+} from './controllers';
 
 @Module({
   imports: [
@@ -21,7 +33,9 @@ import { TarifasController, TipoTarifaController, TipoUnidadTiempoController } f
     TypeOrmModule.forFeature([
       Tarifa,
       TipoTarifa,
-      TipoUnidadTiempo
+      TipoUnidadTiempo,
+      TarifaHora,
+      TarifaHoraDescripcion
     ]),
     AuthModule,
     PermissionsModule,
@@ -35,18 +49,24 @@ import { TarifasController, TipoTarifaController, TipoUnidadTiempoController } f
   controllers: [
     TarifasController,
     TipoTarifaController,
-    TipoUnidadTiempoController
+    TipoUnidadTiempoController,
+    TarifaHoraController,
+    TarifaHoraDescripcionController
   ],
   providers: [
     TarifasService,
     TipoTarifaService,
-    TipoUnidadTiempoService
+    TipoUnidadTiempoService,
+    TarifaHoraService,
+    TarifaHoraDescripcionService
   ],
   exports: [
     TypeOrmModule,
     TarifasService,
     TipoTarifaService,
-    TipoUnidadTiempoService
+    TipoUnidadTiempoService,
+    TarifaHoraService,
+    TarifaHoraDescripcionService
   ]
 })
 export class TarifasModule {}

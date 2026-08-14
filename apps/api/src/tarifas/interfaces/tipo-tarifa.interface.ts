@@ -1,15 +1,15 @@
 export enum TipoTarifaInterface { 
     
     // MES
-    MES = "mes",
+    MES = "mensual", // para cuando un servicio se cobra por mes
 
     // DIA
-    DIA = "dia",
+    TURNO = "por turno", // se tenga las horas fijas
 
     // HORA
-    HORA = "hora",
+    HORA = "por hora", // para cuando un servicio sea flexible
 
-    // UNIDAD
-    UNIDAD = "unidad"
+    // SERVICIO
+    SERVICIO = "por servicio" // el servicio no tiene un tiempo definido, se cobra por el servicio completo
 
 }

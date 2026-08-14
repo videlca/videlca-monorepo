@@ -13,8 +13,8 @@ export class OrdenServicioScheduler {
         private readonly ordenServicioService: OrdenServicioService
     ) {}
 
-    // TODOS LOS DIAS A LAS 7 AM
-    @Cron('0 7 * * *')
+    // TODOS LOS DIAS A LAS 6 AM
+    @Cron('0 6 * * *')
     async validarEstadosOrdenes() {
 
         this.logger.log('Validando estados de ordenes de servicio...');

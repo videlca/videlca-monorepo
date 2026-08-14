@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 
 import { IsNotEmpty, Min, Max, Length } from 'class-validator';
-import { Tarifa } from '../../tarifas/entities';
+import { Tarifa, TarifaHora } from '../../tarifas/entities';
 
 @Entity('periodo')
 @Index(['mesInicio', 'anioInicio', 'mesFin', 'anioFin'])
@@ -92,5 +92,11 @@ export class Periodo {
         (tarifa) => tarifa.idPeriodo, 
     )
     tarifas: Tarifa[];
+    
+    @OneToMany(
+        () => TarifaHora, 
+        (tarifaHora) => tarifaHora.idPeriodo, 
+    )
+    tarifasHoras: TarifaHora[];
 
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
@@ -21,6 +21,8 @@ import {
   TipoHorarioService 
 } from './services';
 
+import { TarifasModule } from '../tarifas/tarifas.module';
+
 import { 
   ServiciosController,
   TipoDuracionController,
@@ -41,6 +43,7 @@ import {
     ]),
     AuthModule,
     PermissionsModule,
+    forwardRef(() => TarifasModule),
     ConfigModule,
   
   ],
