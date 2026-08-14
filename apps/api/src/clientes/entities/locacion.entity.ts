@@ -4,7 +4,7 @@ import { Correo } from "./correo.entity";
 import { Cliente } from "./cliente.entity";
 import { OrdenServicio } from "../../orden-servicio/entities/orden-servicio.entity";
 
-@Entity({name: 'locacion'})
+@Entity({ name: 'locacion' })
 export class Locacion {
 
     @PrimaryGeneratedColumn({
@@ -12,12 +12,12 @@ export class Locacion {
         name: 'idLocacion',
     })
     idLocacion: number;
-    
+
     // NOMBRE
     @Column({
         type: 'varchar',
         name: 'nombre',
-        length: 100 
+        length: 100
     })
     nombre: string;
 
@@ -25,9 +25,9 @@ export class Locacion {
     @ManyToOne(
         () => Ciudad,
         (ciudad) => ciudad.locaciones,
-        {eager: true}
+        { eager: true }
     )
-    @JoinColumn({name: 'idCiudad'})
+    @JoinColumn({ name: 'idCiudad' })
     idCiudad: Ciudad;
 
     // DIRECCION
@@ -42,14 +42,14 @@ export class Locacion {
     @Column({
         type: 'varchar',
         name: 'latitud',
-        length: 10 
+        length: 15
     })
     latitud: string;
 
     @Column({
         type: 'varchar',
         name: 'longitud',
-        length: 10 
+        length: 15
     })
     longitud: string;
 
@@ -57,14 +57,14 @@ export class Locacion {
     @Column({
         type: 'varchar',
         name: 'primerNombreResponsable',
-        length: 50 
+        length: 50
     })
     primerNombreResponsable: string;
-    
+
     @Column({
         type: 'varchar',
         name: 'primerApellidoResponsable',
-        length: 50 
+        length: 50
     })
     primerApellidoResponsable: string;
 
@@ -98,8 +98,8 @@ export class Locacion {
     @OneToMany(
         () => Correo,
         (correo) => correo.locacion,
-        { 
-            cascade: true, 
+        {
+            cascade: true,
         }
     )
     correos: Correo[];
@@ -113,7 +113,7 @@ export class Locacion {
             eager: true
         }
     )
-    @JoinColumn({name: 'idCliente'})
+    @JoinColumn({ name: 'idCliente' })
     idCliente: Cliente;
 
     // Cliente responsable de facturacion

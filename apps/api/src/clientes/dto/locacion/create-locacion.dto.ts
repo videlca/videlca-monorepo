@@ -16,7 +16,7 @@ export class CreateCorreoDto {
 
   @IsString()
   @IsNotEmpty()
-  @IsEmail({},{ message: 'El correo debe ser un correo válido' })
+  @IsEmail({}, { message: 'El correo debe ser un correo válido' })
   @Length(1, 100, { message: 'El email debe tener entre 1 y 100 caracteres' })
   email: string;
 
@@ -46,12 +46,12 @@ export class CreateLocacionDto {
 
   @IsString()
   @IsNotEmpty()
-  @Length(1, 10, { message: 'La latitud debe tener entre 1 y 10 caracteres' })
+  @Length(1, 15, { message: 'La latitud debe tener entre 1 y 13 caracteres' })
   latitud: string;
 
   @IsString()
   @IsNotEmpty()
-  @Length(1, 10, { message: 'La longitud debe tener entre 1 y 10 caracteres' })
+  @Length(1, 15, { message: 'La longitud debe tener entre 1 y 13 caracteres' })
   longitud: string;
 
   @IsString()
