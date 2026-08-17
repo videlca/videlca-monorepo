@@ -21,6 +21,7 @@ import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../../api/dtos";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
+import { useServerPagination } from "../../../hooks/useServerPagination";
 
 export const Route = createFileRoute("/dashboard/tarifas/periodo")({
   component: RouteComponent,
@@ -33,8 +34,12 @@ function RouteComponent() {
   const [isOpenEditTarifa, setIsOpenEditTarifa] = useState(false);
   const [selectedPeriodo, setSelectedPeriodo] = useState<Periodo | null>(null);
   const [isOpenDeleteTarifa, setIsOpenDeleteTarifa] = useState(false);
+  
+  // Paginación server-side
+  const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
+
   // Mutaciones y queries
-  const { data: periodos } = usePeriodos();
+  const { data: periodos } = usePeriodos(paginationParams);
   const { mutate: crearPeriodo, isPending: isLoadingCrearPeriodo } =
     useCrearPeriodo();
   const { mutate: actualizarPeriodo, isPending: isLoadingActualizarPeriodo } =
@@ -173,8 +178,17 @@ function RouteComponent() {
         <Table
           data={periodos?.data?.data || []}
           columns={columns}
-          pageSize={5}
-          enableFiltering={true}
+          serverPagination={true}
+          totalRows={periodos?.data?.pagination?.total ?? 0}
+          currentPage={page}
+          onPageChange={setPage}
+          onPageSizeChange={(size) => {
+            setPageSize(size);
+            setPage(0);
+          }}
+          pageSize={pageSize}
+          // enableFiltering={true}
+          enableFiltering={false}
           enableSorting={false}
           enablePagination={true}
         />

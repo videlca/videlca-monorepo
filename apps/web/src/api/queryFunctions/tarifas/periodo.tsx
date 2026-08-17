@@ -13,20 +13,23 @@ import {
   getPeriodosActivo,
   updatePeriodo,
 } from "../../functions/tarifas/periodo";
-import type { ApiResponse , PaginatedResponse } from "../../types/common";
+import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import type { ComparativaPeriodosResponse, Periodo } from "../../types/periodo";
 import type { CreatePeriodoDto, UpdatePeriodoDto } from "../../dtos";
+import type { PaginationDto } from "../../dtos/common";
 import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 
-export const usePeriodos = (): UseQueryResult<
+export const usePeriodos = (
+  paginationParams: PaginationDto = { pagination: "false" }
+): UseQueryResult<
   ApiResponse<PaginatedResponse<Periodo[]>>,
   Error
 > => {
   return useQuery({
-    queryKey: ["periodos"],
-    queryFn: () => getPeriodos({ pagination: 'false' }),
+    queryKey: ["periodos", paginationParams],
+    queryFn: () => getPeriodos(paginationParams),
   });
 };
 

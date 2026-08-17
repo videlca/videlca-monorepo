@@ -23,21 +23,19 @@ export const useGetIdsAnuladosOrdenServicio = (paginationParams: PaginationDto =
 
 export const useUpdateIdOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, { id: number, data: UpdateOrdenServicioIdDto }> => {
   return useMutation({
-    mutationFn: async ({ id, data }) => {
-      const response = await updateIdOrdenServicio(id, data);
-      if (response.status !== 200 && response.status !== 201) {
-        showErrorToast(response.message, "Error al actualizar el identificador de orden de servicio");
+    mutationFn: ({ id, data }) => updateIdOrdenServicio(id, data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Identificador de orden de servicio actualizado correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["ids-anulados-orden-servicio"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["ids-orden-servicio"],
+        });
+      } else {
+        showErrorToast(data.message, "Error al actualizar el identificador de orden de servicio");
       }
-      return response;
-    },
-    onSuccess: () => {
-      toast.success("Identificador de orden de servicio actualizado correctamente");
-      queryClient.invalidateQueries({
-        queryKey: ["ids-anulados-orden-servicio"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["ids-orden-servicio"],
-      });
     },
     onError: (error) => {
       showErrorToast(error.message, "Error al actualizar el identificador de orden de servicio");
@@ -49,21 +47,19 @@ export const useUpdateIdOrdenServicio = (): UseMutationResult<ApiResponse<any>, 
 export const useAnularIdOrdenServicio = (): UseMutationResult<ApiResponse<OrdenServicioId>, Error, AnularIdOrdenServicioDto> => {
   return useMutation({
     mutationKey: ["anular-id-orden-servicio"],
-    mutationFn: async (data) => {
-      const response = await anularOrdenServicioId(data);
-      if (response.status !== 200 && response.status !== 201) {
-        showErrorToast(response.message, "Error al anular el identificador de la orden de servicio");
+    mutationFn: (data) => anularOrdenServicioId(data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Identificador de orden de servicio anulado correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["ids-anulados-orden-servicio"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["ids-orden-servicio"],
+        });
+      } else {
+        showErrorToast(data.message, "Error al anular el identificador de la orden de servicio");
       }
-      return response;
-    },
-    onSuccess: () => {
-      toast.success("Identificador de orden de servicio anulado correctamente");
-      queryClient.invalidateQueries({
-        queryKey: ["ids-anulados-orden-servicio"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["ids-orden-servicio"],
-      });
     },
     onError: (error) => {
       showErrorToast(error.message, "Error al anular el identificador de la orden de servicio");
@@ -73,21 +69,19 @@ export const useAnularIdOrdenServicio = (): UseMutationResult<ApiResponse<OrdenS
 
 export const useDeleteIdOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, { id: number }> => {
   return useMutation({
-    mutationFn: async ({ id }) => {
-      const response = await deleteIdOrdenServicio(id);
-      if (response.status !== 200 && response.status !== 201) {
-        showErrorToast(response.message, "Error al eliminar el identificador de orden de servicio");
+    mutationFn: ({ id }) => deleteIdOrdenServicio(id),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Identificador de orden de servicio eliminado correctamente");
+        queryClient.invalidateQueries({
+          queryKey: ["ids-anulados-orden-servicio"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["ids-orden-servicio"],
+        });
+      } else {
+        showErrorToast(data.message, "Error al eliminar el identificador de orden de servicio");
       }
-      return response;
-    },
-    onSuccess: () => {
-      toast.success("Identificador de orden de servicio eliminado correctamente");
-      queryClient.invalidateQueries({
-        queryKey: ["ids-anulados-orden-servicio"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["ids-orden-servicio"],
-      });
     },
     onError: (error) => {
       showErrorToast(error.message, "Error al eliminar el identificador de orden de servicio");

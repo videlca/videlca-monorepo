@@ -5,7 +5,7 @@ import type { PaginationDto } from "../../dtos/common";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { Periodo, ComparativaPeriodosResponse } from "../../types/periodo";
 
-export const getPeriodos = async (pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Periodo[]>>> => {
+export const getPeriodos = async (pagination?: PaginationDto): Promise<ApiResponse<PaginatedResponse<Periodo[]>>> => {
   return await apiGet<PaginatedResponse<Periodo[]>>("/periodos", pagination);
 };
 

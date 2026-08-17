@@ -182,9 +182,11 @@ export function IdentificadoresAnulados() {
                                 motivo: data.motivo
                             },
                             {
-                                onSuccess: () => {
-                                    setIsOpenAdd(false);
-                                    resetAdd();
+                                onSuccess: (data) => {
+                                    if (data.status === 200 || data.status === 201) {
+                                        setIsOpenAdd(false);
+                                        resetAdd();
+                                    }
                                 },
                             },
                         );
@@ -246,9 +248,11 @@ export function IdentificadoresAnulados() {
                         updateIdOrdenServicio(
                             { id: idOrdenServicioId || 0, data: { descripcionId: `${data.descripcionId}-${data.consecutivo}`, consecutivo: Number(data.consecutivo || 0), motivo: data.motivo } },
                             {
-                                onSuccess: () => {
-                                    setIsOpenEdit(false);
-                                    resetEdit();
+                                onSuccess: (data) => {
+                                    if (data.status === 200 || data.status === 201) {
+                                        setIsOpenEdit(false);
+                                        resetEdit();
+                                    }
                                 },
                             },
                         );
@@ -307,8 +311,10 @@ export function IdentificadoresAnulados() {
                     deleteIdOrdenServicio(
                         { id: idOrdenServicioId || 0 },
                         {
-                            onSuccess: () => {
-                                setIsOpenDelete(false);
+                            onSuccess: (data) => {
+                                if (data.status === 200 || data.status === 201) {
+                                    setIsOpenDelete(false);
+                                }
                             },
                         },
                     );

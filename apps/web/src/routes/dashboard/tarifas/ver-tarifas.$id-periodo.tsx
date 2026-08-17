@@ -139,10 +139,10 @@ function RouteComponent() {
         return (
           <div className="flex flex-col text-left">
             <span className="text-base font-semibold">
-              {row.original.idServicio.codigo}
+              {row.original.idServicio?.codigo || "-"}
             </span>
             <span className="text-sm">
-              {row.original.idServicio.descripcion}
+              {row.original.idServicio?.descripcion || "-"}
             </span>
           </div>
         );
@@ -155,7 +155,7 @@ function RouteComponent() {
         return (
           <div className="flex flex-col text-left whitespace-nowrap">
             <span className="text-base font-semibold">
-              {row.original.idPeriodo.nombre}
+              {row.original.idPeriodo?.nombre || "-"}
             </span>
           </div>
         );
@@ -244,7 +244,7 @@ function RouteComponent() {
       cell: ({ row }) => {
         return (
           <span className="rounded-full bg-blue-100 px-3 py-1 text-center text-sm whitespace-nowrap text-blue-600">
-            {row.original.idTipoTarifa.nombre}
+            {row.original.idTipoTarifa?.nombre || "-"}
           </span>
         );
       },
@@ -261,7 +261,7 @@ function RouteComponent() {
       cell: ({ row }) => {
         return (
           <MoreActionsButton
-            menuId={`actions-${row.original.idPeriodo}`}
+            menuId={`actions-${row.original.idTarifa}`}
             actions={[
               {
                 label: "Ver",
@@ -276,9 +276,9 @@ function RouteComponent() {
                   setIsOpenEditTarifa(true);
                   setTarifaSelected(row.original);
                   reset({
-                    idPeriodo: row.original.idPeriodo.idPeriodo,
-                    idServicio: row.original.idServicio.idServicio,
-                    idTipoTarifa: row.original.idTipoTarifa.idTipoTarifa,
+                    idPeriodo: row.original.idPeriodo?.idPeriodo || 0,
+                    idServicio: row.original.idServicio?.idServicio || 0,
+                    idTipoTarifa: row.original.idTipoTarifa?.idTipoTarifa || 0,
                     precioAntesIva: row.original.precioAntesIva,
                     iva: row.original.iva,
                     precioTotal: row.original.precioTotal,
@@ -309,6 +309,7 @@ function RouteComponent() {
     () => Object.entries(tarifas?.data || []),
     [tarifas?.data],
   );
+  const hasServicios = serviciosData.length > 0;
 
   return (
     <Section>
@@ -342,22 +343,26 @@ function RouteComponent() {
               });
             }}
           />
-          <ButtonAction
-            Icon={FileSpreadsheet}
-            label="Descargar Excel"
-            onClick={() => {
-              handleDownloadExcel(Number(idPeriodoParam));
-            }}
-            color="green-light"
-          />
-          <ButtonAction
-            Icon={Mail}
-            label="Enviar por correo"
-            onClick={() => {
-              setIsOpenSendExcel(true);
-            }}
-            color="yellow-light"
-          />
+          {hasServicios && (
+            <>
+              <ButtonAction
+                Icon={FileSpreadsheet}
+                label="Descargar Excel"
+                onClick={() => {
+                  handleDownloadExcel(Number(idPeriodoParam));
+                }}
+                color="green-light"
+              />
+              <ButtonAction
+                Icon={Mail}
+                label="Enviar por correo"
+                onClick={() => {
+                  setIsOpenSendExcel(true);
+                }}
+                color="yellow-light"
+              />
+            </>
+          )}
           <ButtonAction
             Icon={SettingsIcon}
             label="Configurar Servicios para este periodo"
@@ -374,48 +379,56 @@ function RouteComponent() {
       </div>
 
       <div className="flex flex-col gap-6">
-        {serviciosData.map(([key, value]: [string, any]) => {
-          const isCollapsed = collapsedGroups.has(key);
-          return (
-            <div
-              key={key}
-              className="rounded-lg border border-blue-200 bg-blue-100/70 pt-2"
-            >
-              <button
-                type="button"
-                className="flex w-full cursor-pointer items-center gap-2 rounded-lg p-2 px-4 text-left transition-colors hover:bg-blue-200/50"
-                onClick={() => {
-                  setCollapsedGroups((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(key)) {
-                      next.delete(key);
-                    } else {
-                      next.add(key);
-                    }
-                    return next;
-                  });
-                }}
+        {!hasServicios ? (
+          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500 shadow-sm">
+            <p className="text-base font-medium text-gray-600">
+              No hay tarifas configuradas para este periodo.
+            </p>
+          </div>
+        ) : (
+          serviciosData.map(([key, value]: [string, any]) => {
+            const isCollapsed = collapsedGroups.has(key);
+            return (
+              <div
+                key={key}
+                className="rounded-lg border border-blue-200 bg-blue-100/70 pt-2"
               >
-                {isCollapsed ? (
-                  <ChevronRight className="h-5 w-5 text-blue-600" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-blue-600" />
+                <button
+                  type="button"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg p-2 px-4 text-left transition-colors hover:bg-blue-200/50"
+                  onClick={() => {
+                    setCollapsedGroups((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(key)) {
+                        next.delete(key);
+                      } else {
+                        next.add(key);
+                      }
+                      return next;
+                    });
+                  }}
+                >
+                  {isCollapsed ? (
+                    <ChevronRight className="h-5 w-5 text-blue-600" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-blue-600" />
+                  )}
+                  <h2 className="text-xl font-medium text-blue-600">
+                    {key}
+                  </h2>
+                </button>
+                {!isCollapsed && (
+                  <Table
+                    columns={columns}
+                    data={value || []}
+                    pageSize={200}
+                    enablePagination={false}
+                  />
                 )}
-                <h2 className="text-xl font-medium text-blue-600">
-                  {key}
-                </h2>
-              </button>
-              {!isCollapsed && (
-                <Table
-                  columns={columns}
-                  data={value || []}
-                  pageSize={200}
-                  enablePagination={false}
-                />
-              )}
-            </div>
-          );
-        })}
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* TODO: mostrar datos de la tarifa */}
@@ -440,7 +453,7 @@ function RouteComponent() {
                 </p>
                 <p>
                   <span className="font-medium">Tipo de Tarifa:</span>{" "}
-                  {tarifaSelected?.idTipoTarifa.nombre}
+                  {tarifaSelected?.idTipoTarifa?.nombre || "-"}
                 </p>
                 <p>
                   <span className="font-medium">Estado:</span>{" "}
@@ -457,15 +470,15 @@ function RouteComponent() {
               <div>
                 <p>
                   <span className="font-medium">Fecha Creación:</span>{" "}
-                  {new Date(tarifaSelected?.fechaCreacion || "").toLocaleString(
-                    "es-ES",
-                  )}
+                  {tarifaSelected?.fechaCreacion
+                    ? new Date(tarifaSelected.fechaCreacion).toLocaleString("es-ES")
+                    : "-"}
                 </p>
                 <p>
                   <span className="font-medium">Última Actualización:</span>{" "}
-                  {new Date(
-                    tarifaSelected?.fechaActualizacion || "",
-                  ).toLocaleString("es-ES")}
+                  {tarifaSelected?.fechaActualizacion
+                    ? new Date(tarifaSelected.fechaActualizacion).toLocaleString("es-ES")
+                    : "-"}
                 </p>
               </div>
             </div>
@@ -481,41 +494,41 @@ function RouteComponent() {
               <div>
                 <p>
                   <span className="font-medium">Nombre:</span>{" "}
-                  {tarifaSelected?.idPeriodo.nombre}
+                  {tarifaSelected?.idPeriodo?.nombre || "-"}
                 </p>
                 <p>
                   <span className="font-medium">Fecha Inicio:</span>{" "}
-                  {new Date(
-                    tarifaSelected?.idPeriodo.fechaInicio || "",
-                  ).toLocaleDateString("es-ES")}
+                  {tarifaSelected?.idPeriodo?.fechaInicio
+                    ? new Date(tarifaSelected.idPeriodo.fechaInicio).toLocaleDateString("es-ES")
+                    : "-"}
                 </p>
                 <p>
                   <span className="font-medium">Fecha Fin:</span>{" "}
-                  {new Date(
-                    tarifaSelected?.idPeriodo.fechaFin || "",
-                  ).toLocaleDateString("es-ES")}
+                  {tarifaSelected?.idPeriodo?.fechaFin
+                    ? new Date(tarifaSelected.idPeriodo.fechaFin).toLocaleDateString("es-ES")
+                    : "-"}
                 </p>
               </div>
               <div>
                 <p>
                   <span className="font-medium">Mes Inicio:</span>{" "}
-                  {tarifaSelected?.idPeriodo.mesInicio}/
-                  {tarifaSelected?.idPeriodo.anioInicio}
+                  {tarifaSelected?.idPeriodo?.mesInicio}/
+                  {tarifaSelected?.idPeriodo?.anioInicio}
                 </p>
                 <p>
                   <span className="font-medium">Mes Fin:</span>{" "}
-                  {tarifaSelected?.idPeriodo.mesFin}/
-                  {tarifaSelected?.idPeriodo.anioFin}
+                  {tarifaSelected?.idPeriodo?.mesFin}/
+                  {tarifaSelected?.idPeriodo?.anioFin}
                 </p>
                 <p>
                   <span className="font-medium">Activo para Facturación:</span>{" "}
                   <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.idPeriodo.periodoActivoFacturacion
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.idPeriodo?.periodoActivoFacturacion
                       ? "bg-green-100 text-green-800"
                       : "bg-red-100 text-red-800"
                       }`}
                   >
-                    {tarifaSelected?.idPeriodo.periodoActivoFacturacion
+                    {tarifaSelected?.idPeriodo?.periodoActivoFacturacion
                       ? "Sí"
                       : "No"}
                   </span>
@@ -534,35 +547,35 @@ function RouteComponent() {
               <div>
                 <p>
                   <span className="font-medium">Código:</span>{" "}
-                  {tarifaSelected?.idServicio.codigo}
+                  {tarifaSelected?.idServicio?.codigo || "-"}
                 </p>
                 <p>
                   <span className="font-medium">Descripción:</span>{" "}
-                  {tarifaSelected?.idServicio.descripcion}
+                  {tarifaSelected?.idServicio?.descripcion || "-"}
                 </p>
                 <p>
                   <span className="font-medium">Tipo de Servicio:</span>{" "}
-                  {tarifaSelected?.idServicio.idTipoServicio?.descripcion}
+                  {tarifaSelected?.idServicio?.idTipoServicio?.descripcion || "-"}
                 </p>
                 <p>
                   <span className="font-medium">Tipo de Duración:</span>{" "}
-                  {tarifaSelected?.idServicio.idTipoDuracion?.descripcion}
+                  {tarifaSelected?.idServicio?.idTipoDuracion?.descripcion || "-"}
                 </p>
               </div>
               <div>
                 <p>
                   <span className="font-medium">Tipo de Horario:</span>{" "}
-                  {tarifaSelected?.idServicio.idTipoHorarioDescripcion?.nombre}
+                  {tarifaSelected?.idServicio?.idTipoHorarioDescripcion?.nombre || "-"}
                 </p>
                 <p>
                   <span className="font-medium">Estado del Servicio:</span>{" "}
                   <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.idServicio.estado
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.idServicio?.estado
                       ? "bg-green-100 text-green-800"
                       : "bg-red-100 text-red-800"
                       }`}
                   >
-                    {tarifaSelected?.idServicio.estado ? "Activo" : "Inactivo"}
+                    {tarifaSelected?.idServicio?.estado ? "Activo" : "Inactivo"}
                   </span>
                 </p>
               </div>
@@ -631,7 +644,10 @@ function RouteComponent() {
                 <InputSelect
                   label="Tipo de tarifa"
                   options={
-                    tiposTarifa?.data?.data.map((tipo) => ({
+                    (Array.isArray(tiposTarifa?.data)
+                      ? tiposTarifa.data
+                      : (tiposTarifa?.data as any)?.data || []
+                    ).map((tipo: any) => ({
                       id: tipo.idTipoTarifa,
                       descripcion: tipo.nombre,
                     })) || []
