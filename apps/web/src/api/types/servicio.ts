@@ -1,4 +1,4 @@
-import type { Tarifa } from "./periodo";
+import type { Tarifa, TipoTarifa } from "./periodo";
 
 export interface Servicio {
   idTarifa: Tarifa;
@@ -8,9 +8,11 @@ export interface Servicio {
   idTipoServicio: TipoServicio;
   idTipoDuracion: TipoDuracion;
   idTipoHorarioDescripcion: TipoHorarioDescripcion;
+  idTipoTarifa: TipoTarifa;
   horasFijas: number;
   horasMinimas: number;
   horasMaximas: number;
+  dominical: boolean;
   estado: boolean;
   tarifas: Tarifa[];
 }

@@ -5,6 +5,7 @@ import {
   type UseQueryResult,
 } from "@tanstack/react-query";
 import {
+  calcularPreciosServicios,
   createTarifa,
   deleteTarifa,
   descargarExcel,
@@ -18,12 +19,13 @@ import {
   updateTarifa,
 } from "../../functions/tarifas/tarifa";
 import type {
+  CalcularPreciosDto,
   CreateTarifaDto,
   SaveTarifaDto,
   UpdateTarifaDto,
 } from "../../dtos/tarifas";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
-import type { Tarifa } from "../../types/periodo";
+import type { CalcularPreciosResponse, Tarifa } from "../../types/periodo";
 import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
@@ -100,6 +102,25 @@ export const useGuardarTarifas = (): UseMutationResult<
     },
     onError: (error) => {
       showErrorToast(error.message, "Error al guardar las tarifas");
+    },
+  });
+};
+
+export const useCalcularPrecios = (): UseMutationResult<
+  ApiResponse<CalcularPreciosResponse>,
+  Error,
+  CalcularPreciosDto
+> => {
+  return useMutation({
+    mutationKey: ["calcular-precios"],
+    mutationFn: (data: CalcularPreciosDto) => calcularPreciosServicios(data),
+    onSuccess: (data) => {
+      if (data.status !== 200 && data.status !== 201) {
+        showErrorToast(data.message, "Error al calcular los precios");
+      }
+    },
+    onError: (error) => {
+      showErrorToast(error.message, "Error al calcular los precios");
     },
   });
 };

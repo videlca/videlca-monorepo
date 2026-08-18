@@ -12,7 +12,7 @@ export const priceCalculate = (
 ) => {
   const costosDirectosSeguroVida = costosDirectos + seguroVida;
   const precioAntesIva = costosDirectosSeguroVida + aui;
-  const iva = Math.round(precioAntesIva * 0.019); // IVA del 19%
+  const iva = Math.round(precioAntesIva * 0.19); // IVA del 19%
   const precioTotal = Math.round(precioAntesIva + iva);
   return { iva, precioTotal, precioAntesIva, costosDirectosSeguroVida };
 };

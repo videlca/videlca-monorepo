@@ -47,6 +47,55 @@ export interface TipoTarifa {
   cantidadTiempo?: number;
 }
 
+// Tarifa hora descripcion (catalogo fijo de 4 categorias: diurna, diurna dominical/festiva, nocturna, nocturna dominical/festiva)
+export interface TarifaHoraDescripcion {
+  idTarifaHoraDescripcion: number;
+  nombre: string;
+  descripcion: string;
+  dominical: boolean;
+  diurno: boolean;
+}
+
+// Tarifa hora (valor por periodo de cada una de las 4 tarifa hora descripcion)
+export interface TarifaHora {
+  idTarifaHora: number | null;
+  idPeriodo: Periodo;
+  idTarifaHoraDescripcion: TarifaHoraDescripcion;
+  costosDirectos: number | null;
+  seguroVida: number | null;
+  aui: number | null;
+  fechaCreacion: string | null;
+  fechaActualizacion: string | null;
+}
+
+// Respuesta de POST /tarifas/calcular-precios
+export interface ServicioPrecioCalculado {
+  idServicio: number;
+  codigo: string;
+  descripcion: string;
+  idTipoHorarioDescripcion: number;
+  tipoHorario: string;
+  idTipoDuracion: number;
+  tipoDuracion: string;
+  idTipoTarifa: number;
+  tipoTarifa: string;
+  dominical: boolean;
+  calculado: boolean;
+  mensaje: string;
+  costosDirectos: number | null;
+  seguroVida: number | null;
+  costosDirectosSeguroVida: number | null;
+  aui: number | null;
+  precioAntesIva: number | null;
+  iva: number | null;
+  precioTotal: number | null;
+}
+
+export interface CalcularPreciosResponse {
+  calculados: ServicioPrecioCalculado[];
+  manuales: ServicioPrecioCalculado[];
+}
+
 // Comparativa de periodos
 export interface ComparativaPeriodosResponse {
   periodoA: ComparativaPeriodoInfo;

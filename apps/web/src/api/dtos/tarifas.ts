@@ -37,3 +37,23 @@ export interface UpdateTarifaDto extends Partial<CreateTarifaDto> {
   estado?: boolean;
 }
 
+// tarifa hora
+export interface CreateTarifaHoraDto {
+  idPeriodo: number;
+  idTarifaHoraDescripcion: number;
+  costosDirectos: number;
+  seguroVida?: number;
+  aui: number;
+}
+
+export interface SaveTarifaHoraDto {
+  idPeriodo: number;
+  tarifas: CreateTarifaHoraDto[];
+}
+
+// calcular precios de servicios a partir de la tarifa hora de un periodo
+export interface CalcularPreciosDto {
+  idPeriodo: number;
+  idsServicios: number[];
+}
+

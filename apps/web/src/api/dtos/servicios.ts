@@ -29,9 +29,11 @@ export interface CreateServicioDto {
   idTipoServicio: number;
   idTipoDuracion: number;
   idTipoHorarioDescripcion: number;
+  idTipoTarifa: number;
   horasFijas?: number;
   horasMinimas?: number;
   horasMaximas?: number;
+  dominical?: boolean;
 }
 
 export interface UpdateServicioDto extends Partial<CreateServicioDto> {

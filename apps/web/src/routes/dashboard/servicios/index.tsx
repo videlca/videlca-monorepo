@@ -3,6 +3,7 @@ import {
   BarChart3,
   Calendar,
   Clock,
+  DollarSign,
   FileText,
   PlusIcon,
   Shield,
@@ -22,7 +23,9 @@ import {
   useTipoServicios,
   useUpdateServicio,
 } from "../../../api/queryFunctions/servicios";
+import { useTipoTarifa } from "../../../api/queryFunctions/tarifas";
 import type { Servicio } from "../../../api/types/servicio";
+import type { TipoTarifa } from "../../../api/types/periodo";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { useMemo, useState } from "react";
@@ -34,6 +37,7 @@ import type { CreateServicioDto, UpdateServicioDto } from "../../../api/dtos";
 import { InputForm } from "../../../components/common/InputForm";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { InputSelectStateBoolean } from "../../../components/common/InputSelectState";
+import { CheckboxForm } from "../../../components/common/CheckboxForm";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { FormSection } from "../../../components/common/FormSection";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
@@ -43,6 +47,45 @@ export const Route = createFileRoute("/dashboard/servicios/")({
   component: RouteComponent,
 });
 
+// Nombres de tipo horario que tienen un rango de horas configurado (diurno/nocturno) y por lo tanto
+// permiten el checkbox "dominical" (solo ellos tienen tarifa hora diferenciada dominical/festiva)
+const HORARIOS_CON_DOMINICAL = ["diurno", "nocturno"];
+
+// Determina, según el tipo de horario y (si aplica) el tipo de duración, qué tipos de tarifa
+// puede elegir el usuario. Refleja las mismas reglas que valida el backend, solo para guiar la UI.
+const filtrarTiposTarifaPermitidos = (
+  tiposTarifa: TipoTarifa[],
+  tipoHorarioNombre: string | null,
+  tipoDuracion: string | null,
+): TipoTarifa[] => {
+  if (!tipoHorarioNombre) return [];
+
+  if (tipoHorarioNombre.includes("dia completo")) {
+    return tiposTarifa.filter(
+      (tipo) => tipo.nombre === "mensual" || tipo.nombre === "por turno",
+    );
+  }
+
+  if (tipoHorarioNombre === "mixto") {
+    return tiposTarifa.filter(
+      (tipo) => tipo.nombre === "por hora" || tipo.nombre === "por servicio",
+    );
+  }
+
+  // Diurno / Nocturno: el tipo de tarifa permitido depende de la duración
+  if (tipoDuracion === "flexible") {
+    return tiposTarifa.filter((tipo) => tipo.nombre === "por hora");
+  }
+
+  if (tipoDuracion === "fija") {
+    return tiposTarifa.filter(
+      (tipo) => tipo.nombre === "mensual" || tipo.nombre === "por turno",
+    );
+  }
+
+  return [];
+};
+
 function RouteComponent() {
   // Estados
   const [isOpenAddModal, setIsOpenAddModal] = useState(false);
@@ -51,9 +94,10 @@ function RouteComponent() {
   const [isOpenViewModal, setIsOpenViewModal] = useState(false);
   const [servicioId, setServicioId] = useState<number | null>(null);
   const [tipoDuracion, setTipoDuracion] = useState<string | null>(null);
-  const [tipoHorarioDescripcion, setTipoHorarioDescripcion] = useState<
-    boolean | null
-  >(null);
+  // Nombre del tipo de horario seleccionado (diurno / nocturno / mixto / dia completo (24 horas))
+  const [tipoHorarioNombre, setTipoHorarioNombre] = useState<string | null>(
+    null,
+  );
 
   const [codigoServicio, setCodigoServicio] = useState<{
     parte1: string;
@@ -70,6 +114,7 @@ function RouteComponent() {
   const { data: tiposServicios } = useTipoServicios();
   const { data: tiposDuraciones } = useTipoDuracion();
   const { data: tiposHorarios } = useTipoHorarioDescripcion();
+  const { data: tiposTarifas } = useTipoTarifa();
 
   const { mutate: agregarServicio, isPending: isLoadingAgregarServicio } =
     useCreateServicio();
@@ -78,11 +123,41 @@ function RouteComponent() {
   const { mutate: eliminarServicio } = useDeleteServicio();
   const { data: servicio, mutate: obtenerServicioById } = useServicioById();
 
+  // Reglas derivadas del tipo de horario seleccionado
+  const esDiaCompleto = tipoHorarioNombre?.includes("dia completo") ?? false;
+  const esMixto = tipoHorarioNombre === "mixto";
+  // Para "mixto" y "dia completo" el backend calcula/sobreescribe la duración y las horas, por eso se ocultan
+  const ocultarDuracionYHoras = esDiaCompleto || esMixto;
+  const permiteDominical = tipoHorarioNombre
+    ? HORARIOS_CON_DOMINICAL.includes(tipoHorarioNombre)
+    : false;
+
+  // Id del tipo de duración "flexible": para horario mixto el backend exige que la duración enviada
+  // ya sea flexible (la valida, no la infiere), así que se envía automáticamente sin mostrarla en el form
+  const idTipoDuracionFlexible = useMemo(
+    () =>
+      tiposDuraciones?.data?.data?.find(
+        (tipo) => tipo.descripcion === "flexible",
+      )?.idTipoDuracion,
+    [tiposDuraciones?.data?.data],
+  );
+
+  const tipoTarifaOptions = useMemo(
+    () =>
+      filtrarTiposTarifaPermitidos(
+        tiposTarifas?.data?.data || [],
+        tipoHorarioNombre,
+        tipoDuracion,
+      ),
+    [tiposTarifas?.data?.data, tipoHorarioNombre, tipoDuracion],
+  );
+
   // Formularios con react-hook-form
   const {
     register: registerAgregar,
     handleSubmit: handleSubmitAgregar,
     reset: resetAgregar,
+    setValue: setValueAgregar,
   } = useForm<CreateServicioDto>({
     defaultValues: {
       codigo: "",
@@ -90,9 +165,11 @@ function RouteComponent() {
       idTipoServicio: 0,
       idTipoDuracion: 0,
       idTipoHorarioDescripcion: 0,
+      idTipoTarifa: 0,
       horasFijas: 0,
       horasMinimas: 0,
       horasMaximas: 0,
+      dominical: false,
     },
   });
 
@@ -100,6 +177,7 @@ function RouteComponent() {
     register: registerEditar,
     handleSubmit: handleSubmitEditar,
     reset: resetEditar,
+    setValue: setValueEditar,
   } = useForm<UpdateServicioDto>({
     defaultValues: {
       codigo: "",
@@ -107,9 +185,11 @@ function RouteComponent() {
       idTipoServicio: 0,
       idTipoDuracion: 0,
       idTipoHorarioDescripcion: 0,
+      idTipoTarifa: 0,
       horasFijas: 0,
       horasMinimas: 0,
       horasMaximas: 0,
+      dominical: false,
       estado: true,
     },
   });
@@ -147,6 +227,19 @@ function RouteComponent() {
           <span className="whitespace-nowrap">
             {row.original.idTipoHorarioDescripcion.nombre}
           </span>
+        );
+      },
+    },
+    {
+      header: "Tarifa",
+      cell: ({ row }) => {
+        return (
+          <div className="flex flex-col gap-1 whitespace-nowrap">
+            <span>{row.original.idTipoTarifa?.nombre}</span>
+            {row.original.dominical && (
+              <span className="text-xs text-blue-600">Dominical</span>
+            )}
+          </div>
         );
       },
     },
@@ -194,9 +287,11 @@ function RouteComponent() {
                   idTipoHorarioDescripcion:
                     row.original.idTipoHorarioDescripcion
                       .idTipoHorarioDescripcion,
+                  idTipoTarifa: row.original.idTipoTarifa?.idTipoTarifa,
                   horasFijas: row.original.horasFijas,
                   horasMinimas: row.original.horasMinimas,
                   horasMaximas: row.original.horasMaximas,
+                  dominical: row.original.dominical,
                   estado: row.original.estado,
                 });
                 setCodigoServicio({
@@ -206,10 +301,8 @@ function RouteComponent() {
                 });
                 setIsOpenEditModal(true);
                 setTipoDuracion(row.original.idTipoDuracion.descripcion);
-                setTipoHorarioDescripcion(
-                  row.original.idTipoHorarioDescripcion.nombre.includes(
-                    "dia completo",
-                  ),
+                setTipoHorarioNombre(
+                  row.original.idTipoHorarioDescripcion.nombre,
                 );
               },
             },
@@ -277,7 +370,7 @@ function RouteComponent() {
           setIsOpenAddModal(false);
           resetAgregar();
           setTipoDuracion(null);
-          setTipoHorarioDescripcion(null);
+          setTipoHorarioNombre(null);
           setCodigoServicio({
             parte1: "",
             parte2: "",
@@ -293,21 +386,27 @@ function RouteComponent() {
               {
                 ...data,
                 idTipoServicio: Number(data.idTipoServicio),
-                idTipoDuracion: tipoHorarioDescripcion
-                  ? 0
-                  : Number(data.idTipoDuracion),
+                idTipoDuracion: esMixto
+                  ? (idTipoDuracionFlexible ?? 0)
+                  : esDiaCompleto
+                    ? 0
+                    : Number(data.idTipoDuracion),
                 idTipoHorarioDescripcion: Number(
                   data.idTipoHorarioDescripcion,
                 ),
-                horasFijas: tipoHorarioDescripcion
+                idTipoTarifa: Number(data.idTipoTarifa),
+                horasFijas: ocultarDuracionYHoras
                   ? 0
                   : Number(data.horasFijas),
-                horasMinimas: tipoHorarioDescripcion
+                horasMinimas: ocultarDuracionYHoras
                   ? 0
                   : Number(data.horasMinimas),
-                horasMaximas: tipoHorarioDescripcion
+                horasMaximas: ocultarDuracionYHoras
                   ? 0
                   : Number(data.horasMaximas),
+                dominical: permiteDominical
+                  ? Boolean(data.dominical)
+                  : false,
                 codigo: `${codigoServicio.parte1}-${codigoServicio.parte2}-${codigoServicio.parte3}`,
               },
               {
@@ -315,6 +414,7 @@ function RouteComponent() {
                   setIsOpenAddModal(false);
                   resetAgregar();
                   setTipoDuracion(null);
+                  setTipoHorarioNombre(null);
                   setCodigoServicio({
                     parte1: "",
                     parte2: "",
@@ -329,7 +429,7 @@ function RouteComponent() {
             setIsOpenAddModal(false);
             resetAgregar();
             setTipoDuracion(null);
-            setTipoHorarioDescripcion(null);
+            setTipoHorarioNombre(null);
             setCodigoServicio({
               parte1: "",
               parte2: "",
@@ -431,17 +531,21 @@ function RouteComponent() {
                 required={true}
                 {...registerAgregar("idTipoHorarioDescripcion", {
                   onChange: (e) => {
+                    const nombreSeleccionado =
+                      e.target.selectedOptions[0]?.text || null;
+                    setTipoHorarioNombre(nombreSeleccionado);
+                    setTipoDuracion(null);
+                    setValueAgregar("idTipoTarifa", 0);
                     if (
-                      e.target.selectedOptions[0].text.includes("dia completo")
+                      nombreSeleccionado &&
+                      !HORARIOS_CON_DOMINICAL.includes(nombreSeleccionado)
                     ) {
-                      setTipoHorarioDescripcion(true);
-                    } else {
-                      setTipoHorarioDescripcion(false);
+                      setValueAgregar("dominical", false);
                     }
                   },
                 })}
               />
-              {!tipoHorarioDescripcion && (
+              {!ocultarDuracionYHoras && (
                 <InputSelect
                   label="Tipo de duración *"
                   placeholder="Tipo de duración"
@@ -455,33 +559,55 @@ function RouteComponent() {
                   required={true}
                   {...registerAgregar("idTipoDuracion", {
                     onChange: (e) => {
-                      if (
+                      const nuevaDuracion =
                         tiposDuraciones?.data?.data?.find(
                           (tipo) =>
                             tipo.idTipoDuracion === Number(e.target.value),
                         )?.descripcion === "flexible"
-                      ) {
-                        setTipoDuracion("flexible");
-                      } else {
-                        setTipoDuracion("fija");
-                      }
+                          ? "flexible"
+                          : "fija";
+                      setTipoDuracion(nuevaDuracion);
+                      setValueAgregar("idTipoTarifa", 0);
                     },
                   })}
                 />
               )}
+              <InputSelect
+                label="Tipo de tarifa *"
+                placeholder={
+                  tipoTarifaOptions.length > 0
+                    ? "Tipo de tarifa"
+                    : "Seleccione primero el tipo de horario y duración"
+                }
+                options={tipoTarifaOptions.map((tipo) => ({
+                  id: tipo.idTipoTarifa,
+                  descripcion: tipo.nombre,
+                }))}
+                id="idTipoTarifa"
+                required={true}
+                disabled={tipoTarifaOptions.length === 0}
+                {...registerAgregar("idTipoTarifa")}
+              />
+              <CheckboxForm
+                label="Dominical"
+                id="dominical"
+                disabled={!permiteDominical}
+                {...registerAgregar("dominical")}
+              />
             </FormSection>
             <FormSection
               title="Configuración de horas"
               description="Configuración de horas"
               Icon={Clock}
             >
-              {tipoHorarioDescripcion && (
+              {ocultarDuracionYHoras && (
                 <span className="text-sm text-gray-500">
-                  El servicio cubre todo el día. No es necesario configurar
-                  horas.
+                  {esMixto
+                    ? "El servicio es de horario mixto. La duración y las horas las calcula el sistema automáticamente."
+                    : "El servicio cubre todo el día. No es necesario configurar horas."}
                 </span>
               )}
-              {!tipoHorarioDescripcion && tipoDuracion === "fija" && (
+              {!ocultarDuracionYHoras && tipoDuracion === "fija" && (
                 <InputForm
                   label="Horas fijas *"
                   placeholder="Horas fijas"
@@ -491,7 +617,7 @@ function RouteComponent() {
                   {...registerAgregar("horasFijas")}
                 />
               )}
-              {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
+              {!ocultarDuracionYHoras && tipoDuracion === "flexible" && (
                 <>
                   <InputForm
                     label="Horas mínimas *"
@@ -522,7 +648,7 @@ function RouteComponent() {
           setIsOpenEditModal(false);
           resetEditar();
           setTipoDuracion(null);
-          setTipoHorarioDescripcion(null);
+          setTipoHorarioNombre(null);
           setCodigoServicio({
             parte1: "",
             parte2: "",
@@ -547,17 +673,23 @@ function RouteComponent() {
                 data: {
                   ...data,
                   idTipoServicio: Number(data.idTipoServicio),
-                  idTipoDuracion: tipoHorarioDescripcion
-                    ? 0
-                    : Number(data.idTipoDuracion),
+                  idTipoDuracion: esMixto
+                    ? (idTipoDuracionFlexible ?? 0)
+                    : esDiaCompleto
+                      ? 0
+                      : Number(data.idTipoDuracion),
                   idTipoHorarioDescripcion: Number(
                     data.idTipoHorarioDescripcion,
                   ),
+                  idTipoTarifa: Number(data.idTipoTarifa),
                   estado: String(data.estado) === "true",
                   codigo: `${codigoServicio.parte1}-${codigoServicio.parte2}-${codigoServicio.parte3}`,
-                  horasFijas: tipoHorarioDescripcion ? 0 : horasFijas,
-                  horasMinimas: tipoHorarioDescripcion ? 0 : horasMinimas,
-                  horasMaximas: tipoHorarioDescripcion ? 0 : horasMaximas,
+                  horasFijas: ocultarDuracionYHoras ? 0 : horasFijas,
+                  horasMinimas: ocultarDuracionYHoras ? 0 : horasMinimas,
+                  horasMaximas: ocultarDuracionYHoras ? 0 : horasMaximas,
+                  dominical: permiteDominical
+                    ? Boolean(data.dominical)
+                    : false,
                 },
               },
               {
@@ -565,6 +697,7 @@ function RouteComponent() {
                   setIsOpenEditModal(false);
                   resetEditar();
                   setTipoDuracion(null);
+                  setTipoHorarioNombre(null);
                   setCodigoServicio({
                     parte1: "",
                     parte2: "",
@@ -579,7 +712,7 @@ function RouteComponent() {
             setIsOpenEditModal(false);
             resetEditar();
             setTipoDuracion(null);
-            setTipoHorarioDescripcion(null);
+            setTipoHorarioNombre(null);
             setCodigoServicio({
               parte1: "",
               parte2: "",
@@ -678,17 +811,21 @@ function RouteComponent() {
                 required={true}
                 {...registerEditar("idTipoHorarioDescripcion", {
                   onChange: (e) => {
+                    const nombreSeleccionado =
+                      e.target.selectedOptions[0]?.text || null;
+                    setTipoHorarioNombre(nombreSeleccionado);
+                    setTipoDuracion(null);
+                    setValueEditar("idTipoTarifa", 0);
                     if (
-                      e.target.selectedOptions[0].text.includes("dia completo")
+                      nombreSeleccionado &&
+                      !HORARIOS_CON_DOMINICAL.includes(nombreSeleccionado)
                     ) {
-                      setTipoHorarioDescripcion(true);
-                    } else {
-                      setTipoHorarioDescripcion(false);
+                      setValueEditar("dominical", false);
                     }
                   },
                 })}
               />
-              {!tipoHorarioDescripcion && (
+              {!ocultarDuracionYHoras && (
                 <InputSelect
                   label="Tipo de duración *"
                   placeholder="Tipo de duración"
@@ -702,20 +839,41 @@ function RouteComponent() {
                   required={true}
                   {...registerEditar("idTipoDuracion", {
                     onChange: (e) => {
-                      if (
+                      const nuevaDuracion =
                         tiposDuraciones?.data?.data?.find(
                           (tipo) =>
                             tipo.idTipoDuracion === Number(e.target.value),
                         )?.descripcion === "flexible"
-                      ) {
-                        setTipoDuracion("flexible");
-                      } else {
-                        setTipoDuracion("fija");
-                      }
+                          ? "flexible"
+                          : "fija";
+                      setTipoDuracion(nuevaDuracion);
+                      setValueEditar("idTipoTarifa", 0);
                     },
                   })}
                 />
               )}
+              <InputSelect
+                label="Tipo de tarifa *"
+                placeholder={
+                  tipoTarifaOptions.length > 0
+                    ? "Tipo de tarifa"
+                    : "Seleccione primero el tipo de horario y duración"
+                }
+                options={tipoTarifaOptions.map((tipo) => ({
+                  id: tipo.idTipoTarifa,
+                  descripcion: tipo.nombre,
+                }))}
+                id="idTipoTarifa"
+                required={true}
+                disabled={tipoTarifaOptions.length === 0}
+                {...registerEditar("idTipoTarifa")}
+              />
+              <CheckboxForm
+                label="Dominical"
+                id="dominical"
+                disabled={!permiteDominical}
+                {...registerEditar("dominical")}
+              />
               <InputSelectStateBoolean
                 label="Estado"
                 placeholder="Estado"
@@ -728,13 +886,14 @@ function RouteComponent() {
               description="Configuración de horas"
               Icon={Clock}
             >
-              {tipoHorarioDescripcion && (
+              {ocultarDuracionYHoras && (
                 <span className="text-sm text-gray-500">
-                  El servicio cubre todo el día. No es necesario configurar
-                  horas.
+                  {esMixto
+                    ? "El servicio es de horario mixto. La duración y las horas las calcula el sistema automáticamente."
+                    : "El servicio cubre todo el día. No es necesario configurar horas."}
                 </span>
               )}
-              {!tipoHorarioDescripcion && tipoDuracion === "fija" && (
+              {!ocultarDuracionYHoras && tipoDuracion === "fija" && (
                 <InputForm
                   label="Horas fijas"
                   placeholder="Horas fijas"
@@ -744,7 +903,7 @@ function RouteComponent() {
                   {...registerEditar("horasFijas")}
                 />
               )}
-              {!tipoHorarioDescripcion && tipoDuracion === "flexible" && (
+              {!ocultarDuracionYHoras && tipoDuracion === "flexible" && (
                 <>
                   <InputForm
                     label="Horas mínimas"
@@ -847,6 +1006,30 @@ function RouteComponent() {
                   {servicio?.data?.idTipoHorarioDescripcion.descripcion}
                 </div>
                 <div className="text-xs text-gray-500">Tipo de Horario</div>
+              </div>
+            </div>
+
+            {/* Tipo de tarifa */}
+            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
+              <DollarSign className="h-5 w-5 flex-shrink-0 text-teal-600" />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900">
+                  {servicio?.data?.idTipoTarifa?.nombre}
+                </div>
+                <div className="text-xs text-gray-500">Tipo de Tarifa</div>
+              </div>
+            </div>
+
+            {/* Dominical */}
+            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
+              <div
+                className={`h-5 w-5 flex-shrink-0 rounded-full ${servicio?.data?.dominical ? "bg-green-500" : "bg-gray-300"}`}
+              />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900">
+                  {servicio?.data?.dominical ? "Sí" : "No"}
+                </div>
+                <div className="text-xs text-gray-500">Dominical</div>
               </div>
             </div>
           </div>

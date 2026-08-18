@@ -1,8 +1,8 @@
 import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 import type { EnviarCorreoDto, PaginationDto } from "../../dtos/common";
-import type { CreateTarifaDto, SaveTarifaDto, UpdateTarifaDto } from "../../dtos/tarifas";
+import type { CalcularPreciosDto, CreateTarifaDto, SaveTarifaDto, UpdateTarifaDto } from "../../dtos/tarifas";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
-import type { Tarifa } from "../../types/periodo";
+import type { CalcularPreciosResponse, Tarifa } from "../../types/periodo";
 
 export const createTarifa = async (data: CreateTarifaDto): Promise<ApiResponse> => {
   return await apiPost<Tarifa>("/tarifas", data);
@@ -10,6 +10,12 @@ export const createTarifa = async (data: CreateTarifaDto): Promise<ApiResponse> 
 
 export const saveTarifas = async (data: SaveTarifaDto): Promise<ApiResponse> => {
   return await apiPost<Tarifa>("/tarifas/guardar-tarifas", data);
+};
+
+// Calcula el precio de los servicios seleccionados de un periodo a partir de la tarifa hora de ese periodo.
+// No persiste nada, solo propone un precio (o indica que debe ingresarse manualmente).
+export const calcularPreciosServicios = async (data: CalcularPreciosDto): Promise<ApiResponse<CalcularPreciosResponse>> => {
+  return await apiPost<CalcularPreciosResponse>("/tarifas/calcular-precios", data);
 };
 
 export const getTarifasByPeriodo = async (idPeriodo: number, pagination: PaginationDto): Promise<ApiResponse<PaginatedResponse<Tarifa[]>>> => {
