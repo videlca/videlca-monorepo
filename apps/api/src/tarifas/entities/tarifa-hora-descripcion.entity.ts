@@ -11,10 +11,11 @@ export class TarifaHoraDescripcion {
     idTarifaHoraDescripcion: number;
 
     // nombre
+    // length 50: "valor hora diurna dominical y festivos" (TipoHoraDescripcionInterface) ya son 38 caracteres
     @Column({
         type: 'varchar',
         name: 'nombre',
-        length: 30,
+        length: 50,
         unique: true
     })
     nombre: string;

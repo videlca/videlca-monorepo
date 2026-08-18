@@ -83,6 +83,12 @@ export class TarifasService {
 
   private async calcularPrecioServicio(idPeriodo: number, servicio: Servicio) {
 
+    // Servicios creados antes de que idTipoTarifa fuera un campo obligatorio (ver PARTE 1) pueden no tener
+    // uno asignado todavia; se valida aca en vez de dejar que truene al leer servicio.idTipoTarifa.idTipoTarifa
+    if (!servicio.idTipoTarifa) {
+      throw new BadRequestException(`El servicio "${servicio.descripcion}" (${servicio.codigo}) no tiene un tipo de tarifa asignado, edite el servicio para asignarle uno antes de calcular su precio`);
+    }
+
     const base = {
       idServicio: servicio.idServicio,
       codigo: servicio.codigo,
@@ -320,7 +326,7 @@ export class TarifasService {
     const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoTarifa', 'tipoTarifa')
       .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
       .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion')
       .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
@@ -354,7 +360,7 @@ export class TarifasService {
     const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoTarifa', 'tipoTarifa')
       .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
       .where('tarifa.idPeriodo = :id', { id })
       .andWhere('tarifa.estado = :estado', { estado: true })
@@ -404,7 +410,7 @@ export class TarifasService {
     const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoTarifa', 'tipoTarifa')
       .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
       .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion')
       .where('tarifa.idPeriodo = :id', { id: periodoActivoFacturacion.idPeriodo })
@@ -454,7 +460,7 @@ export class TarifasService {
     const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoTarifa', 'tipoTarifa')
       .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
       .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion')
       .where('tarifa.idPeriodo = :id', { id: periodoActivoFacturacion.idPeriodo })
@@ -564,9 +570,9 @@ export class TarifasService {
     const tarifas = await this.tarifaRepository
       .createQueryBuilder('tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
-      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
-      .leftJoinAndSelect('tipoTarifa.idTipoUnidadTiempo', 'tipoUnidadTiempo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('servicio.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('tipoTarifa.idTipoUnidadTiempo', 'tipoUnidadTiempo')
       .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
       .where('tarifa.idServicio = :idServicio', { idServicio })
       .andWhere('tarifa.estado = :estado', { estado: true })
@@ -638,7 +644,7 @@ export class TarifasService {
     const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoTarifa', 'tipoTarifa')
       .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
       .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion')
       .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
@@ -677,7 +683,7 @@ export class TarifasService {
     const queryBuilder = this.tarifaRepository.createQueryBuilder('tarifa')
       .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .leftJoinAndSelect('tarifa.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoTarifa', 'tipoTarifa')
       .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
       .leftJoinAndSelect('servicio.idTipoDuracion', 'tipoDuracion')
       .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')

@@ -393,8 +393,11 @@ export class ServiciosService {
       .where('tarifa.idTarifa IS NULL')
       .andWhere('servicio.estado = :estado', { estado: true })
       // LOS SERVICIOS DE HORARIO MIXTO CON TARIFA POR HORA NUNCA SE GUARDAN EN LA TABLA TARIFA
-      // (su precio depende del valor hora y se calcula al crear la orden de servicio), por eso no se muestran aca
-      .andWhere('NOT (tipoHorarioDescripcion.nombre = :nombreMixto AND tipoTarifa.nombre = :nombreHora)', {
+      // (su precio depende del valor hora y se calcula al crear la orden de servicio), por eso no se muestran aca.
+      // COALESCE es necesario porque tipoTarifa.nombre puede ser NULL (servicios sin idTipoTarifa asignado, ej.
+      // creados antes de PARTE 1): "NULL AND x" evalua a NULL, y "NOT NULL" tambien es NULL, lo que un WHERE
+      // trata como falso y excluia por error servicios mixtos que ni siquiera son confirmados "por hora".
+      .andWhere('NOT (tipoHorarioDescripcion.nombre = :nombreMixto AND COALESCE(tipoTarifa.nombre, \'\') = :nombreHora)', {
         nombreMixto: TipoHorarioInterface.MIXTO,
         nombreHora: TipoTarifaInterface.HORA,
       })
