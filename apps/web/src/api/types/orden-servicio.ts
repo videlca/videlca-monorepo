@@ -82,3 +82,44 @@ export interface ObservacionGrupoOrdenServicio {
   idGrupoLiquidacion: GruposLiquidaciones;
   fechaCreacion: string;
 }
+
+// Respuesta de POST /orden-servicio/obtener-precio (calcula el precio de todos los servicios de la orden a la vez)
+// Solo viene lleno cuando el servicio es de horario Mixto + Por hora (su precio depende del valor hora del periodo activo,
+// se desconoce cuantas horas seran de dia/noche y ordinarias/dominicales hasta que se arma la orden)
+export interface CostoHoraOrdenServicio {
+  fecha: string;
+  horaInicio: string;
+  horaFin: string;
+  tipoHorario: string;
+  dominical: boolean;
+  horas: number;
+  costosDirectos: number;
+  seguroVida: number;
+  aui: number;
+}
+
+export interface PrecioServicioOrdenResponse {
+  idServicio: number;
+  idTarifa: number | null;
+  message: string;
+  precio: number | null;
+  costosDirectos: number | null;
+  seguroVida: number | null;
+  costosDirectosSeguroVida: number | null;
+  aui: number | null;
+  precioAntesIva: number | null;
+  iva: number | null;
+  costos_horas: CostoHoraOrdenServicio[];
+}
+
+export interface PrecioOrdenResponse {
+  message: string;
+  precio: number | null;
+  costosDirectos: number | null;
+  seguroVida: number | null;
+  costosDirectosSeguroVida: number | null;
+  aui: number | null;
+  precioAntesIva: number | null;
+  iva: number | null;
+  servicios: PrecioServicioOrdenResponse[];
+}

@@ -63,13 +63,19 @@ export interface ValidarHorarioServicioDto {
   horaFin: string;
 }
 
-export interface PrecioOrdenDto {
-  idTarifa: number;
+// El endpoint ahora recibe la lista completa de servicios de la orden y calcula el precio de todos
+// de una sola vez (antes se llamaba una vez por servicio con PrecioOrdenServicioDto suelto)
+export interface PrecioOrdenServicioItemDto {
+  idTarifa?: number; // opcional: los servicios de horario Mixto + Por hora no tienen tarifa guardada
   idServicio: number;
-  horaInicio: string | null;
-  horaFin: string | null;
+  horaInicio: string;
+  horaFin: string;
+}
+
+export interface PrecioOrdenDto {
   fechaInicio: string;
   fechaFin: string | null;
+  servicios: PrecioOrdenServicioItemDto[];
 }
 
 export interface CreateObservacionOrdenServicioDto {

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import { anularOrdenServicio, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio, getFilteredOrdenesServicio } from "../../functions/orden-servicio";
 import type { CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
-import type { OrdenServicio, OrdenServicioId } from "../../types/orden-servicio";
+import type { OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
 import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
@@ -182,7 +182,7 @@ export const useUpdateValidateFechasOrdenServicio = (): UseMutationResult<ApiRes
   });
 }
 
-export const useGetPrecioOrdenServicio = (): UseMutationResult<ApiResponse<any>, Error, PrecioOrdenDto> => {
+export const useGetPrecioOrdenServicio = (): UseMutationResult<ApiResponse<PrecioOrdenResponse>, Error, PrecioOrdenDto> => {
   return useMutation({
     mutationFn: getPrecioOrdenServicio,
     onSuccess: (data) => {

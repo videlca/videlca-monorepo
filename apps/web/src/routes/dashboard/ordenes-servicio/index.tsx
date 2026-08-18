@@ -34,7 +34,7 @@ import {
   type UpdateOrdenServicioTarifaDto,
   OrdenServicioFilterColumn,
 } from "../../../api/dtos";
-import type { OrdenServicio } from "../../../api/types/orden-servicio";
+import type { OrdenServicio, PrecioOrdenResponse } from "../../../api/types/orden-servicio";
 import { useTipoServiciosActivo } from "../../../api/queryFunctions/servicios";
 import { useTarifasPeriodoActivoByIdTipoServicio } from "../../../api/queryFunctions/tarifas";
 import { priceFormat } from "../../../utils/PriceFormat";
@@ -100,6 +100,10 @@ function RouteComponent() {
   const [selectedServices, setSelectedServices] = useState<Servicio[]>([]);
 
   const [mensajeRespuesta, setMensajeRespuesta] = useState<string>("");
+  // Respuesta completa de POST /orden-servicio/obtener-precio: trae el total de la orden y el
+  // desglose de precio de cada servicio, se usa directo en el paso de vista previa (PreviewInformacionOrden)
+  const [precioOrdenDetalle, setPrecioOrdenDetalle] =
+    useState<PrecioOrdenResponse | null>(null);
 
   const [isIndefinite, setIsIndefinite] = useState(false);
 
@@ -237,6 +241,8 @@ function RouteComponent() {
     setConfiguracionServicioTarifa([]);
     setSelectedServices([]);
     setIsIndefinite(false);
+    setPrecioOrdenDetalle(null);
+    setMensajeRespuesta("");
     resetCreate();
     resetEdit();
     setIdentificador({ prefijo: "", codigo: nextIdOrdenServicioQuery?.data || 0, codigoTipoServicio: 0 });
@@ -302,8 +308,6 @@ function RouteComponent() {
     }
 
     if (currentStep === 5) {
-      let precioTotal = 0;
-      let allValidated = true;
       const campoHorario = configuracionServicioTarifa.some(
         (service) => service.horaInicio === "" && service.horaFin === "",
       );
@@ -312,49 +316,62 @@ function RouteComponent() {
         return;
       }
 
-      // Va a recorrer todos los servicios seleccionados y va a utilizar el endpoint de
-
       try {
-        const responseHorarioServicio = await Promise.allSettled(
-          configuracionServicioTarifa.map(async (servicio) => {
-            return validarHorarioServicioOrdenServicio({
-              idTarifa: servicio.idTarifa || 0,
+        // El precio de la orden ahora se calcula en una sola llamada para todos los servicios
+        // seleccionados (antes se llamaba el endpoint una vez por servicio y se sumaban los precios
+        // a mano); la respuesta ya trae el total de la orden y el desglose de cada servicio
+        const [responseHorarioServicio, responsePrecioOrden] = await Promise.all([
+          Promise.allSettled(
+            configuracionServicioTarifa.map(async (servicio) => {
+              return validarHorarioServicioOrdenServicio({
+                idTarifa: servicio.idTarifa || 0,
+                idServicio: servicio.idServicio || 0,
+                horaInicio: timeFormat(servicio.horaInicio),
+                horaFin:
+                  servicio.horaFin === ""
+                    ? "00:00:00"
+                    : timeFormat(servicio.horaFin),
+              });
+            }),
+          ),
+          getPrecioOrdenServicio({
+            fechaInicio: watchCreate("fechaInicio"),
+            fechaFin: isIndefinite ? null : watchCreate("fechaFin"),
+            servicios: configuracionServicioTarifa.map((servicio) => ({
               idServicio: servicio.idServicio || 0,
-              horaInicio: timeFormat(servicio.horaInicio),
-              horaFin:
-                servicio.horaFin === ""
-                  ? "00:00:00"
-                  : timeFormat(servicio.horaFin),
-            });
-          }),
-        );
-
-        const responsePrecioOrdenServicio = await Promise.allSettled(
-          configuracionServicioTarifa.map(async (servicio) => {
-            const response = await getPrecioOrdenServicio({
+              // Los servicios de horario Mixto + Por hora no tienen tarifa guardada, no se envia idTarifa para esos
+              ...(servicio.idTarifa ? { idTarifa: servicio.idTarifa } : {}),
               horaInicio: servicio.horaInicio,
               horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
-              fechaFin: isIndefinite ? null : watchCreate("fechaFin"),
-              fechaInicio: watchCreate("fechaInicio"),
-              idTarifa: servicio.idTarifa || 0,
-              idServicio: servicio.idServicio || 0,
-            });
-
-            if (response.status === 201) {
-              servicio.precio = response.data.precio;
-              precioTotal += response.data.precio;
-              setMensajeRespuesta(response.data.message);
-            }
-            return response;
+            })),
           }),
-        );
+        ]);
 
-        allValidated =
+        const precioValidado =
+          (responsePrecioOrden.status === 200 || responsePrecioOrden.status === 201) &&
+          !!responsePrecioOrden.data;
+
+        if (precioValidado && responsePrecioOrden.data) {
+          const precioData = responsePrecioOrden.data;
+          setPrecioOrdenDetalle(precioData);
+          setMensajeRespuesta(precioData.message);
+          setValueCreate("precioTotal", precioData.precio || 0);
+
+          setConfiguracionServicioTarifa((prev) =>
+            prev.map((servicio) => {
+              const detalle = precioData.servicios.find(
+                (s) => s.idServicio === servicio.idServicio,
+              );
+              return detalle ? { ...servicio, precio: detalle.precio || 0 } : servicio;
+            }),
+          );
+        }
+
+        const allValidated =
           responseHorarioServicio.every((r) => r.status === "fulfilled") &&
-          responsePrecioOrdenServicio.every((r) => r.status === "fulfilled");
+          precioValidado;
 
         if (allValidated) {
-          setValueCreate("precioTotal", precioTotal);
           toast.success(
             "Rango horario personal y precio de orden de servicio validados correctamente",
           );
@@ -432,8 +449,6 @@ function RouteComponent() {
 
   const handleNextEdit = async () => {
     if (currentStep === 1) {
-      let precioTotal = 0;
-
       updateValidateFechasOrdenServicio(
         {
           id: selectedOrderDetail?.idOrdenServicio || 0,
@@ -446,33 +461,38 @@ function RouteComponent() {
         {
           onSuccess: async () => {
             try {
-              const responsePrecioOrdenServicio = await Promise.allSettled(
-                configuracionServicioTarifaEdit.map(async (servicio) => {
-                  const response = await getPrecioOrdenServicio({
-                    horaInicio: servicio.horaInicio,
-                    horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
-                    fechaFin: isIndefinite ? null : watchEdit("fechaFin"),
-                    fechaInicio: watchEdit("fechaInicio"),
-                    idTarifa: servicio.idTarifa || 0,
-                    idServicio: servicio.idServicio || 0,
-                  });
+              // Igual que en la creacion, un solo llamado calcula el precio de todos los servicios de la orden
+              const responsePrecioOrden = await getPrecioOrdenServicio({
+                fechaInicio: watchEdit("fechaInicio"),
+                fechaFin: isIndefinite ? null : watchEdit("fechaFin"),
+                servicios: configuracionServicioTarifaEdit.map((servicio) => ({
+                  idServicio: servicio.idServicio || 0,
+                  ...(servicio.idTarifa ? { idTarifa: servicio.idTarifa } : {}),
+                  horaInicio: servicio.horaInicio,
+                  horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+                })),
+              });
 
-                  if (response.status === 201) {
-                    servicio.precio = response.data.precio;
-                    precioTotal += response.data.precio;
-                    setMensajeRespuesta(response.data.message);
-                  }
-                  return response;
-                }),
-              );
+              const precioValidado =
+                (responsePrecioOrden.status === 200 || responsePrecioOrden.status === 201) &&
+                !!responsePrecioOrden.data;
 
-              const allValidated = responsePrecioOrdenServicio.every(
-                (r) => r.status === "fulfilled",
-              );
+              if (precioValidado && responsePrecioOrden.data) {
+                const precioData = responsePrecioOrden.data;
+                setPrecioOrdenDetalle(precioData);
+                setMensajeRespuesta(precioData.message);
+                setValueEdit("precioTotal", precioData.precio || 0);
 
-              if (allValidated) {
-                setValueEdit("precioTotal", precioTotal);
-                toast.success("Precio de orden de servicio validados correctamente");
+                setConfiguracionServicioTarifaEdit((prev) =>
+                  prev.map((servicio) => {
+                    const detalle = precioData.servicios.find(
+                      (s) => s.idServicio === servicio.idServicio,
+                    );
+                    return detalle ? { ...servicio, precio: detalle.precio || 0 } : servicio;
+                  }),
+                );
+
+                toast.success("Precio de orden de servicio validado correctamente");
                 setCurrentStep(2);
               }
             } catch (error) {
@@ -913,27 +933,18 @@ function RouteComponent() {
       //       }
       //     />
       //   );
-      case 6: { // antes paso 7
-        const tarifasDetalleCreate = configuracionServicioTarifa
-          .map((config) =>
-            (tarifasPeriodoActivoByIdTipoServicioData?.data?.data ?? []).find(
-              (t) => t.idTarifa === config.idTarifa,
-            ),
-          )
-          .filter((t) => t !== undefined);
-
+      case 6: // antes paso 7
         return (
           <PreviewInformacionOrden
             selectedPuesto={selectedPuesto}
             formOrdenServicio={watchCreate()}
             configuracionServicioTarifa={configuracionServicioTarifa}
+            selectedServices={selectedServices}
             mensajeRespuesta={mensajeRespuesta}
             isIndefinite={isIndefinite}
-            // @ts-ignore
-            tarifasDetalle={tarifasDetalleCreate}
+            precioOrdenDetalle={precioOrdenDetalle}
           />
         );
-      }
 
       default:
         return null;
@@ -974,28 +985,19 @@ function RouteComponent() {
       //     />
       //   );
 
-      case 2: { // antes paso 3
-        const tarifasDetalleEdit = configuracionServicioTarifaEdit
-          .map((config) =>
-            selectedOrderDetail?.tarifas?.find(
-              (t) => t.idTarifa.idTarifa === config.idTarifa,
-            )?.idTarifa,
-          )
-          .filter((t) => t !== undefined);
-
+      case 2: // antes paso 3
         return (
           <PreviewInformacionOrden
             isEditing={isEditing}
             selectedPuesto={selectedOrderDetail?.idLocacion || null}
             formOrdenServicio={watchEdit()}
             configuracionServicioTarifa={configuracionServicioTarifaEdit}
+            selectedServices={selectedServices}
             mensajeRespuesta={mensajeRespuesta}
             isIndefinite={isIndefinite}
-            // @ts-ignore
-            tarifasDetalle={tarifasDetalleEdit}
+            precioOrdenDetalle={precioOrdenDetalle}
           />
         );
-      }
 
       default:
         return null;
