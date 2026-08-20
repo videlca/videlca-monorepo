@@ -11,22 +11,25 @@ import { CostoHoraOrdenServicioTarifa } from '../../orden-servicio/entities';
 
 // ===================================================================
 // PALETA DE COLORES
+// Un unico color base (azul oscuro corporativo) para todas las secciones generales.
+// El azul claro se reserva para donde se desglosan los servicios, y el gris claro para el desglose por horas.
 // ===================================================================
 const PALETTE = {
   textDark: '#0F172A',
   textMuted: '#64748B',
   white: '#FFFFFF',
 
-  headerFrom: '#4338CA', // indigo
-  headerTo: '#06B6D4',   // cyan
-  accentPop: '#F59E0B',  // amber (franja alegre bajo el header)
+  headerFrom: '#12283F', // azul oscuro profundo
+  headerTo: '#1D3F66',   // azul oscuro, un poco mas claro para dar sutil profundidad al degradado
 
-  cliente: { accent: '#3B82F6', tint: '#EFF6FF' },     // blue
-  puesto: { accent: '#14B8A6', tint: '#F0FDFA' },      // teal
-  facturacion: { accent: '#8B5CF6', tint: '#F5F3FF' }, // violet
-  servicios: { accent: '#F59E0B', tint: '#FFFBEB' },   // amber
-  precios: { accent: '#10B981', tint: '#ECFDF5' },     // emerald
-  info: { accent: '#0EA5E9', tint: '#F0F9FF' },        // sky (mensaje orden indefinida)
+  // Azul oscuro: Cliente, Puesto, Facturacion, Desglose de precio (secciones generales)
+  navy: { accent: '#1E3A5F', tint: '#EDF1F6' },
+
+  // Azul claro: donde se desglosan los servicios (Servicios asociados y su tabla de precio individual)
+  servicios: { accent: '#4A7CB0', tint: '#E7F0F9' },
+
+  // Gris claro: desglose hora a hora (horario mixto)
+  costosHoras: { accent: '#94A3B8', tint: '#F1F5F9' },
 };
 
 const ESTADO_COLOR: Record<string, string> = {
@@ -205,17 +208,12 @@ export class ReporteOrdenServicioService {
 
   }
 
-  private badge(texto: string, color: string): TableCell {
+  // Nota: fillColor en un nodo dentro de un "stack" no lo respeta pdfmake de forma confiable al renderizar
+  // (probado: una mini tabla anidada dentro del stack tampoco pinta el fondo). Por eso el estado se muestra
+  // como texto en el color del estado (mismo patron que "Dominical/Festivo" en el desglose por horas), sin pastilla de fondo
+  private textoEstado(texto: string, color: string): Content {
 
-    return {
-      text: texto.toUpperCase(),
-      color: PALETTE.white,
-      fillColor: color,
-      bold: true,
-      fontSize: 9,
-      alignment: 'center',
-      margin: [0, 3, 0, 3],
-    };
+    return { text: texto.toUpperCase(), color, bold: true, fontSize: 12, margin: [0, 3, 0, 0] };
 
   }
 
@@ -242,52 +240,61 @@ export class ReporteOrdenServicioService {
 
   private buildHeader(ordenServicio: OrdenServicio): Content[] {
 
-    const headerHeight = 100;
+    // Suficiente para: fila logo/codigo + titulo de 2 lineas, con margen de sobra para no invadir el area blanca
+    // (el texto del titulo es blanco, si el bloque de flujo se sale de esta franja el texto queda invisible sobre blanco)
+    const headerHeight = 135;
 
     return [
 
+      // FONDO: degradado en tonos de azul oscuro (sin franjas de otros colores)
       {
         canvas: this.buildGradientRects(0, 0, 535, headerHeight, PALETTE.headerFrom, PALETTE.headerTo),
         absolutePosition: { x: 40, y: 40 },
       },
-      {
-        canvas: [{ type: 'rect', x: 0, y: 0, w: 535, h: 5, color: PALETTE.accentPop }],
-        absolutePosition: { x: 40, y: 40 + headerHeight },
-      },
 
+      // FRANJA SUPERIOR: logo a la izquierda, codigo/orden a la derecha
       {
-        margin: [0, 14, 0, 0],
+        margin: [0, 10, 0, 0],
         table: {
-          widths: ['16%', '54%', '30%'],
+          widths: ['20%', '80%'],
           body: [
             [
               {
                 image: 'logo',
-                width: 58,
-                alignment: 'center',
-                rowSpan: 2,
-                margin: [0, 4, 0, 0],
-              },
-              {
-                text: 'ORDEN DE SERVICIO\nVIGILANCIA FÍSICA Y ELECTRÓNICA',
-                color: PALETTE.white,
-                bold: true,
-                fontSize: 18,
-                lineHeight: 1.25,
-                rowSpan: 2,
-                margin: [0, 8, 0, 0],
+                width: 42,
+                alignment: 'left',
               },
               {
                 stack: [
-                  { text: 'CÓDIGO', color: '#C7D2FE', fontSize: 8, bold: true },
-                  { text: ordenServicio.ordenServicioId.descripcionId, color: PALETTE.white, fontSize: 13, bold: true },
-                  { text: 'ORDEN N°', color: '#C7D2FE', fontSize: 8, bold: true, margin: [0, 8, 0, 0] },
-                  { text: ordenServicio.ordenServicioId.consecutivo.toString(), color: PALETTE.white, fontSize: 13, bold: true },
+                  { text: 'CÓDIGO', color: '#B9C7DA', fontSize: 8, bold: true },
+                  { text: ordenServicio.ordenServicioId.descripcionId, color: PALETTE.white, fontSize: 12, bold: true },
+                  { text: 'ORDEN N°', color: '#B9C7DA', fontSize: 8, bold: true, margin: [0, 5, 0, 0] },
+                  { text: ordenServicio.ordenServicioId.consecutivo.toString(), color: PALETTE.white, fontSize: 12, bold: true },
                 ],
                 alignment: 'right',
               },
             ],
-            [{ text: '' }, { text: '' }, { text: '' }],
+          ],
+        },
+        layout: 'noBorders',
+      },
+
+      // TITULO: centrado en el ancho completo de la pagina (no relativo a la columna del logo)
+      {
+        margin: [0, 16, 0, 0],
+        table: {
+          widths: [535],
+          body: [
+            [
+              {
+                text: 'ORDEN DE SERVICIO\nVIGILANCIA FÍSICA Y ELECTRÓNICA',
+                color: PALETTE.white,
+                bold: true,
+                fontSize: 16,
+                lineHeight: 1.3,
+                alignment: 'center',
+              },
+            ],
           ],
         },
         layout: 'noBorders',
@@ -324,11 +331,11 @@ export class ReporteOrdenServicioService {
             stat('Fecha fin', esIndefinida ? 'Indefinida' : this.formatearFechaCorta(ordenServicio.fechaFinOrden)),
             {
               stack: [
-                { text: 'ESTADO', fontSize: 8, bold: true, color: PALETTE.textMuted, margin: [0, 0, 0, 4] },
-                this.badge(estado, this.colorEstado(estado)),
+                { text: 'ESTADO', fontSize: 8, bold: true, color: PALETTE.textMuted },
+                this.textoEstado(estado, this.colorEstado(estado)),
               ],
               fillColor: '#F8FAFC',
-              margin: [8, 8, 8, 4],
+              margin: [8, 8, 8, 8],
             },
           ],
         ],
@@ -352,7 +359,7 @@ export class ReporteOrdenServicioService {
 
     const cliente = ordenServicio.idLocacion.idCliente;
 
-    return this.card(PALETTE.cliente, ['50%', '50%'], 'Cliente', [
+    return this.card(PALETTE.navy, ['50%', '50%'], 'Cliente', [
       [
         this.labelValue('Nombre', cliente.nombre),
         this.labelValue('Identificación', cliente.numeroIdentificacion),
@@ -379,7 +386,7 @@ export class ReporteOrdenServicioService {
         this.labelValue('Ciudad', locacion.idCiudad.descripcion),
       ],
       [
-        { text: 'RESPONSABLE DEL PUESTO', colSpan: 2, bold: true, fontSize: 9.5, color: PALETTE.puesto.accent, margin: [0, 6, 0, 4] },
+        { text: 'RESPONSABLE DEL PUESTO', colSpan: 2, bold: true, fontSize: 9.5, color: PALETTE.navy.accent, margin: [0, 6, 0, 4] },
         { text: '' },
       ],
       [
@@ -391,7 +398,7 @@ export class ReporteOrdenServicioService {
     if (locacion.correos && locacion.correos.length > 0) {
 
       filas.push([
-        { text: 'CORREOS ASOCIADOS', colSpan: 2, bold: true, fontSize: 9.5, color: PALETTE.puesto.accent, margin: [0, 6, 0, 4] },
+        { text: 'CORREOS ASOCIADOS', colSpan: 2, bold: true, fontSize: 9.5, color: PALETTE.navy.accent, margin: [0, 6, 0, 4] },
         { text: '' },
       ]);
 
@@ -406,7 +413,7 @@ export class ReporteOrdenServicioService {
 
     }
 
-    return this.card(PALETTE.puesto, ['50%', '50%'], 'Puesto', filas);
+    return this.card(PALETTE.navy, ['50%', '50%'], 'Puesto', filas);
 
   }
 
@@ -415,7 +422,7 @@ export class ReporteOrdenServicioService {
     const locacion = ordenServicio.idLocacion;
     const responsable = locacion.idClienteFacturacion ?? locacion.idCliente;
 
-    return this.card(PALETTE.facturacion, ['50%', '50%'], 'Responsable de facturación', [
+    return this.card(PALETTE.navy, ['50%', '50%'], 'Responsable de facturación', [
       [
         this.labelValue('Nombre', responsable.nombre),
         this.labelValue('Identificación', responsable.numeroIdentificacion),
@@ -479,9 +486,9 @@ export class ReporteOrdenServicioService {
         ],
       },
       layout: {
-        fillColor: () => PALETTE.info.tint,
-        hLineColor: () => PALETTE.info.accent,
-        vLineColor: () => PALETTE.info.accent,
+        fillColor: () => PALETTE.navy.tint,
+        hLineColor: () => PALETTE.navy.accent,
+        vLineColor: () => PALETTE.navy.accent,
         hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 2 : 0),
         vLineWidth: (i: number) => (i === 0 ? 2 : 0),
         paddingLeft: () => 10,
@@ -514,14 +521,14 @@ export class ReporteOrdenServicioService {
             { text: this.formatearMoneda(servicioOrden.aui), fontSize: 9 },
             { text: this.formatearMoneda(servicioOrden.precioAntesIva), fontSize: 9 },
             { text: this.formatearMoneda(servicioOrden.iva), fontSize: 9 },
-            { text: this.formatearMoneda(servicioOrden.precio), fontSize: 9.5, bold: true, color: PALETTE.precios.accent },
+            { text: this.formatearMoneda(servicioOrden.precio), fontSize: 9.5, bold: true, color: PALETTE.navy.accent },
           ],
         ],
       },
       layout: {
-        fillColor: (rowIndex: number) => (rowIndex === 0 ? '#D1FAE5' : null),
-        hLineColor: () => '#A7F3D0',
-        vLineColor: () => '#A7F3D0',
+        fillColor: (rowIndex: number) => (rowIndex === 0 ? PALETTE.servicios.tint : null),
+        hLineColor: () => '#C7DCF0',
+        vLineColor: () => '#C7DCF0',
         hLineWidth: () => 0.6,
         vLineWidth: () => 0.6,
         paddingLeft: () => 5,
@@ -568,9 +575,9 @@ export class ReporteOrdenServicioService {
         ],
       },
       layout: {
-        fillColor: (rowIndex: number) => (rowIndex === 0 ? '#FDE68A' : (rowIndex % 2 === 0 ? '#FFFBEB' : null)),
-        hLineColor: () => '#FDE68A',
-        vLineColor: () => '#FDE68A',
+        fillColor: (rowIndex: number) => (rowIndex === 0 ? PALETTE.costosHoras.accent : (rowIndex % 2 === 0 ? PALETTE.costosHoras.tint : null)),
+        hLineColor: () => '#E2E8F0',
+        vLineColor: () => '#E2E8F0',
         hLineWidth: () => 0.5,
         vLineWidth: () => 0.5,
         paddingLeft: () => 4,
@@ -593,7 +600,7 @@ export class ReporteOrdenServicioService {
         body: [[this.cardHeaderCell('Desglose de precio', 1)]],
       },
       layout: {
-        fillColor: () => PALETTE.precios.accent,
+        fillColor: () => PALETTE.navy.accent,
         hLineWidth: () => 0,
         vLineWidth: () => 0,
         paddingLeft: () => 10,
@@ -651,7 +658,7 @@ export class ReporteOrdenServicioService {
         ],
       },
       layout: {
-        fillColor: () => PALETTE.precios.accent,
+        fillColor: () => PALETTE.navy.accent,
         hLineWidth: () => 0,
         vLineWidth: () => 0,
         paddingLeft: () => 6,
