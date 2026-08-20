@@ -1299,36 +1299,22 @@ export class OrdenServicioService {
 
   }
 
-  // DETERMINA SI EL RANGO DE FECHAS CORRESPONDE A UN "MES EXACTO" PARA EFECTOS DE COBRO MENSUAL:
-  // - mismo dia del mes, un mes despues (ej: 1 ene -> 1 feb, 15 ene -> 15 feb), o
-  // - mes calendario completo (ej: todo enero: 1 ene -> 31 ene)
+  // DETERMINA SI EL RANGO DE FECHAS ES UN "MES EXACTO" PARA EFECTOS DE COBRO MENSUAL:
+  // unicamente el mes calendario completo (ej: todo enero: 1 ene -> 31 ene). Del 15 de enero al 15 de febrero
+  // NO cuenta como mes exacto, aunque sean 30/31 dias de diferencia, debe empezar el dia 1 y terminar el ultimo dia del mes
   private esMesExacto(fechaInicio: Date, fechaFin: Date): boolean {
 
-    const fechaInicioMasUnMes = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + 1, fechaInicio.getDate());
-
-    if (
-      fechaFin.getFullYear() === fechaInicioMasUnMes.getFullYear() &&
-      fechaFin.getMonth() === fechaInicioMasUnMes.getMonth() &&
-      fechaFin.getDate() === fechaInicioMasUnMes.getDate()
-    ) {
-      return true;
+    if (fechaInicio.getDate() !== 1) {
+      return false;
     }
 
-    if (fechaInicio.getDate() === 1) {
+    const ultimoDiaDelMes = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + 1, 0).getDate();
 
-      const ultimoDiaDelMes = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + 1, 0).getDate();
-
-      if (
-        fechaFin.getFullYear() === fechaInicio.getFullYear() &&
-        fechaFin.getMonth() === fechaInicio.getMonth() &&
-        fechaFin.getDate() === ultimoDiaDelMes
-      ) {
-        return true;
-      }
-
-    }
-
-    return false;
+    return (
+      fechaFin.getFullYear() === fechaInicio.getFullYear() &&
+      fechaFin.getMonth() === fechaInicio.getMonth() &&
+      fechaFin.getDate() === ultimoDiaDelMes
+    );
 
   }
 
