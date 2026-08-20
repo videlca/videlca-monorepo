@@ -35,6 +35,7 @@ import {
   OrdenServicioId,
   OrdenServicioIdAnulado,
   OrdenServicioTarifa,
+  CostoHoraOrdenServicioTarifa,
   ProgramacionPersonal
 } from '../entities';
 
@@ -236,21 +237,46 @@ export class OrdenServicioService {
 
       const nombreServicios = []
 
+      let precioTotalCalculado = 0;
+
       for (const servicio of servicios) {
 
-        // OBTENER TARIFA
-        const tarifa = await this.tarifasService.findOne(servicio.idTarifa);
+        // OBTENER TARIFA (si aplica) Y SERVICIO
+        // Los servicios de horario mixto por hora no tienen tarifa guardada, en ese caso solo se envia idServicio
+        let tarifa: Tarifa | null = null;
 
-        nombreServicios.push(tarifa.idServicio.descripcion);
+        if (servicio.idTarifa) {
+          tarifa = await this.tarifasService.findOne(servicio.idTarifa);
+        }
 
-        // Validar si se debe enviar el precio del servicio
+        const servicioEntidad = tarifa ? tarifa.idServicio : await this.servicioService.findOne(servicio.idServicio);
+
+        nombreServicios.push(servicioEntidad.descripcion);
+
+        let calculoPrecio: Awaited<ReturnType<OrdenServicioService['calcularPrecioServicioOrden']>> | null = null;
+
+        // Validar si se debe enviar el precio del servicio, y calcular el desglose real (costos directos, seguro vida, aui, iva, etc)
+        // usando la misma logica de obtenerPrecio, en lugar de confiar unicamente en el precio que envia el front
         if (createOrdenServicioDto.fechaFin != null) {
 
           if (servicio.precio == null || servicio.precio == 0) {
 
-            throw new BadRequestException(`se debe enviar el precio del servicio ${tarifa.idServicio.descripcion} al ser una orden definida`);
+            throw new BadRequestException(`se debe enviar el precio del servicio ${servicioEntidad.descripcion} al ser una orden definida`);
 
           }
+
+          calculoPrecio = await this.calcularPrecioServicioOrden(
+            {
+              idTarifa: servicio.idTarifa,
+              idServicio: servicioEntidad.idServicio,
+              horaInicio: servicio.horaInicio,
+              horaFin: servicio.horaFin,
+            },
+            fechaInicioOrden,
+            fechaFinOrden,
+          );
+
+          precioTotalCalculado += calculoPrecio.precio;
 
         }
 
@@ -258,21 +284,52 @@ export class OrdenServicioService {
         // Validar si el servicio requiere personal
         // if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.personal.length <= 0){
 
-        //   throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
+        //   throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);
 
         // }
 
         // Crear el servicio para la orden
+        // Si la orden es indefinida (sin fecha fin) todos los valores de precio quedan en null, ya que se cobra mes a mes al liquidar/finalizar
         const servicioOrden = queryRunner.manager.create(OrdenServicioTarifa, {
           idOrdenServicio: savedOrdenServicio,
           idTarifa: tarifa,
+          idServicio: servicioEntidad,
           cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
           horaInicio: servicio.horaInicio,
           horaFin: servicio.horaFin,
-          precio: servicio.precio ? servicio.precio : 0
+          costosDirectos: calculoPrecio ? calculoPrecio.costosDirectos : null,
+          seguroVida: calculoPrecio ? calculoPrecio.seguroVida : null,
+          aui: calculoPrecio ? calculoPrecio.aui : null,
+          precioAntesIva: calculoPrecio ? calculoPrecio.precioAntesIva : null,
+          iva: calculoPrecio ? calculoPrecio.iva : null,
+          precio: calculoPrecio ? calculoPrecio.precio : null,
         });
 
         const savedServicio = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
+
+        // GUARDAR EL DESGLOSE HORA A HORA (solo trae datos cuando el servicio es de horario mixto por hora)
+        if (calculoPrecio && calculoPrecio.costos_horas.length > 0) {
+
+          for (const segmento of calculoPrecio.costos_horas) {
+
+            const costoHora = queryRunner.manager.create(CostoHoraOrdenServicioTarifa, {
+              idOrdenServicioTarifa: savedServicio,
+              fecha: segmento.fecha,
+              horaInicio: segmento.horaInicio,
+              horaFin: segmento.horaFin,
+              tipoHorario: segmento.tipoHorario,
+              dominical: segmento.dominical,
+              horas: segmento.horas,
+              costosDirectos: segmento.costosDirectos,
+              seguroVida: segmento.seguroVida,
+              aui: segmento.aui,
+            });
+
+            await queryRunner.manager.save(CostoHoraOrdenServicioTarifa, costoHora);
+
+          }
+
+        }
 
         // agregar el personal si es necesario
         const personalServicio = servicio.personal;
@@ -293,6 +350,16 @@ export class OrdenServicioService {
           const savedPersonal = await queryRunner.manager.save(ProgramacionPersonal, asignarPersonal);
 
         }
+
+      }
+
+      // SI LA ORDEN ES DEFINIDA, EL PRECIO TOTAL DE LA ORDEN SE RECALCULA COMO LA SUMA DE LOS PRECIOS YA CALCULADOS DE CADA SERVICIO
+      // (en vez de confiar en el precioTotal que envia el front)
+      if (createOrdenServicioDto.fechaFin != null) {
+
+        savedOrdenServicio.precioTotal = Math.round(precioTotalCalculado);
+
+        await queryRunner.manager.save(OrdenServicio, savedOrdenServicio);
 
       }
 
@@ -503,6 +570,8 @@ export class OrdenServicioService {
       .leftJoinAndSelect('orden.tarifas', 'tarifas')
       .leftJoinAndSelect('tarifas.idTarifa', 'tarifa')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('tarifas.idServicio', 'tarifaServicioDirecto')
+      .leftJoinAndSelect('tarifas.costosHoras', 'tarifaCostosHoras')
       .where(`${dbColumn} LIKE :query`, {
         query: `%${query}%`,
       })
@@ -565,7 +634,9 @@ export class OrdenServicioService {
         tarifas: {
           idTarifa: {
             idServicio: true
-          }
+          },
+          idServicio: true,
+          costosHoras: true,
         },
         idLocacion: {
           correos: true,
@@ -1460,82 +1531,40 @@ export class OrdenServicioService {
     return await disponiblesQB.getMany();
   }
 
-  async updateValidarFechasOrdenServicio(id: number, updateValidarFechaOrdenServicioDto: UpdateValidarFechaOrdenServicioDto) {
+  // VALIDA SI UN CAMBIO DE FECHAS ES VALIDO SEGUN EL ESTADO ACTUAL DE LA ORDEN.
+  // La usan tanto updateValidarFechasOrdenServicio (precheck informativo) como updateOrdenServicio (la que realmente persiste),
+  // para que la restriccion quede garantizada por el backend y no dependa de que el front haya llamado primero al precheck
+  private validarCambioFechasSegunEstado(
+    estadoActual: string,
+    cambioFechaInicio: boolean,
+    cambioFechaFin: boolean,
+    fechaFinAnteriorExiste: boolean,
+    fechaFinNuevaExiste: boolean,
+  ) {
 
-    const { fechaInicio, fechaFin, fechaActualizacion } = updateValidarFechaOrdenServicioDto;
+    // NUNCA SE PUEDE QUITAR LA FECHA FIN DE UNA ORDEN QUE YA ERA DEFINIDA (volverla indefinida).
+    // Si se necesita continuar el servicio de forma indefinida, se debe cancelar/terminar esta orden y crear una nueva orden indefinida
+    if (fechaFinAnteriorExiste && !fechaFinNuevaExiste) {
 
-    // validar orden logico de las fechas
-
-    // FECHA INICIO ORDEN SERVICIO
-
-    const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
-
-    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
-
-    const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
-
-    // FECHA FIN ORDEN SERVICIO
-
-    let fechaFinOrden = fechaFin ? new Date(fechaFin) : null;
-
-    // Validar que las fechas sean lógicamente correcto
-    if (fechaFin != null) {
-
-      // FECHA FIN ORDEN SERVICIO
-
-      const fechaFinSplit = fechaFin.toISOString().split('T')[0];
-
-      const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
-
-      fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
-
-      if (fechaInicioOrden >= fechaFinOrden) {
-
-        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
-
-      }
+      throw new BadRequestException('No se puede quitar la fecha de fin de una orden que ya era definida. Si el servicio va a continuar de forma indefinida, cree una nueva orden de servicio a partir del dia siguiente en que termina esta');
 
     }
 
-    // Obtener orden de servicio
-    const ordenServicio = await this.findOne(id);
+    if (cambioFechaInicio) {
 
-    // Convert ordenServicio.fechaInicio to Date if it's a string
-    const fechaInicioOrdenString = new Date(ordenServicio.fechaInicio).toISOString().split('T')[0];
-
-    const fechaFinOrdenString = ordenServicio.fechaFin
-      ? new Date(ordenServicio.fechaFin).toISOString().split('T')[0]
-      : null;
-
-    const fechaFinOrdenDtoString = fechaFinOrden
-      ? fechaFinOrden.toISOString().split('T')[0]
-      : null;
-
-    if (fechaInicioOrden.toISOString().split('T')[0] == fechaInicioOrdenString && fechaFinOrdenDtoString === fechaFinOrdenString) {
-      return {
-        message: 'Las fechas son iguales a las que ya tiene la orden de servicio, no se realizo ningun cambio'
-      }
-    }
-
-    const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.nombre;
-
-    // validar si es diferente a la que se coloco
-    // si es diferente validar que el estado de la orden sea programado o por iniciar
-    if (fechaInicioOrden.toISOString().split('T')[0] != fechaInicioOrdenString) {
-
-      if (descripcionEstadoOrdenServicio == EstadoOrdenServicio.INICIADO || descripcionEstadoOrdenServicio == EstadoOrdenServicio.POR_TERMINAR) {
+      if (estadoActual == EstadoOrdenServicio.INICIADO || estadoActual == EstadoOrdenServicio.POR_TERMINAR) {
 
         throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden aun no ha iniciado');
 
       }
 
-      if (descripcionEstadoOrdenServicio == EstadoOrdenServicio.CANCELADA || descripcionEstadoOrdenServicio == EstadoOrdenServicio.ANULADA) {
+      if (estadoActual == EstadoOrdenServicio.CANCELADA || estadoActual == EstadoOrdenServicio.ANULADA) {
 
         throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden no ha sido cancelada o anulada');
 
       }
 
-      if (descripcionEstadoOrdenServicio == EstadoOrdenServicio.TERMINADO) {
+      if (estadoActual == EstadoOrdenServicio.TERMINADO) {
 
         throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden no ha terminado');
 
@@ -1543,15 +1572,12 @@ export class OrdenServicioService {
 
     }
 
-    // validar fecha fin de la orden y si es diferente a la que se coloco
-    // si es diferente validar - que el estado de la orden sea PROGRAMADO , POR INICIAR , INICIADO , POR TERMINAR 
-
-    if (fechaFinOrden != null && fechaFinOrden.toISOString().split('T')[0] != fechaFinOrdenString) {
+    if (cambioFechaFin) {
 
       if (
-        descripcionEstadoOrdenServicio == EstadoOrdenServicio.CANCELADA ||
-        descripcionEstadoOrdenServicio == EstadoOrdenServicio.ANULADA ||
-        descripcionEstadoOrdenServicio == EstadoOrdenServicio.TERMINADO
+        estadoActual == EstadoOrdenServicio.CANCELADA ||
+        estadoActual == EstadoOrdenServicio.ANULADA ||
+        estadoActual == EstadoOrdenServicio.TERMINADO
       ) {
 
         throw new BadRequestException('La fecha de fin solo se puede modificar si la orden aun no ha sido cancelada, terminada o anulada');
@@ -1560,15 +1586,51 @@ export class OrdenServicioService {
 
     }
 
+  }
+
+  async updateValidarFechasOrdenServicio(id: number, updateValidarFechaOrdenServicioDto: UpdateValidarFechaOrdenServicioDto) {
+
+    const { fechaInicio, fechaFin, fechaActualizacion } = updateValidarFechaOrdenServicioDto;
+
+    // validar orden logico de las fechas
+    const fechaInicioOrden = this.normalizarFecha(fechaInicio);
+
+    const fechaFinOrden = fechaFin ? this.normalizarFecha(fechaFin) : null;
+
+    if (fechaFinOrden != null && fechaInicioOrden >= fechaFinOrden) {
+
+      throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+
+    }
+
+    // Obtener orden de servicio
+    const ordenServicio = await this.findOne(id);
+
+    const fechaInicioOrdenString = this.formatearFecha(new Date(ordenServicio.fechaInicio));
+    const fechaFinOrdenString = ordenServicio.fechaFin ? this.formatearFecha(new Date(ordenServicio.fechaFin)) : null;
+
+    const fechaInicioNuevaString = this.formatearFecha(fechaInicioOrden);
+    const fechaFinNuevaString = fechaFinOrden ? this.formatearFecha(fechaFinOrden) : null;
+
+    if (fechaInicioNuevaString == fechaInicioOrdenString && fechaFinNuevaString === fechaFinOrdenString) {
+      return {
+        message: 'Las fechas son iguales a las que ya tiene la orden de servicio, no se realizo ningun cambio'
+      }
+    }
+
+    const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.nombre;
+
+    // VALIDAR SI EL CAMBIO DE FECHAS ES VALIDO SEGUN EL ESTADO ACTUAL DE LA ORDEN
+    this.validarCambioFechasSegunEstado(
+      descripcionEstadoOrdenServicio,
+      fechaInicioNuevaString != fechaInicioOrdenString,
+      fechaFinNuevaString != fechaFinOrdenString,
+      fechaFinOrdenString != null,
+      fechaFinNuevaString != null,
+    );
+
     // VALIDAR ESTADO DE LA ORDEN, TENER EN CUENTA SI LAS FECHAS SON IGUALES QUEDA COMO ESTA, SI CAMBIARON ENTONCES VALIDAR EN QUE ESTADO QUEDA
-
-    // FECHA ACTUALIZACION ORDEN SERVICIO
-
-    const fechaActualizacionSplit = fechaActualizacion.toISOString().split('T')[0];
-
-    const [añoActualizacion, mesActualizacion, diaActualizacion] = fechaActualizacionSplit.split('-').map(Number);
-
-    const fechaActualizacionOrden = new Date(añoActualizacion, mesActualizacion - 1, diaActualizacion);
+    const fechaActualizacionOrden = this.normalizarFecha(fechaActualizacion);
 
     // OBTENER ID ESTADO ORDEN SERVICIO
     //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
@@ -1607,61 +1669,50 @@ export class OrdenServicioService {
 
     const { fechaInicio, fechaFin, fechaActualizacion } = updateOrdenServicioDto;
 
-    // Usar QueryRunner para transacción manual
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    const fechaInicioOrden = this.normalizarFecha(fechaInicio);
 
-    // FECHA INICIO ORDEN SERVICIO
+    const fechaFinOrden = fechaFin ? this.normalizarFecha(fechaFin) : null;
 
-    const fechaInicioSplit = fechaInicio.toISOString().split('T')[0];
+    if (fechaFinOrden != null && fechaInicioOrden >= fechaFinOrden) {
 
-    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
-
-    const fechaInicioOrden = new Date(añoInicio, mesInicio - 1, diaInicio);
-
-    // FECHA FIN ORDEN SERVICIO
-
-    let fechaFinOrden = fechaFin ? new Date(fechaFin) : null;
-
-    // Validar que las fechas sean lógicamente correcto
-    if (fechaFin != null) {
-
-      // FECHA FIN ORDEN SERVICIO
-
-      const fechaFinSplit = fechaFin.toISOString().split('T')[0];
-
-      const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
-
-      fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
-
-      if (fechaInicioOrden >= fechaFinOrden) {
-
-        throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
-
-      }
-
-      if (updateOrdenServicioDto.precioTotal == null || updateOrdenServicioDto.precioTotal == 0) {
-
-        throw new BadRequestException('se debe enviar el precio total al ser una orden definida');
-
-      }
+      throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
 
     }
 
-    // FECHA ACTUALIZACION ORDEN SERVICIO
+    if (fechaFinOrden != null && (updateOrdenServicioDto.precioTotal == null || updateOrdenServicioDto.precioTotal == 0)) {
 
-    const fechaActualizacionSplit = fechaActualizacion.toISOString().split('T')[0];
+      throw new BadRequestException('se debe enviar el precio total al ser una orden definida');
 
-    const [añoActualizacion, mesActualizacion, diaActualizacion] = fechaActualizacionSplit.split('-').map(Number);
+    }
 
-    const fechaActualizacionOrden = new Date(añoActualizacion, mesActualizacion - 1, diaActualizacion);
+    const fechaActualizacionOrden = this.normalizarFecha(fechaActualizacion);
+
+    // OBTENER LA ORDEN CON SUS SERVICIOS (tarifas) ACTUALES
+    const ordenServicio = await this.findOneOrdenRelations(id);
+
+    const fechaInicioOrdenString = this.formatearFecha(new Date(ordenServicio.fechaInicio));
+    const fechaFinOrdenString = ordenServicio.fechaFin ? this.formatearFecha(new Date(ordenServicio.fechaFin)) : null;
+
+    const fechaInicioNuevaString = this.formatearFecha(fechaInicioOrden);
+    const fechaFinNuevaString = fechaFinOrden ? this.formatearFecha(fechaFinOrden) : null;
+
+    const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.nombre;
+
+    // VALIDAR QUE EL CAMBIO DE FECHAS SEA VALIDO SEGUN EL ESTADO ACTUAL DE LA ORDEN
+    // (misma validacion de updateValidarFechasOrdenServicio, para que quede garantizada aunque no se haya llamado ese endpoint antes)
+    this.validarCambioFechasSegunEstado(
+      descripcionEstadoOrdenServicio,
+      fechaInicioNuevaString != fechaInicioOrdenString,
+      fechaFinNuevaString != fechaFinOrdenString,
+      fechaFinOrdenString != null,
+      fechaFinNuevaString != null,
+    );
 
     // OBTENER ID ESTADO ORDEN SERVICIO
     //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
     let estadoOrdenServicio: EstadoOrdenEntity;
 
-    if (fechaFin != null && fechaFinOrden < fechaActualizacionOrden) {
+    if (fechaFinOrden != null && fechaFinOrden < fechaActualizacionOrden) {
       // Caso 1: Ya terminó (fecha fin es anterior a fecha actualizacion)
       estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.TERMINADO);
 
@@ -1680,97 +1731,92 @@ export class OrdenServicioService {
 
     }
 
-    let cambioEstadoOrden: boolean = false;
+    const cambioEstadoOrden = ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio != estadoOrdenServicio.idEstadoOrdenServicio;
 
-    const ordenServicio = await this.findOne(id);
-
-    if (ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio != estadoOrdenServicio.idEstadoOrdenServicio) {
-      cambioEstadoOrden = true;
-    }
+    // Usar QueryRunner para transacción manual
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
 
-      // actualizar campos
+      // actualizar campos de la orden
       ordenServicio.fechaInicio = fechaInicioOrden;
       ordenServicio.fechaFin = fechaFinOrden;
       ordenServicio.fechaActualizacion = fechaActualizacionOrden;
-      ordenServicio.precioTotal = updateOrdenServicioDto.precioTotal;
       ordenServicio.idEstadoOrdenServicio = estadoOrdenServicio;
 
-      const savedOrdenServicio = await queryRunner.manager.save(OrdenServicio, ordenServicio);
+      let precioTotalCalculado = 0;
 
-      const servicios = ordenServicio.tarifas;
+      // ACTUALIZAR EL PRECIO DE CADA SERVICIO YA EXISTENTE, SIN BORRAR/RECREAR LAS FILAS DE OrdenServicioTarifa
+      // (borrar y recrear eliminaba en cascada el personal ya asignado en ProgramacionPersonal)
+      for (const servicioOrden of ordenServicio.tarifas) {
 
-      // eliminar tarifas asociadas a la orden
-      await queryRunner.manager.delete(OrdenServicioTarifa, { idOrdenServicio: id });
+        let calculoPrecio: Awaited<ReturnType<OrdenServicioService['calcularPrecioServicioOrden']>> | null = null;
 
-      for (const servicio of servicios) {
-
-        // OBTENER PRECIO
-        let precio = 0
-
-        // OBTENER TARIFA
-        const tarifa = await this.tarifasService.findOne(servicio.idTarifa.idTarifa);
-
-        // Validar si se debe enviar el precio del servicio
+        // Si la orden queda definida, recalcular el precio real del servicio con las nuevas fechas,
+        // usando la misma logica de obtenerPrecio (en lugar de confiar en un precio que ya no aplica)
         if (fechaFinOrden != null) {
 
-          // calcular precio
-          const resultado = await this.obtenerPrecio({
-            fechaInicio: fechaInicioOrden,
-            fechaFin: fechaFinOrden,
-            servicios: [{
-              idTarifa: tarifa.idTarifa,
-              idServicio: tarifa.idServicio.idServicio,
-              horaInicio: servicio.horaInicio,
-              horaFin: servicio.horaFin,
-            }],
-          })
+          calculoPrecio = await this.calcularPrecioServicioOrden(
+            {
+              idTarifa: servicioOrden.idTarifa ? servicioOrden.idTarifa.idTarifa : undefined,
+              idServicio: servicioOrden.idServicio.idServicio,
+              horaInicio: servicioOrden.horaInicio,
+              horaFin: servicioOrden.horaFin,
+            },
+            fechaInicioOrden,
+            fechaFinOrden,
+          );
 
-          precio = resultado.precio;
+          precioTotalCalculado += calculoPrecio.precio;
 
         }
 
-        // Validar si el servicio requiere personal
-        // if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.programaciones.length <= 0){
+        // Si la orden es indefinida, todos los valores de precio quedan en null (se cobra mes a mes al liquidar/finalizar)
+        servicioOrden.costosDirectos = calculoPrecio ? calculoPrecio.costosDirectos : null;
+        servicioOrden.seguroVida = calculoPrecio ? calculoPrecio.seguroVida : null;
+        servicioOrden.aui = calculoPrecio ? calculoPrecio.aui : null;
+        servicioOrden.precioAntesIva = calculoPrecio ? calculoPrecio.precioAntesIva : null;
+        servicioOrden.iva = calculoPrecio ? calculoPrecio.iva : null;
+        servicioOrden.precio = calculoPrecio ? calculoPrecio.precio : null;
 
-        //   throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);          
+        const savedServicioOrden = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
 
-        // }
+        // REEMPLAZAR EL DESGLOSE HORA A HORA: a diferencia del personal, estos tramos no tienen identidad propia,
+        // dependen enteramente de las fechas/horas, asi que se recalculan desde cero en cada actualizacion
+        await queryRunner.manager.delete(CostoHoraOrdenServicioTarifa, { idOrdenServicioTarifa: savedServicioOrden.idOrdenServicioTarifa });
 
-        // Crear el servicio para la orden
-        const servicioOrden = queryRunner.manager.create(OrdenServicioTarifa, {
-          idOrdenServicio: savedOrdenServicio,
-          idTarifa: tarifa,
-          cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
-          horaInicio: servicio.horaInicio,
-          horaFin: servicio.horaFin,
-          precio: precio
-        });
+        if (calculoPrecio && calculoPrecio.costos_horas.length > 0) {
 
-        const savedServicio = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
+          for (const segmento of calculoPrecio.costos_horas) {
 
-        // agregar el personal si es necesario
-        // const personalServicio = servicio.personal;
+            const costoHora = queryRunner.manager.create(CostoHoraOrdenServicioTarifa, {
+              idOrdenServicioTarifa: savedServicioOrden,
+              fecha: segmento.fecha,
+              horaInicio: segmento.horaInicio,
+              horaFin: segmento.horaFin,
+              tipoHorario: segmento.tipoHorario,
+              dominical: segmento.dominical,
+              horas: segmento.horas,
+              costosDirectos: segmento.costosDirectos,
+              seguroVida: segmento.seguroVida,
+              aui: segmento.aui,
+            });
 
-        // for (const personalAsignado of personalServicio){
+            await queryRunner.manager.save(CostoHoraOrdenServicioTarifa, costoHora);
 
-        //   // OBTENER PERSONAL
-        //   const personal = await this.personalService.findOne(personalAsignado.idPersonal);
+          }
 
-        //   // asignar personal para el servicio
-        //   const asignarPersonal = queryRunner.manager.create(ProgramacionPersonal, {
-        //       idOrdenServicioTarifa: savedServicio,
-        //       idPersonal: personal,
-        //       horaInicio: personalAsignado.horaInicio,
-        //       horaFin: personalAsignado.horaFin
-        //   });
-
-        //   const savedPersonal = await queryRunner.manager.save(ProgramacionPersonal, asignarPersonal);
-
-        // }        
+        }
 
       }
+
+      // EL PRECIO TOTAL DE LA ORDEN SE RECALCULA COMO LA SUMA DE LOS PRECIOS YA CALCULADOS DE CADA SERVICIO
+      // (en vez de confiar en el precioTotal que envia el front)
+      ordenServicio.precioTotal = fechaFinOrden != null ? Math.round(precioTotalCalculado) : null;
+
+      const savedOrdenServicio = await queryRunner.manager.save(OrdenServicio, ordenServicio);
 
       await queryRunner.commitTransaction();
 
@@ -2475,6 +2521,8 @@ export class OrdenServicioService {
       .leftJoinAndSelect('o.tarifas', 'tarifas')
       .leftJoinAndSelect('tarifas.idTarifa', 'tarifa')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('tarifas.idServicio', 'tarifaServicioDirecto')
+      .leftJoinAndSelect('tarifas.costosHoras', 'tarifaCostosHoras')
       .where('o.fechaInicio BETWEEN :from AND :to', { from, to })
       .getMany();
 

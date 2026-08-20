@@ -1,381 +1,706 @@
-import { Injectable, Logger} from '@nestjs/common';
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
+import { Injectable, Logger } from '@nestjs/common';
+import { TDocumentDefinitions, Content, ContentTable, TableCell } from 'pdfmake/interfaces';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 import { PrinterService } from '../../common/services';
 
 import { OrdenServicio } from '../../orden-servicio/entities';
+import { OrdenServicioTarifa } from '../../orden-servicio/entities';
+import { CostoHoraOrdenServicioTarifa } from '../../orden-servicio/entities';
+
+// ===================================================================
+// PALETA DE COLORES
+// ===================================================================
+const PALETTE = {
+  textDark: '#0F172A',
+  textMuted: '#64748B',
+  white: '#FFFFFF',
+
+  headerFrom: '#4338CA', // indigo
+  headerTo: '#06B6D4',   // cyan
+  accentPop: '#F59E0B',  // amber (franja alegre bajo el header)
+
+  cliente: { accent: '#3B82F6', tint: '#EFF6FF' },     // blue
+  puesto: { accent: '#14B8A6', tint: '#F0FDFA' },      // teal
+  facturacion: { accent: '#8B5CF6', tint: '#F5F3FF' }, // violet
+  servicios: { accent: '#F59E0B', tint: '#FFFBEB' },   // amber
+  precios: { accent: '#10B981', tint: '#ECFDF5' },     // emerald
+  info: { accent: '#0EA5E9', tint: '#F0F9FF' },        // sky (mensaje orden indefinida)
+};
+
+const ESTADO_COLOR: Record<string, string> = {
+  'programado': '#6366F1',
+  'por iniciar': '#F59E0B',
+  'iniciado': '#10B981',
+  'por terminar': '#FB923C',
+  'terminado': '#64748B',
+  'cancelada': '#F43F5E',
+  'anulada': '#DC2626',
+};
+
+interface CardTheme {
+  accent: string;
+  tint: string;
+}
 
 @Injectable()
 export class ReporteOrdenServicioService {
 
   private readonly logger = new Logger('ReporteOrdenServicioService');
-          
+
   constructor(
     private readonly printer: PrinterService,
   ) {}
 
+  // ===================================================================
+  // HELPERS DE FORMATO
+  // ===================================================================
+
+  private normalizarFecha(fecha: Date | string | null): Date | null {
+
+    if (!fecha) return null;
+
+    const fechaSplit = new Date(fecha).toISOString().split('T')[0];
+
+    const [año, mes, dia] = fechaSplit.split('-').map(Number);
+
+    return new Date(año, mes - 1, dia);
+
+  }
+
+  private formatearFechaCorta(fecha: Date | string | null): string {
+
+    const fechaNormalizada = this.normalizarFecha(fecha);
+
+    if (!fechaNormalizada) return '-';
+
+    return format(fechaNormalizada, 'dd/MM/yyyy', { locale: es });
+
+  }
+
+  private formatearMoneda(valor: number | string | null | undefined): string {
+
+    if (valor == null) return '-';
+
+    const numero = Number(valor);
+
+    if (Number.isNaN(numero)) return '-';
+
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(numero);
+
+  }
+
+  private colorEstado(nombreEstado: string): string {
+
+    return ESTADO_COLOR[nombreEstado?.toLowerCase()] ?? PALETTE.textMuted;
+
+  }
+
+  // ===================================================================
+  // HELPERS DE ESTILO / MAQUETACION
+  // ===================================================================
+
+  private hexToRgb(hex: string) {
+
+    const clean = hex.replace('#', '');
+
+    return {
+      r: parseInt(clean.substring(0, 2), 16),
+      g: parseInt(clean.substring(2, 4), 16),
+      b: parseInt(clean.substring(4, 6), 16),
+    };
+
+  }
+
+  private rgbToHex(r: number, g: number, b: number): string {
+
+    const toHex = (v: number) => Math.round(v).toString(16).padStart(2, '0');
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+
+  }
+
+  // Genera franjas verticales con color interpolado, para simular un degradado (pdfmake no soporta gradientes nativos)
+  private buildGradientRects(x: number, y: number, width: number, height: number, colorFrom: string, colorTo: string, steps = 48) {
+
+    const from = this.hexToRgb(colorFrom);
+    const to = this.hexToRgb(colorTo);
+    const stepWidth = width / steps;
+
+    const rects = [];
+
+    for (let i = 0; i < steps; i++) {
+
+      const t = steps === 1 ? 0 : i / (steps - 1);
+
+      rects.push({
+        type: 'rect' as const,
+        x: x + (i * stepWidth),
+        y,
+        w: stepWidth + 0.6, // pequeño solape para que no se noten lineas entre franjas
+        h: height,
+        color: this.rgbToHex(
+          from.r + (to.r - from.r) * t,
+          from.g + (to.g - from.g) * t,
+          from.b + (to.b - from.b) * t,
+        ),
+      });
+
+    }
+
+    return rects;
+
+  }
+
+  // Layout de "tarjeta": fila 0 con el color solido de acento (encabezado), resto del cuerpo con un tinte suave
+  private cardLayout(theme: CardTheme) {
+
+    return {
+      fillColor: (rowIndex: number) => (rowIndex === 0 ? theme.accent : theme.tint),
+      hLineColor: () => '#ffffff',
+      vLineColor: () => '#ffffff',
+      hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 0 : 1),
+      vLineWidth: () => 0,
+      paddingLeft: () => 10,
+      paddingRight: () => 10,
+      paddingTop: () => 7,
+      paddingBottom: () => 7,
+    };
+
+  }
+
+  private cardHeaderCell(titulo: string, colSpan: number): TableCell {
+
+    return {
+      text: titulo.toUpperCase(),
+      colSpan,
+      color: PALETTE.white,
+      bold: true,
+      fontSize: 11,
+      characterSpacing: 0.4,
+    };
+
+  }
+
+  private fillEmptyCells(n: number): TableCell[] {
+
+    return Array.from({ length: n }, () => ({ text: '' }));
+
+  }
+
+  private labelValue(label: string, value: string): Content {
+
+    return {
+      stack: [
+        { text: label.toUpperCase(), style: 'label' },
+        { text: value || '-', style: 'value' },
+      ],
+    };
+
+  }
+
+  private badge(texto: string, color: string): TableCell {
+
+    return {
+      text: texto.toUpperCase(),
+      color: PALETTE.white,
+      fillColor: color,
+      bold: true,
+      fontSize: 9,
+      alignment: 'center',
+      margin: [0, 3, 0, 3],
+    };
+
+  }
+
+  // Tarjeta generica: [ [header (colSpan=widths.length)], ...filas ]
+  private card(theme: CardTheme, widths: (string | number)[], titulo: string, filas: TableCell[][]): Content {
+
+    return {
+      margin: [0, 0, 0, 14],
+      table: {
+        widths,
+        body: [
+          [this.cardHeaderCell(titulo, widths.length), ...this.fillEmptyCells(widths.length - 1)],
+          ...filas,
+        ],
+      },
+      layout: this.cardLayout(theme),
+    };
+
+  }
+
+  // ===================================================================
+  // SECCIONES
+  // ===================================================================
+
+  private buildHeader(ordenServicio: OrdenServicio): Content[] {
+
+    const headerHeight = 100;
+
+    return [
+
+      {
+        canvas: this.buildGradientRects(0, 0, 535, headerHeight, PALETTE.headerFrom, PALETTE.headerTo),
+        absolutePosition: { x: 40, y: 40 },
+      },
+      {
+        canvas: [{ type: 'rect', x: 0, y: 0, w: 535, h: 5, color: PALETTE.accentPop }],
+        absolutePosition: { x: 40, y: 40 + headerHeight },
+      },
+
+      {
+        margin: [0, 14, 0, 0],
+        table: {
+          widths: ['16%', '54%', '30%'],
+          body: [
+            [
+              {
+                image: 'logo',
+                width: 58,
+                alignment: 'center',
+                rowSpan: 2,
+                margin: [0, 4, 0, 0],
+              },
+              {
+                text: 'ORDEN DE SERVICIO\nVIGILANCIA FÍSICA Y ELECTRÓNICA',
+                color: PALETTE.white,
+                bold: true,
+                fontSize: 18,
+                lineHeight: 1.25,
+                rowSpan: 2,
+                margin: [0, 8, 0, 0],
+              },
+              {
+                stack: [
+                  { text: 'CÓDIGO', color: '#C7D2FE', fontSize: 8, bold: true },
+                  { text: ordenServicio.ordenServicioId.descripcionId, color: PALETTE.white, fontSize: 13, bold: true },
+                  { text: 'ORDEN N°', color: '#C7D2FE', fontSize: 8, bold: true, margin: [0, 8, 0, 0] },
+                  { text: ordenServicio.ordenServicioId.consecutivo.toString(), color: PALETTE.white, fontSize: 13, bold: true },
+                ],
+                alignment: 'right',
+              },
+            ],
+            [{ text: '' }, { text: '' }, { text: '' }],
+          ],
+        },
+        layout: 'noBorders',
+      },
+
+      { text: '\n' },
+
+    ];
+
+  }
+
+  private buildResumenFechas(ordenServicio: OrdenServicio): Content {
+
+    const esIndefinida = !ordenServicio.fechaFin;
+    const estado = ordenServicio.idEstadoOrdenServicio.nombre;
+
+    const stat = (label: string, value: string): TableCell => ({
+      stack: [
+        { text: label.toUpperCase(), fontSize: 8, bold: true, color: PALETTE.textMuted },
+        { text: value, fontSize: 11, bold: true, color: PALETTE.textDark, margin: [0, 3, 0, 0] },
+      ],
+      fillColor: '#F8FAFC',
+      margin: [8, 8, 8, 8],
+    });
+
+    return {
+      margin: [0, 0, 0, 16],
+      table: {
+        widths: ['25%', '25%', '25%', '25%'],
+        body: [
+          [
+            stat('Fecha creación', this.formatearFechaCorta(ordenServicio.fechaCreacion)),
+            stat('Fecha inicio', this.formatearFechaCorta(ordenServicio.fechaInicioOrden)),
+            stat('Fecha fin', esIndefinida ? 'Indefinida' : this.formatearFechaCorta(ordenServicio.fechaFinOrden)),
+            {
+              stack: [
+                { text: 'ESTADO', fontSize: 8, bold: true, color: PALETTE.textMuted, margin: [0, 0, 0, 4] },
+                this.badge(estado, this.colorEstado(estado)),
+              ],
+              fillColor: '#F8FAFC',
+              margin: [8, 8, 8, 4],
+            },
+          ],
+        ],
+      },
+      layout: {
+        fillColor: () => null,
+        hLineColor: () => '#E2E8F0',
+        vLineColor: () => '#E2E8F0',
+        hLineWidth: () => 1,
+        vLineWidth: () => 1,
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+      },
+    };
+
+  }
+
+  private buildCliente(ordenServicio: OrdenServicio): Content {
+
+    const cliente = ordenServicio.idLocacion.idCliente;
+
+    return this.card(PALETTE.cliente, ['50%', '50%'], 'Cliente', [
+      [
+        this.labelValue('Nombre', cliente.nombre),
+        this.labelValue('Identificación', cliente.numeroIdentificacion),
+      ],
+      [
+        this.labelValue('Tipo de cliente', cliente.idTipoCliente.descripcion),
+        { text: '' },
+      ],
+    ]);
+
+  }
+
+  private buildPuesto(ordenServicio: OrdenServicio): Content {
+
+    const locacion = ordenServicio.idLocacion;
+
+    const filas: TableCell[][] = [
+      [
+        this.labelValue('Nombre', locacion.nombre),
+        this.labelValue('Dirección', locacion.direccion),
+      ],
+      [
+        this.labelValue('Teléfono', locacion.telefono),
+        this.labelValue('Ciudad', locacion.idCiudad.descripcion),
+      ],
+      [
+        { text: 'RESPONSABLE DEL PUESTO', colSpan: 2, bold: true, fontSize: 9.5, color: PALETTE.puesto.accent, margin: [0, 6, 0, 4] },
+        { text: '' },
+      ],
+      [
+        this.labelValue('Nombre', `${locacion.primerNombreResponsable} ${locacion.primerApellidoResponsable}`),
+        this.labelValue('Teléfono', locacion.telefono),
+      ],
+    ];
+
+    if (locacion.correos && locacion.correos.length > 0) {
+
+      filas.push([
+        { text: 'CORREOS ASOCIADOS', colSpan: 2, bold: true, fontSize: 9.5, color: PALETTE.puesto.accent, margin: [0, 6, 0, 4] },
+        { text: '' },
+      ]);
+
+      for (const correo of locacion.correos) {
+
+        filas.push([
+          this.labelValue('Nombre', `${correo.nombre} ${correo.apellido}`),
+          this.labelValue('Email', correo.email),
+        ]);
+
+      }
+
+    }
+
+    return this.card(PALETTE.puesto, ['50%', '50%'], 'Puesto', filas);
+
+  }
+
+  private buildFacturacion(ordenServicio: OrdenServicio): Content {
+
+    const locacion = ordenServicio.idLocacion;
+    const responsable = locacion.idClienteFacturacion ?? locacion.idCliente;
+
+    return this.card(PALETTE.facturacion, ['50%', '50%'], 'Responsable de facturación', [
+      [
+        this.labelValue('Nombre', responsable.nombre),
+        this.labelValue('Identificación', responsable.numeroIdentificacion),
+      ],
+    ]);
+
+  }
+
+  private buildServicios(ordenServicio: OrdenServicio): Content {
+
+    const filas: TableCell[][] = [
+      [
+        { text: 'SERVICIO', style: 'label' },
+        { text: 'HORARIO', style: 'label' },
+        { text: 'PERSONAL', style: 'label' },
+        { text: 'TARIFA', style: 'label' },
+      ],
+    ];
+
+    ordenServicio.tarifas.forEach((servicioOrden, index) => {
+
+      const servicio = servicioOrden.idServicio;
+
+      filas.push([
+        { text: `${index + 1}. ${servicio.descripcion}\n`, bold: true, fontSize: 9.5, color: PALETTE.textDark,
+          margin: [0, 4, 0, 0],
+        },
+        { text: `${servicioOrden.horaInicio} - ${servicioOrden.horaFin}`, margin: [0, 4, 0, 0] },
+        { text: servicioOrden.cantidadPersonal?.toString() ?? '0', margin: [0, 4, 0, 0] },
+        { text: servicio.idTipoTarifa?.nombre ?? '-', margin: [0, 4, 0, 0] },
+      ]);
+
+      filas.push([
+        { text: `Código: ${servicio.codigo}`, colSpan: 4, fontSize: 8, italics: true, color: PALETTE.textMuted, margin: [0, 0, 0, 4] },
+        { text: '' }, { text: '' }, { text: '' },
+      ]);
+
+    });
+
+    return this.card(PALETTE.servicios, ['34%', '26%', '16%', '24%'], 'Servicios asociados', filas);
+
+  }
+
+  // ------------------ DESGLOSE DE PRECIO ------------------
+
+  private buildMensajeOrdenIndefinida(): Content {
+
+    return {
+      margin: [0, 0, 0, 14],
+      table: {
+        widths: ['100%'],
+        body: [
+          [
+            {
+              text: 'Esta orden de servicio es indefinida (sin fecha de fin). El precio se calculará mes a mes al momento de realizar la liquidación.',
+              italics: true,
+              color: PALETTE.textDark,
+              margin: [4, 6, 4, 6],
+            },
+          ],
+        ],
+      },
+      layout: {
+        fillColor: () => PALETTE.info.tint,
+        hLineColor: () => PALETTE.info.accent,
+        vLineColor: () => PALETTE.info.accent,
+        hLineWidth: (i: number, node: any) => (i === 0 || i === node.table.body.length ? 2 : 0),
+        vLineWidth: (i: number) => (i === 0 ? 2 : 0),
+        paddingLeft: () => 10,
+        paddingRight: () => 10,
+        paddingTop: () => 8,
+        paddingBottom: () => 8,
+      },
+    };
+
+  }
+
+  private buildTablaPrecioServicio(servicioOrden: OrdenServicioTarifa): ContentTable {
+
+    return {
+      margin: [0, 4, 0, 4],
+      table: {
+        widths: ['*', '*', '*', '*', '*', '*'],
+        body: [
+          [
+            { text: 'C. DIRECTOS', style: 'miniLabel' },
+            { text: 'SEGURO VIDA', style: 'miniLabel' },
+            { text: 'AUI', style: 'miniLabel' },
+            { text: 'ANTES IVA', style: 'miniLabel' },
+            { text: 'IVA', style: 'miniLabel' },
+            { text: 'TOTAL', style: 'miniLabel' },
+          ],
+          [
+            { text: this.formatearMoneda(servicioOrden.costosDirectos), fontSize: 9 },
+            { text: this.formatearMoneda(servicioOrden.seguroVida), fontSize: 9 },
+            { text: this.formatearMoneda(servicioOrden.aui), fontSize: 9 },
+            { text: this.formatearMoneda(servicioOrden.precioAntesIva), fontSize: 9 },
+            { text: this.formatearMoneda(servicioOrden.iva), fontSize: 9 },
+            { text: this.formatearMoneda(servicioOrden.precio), fontSize: 9.5, bold: true, color: PALETTE.precios.accent },
+          ],
+        ],
+      },
+      layout: {
+        fillColor: (rowIndex: number) => (rowIndex === 0 ? '#D1FAE5' : null),
+        hLineColor: () => '#A7F3D0',
+        vLineColor: () => '#A7F3D0',
+        hLineWidth: () => 0.6,
+        vLineWidth: () => 0.6,
+        paddingLeft: () => 5,
+        paddingRight: () => 5,
+        paddingTop: () => 5,
+        paddingBottom: () => 5,
+      },
+    };
+
+  }
+
+  private buildTablaCostosHoras(costosHoras: CostoHoraOrdenServicioTarifa[]): ContentTable {
+
+    const filas = [...costosHoras]
+      .sort((a, b) => `${a.fecha}${a.horaInicio}`.localeCompare(`${b.fecha}${b.horaInicio}`))
+      .map(segmento => ([
+        { text: this.formatearFechaCorta(segmento.fecha), fontSize: 7.5 },
+        { text: `${segmento.horaInicio} - ${segmento.horaFin}`, fontSize: 7.5 },
+        { text: segmento.tipoHorario === 'diurno' ? 'Diurno' : 'Nocturno', fontSize: 7.5 },
+        { text: segmento.dominical ? 'Dominical/Festivo' : 'Ordinario', fontSize: 7.5, color: segmento.dominical ? '#DC2626' : PALETTE.textDark },
+        { text: Number(segmento.horas).toString(), fontSize: 7.5, alignment: 'center' },
+        { text: this.formatearMoneda(segmento.costosDirectos), fontSize: 7.5 },
+        { text: this.formatearMoneda(segmento.seguroVida), fontSize: 7.5 },
+        { text: this.formatearMoneda(segmento.aui), fontSize: 7.5 },
+      ]));
+
+    return {
+      margin: [0, 2, 0, 8],
+      table: {
+        headerRows: 1,
+        widths: ['12%', '15%', '10%', '17%', '8%', '13%', '13%', '12%'],
+        body: [
+          [
+            { text: 'FECHA', style: 'miniLabel', fontSize: 7 },
+            { text: 'HORARIO', style: 'miniLabel', fontSize: 7 },
+            { text: 'TIPO', style: 'miniLabel', fontSize: 7 },
+            { text: 'DÍA', style: 'miniLabel', fontSize: 7 },
+            { text: 'HORAS', style: 'miniLabel', fontSize: 7 },
+            { text: 'C. DIRECTOS', style: 'miniLabel', fontSize: 7 },
+            { text: 'SEGURO VIDA', style: 'miniLabel', fontSize: 7 },
+            { text: 'AUI', style: 'miniLabel', fontSize: 7 },
+          ],
+          ...filas,
+        ],
+      },
+      layout: {
+        fillColor: (rowIndex: number) => (rowIndex === 0 ? '#FDE68A' : (rowIndex % 2 === 0 ? '#FFFBEB' : null)),
+        hLineColor: () => '#FDE68A',
+        vLineColor: () => '#FDE68A',
+        hLineWidth: () => 0.5,
+        vLineWidth: () => 0.5,
+        paddingLeft: () => 4,
+        paddingRight: () => 4,
+        paddingTop: () => 3,
+        paddingBottom: () => 3,
+      },
+    };
+
+  }
+
+  private buildDesglosePrecios(ordenServicio: OrdenServicio): Content[] {
+
+    const contenido: Content[] = [];
+
+    contenido.push({
+      margin: [0, 0, 0, 8],
+      table: {
+        widths: ['100%'],
+        body: [[this.cardHeaderCell('Desglose de precio', 1)]],
+      },
+      layout: {
+        fillColor: () => PALETTE.precios.accent,
+        hLineWidth: () => 0,
+        vLineWidth: () => 0,
+        paddingLeft: () => 10,
+        paddingRight: () => 10,
+        paddingTop: () => 7,
+        paddingBottom: () => 7,
+      },
+    });
+
+    if (!ordenServicio.fechaFin) {
+
+      contenido.push(this.buildMensajeOrdenIndefinida());
+
+      return contenido;
+
+    }
+
+    for (const servicioOrden of ordenServicio.tarifas) {
+
+      contenido.push({
+        text: servicioOrden.idServicio.descripcion,
+        bold: true,
+        fontSize: 10,
+        color: PALETTE.textDark,
+        margin: [0, 6, 0, 0],
+      });
+
+      contenido.push(this.buildTablaPrecioServicio(servicioOrden));
+
+      if (servicioOrden.costosHoras && servicioOrden.costosHoras.length > 0) {
+
+        contenido.push({
+          text: 'Desglose por horas (horario mixto)',
+          fontSize: 8.5,
+          italics: true,
+          color: PALETTE.textMuted,
+          margin: [0, 2, 0, 2],
+        });
+
+        contenido.push(this.buildTablaCostosHoras(servicioOrden.costosHoras));
+
+      }
+
+    }
+
+    contenido.push({
+      margin: [0, 8, 0, 14],
+      table: {
+        widths: ['*', 'auto'],
+        body: [
+          [
+            { text: 'TOTAL ORDEN DE SERVICIO', bold: true, fontSize: 12, color: PALETTE.white, margin: [4, 8, 0, 8] },
+            { text: this.formatearMoneda(ordenServicio.precioTotal), bold: true, fontSize: 14, color: PALETTE.white, alignment: 'right', margin: [0, 6, 4, 6] },
+          ],
+        ],
+      },
+      layout: {
+        fillColor: () => PALETTE.precios.accent,
+        hLineWidth: () => 0,
+        vLineWidth: () => 0,
+        paddingLeft: () => 6,
+        paddingRight: () => 6,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+      },
+    });
+
+    return contenido;
+
+  }
+
+  // ===================================================================
+  // DOCUMENTO
+  // ===================================================================
+
   private generateOrdenServicioReporte(ordenServicio: OrdenServicio): TDocumentDefinitions {
 
-    // ===== ESTILO DE TABLAS PREMIUM =====
-    const layoutModern = {
-      fillColor: (rowIndex: number) => (rowIndex === 0 ? "#f9fbff" : null),
-      hLineColor: () => "#e5e9f1",
-      vLineColor: () => "#e5e9f1",
-      hLineWidth: () => 0.6,
-      vLineWidth: () => 0,
-      paddingLeft: () => 6,
-      paddingRight: () => 6,
-      paddingTop: () => 8,
-      paddingBottom: () => 8,
-    };
-  
-    // ===== DOCUMENTO PREMIUM =====
     const docDefinition: TDocumentDefinitions = {
-      pageSize: "LETTER",
-      pageMargins: [40, 40, 40, 50],
-  
+      pageSize: 'LETTER',
+      pageMargins: [40, 40, 40, 55],
+
       content: [
-  
-        // ===========================================================
-        // SUPER HEADER PREMIUM CON EFECTO "GLASS GRADIENT"
-        // ===========================================================
-        {
-          canvas: [
-            { type: "rect", x: 0, y: 0, w: 535, h: 90, color: "#0f172a" },
-            { type: "rect", x: 0, y: 0, w: 535, h: 90, color: "rgba(255,255,255,0.08)" },
-          ],
-          absolutePosition: { x: 40, y: 40 },
-        },
-  
-        {
-          style: "headerContent",
-          margin: [0, 0, 0, 25],
-          table: {
-            widths: ["15%", "55%", "30%"],
-            body: [
-              [
-                {
-                  image: "logo",
-                  width: 55,
-                  alignment: "center",
-                  margin: [0, 5, 0, 0],
-                  rowSpan: 2,
-                },
-                {
-                  text: "ORDEN DE SERVICIO\nVIGILANCIA FÍSICA",
-                  style: "headerTitle",
-                  rowSpan: 2,
-                  margin: [0, 5, 0, 0],
-                },
-                {
-                  stack: [
-                    { text: "Código", style: "subLabel" },
-                    { text: ordenServicio.ordenServicioId.descripcionId, style: "subValue" },
-                    { text: "Orden Nº", style: "subLabel", margin: [0, 10, 0, 0] },
-                    { text: ordenServicio.ordenServicioId.consecutivo.toString(), style: "subValue" },
-                  ],
-                  alignment: "right",
-                  margin: [0, 10, 0, 0],
-                },
-              ],
-              ["", "", ""],
-            ],
-          },
-          layout: "noBorders",
-        },
-  
-        // ===========================================================
-        // FECHAS (CARD MODERNA)
-        // ===========================================================
-        {
-          style: "card",
-          table: {
-            widths: ["33%", "33%", "33%"],
-            body: [
-              [
-                { text: "Fecha Creación", style: "label" },
-                { text: "Fecha Inicio", style: "label" },
-                { text: "Fecha Fin", style: "label" },
-              ],
-              [
-                { text: ordenServicio.fechaCreacion },
-                { text: ordenServicio.fechaInicioOrden },
-                { text: ordenServicio.fechaFinOrden },
-              ],
-            ],
-          },
-          layout: layoutModern,
-        },
-  
-        { text: "\n" },
-
-        // ===========================================================
-        // CLIENTE
-        // ===========================================================
-        {
-          style: "card",
-          table: {
-            widths: ["50%", "50%"],
-            body: [
-              [{ text: "Cliente", colSpan: 2, style: "sectionHeader" }, ""],
-              [
-                {
-                  stack: [
-                    { text: "Nombre", style: "label" },
-                    { text: ordenServicio.idLocacion.idCliente.nombre },
-                  ],
-                },
-                {
-                  stack: [
-                    { text: "Identificación", style: "label" },
-                    { text: ordenServicio.idLocacion.idCliente.numeroIdentificacion },
-                  ],
-                },
-              ],
-              [
-                {
-                  stack: [
-                    { text: "Tipo Cliente", style: "label" },
-                    { text: ordenServicio.idLocacion.idCliente.idTipoCliente.descripcion },
-                  ],
-                },
-                "",
-              ],
-            ],
-          },
-          layout: layoutModern,
-        },
-  
-        { text: "\n" },
-  
-        // ===========================================================
-        // PUESTO + RESPONSABLE + CORREOS (CARD ESPECIAL)
-        // ===========================================================
-        {
-          style: "card",
-          table: {
-            widths: ["50%", "50%"],
-            body: [
-              [{ text: "Puesto", colSpan: 2, style: "sectionHeader" }, ""],
-  
-              [
-                {
-                  stack: [
-                    { text: "Nombre", style: "label" },
-                    { text: ordenServicio.idLocacion.nombre },
-                  ],
-                },
-                {
-                  stack: [
-                    { text: "Dirección", style: "label" },
-                    { text: ordenServicio.idLocacion.direccion },
-                  ],
-                },
-              ],
-  
-              [
-                {
-                  stack: [
-                    { text: "Teléfono", style: "label" },
-                    { text: ordenServicio.idLocacion.telefono },
-                  ],
-                },
-                {
-                  stack: [
-                    { text: "Ciudad", style: "label" },
-                    { text: ordenServicio.idLocacion.idCiudad.descripcion },
-                  ],
-                },
-              ],
-  
-              // -------- RESPONSABLE --------
-              [{ text: "Responsable del Puesto", colSpan: 2, style: "sectionHeader" }, ""],
-  
-              [
-                {
-                  stack: [
-                    { text: "Nombre", style: "label" },
-                    {
-                      text: `${ordenServicio.idLocacion.primerNombreResponsable} ${ordenServicio.idLocacion.primerApellidoResponsable}`,
-                    },
-                  ],
-                },
-                {
-                  stack: [
-                    { text: "Teléfono", style: "label" },
-                    { text: ordenServicio.idLocacion.telefono },
-                  ],
-                },
-              ],
-  
-              // -------- CORREOS --------
-              [{ text: "Correos Asociados", colSpan: 2, style: "sectionHeader" }, ""],
-  
-              ...ordenServicio.idLocacion.correos.map(c => [
-                {
-                  stack: [
-                    { text: "Nombre", style: "label" },
-                    { text: `${c.nombre} ${c.apellido}` },
-                  ],
-                },
-                {
-                  stack: [
-                    { text: "Email", style: "label" },
-                    { text: c.email },
-                  ],
-                },
-              ]),
-            ],
-          },
-          layout: layoutModern,
-        },
-  
-        { text: "\n" },
-
-        // ===========================================================
-        // RESPONSABLE FACTURACION (CARD MODERNA)
-        // ===========================================================
-        {
-          style: "card",
-          table: {
-            widths: ["50%", "50%"],
-            body: [
-              [{ text: "Responsable Facturacion", colSpan: 2, style: "sectionHeader" }, ""],
-  
-              [
-                {
-                  stack: [
-                    { text: "Nombre", style: "label" },
-                    {
-                      text: `${ordenServicio.idLocacion.idClienteFacturacion ? ordenServicio.idLocacion.idClienteFacturacion.nombre : ordenServicio.idLocacion.idCliente.nombre}`,
-                    },
-                  ],
-                },
-                {
-                  stack: [
-                    { text: "Identificación", style: "label" },
-                    { text: `${ordenServicio.idLocacion.idClienteFacturacion ? ordenServicio.idLocacion.idClienteFacturacion.numeroIdentificacion : ordenServicio.idLocacion.idCliente.numeroIdentificacion}` },
-                  ],
-                },
-              ],
-            ],
-          },
-          layout: layoutModern,
-        },
-  
-        { text: "\n" },
-  
-        // ===========================================================
-        // ESTADO
-        // ===========================================================
-        {
-          style: "card",
-          table: {
-            widths: ["100%"],
-            body: [
-              [{ text: "Estado de la Orden", style: "sectionHeader" }],
-              [
-                {
-                  text: ordenServicio.idEstadoOrdenServicio.nombre,
-                  style: "label",
-                  margin: [0, 5, 0, 5],
-                },
-              ],
-            ],
-          },
-          layout: layoutModern,
-        },
-  
-        { text: "\n" },
-  
-        // ===========================================================
-        // SERVICIOS ASOCIADOS - ULTRA PREMIUM
-        // ===========================================================
-        {
-          style: "card",
-          table: {
-            widths: ["40%", "30%", "30%"],
-            body: [
-              [
-                { text: "SERVICIOS ASOCIADOS", colSpan: 3, style: "sectionHeader" },
-                "",
-                "",
-              ],
-  
-              [
-                { text: "Servicio", style: "label" },
-                { text: "Horario", style: "label" },
-                { text: "Cantidad Personal", style: "label" },
-              ],
-  
-              ...ordenServicio.tarifas.flatMap((t, index) => [
-                [
-                  {
-                    text: `Servicio ${index + 1}: ${t.idTarifa.idServicio.descripcion}`,
-                    colSpan: 3,
-                    style: "serviceTitle",
-                    margin: [0, 10, 0, 4],
-                  },
-                  "",
-                  "",
-                ],
-  
-                [
-                  { text: t.idTarifa.idServicio.descripcion },
-                  { text: `${t.horaInicio} - ${t.horaFin}` },
-                  { text: t.cantidadPersonal.toString() },
-                ],
-  
-                [{ text: "", colSpan: 3, margin: [0, 12, 0, 12] }, "", ""],
-              ]),
-            ],
-          },
-          layout: layoutModern,
-        },
+        ...this.buildHeader(ordenServicio),
+        this.buildResumenFechas(ordenServicio),
+        this.buildCliente(ordenServicio),
+        this.buildPuesto(ordenServicio),
+        this.buildFacturacion(ordenServicio),
+        this.buildServicios(ordenServicio),
+        ...this.buildDesglosePrecios(ordenServicio),
       ],
-  
-      // ===========================================================
-      // ESTILOS ULTRA PREMIUM
-      // ===========================================================
+
+      footer: (currentPage: number, pageCount: number) => ({
+        columns: [
+          { text: 'GEVID · Videlca Ltda. - Seguridad Física y Electrónica', fontSize: 8, color: PALETTE.textMuted, margin: [40, 0, 0, 0] },
+          { text: `Página ${currentPage} de ${pageCount}`, fontSize: 8, color: PALETTE.textMuted, alignment: 'right', margin: [0, 0, 40, 0] },
+        ],
+      }),
+
       styles: {
-        headerContent: { margin: [0, 20, 0, 0] },
-  
-        headerTitle: {
-          fontSize: 20,
-          bold: true,
-          color: "#ffffff",
-          alignment: "center",
-          leadingIndent: 0,
-          margin: [0, -2, 0, 0],
-        },
-  
-        subLabel: { fontSize: 9, color: "#cbd5e1" },
-        subValue: { fontSize: 11, bold: true, color: "#ffffff" },
-  
-        // Tarjetas con estética "Glass/Soft"
-        card: {
-          margin: [0, 10, 0, 20],
-          fillColor: "#ffffff",
-        },
-  
-        sectionHeader: {
-          fontSize: 12,
-          bold: true,
-          color: "#0f172a",
-          margin: [0, 6, 0, 6],
-        },
-  
-        label: {
-          bold: true,
-          fontSize: 10,
-          color: "#1e293b",
-        },
-  
-        serviceTitle: {
-          fontSize: 11,
-          bold: true,
-          color: "#334155",
-        },
+        label: { fontSize: 8, bold: true, color: PALETTE.textMuted },
+        value: { fontSize: 10, color: PALETTE.textDark, margin: [0, 2, 0, 0] },
+        miniLabel: { fontSize: 8, bold: true, color: PALETTE.textDark },
+      },
+
+      defaultStyle: {
+        fontSize: 9.5,
+        color: PALETTE.textDark,
       },
 
       images: {
@@ -383,20 +708,21 @@ export class ReporteOrdenServicioService {
       },
 
     };
-  
+
     return docDefinition;
+
   }
 
-  getReporteOrdenServicio(ordenServicio: OrdenServicio){
-    
+  getReporteOrdenServicio(ordenServicio: OrdenServicio) {
+
     const docDefinition = this.generateOrdenServicioReporte(ordenServicio);
 
     return this.printer.createPdf(docDefinition);
 
   }
-  
-  async getBufferReporteOrdenServicio(ordenServicio: OrdenServicio){
-    
+
+  async getBufferReporteOrdenServicio(ordenServicio: OrdenServicio) {
+
     const docDefinition = this.generateOrdenServicioReporte(ordenServicio);
 
     return await this.printer.generatePdf(docDefinition);

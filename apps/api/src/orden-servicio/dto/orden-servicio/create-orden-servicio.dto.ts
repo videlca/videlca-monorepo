@@ -32,11 +32,12 @@ export class CreatePersonalServicioDto {
 
 export class CreateOrdenServicioTarifaDto {
 
-    @ApiProperty({ description: 'Id de tarifa', example: 1, required:true})
+    @ApiProperty({ description: 'Id de tarifa. Opcional: los servicios de horario mixto con tarifa por hora no tienen una tarifa guardada, en ese caso solo enviar idServicio', example: 1, required:false})
+    @IsOptional()
     @IsNumber({}, {message: 'El valor del campo tarifa debe ser un número'})
     @IsPositive({message: 'El valor del campo tarifa debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo tarifa debe ser minimo 1'})
-    idTarifa: number;
+    idTarifa?: number;
 
     @ApiProperty({ description: 'Id de servicio', example: 1, required:true})
     @IsNumber({}, {message: 'El valor del campo servicio debe ser un número'})

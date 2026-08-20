@@ -14,13 +14,14 @@ import { PersonalModule } from '../personal/personal.module';
 import { LiquidacionesModule } from 'src/liquidaciones/liquidaciones.module';
 import { ReportesModule } from 'src/reportes/reportes.module';
 
-import { 
-  OrdenServicio, 
-  OrdenServicioId, 
+import {
+  OrdenServicio,
+  OrdenServicioId,
   OrdenServicioIdAnulado,
-  OrdenServicioTarifa, 
+  OrdenServicioTarifa,
+  CostoHoraOrdenServicioTarifa,
   ObservacionOrdenServicio,
-  ProgramacionPersonal 
+  ProgramacionPersonal
 } from './entities';
 
 import { 
@@ -44,6 +45,7 @@ import {
       OrdenServicioId,
       OrdenServicioIdAnulado,
       OrdenServicioTarifa,
+      CostoHoraOrdenServicioTarifa,
       ObservacionOrdenServicio,
       ProgramacionPersonal,
     ]),
