@@ -89,11 +89,13 @@ export const initialData: SeedData = {
         {descripcion: "flexible"},
     ],
 
+    // Los nombres deben coincidir exactamente con TipoTarifaInterface (src/tarifas/interfaces/tipo-tarifa.interface.ts),
+    // que servicios.service.ts y tarifas.service.ts usan para validar y calcular precios de servicios.
     tiposTarifa: [
-        {nombre: "mes", descripcion: "El precio total del servicio equivale a un mes", tipoUnidadTiempo: "dias", cantidadTiempo: 30},
-        {nombre: "dia", descripcion: "El precio total del servicio equivale a un dia", tipoUnidadTiempo: "no aplica"},
-        {nombre: "hora", descripcion: "El precio total del servicio equivale a una hora", tipoUnidadTiempo: "no aplica"},
-        {nombre: "unidad", descripcion: "El precio total del servicio equivale a un evento o dia", tipoUnidadTiempo: "no aplica"},
+        {nombre: "mensual", descripcion: "El precio total del servicio equivale a un mes", tipoUnidadTiempo: "dias", cantidadTiempo: 30},
+        {nombre: "por turno", descripcion: "El precio total del servicio equivale a un turno (horas fijas)", tipoUnidadTiempo: "no aplica"},
+        {nombre: "por hora", descripcion: "El precio total del servicio equivale a una hora", tipoUnidadTiempo: "no aplica"},
+        {nombre: "por servicio", descripcion: "El precio total del servicio equivale a la totalidad del servicio", tipoUnidadTiempo: "no aplica"},
     ],
     
     estadosOrdenServicio: [

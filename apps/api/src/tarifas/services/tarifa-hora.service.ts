@@ -78,12 +78,21 @@ export class TarifaHoraService {
           throw new NotFoundException(`Tarifa hora descripcion con id "${tarifaHoraDto.idTarifaHoraDescripcion}" no se ha encontrado`);
         }
 
-        let tarifaHora = await queryRunner.manager.findOne(TarifaHora, {
-          where: {
-            idPeriodo: { idPeriodo },
-            idTarifaHoraDescripcion: { idTarifaHoraDescripcion: tarifaHoraDto.idTarifaHoraDescripcion }
-          }
-        });
+        // Nota: no se usa find/findOne con criterio anidado por relacion (where: { idPeriodo: { idPeriodo } })
+        // porque tanto TarifaHora.idPeriodo como TarifaHora.idTarifaHoraDescripcion son relaciones eager cuyo
+        // nombre de propiedad coincide exactamente con el nombre de la PK de la entidad relacionada (idPeriodo,
+        // idTarifaHoraDescripcion); TypeORM genera un WHERE ambiguo/mal formado en ese caso. Con QueryBuilder
+        // se referencia la columna FK explicitamente y no hay ambiguedad. Los leftJoinAndSelect son necesarios
+        // porque QueryBuilder (a diferencia de find/findOne) no aplica automaticamente las relaciones eager.
+        let tarifaHora = await queryRunner.manager
+          .createQueryBuilder(TarifaHora, 'tarifaHora')
+          .leftJoinAndSelect('tarifaHora.idPeriodo', 'idPeriodo')
+          .leftJoinAndSelect('tarifaHora.idTarifaHoraDescripcion', 'idTarifaHoraDescripcion')
+          .where('tarifaHora.idPeriodo = :idPeriodo', { idPeriodo })
+          .andWhere('tarifaHora.idTarifaHoraDescripcion = :idTarifaHoraDescripcion', {
+            idTarifaHoraDescripcion: tarifaHoraDto.idTarifaHoraDescripcion,
+          })
+          .getOne();
 
         if (tarifaHora) {
 
@@ -140,11 +149,14 @@ export class TarifaHoraService {
 
     const tiposTarifaHoraDescripcion = await this.tarifaHoraDescripcionService.findAll();
 
-    const tarifasHora = await this.tarifaHoraRepository.find({
-      where: {
-        idPeriodo: { idPeriodo }
-      }
-    });
+    // Ver nota en guardarTarifasHora sobre por que no se usa find({ where: { idPeriodo: { idPeriodo } } })
+    // y por que hacen falta los leftJoinAndSelect (QueryBuilder no aplica relaciones eager automaticamente)
+    const tarifasHora = await this.tarifaHoraRepository
+      .createQueryBuilder('tarifaHora')
+      .leftJoinAndSelect('tarifaHora.idPeriodo', 'idPeriodo')
+      .leftJoinAndSelect('tarifaHora.idTarifaHoraDescripcion', 'idTarifaHoraDescripcion')
+      .where('tarifaHora.idPeriodo = :idPeriodo', { idPeriodo })
+      .getMany();
 
     return tiposTarifaHoraDescripcion.map(tarifaHoraDescripcion => {
 
@@ -173,12 +185,15 @@ export class TarifaHoraService {
   // Retorna null si aun no se ha configurado un valor para ese periodo (no lanza excepcion)
   async findOneByPeriodoYDescripcion(idPeriodo: number, idTarifaHoraDescripcion: number) {
 
-    return await this.tarifaHoraRepository.findOne({
-      where: {
-        idPeriodo: { idPeriodo },
-        idTarifaHoraDescripcion: { idTarifaHoraDescripcion }
-      }
-    });
+    // Ver nota en guardarTarifasHora sobre por que no se usa findOne({ where: { idPeriodo: { idPeriodo }, ... } })
+    // y por que hacen falta los leftJoinAndSelect (QueryBuilder no aplica relaciones eager automaticamente)
+    return await this.tarifaHoraRepository
+      .createQueryBuilder('tarifaHora')
+      .leftJoinAndSelect('tarifaHora.idPeriodo', 'idPeriodo')
+      .leftJoinAndSelect('tarifaHora.idTarifaHoraDescripcion', 'idTarifaHoraDescripcion')
+      .where('tarifaHora.idPeriodo = :idPeriodo', { idPeriodo })
+      .andWhere('tarifaHora.idTarifaHoraDescripcion = :idTarifaHoraDescripcion', { idTarifaHoraDescripcion })
+      .getOne();
 
   }
 
