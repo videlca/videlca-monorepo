@@ -254,6 +254,7 @@ function RouteComponent() {
                   <OrdenServicioCard
                     key={group.idGrupoLiquidacion}
                     grupoLiquidacion={group}
+                    showTotal={true}
                   />
                 )}
               </div>

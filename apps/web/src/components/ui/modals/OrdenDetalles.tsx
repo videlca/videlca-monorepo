@@ -2,6 +2,7 @@ import {
   Calendar,
   CheckCircle2,
   CircleDollarSign,
+  Clock,
   FileText,
   MapPin,
   User,
@@ -10,6 +11,9 @@ import { SimpleModal } from "../../common/SimpleModal";
 import type { OrdenServicio } from "../../../api/types/orden-servicio";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { timeFormat } from "../../../utils/TimeFormat";
+
+const priceOrNA = (value: number | null | undefined) =>
+  value === null || value === undefined ? "N/A" : priceFormat(value);
 
 export const OrdenDetalles = ({
   isOpenDetails,
@@ -321,178 +325,250 @@ export const OrdenDetalles = ({
             </h3>
           </div>
           <div className="space-y-4">
-            {selectedOrderDetail.tarifas?.map((tarifa: any, index: number) => (
-              <div
-                key={tarifa.idOrdenServicioTarifa}
-                className="rounded-lg border border-gray-300 bg-white p-4"
-              >
-                <h4 className="mb-3 text-base font-semibold text-gray-900">
-                  Tarifa {index + 1}
-                </h4>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Cantidad Personal
-                    </p>
-                    <p className="text-base text-gray-900">
-                      {tarifa.cantidadPersonal}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Horario</p>
-                    <p className="text-base text-gray-900">
-                      {timeFormat(tarifa.horaInicio)} -{" "}
-                      {timeFormat(tarifa.horaFin)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Precio</p>
-                    <p className="text-base font-semibold text-green-700">
-                      {priceFormat(tarifa.precio)}
-                    </p>
-                  </div>
+            {selectedOrderDetail.tarifas?.map((tarifa, index) => {
+              const servicio = tarifa.idServicio;
+              const esPorHora = !tarifa.idTarifa;
 
-                  {/* Información del Servicio */}
-                  <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
-                    <h5 className="mb-2 text-sm font-semibold text-gray-900">
-                      Servicio
-                    </h5>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Código
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {tarifa.idTarifa?.idServicio?.codigo}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Descripción
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {tarifa.idTarifa?.idServicio?.descripcion}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Tipo de Servicio
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {tarifa.idTarifa?.idServicio?.idTipoServicio?.nombre}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Duración
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {
-                            tarifa.idTarifa?.idServicio?.idTipoDuracion
-                              ?.descripcion
-                          }
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Horario
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {
-                            tarifa.idTarifa?.idServicio
-                              ?.idTipoHorarioDescripcion?.nombre
-                          }
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Horas
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {tarifa.idTarifa?.idServicio?.horasFijas > 0
-                            ? `Fijas: ${tarifa.idTarifa?.idServicio?.horasFijas}`
-                            : `Min: ${tarifa.idTarifa?.idServicio?.horasMinimas}, Max: ${tarifa.idTarifa?.idServicio?.horasMaximas}`}
-                        </p>
+              const costosDirectos = tarifa.costosDirectos;
+              const seguroVida = tarifa.seguroVida;
+              const aui = tarifa.aui;
+              const precioAntesIva = tarifa.precioAntesIva;
+              const iva = tarifa.iva;
+
+              return (
+                <div
+                  key={tarifa.idOrdenServicioTarifa}
+                  className="rounded-lg border border-gray-300 bg-white p-4"
+                >
+                  <h4 className="mb-3 text-base font-semibold text-gray-900">
+                    Tarifa {index + 1}
+                  </h4>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Cantidad Personal
+                      </p>
+                      <p className="text-base text-gray-900">
+                        {tarifa.cantidadPersonal}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Horario
+                      </p>
+                      <p className="text-base text-gray-900">
+                        {timeFormat(tarifa.horaInicio)} -{" "}
+                        {timeFormat(tarifa.horaFin)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">
+                        Precio
+                      </p>
+                      <p className="text-base font-semibold text-green-700">
+                        {priceOrNA(tarifa.precio)}
+                      </p>
+                    </div>
+
+                    {/* Información del Servicio */}
+                    <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
+                      <h5 className="mb-2 text-sm font-semibold text-gray-900">
+                        Servicio
+                      </h5>
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Código
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {servicio?.codigo}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Descripción
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {servicio?.descripcion}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Tipo de Servicio
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {servicio?.idTipoServicio?.nombre}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Duración
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {servicio?.idTipoDuracion?.descripcion}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Horario
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {servicio?.idTipoHorarioDescripcion?.nombre}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Horas
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {servicio && servicio.horasFijas > 0
+                              ? `Fijas: ${servicio.horasFijas}`
+                              : `Min: ${servicio?.horasMinimas}, Max: ${servicio?.horasMaximas}`}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Tipo Tarifa
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {esPorHora
+                              ? "Mixto por hora (sin tarifa fija)"
+                              : servicio?.idTipoTarifa?.nombre}
+                          </p>
+                        </div>
+                        {!esPorHora && (
+                          <div>
+                            <p className="text-xs font-medium text-gray-600">
+                              Cantidad Tiempo
+                            </p>
+                            <p className="text-sm text-gray-900">
+                              {servicio?.idTipoTarifa?.cantidadTiempo ||
+                                "N/A"}{" "}
+                              {
+                                servicio?.idTipoTarifa?.idTipoUnidadTiempo
+                                  ?.descripcion
+                              }
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-
-                  {/* Desglose de Costos */}
-                  <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
-                    <h5 className="mb-2 text-sm font-semibold text-gray-900">
-                      Desglose de Costos
-                    </h5>
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Costos Directos
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {priceFormat(tarifa.idTarifa?.costosDirectos)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Seguro de Vida
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {priceFormat(tarifa.idTarifa?.seguroVida)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">AUI</p>
-                        <p className="text-sm text-gray-900">
-                          {priceFormat(tarifa.idTarifa?.aui)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">IVA</p>
-                        <p className="text-sm text-gray-900">
-                          {priceFormat(tarifa.idTarifa?.iva)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Precio Antes IVA
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {priceFormat(tarifa.idTarifa?.precioAntesIva)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Precio Total
-                        </p>
-                        <p className="text-sm font-semibold text-green-700">
-                          {priceFormat(tarifa.idTarifa?.precioTotal)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Tipo Tarifa
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {tarifa.idTarifa?.idTipoTarifa?.nombre}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-600">
-                          Cantidad Tiempo
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {tarifa.idTarifa?.idTipoTarifa?.cantidadTiempo ||
-                            "N/A"}{" "}
-                          {
-                            tarifa.idTarifa?.idTipoTarifa?.idTipoUnidadTiempo
-                              ?.descripcion
-                          }
-                        </p>
+                    <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
+                      <h5 className="mb-2 text-sm font-semibold text-gray-900">
+                        Desglose de Costos
+                      </h5>
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Costos Directos
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {priceOrNA(costosDirectos)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Seguro de Vida
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {priceOrNA(seguroVida)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            AUI
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {priceOrNA(aui)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            IVA
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {priceOrNA(iva)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Precio Antes IVA
+                          </p>
+                          <p className="text-sm text-gray-900">
+                            {priceOrNA(precioAntesIva)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-600">
+                            Precio Total
+                          </p>
+                          <p className="text-sm font-semibold text-green-700">
+                            {priceOrNA(tarifa.precio)}
+                          </p>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Desglose hora a hora: solo aplica a servicios Mixto + Por hora */}
+                    {tarifa.costosHoras && tarifa.costosHoras.length > 0 && (
+                      <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
+                        <h5 className="mb-2 flex items-center gap-1 text-sm font-semibold text-gray-900">
+                          <Clock className="h-4 w-4 text-yellow-600" />
+                          Desglose Hora a Hora
+                        </h5>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead>
+                              <tr className="text-left text-xs font-medium text-gray-600">
+                                <th className="py-1 pr-3">Fecha</th>
+                                <th className="py-1 pr-3">Horario</th>
+                                <th className="py-1 pr-3">Tipo</th>
+                                <th className="py-1 pr-3">Dominical/Festivo</th>
+                                <th className="py-1 pr-3">Horas</th>
+                                <th className="py-1 pr-3">Costos Directos</th>
+                                <th className="py-1 pr-3">Seguro de Vida</th>
+                                <th className="py-1 pr-3">AUI</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {tarifa.costosHoras.map((costoHora, i) => (
+                                <tr key={i} className="text-gray-900">
+                                  <td className="py-1 pr-3 whitespace-nowrap">
+                                    {costoHora.fecha}
+                                  </td>
+                                  <td className="py-1 pr-3 whitespace-nowrap">
+                                    {timeFormat(costoHora.horaInicio)} -{" "}
+                                    {timeFormat(costoHora.horaFin)}
+                                  </td>
+                                  <td className="py-1 pr-3 capitalize">
+                                    {costoHora.tipoHorario}
+                                  </td>
+                                  <td className="py-1 pr-3">
+                                    {costoHora.dominical ? "Sí" : "No"}
+                                  </td>
+                                  <td className="py-1 pr-3">
+                                    {costoHora.horas}
+                                  </td>
+                                  <td className="py-1 pr-3 whitespace-nowrap">
+                                    {priceOrNA(costoHora.costosDirectos)}
+                                  </td>
+                                  <td className="py-1 pr-3 whitespace-nowrap">
+                                    {priceOrNA(costoHora.seguroVida)}
+                                  </td>
+                                  <td className="py-1 pr-3 whitespace-nowrap">
+                                    {priceOrNA(costoHora.aui)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

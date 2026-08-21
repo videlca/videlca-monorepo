@@ -317,14 +317,11 @@ function RouteComponent() {
       }
 
       try {
-        // El precio de la orden ahora se calcula en una sola llamada para todos los servicios
-        // seleccionados (antes se llamaba el endpoint una vez por servicio y se sumaban los precios
-        // a mano); la respuesta ya trae el total de la orden y el desglose de cada servicio
         const [responseHorarioServicio, responsePrecioOrden] = await Promise.all([
           Promise.allSettled(
             configuracionServicioTarifa.map(async (servicio) => {
               return validarHorarioServicioOrdenServicio({
-                idTarifa: servicio.idTarifa || 0,
+                idTarifa: servicio.idTarifa || null,
                 idServicio: servicio.idServicio || 0,
                 horaInicio: timeFormat(servicio.horaInicio),
                 horaFin:
@@ -634,23 +631,31 @@ function RouteComponent() {
 
     setConfiguracionServicioTarifaEdit(
       ordenServicioById?.data?.tarifas.map((servicio) => ({
-        idTarifa: servicio.idTarifa.idTarifa,
+        idTarifa: servicio.idTarifa?.idTarifa || 0,
         cantidadPersonal: servicio.cantidadPersonal,
         horaInicio: servicio.horaInicio,
         horaFin: servicio.horaFin,
         precio: servicio.precio || 0,
         personal: [],
-        idServicio: servicio.idTarifa.idServicio.idServicio,
+        idServicio: servicio.idTarifa?.idServicio.idServicio,
       })) || [],
     );
 
     setSelectedServices(
       ordenServicioById?.data?.tarifas.map((servicio) => ({
-        ...servicio.idTarifa.idServicio,
+        ...servicio?.idTarifa.idServicio,
       })) || [],
     );
 
     setIsIndefinite(ordenServicioById?.data?.fechaFin === null);
+  };
+
+  const handleViewOrder = async (idOrdenServicio: number) => {
+    const ordenServicioById = await obtenerOrdenServicioById(idOrdenServicio);
+    if (ordenServicioById?.data) {
+      setSelectedOrderDetail(ordenServicioById.data);
+      setIsOpenDetails(true);
+    }
   };
 
   const handleDownloadPdf = (idOrdenServicio: number) => {
@@ -785,8 +790,7 @@ function RouteComponent() {
             {
               label: "Ver",
               onClick: () => {
-                setIsOpenDetails(true);
-                setSelectedOrderDetail(row.original);
+                handleViewOrder(row.original.idOrdenServicio);
               },
             },
             {

@@ -1,6 +1,7 @@
 import type { EstadoOrden, Puesto, Usuario } from "../../types";
 import type { GruposLiquidaciones } from "./liquidaciones";
 import type { Tarifa } from "./periodo";
+import type { Servicio } from "./servicio";
 import type { PersonalAsignado } from "./programacion-personal";
 
 export interface OrdenServicio {
@@ -23,12 +24,19 @@ export interface OrdenServicio {
 }
 
 export interface TarifaOrdenServicio {
-  idTarifa: Tarifa;
+  idOrdenServicioTarifa: number;
+  idTarifa: Tarifa | null;
+  idServicio: Servicio;
   cantidadPersonal: number;
   horaInicio: string;
   horaFin: string;
-  idOrdenServicioTarifa: number;
+  costosDirectos: number | null;
+  seguroVida: number | null;
+  aui: number | null;
+  precioAntesIva: number | null;
+  iva: number | null;
   precio: number | null;
+  costosHoras: CostoHoraOrdenServicio[];
 }
 
 export interface OrdenServicioId {

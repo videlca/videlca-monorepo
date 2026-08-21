@@ -164,6 +164,7 @@ export function OrdenesTab({
                   <OrdenServicioCard
                     key={group.idGrupoLiquidacion}
                     grupoLiquidacion={group}
+                    showTotal={true}
                   />
                 )}
               </div>

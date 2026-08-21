@@ -57,7 +57,7 @@ export interface UpdateValidarFechaOrdenServicioDto {
 }
 
 export interface ValidarHorarioServicioDto {
-  idTarifa: number;
+  idTarifa: number | null;
   idServicio: number;
   horaInicio: string;
   horaFin: string;
