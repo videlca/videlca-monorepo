@@ -203,8 +203,8 @@ export class LiquidacionesService {
       // La condicion "t.estado = 1" va en el propio JOIN (no en un andWhere aparte), para que las filas sin tarifa
       // (idTarifa null, servicios mixto por hora) no se descarten de "ost" al no cumplir la condicion
       .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
-      .leftJoinAndSelect('t.idTipoTarifa', 'tt')
       .leftJoinAndSelect('t.idServicio', 's')
+      .leftJoinAndSelect('s.idTipoTarifa', 'tt')
       .leftJoinAndSelect('t.idPeriodo', 'p', 'p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin)')
       .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
       .orderBy('ost.idOrdenServicioTarifa', 'ASC')
@@ -410,8 +410,8 @@ export class LiquidacionesService {
       )
       .leftJoinAndSelect('os.idLocacion', 'l')
       .leftJoinAndSelect('l.idCliente', 'c')
-      .leftJoinAndSelect('t.idTipoTarifa', 'tt')
       .leftJoinAndSelect('t.idServicio', 's')
+      .leftJoinAndSelect('s.idTipoTarifa', 'tt')
       .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
 
       .leftJoin('liquidaciones', 'liq', `
@@ -534,7 +534,16 @@ export class LiquidacionesService {
       if (!grupoLiquidacion) {
         throw new NotFoundException('Grupo de liquidación no encontrado');
       }
-  
+
+      // Borrar primero el detalle (liquidacion_servicio_orden_servicio), ya que referencia a
+      // liquidaciones por FK y no tiene cascade, si no la eliminacion de liquidaciones falla
+      await queryRunner.manager
+        .createQueryBuilder()
+        .delete()
+        .from(LiquidacionServicioOrdenServicio)
+        .where('idLiquidacion IN (SELECT idLiquidacion FROM liquidaciones WHERE idGrupoLiquidacion = :id)', { id: idGrupoLiquidacion })
+        .execute();
+
       await queryRunner.manager
         .createQueryBuilder()
         .delete()
@@ -1098,10 +1107,10 @@ export class LiquidacionesService {
     const zipBuffer = await this.reporteAnexoFacturacionService.generateZip(resultado, resultadoLiquidacion, mes, anio, numeroPedido);
 
     // cambiar estado a TRUE
-    // await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
-    //   campo: 'generacion_anexo',
-    //   valor: 'true'      
-    // })
+    await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
+      campo: 'generacion_anexo',
+      valor: 'true'      
+    })
 
     return {
       zipBuffer: zipBuffer,

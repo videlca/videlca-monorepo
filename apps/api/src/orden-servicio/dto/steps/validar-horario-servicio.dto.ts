@@ -5,6 +5,7 @@ import { IsString, Matches, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength, Is
 export class ValidarHorarioServicioDto {
     
     @ApiProperty({ description: 'Id de tarifa', example: 1, required:true})
+    @IsOptional()
     @IsNumber({}, {message: 'El valor del campo tarifa debe ser un número'})
     @IsPositive({message: 'El valor del campo tarifa debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo tarifa debe ser minimo 1'})
@@ -12,6 +13,7 @@ export class ValidarHorarioServicioDto {
     
     @ApiProperty({ description: 'Id de servicio', example: 1, required:true})
     @IsNumber({}, {message: 'El valor del campo servicio debe ser un número'})
+    @IsOptional()
     @IsPositive({message: 'El valor del campo servicio debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo servicio debe ser minimo 1'})
     idServicio?: number;
