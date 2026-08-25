@@ -14,12 +14,6 @@ export class CreateTarifaDto {
     @IsPositive({message: 'El valor del campo servicio debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo servicio debe ser minimo 1'})
     idServicio: number;
-    
-    @ApiProperty({ description: 'Id del tipo tarifa para el servicio', example: 1, required:true})
-    @IsNumber({}, {message: 'El valor del campo tipo tarifa debe ser un número'})
-    @IsPositive({message: 'El valor del campo tipo tarifa debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo tipo tarifa debe ser minimo 1'})
-    idTipoTarifa: number;
 
     @ApiProperty({ description: 'costos directos del servicio', example: 1, required:true})
     @IsNumber({}, {message: 'El valor del campo costos directos debe ser un número'})

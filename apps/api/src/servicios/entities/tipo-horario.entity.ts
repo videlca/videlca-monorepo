@@ -1,41 +1,47 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { TipoHorarioDescripcion } from ".";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
+// UNA UNICA FILA VIGENTE CONTIENE EL RANGO DE HORAS DIURNO Y NOCTURNO (SON COMPLEMENTARIOS,
+// EL NOCTURNO EMPIEZA EXACTAMENTE DONDE TERMINA EL DIURNO Y VICEVERSA, VER validarHorarios EN EL SERVICE)
 @Entity({name: "tipo_horario"})
 export class TipoHorario {
-    
+
     @PrimaryGeneratedColumn({
         type: 'int',
         name: 'idTipoHorario',
     })
     idTipoHorario: number;
 
-    // tipo horario descripcion -> relacion
-    @ManyToOne(
-        () => TipoHorarioDescripcion,
-        (tipoHorarioDescripcion) => tipoHorarioDescripcion.horarios,
-        // {
-        //     eager: true
-        // }
-    )
-    @JoinColumn({name: 'idTipoHorarioDescripcion'})
-    idTipoHorarioDescripcion: TipoHorarioDescripcion;
-    
     @Column({
         type: 'varchar',
         length: 8,
-        name: 'horaInicio',
+        name: 'horaInicioDiurno',
         nullable: false
     })
-    horaInicio: string; // Formato 'HH:mm:ss'
-    
+    horaInicioDiurno: string; // Formato 'HH:mm:ss'
+
     @Column({
         type: 'varchar',
         length: 8,
-        name: 'horaFin',
+        name: 'horaFinDiurno',
         nullable: false
     })
-    horaFin: string; // Formato 'HH:mm:ss'
+    horaFinDiurno: string; // Formato 'HH:mm:ss'
+
+    @Column({
+        type: 'varchar',
+        length: 8,
+        name: 'horaInicioNocturno',
+        nullable: false
+    })
+    horaInicioNocturno: string; // Formato 'HH:mm:ss'
+
+    @Column({
+        type: 'varchar',
+        length: 8,
+        name: 'horaFinNocturno',
+        nullable: false
+    })
+    horaFinNocturno: string; // Formato 'HH:mm:ss'
 
     @Column({
         type: 'date',

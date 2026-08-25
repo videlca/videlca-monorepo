@@ -93,7 +93,7 @@ export class ReporteConsolidacionService {
             cliente,
             Number(numeroId), // 2
             numeroCliente,
-            servicio.tipoServicio,
+            servicio.armado ? "Armado" : "Monitoreo",
             servicio.servicioAplicacion,
             servicio.codigoServicioSiigo,
             "",

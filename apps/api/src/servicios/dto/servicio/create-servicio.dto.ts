@@ -22,42 +22,34 @@ export class CreateServicioDto {
     idTipoServicio: number;
     
     @ApiProperty({ description: 'Id del tipo de duracion de un servicio', example: 2, required: false})
-    @IsOptional()
     @IsNumber({}, {message: 'El valor del campo tipo duracion debe ser un número'})
-    idTipoDuracion?: number;
+    @IsPositive({message: 'El valor del campo tipo duracion debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo tipo duracion debe ser minimo 1'})
+    idTipoDuracion: number;
     
-    @ApiProperty({ description: 'id del tipo de horario descripcion de un servicio', example: 2, required:true})
-    @IsNumber({}, {message: 'El valor del campo tipo horario descripcion debe ser un número'})
-    @IsPositive({message: 'El valor del campo tipo horario descripcion debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo tipo horario descripcion debe ser minimo 1'})
-    idTipoHorarioDescripcion: number;
-
     @ApiProperty({ description: 'id del tipo de tarifa', example: 2, required:true})
     @IsNumber({}, {message: 'El valor del campo tipo tarifa debe ser un número'})
     @IsPositive({message: 'El valor del campo tipo tarifa debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo tipo tarifa debe ser minimo 1'})
     idTipoTarifa: number;
+
+    @ApiProperty({ description: 'id del tipo de horario descripcion de un servicio', example: 2, required:true})
+    @IsNumber({}, {message: 'El valor del campo tipo horario descripcion debe ser un número'})
+    @IsPositive({message: 'El valor del campo tipo horario descripcion debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo tipo horario descripcion debe ser minimo 1'})
+    idTipoHorarioDescripcion: number;
     
     @ApiProperty({ description: 'Horas fijas que debe cumplir un servicio si el tipo de duracion es fijo', example: 2, required: false})
-    @IsOptional()
     @IsNumber({}, {message: 'El valor del campo horas fijas debe ser un número'})
     @Max(24, {message: 'El valor del campo horas fijas debe ser maximo 24'})
-    horasFijas?: number;
-    
-    @ApiProperty({ description: 'Horas minimas que debe cumplir un servicio si el tipo de duracion es flexible', example: 2, required: false})
-    @IsOptional()
-    @IsNumber({}, {message: 'El valor del campo horas minimas debe ser un número'})
-    @Max(24, {message: 'El valor del campo horas minimas debe ser maximo 24'})
-    horasMinimas?: number;
-    
-    @ApiProperty({ description: 'Horas maximas que debe cumplir un servicio si el tipo de duracion es flexible', example: 2, required: false})
-    @IsOptional()
-    @IsNumber({}, {message: 'El valor del campo horas maximas debe ser un número'})
-    @Max(24, {message: 'El valor del campo horas maximas debe ser maximo 24'})
-    horasMaximas?: number;
+    horasFijas: number;
 
     @ApiProperty({ description: 'Indica si el servicio es dominical o no', example: true, required: false})
     @IsOptional()
     dominical?: boolean;
-    
+
+    @ApiProperty({ description: 'Indica si el servicio es armado o no', example: true, required: false})
+    @IsOptional()
+    armado?: boolean;
+
 }

@@ -9,7 +9,4 @@ export enum TipoHorarioInterface {
     // DIA COMPLETO 24 HORAS
     DIA_COMPLETO = "dia completo (24 horas)",
 
-    // MIXTO
-    MIXTO = "mixto",
-
 }

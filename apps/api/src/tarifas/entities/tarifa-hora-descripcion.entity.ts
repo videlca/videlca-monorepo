@@ -28,22 +28,6 @@ export class TarifaHoraDescripcion {
     })
     descripcion: string;
 
-    // identificar si es tarifa de hora normal o tarifa de hora dominical
-    @Column({
-        type: 'boolean',
-        name: 'dominical',
-        default: false
-    })
-    dominical: boolean;
-
-    // identificar si es tarifa de hora normal o tarifa de hora nocturna
-    @Column({
-        type: 'boolean',
-        name: 'diurno',
-        default: true
-    })
-    diurno: boolean;
-
     // relacion con tarifa hora
     @OneToMany(
         () => TarifaHora, 

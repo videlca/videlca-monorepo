@@ -26,7 +26,7 @@ export class TarifaHoraService {
   ) {}
 
   // CREAR O ACTUALIZAR (UPSERT) LAS TARIFAS POR HORA DE UN PERIODO
-  // Siempre se deben enviar las 4 tarifas por hora (diurna, diurna dominical/festiva, nocturna, nocturna dominical/festiva)
+  // Siempre se deben enviar las 5 tarifas por hora (diurna, diurna dominical/festiva, nocturna, nocturna dominical/festiva, seguro de vida)
   async guardarTarifasHora(saveTarifaHoraDto: SaveTarifaHoraDto) {
 
     const { idPeriodo, tarifas } = saveTarifaHoraDto;
@@ -96,18 +96,14 @@ export class TarifaHoraService {
 
         if (tarifaHora) {
 
-          tarifaHora.costosDirectos = tarifaHoraDto.costosDirectos;
-          tarifaHora.seguroVida = tarifaHoraDto.seguroVida ?? null;
-          tarifaHora.aui = tarifaHoraDto.aui;
+          tarifaHora.precio = tarifaHoraDto.precio;
 
         } else {
 
           tarifaHora = queryRunner.manager.create(TarifaHora, {
             idPeriodo: periodo,
             idTarifaHoraDescripcion: tarifaHoraDescripcion,
-            costosDirectos: tarifaHoraDto.costosDirectos,
-            seguroVida: tarifaHoraDto.seguroVida ?? null,
-            aui: tarifaHoraDto.aui,
+            precio: tarifaHoraDto.precio,
           });
 
         }
@@ -170,9 +166,7 @@ export class TarifaHoraService {
         idTarifaHora: null,
         idPeriodo,
         idTarifaHoraDescripcion: tarifaHoraDescripcion,
-        costosDirectos: null,
-        seguroVida: null,
-        aui: null,
+        precio: null,
         fechaCreacion: null,
         fechaActualizacion: null,
       };

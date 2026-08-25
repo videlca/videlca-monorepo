@@ -49,17 +49,6 @@ export class Servicio {
     @JoinColumn({name: 'idTipoDuracion'})
     idTipoDuracion: TipoDuracion;
 
-    // tipo horario descripcion -> relacion
-    @ManyToOne(
-        () => TipoHorarioDescripcion,
-        (tipoHorarioDescripcion) => tipoHorarioDescripcion.servicios,
-        {
-            eager: true
-        }
-    )
-    @JoinColumn({name: 'idTipoHorarioDescripcion'})
-    idTipoHorarioDescripcion: TipoHorarioDescripcion;
-
     // tipo tarifa -> relacion
     @ManyToOne(
         () => TipoTarifa,
@@ -71,33 +60,25 @@ export class Servicio {
     @JoinColumn({name: 'idTipoTarifa'})
     idTipoTarifa: TipoTarifa;
 
+    // tipo horario descripcion -> relacion
+    @ManyToOne(
+        () => TipoHorarioDescripcion,
+        (tipoHorarioDescripcion) => tipoHorarioDescripcion.servicios,
+        {
+            eager: true
+        }
+    )
+    @JoinColumn({name: 'idTipoHorarioDescripcion'})
+    idTipoHorarioDescripcion: TipoHorarioDescripcion;
+
     @Column({ 
         type: 'int',
         name: 'horasFijas',
-        nullable: true 
+        nullable: false 
     })
     @Min(1)
     @Max(24)
     horasFijas: number;
-    
-    @Column({ 
-        type: 'int',
-        name: 'horasMinimas',
-        nullable: true 
-    })
-    @Min(1)
-    @Max(24)
-    horasMinimas: number;
-    
-    @Column({ 
-        type: 'int',
-        name: 'horasMaximas',
-        default: 24,
-        nullable: true 
-    })
-    @Min(1)
-    @Max(24)
-    horasMaximas: number;
 
     // dominical
     @Column({
@@ -107,6 +88,14 @@ export class Servicio {
     })
     dominical: boolean;
 
+    // armado
+    @Column({
+        type: 'boolean',
+        name: 'armado',
+        default: false
+    })
+    armado: boolean;
+
     // estado
     @Column({
         type: 'boolean',
@@ -114,7 +103,7 @@ export class Servicio {
         default: true
     })
     estado: boolean;
-
+    
     @OneToMany(
         () => Tarifa, 
         (tarifa) => tarifa.idServicio, 

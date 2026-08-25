@@ -243,7 +243,7 @@ export class ReporteInterfaseService {
 
           numeroPedido += 1;
 
-          const tipoServicio = servicio.tipoServicio == TipoServicioInterface.ARMADO ? 10 : 20;  
+          const tipoServicio = servicio.armado ? 10 : 20;  
 
           const codigoProducto = servicio.codigoServicioSiigo.split("-");
 

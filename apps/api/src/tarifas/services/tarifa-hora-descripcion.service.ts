@@ -39,18 +39,15 @@ export class TarifaHoraDescripcionService {
 
   }
 
-  // OBTENER LA TARIFA HORA DESCRIPCION SEGUN SI ES DIURNA/NOCTURNA Y DOMINICAL/NO DOMINICAL
-  async findOneByTipo(diurno: boolean, dominical: boolean) {
+  // OBTENER LA TARIFA HORA DESCRIPCION POR NOMBRE (los nombres validos estan en TipoHoraDescripcionInterface:
+  // "valor hora diurna", "valor hora diurna dominical y festivos", "valor hora nocturna",
+  // "valor hora nocturna dominical y festivos", "seguro de vida")
+  async findOneByName(nombre: string) {
 
-    const tarifaHoraDescripcion = await this.tarifaHoraDescripcionRepository.findOne({
-      where: {
-        diurno,
-        dominical
-      }
-    });
+    const tarifaHoraDescripcion = await this.tarifaHoraDescripcionRepository.findOneBy({ nombre });
 
     if (!tarifaHoraDescripcion) {
-      throw new NotFoundException(`No se ha encontrado la tarifa hora descripcion para diurno="${diurno}" y dominical="${dominical}"`);
+      throw new NotFoundException(`No se ha encontrado la tarifa hora descripcion con nombre "${nombre}"`);
     }
 
     return tarifaHoraDescripcion;

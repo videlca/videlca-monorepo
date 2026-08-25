@@ -92,7 +92,7 @@ export class ReporteTarifasService {
           servicio.descripcion,
           t.costosDirectos,
           t.seguroVida ?? 0,
-          t.costosDirectosSeguroVida,
+          t.costosDirectosSeguroVida ?? 0,
           t.aui,
           t.precioAntesIva,
           t.iva,

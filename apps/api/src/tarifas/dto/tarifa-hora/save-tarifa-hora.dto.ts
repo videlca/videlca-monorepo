@@ -16,13 +16,13 @@ export class SaveTarifaHoraDto {
     idPeriodo: number;
 
     @ApiProperty({
-        description: 'Lista de las 4 tarifas por hora del periodo (diurna, diurna dominical/festiva, nocturna, nocturna dominical/festiva)',
+        description: 'Lista de las 5 tarifas por hora del periodo (diurna, diurna dominical/festiva, nocturna, nocturna dominical/festiva, seguro de vida)',
         type: [CreateTarifaHoraDto],
         required: true
     })
     @IsArray({message: 'Las tarifas por hora deben ser un arreglo'})
-    @ArrayMinSize(4, {message: 'Debe enviar el valor de las 4 tarifas por hora'})
-    @ArrayMaxSize(4, {message: 'Debe enviar el valor de las 4 tarifas por hora'})
+    @ArrayMinSize(5, {message: 'Debe enviar el valor de las 5 tarifas por hora'})
+    @ArrayMaxSize(5, {message: 'Debe enviar el valor de las 5 tarifas por hora'})
     @ValidateNested({ each: true })
     @Type(() => CreateTarifaHoraDto)
     tarifas: CreateTarifaHoraDto[];

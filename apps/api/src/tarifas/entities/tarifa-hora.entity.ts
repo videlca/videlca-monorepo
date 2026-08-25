@@ -33,33 +33,14 @@ export class TarifaHora {
     @JoinColumn({name: 'idTarifaHoraDescripcion'})
     idTarifaHoraDescripcion: TarifaHoraDescripcion;
 
-    // COSTOS DIRECTOS
+    // PRECIO
     @Column({
         type: 'decimal',
-        name: 'costosDirectos',
+        name: 'precio',
         precision: 15,
         scale: 2
     })
-    costosDirectos: number;
-    
-    // SEGURO VIDA
-    @Column({
-        type: 'decimal',
-        name: 'seguroVida',
-        precision: 15,
-        scale: 2,
-        nullable: true
-    })
-    seguroVida: number | null;
-
-    // AUI
-    @Column({
-        type: 'decimal',
-        name: 'aui',
-        precision: 15,
-        scale: 2
-    })
-    aui: number;
+    precio: number;
 
     // FECHA ASIGNACION
     @CreateDateColumn({

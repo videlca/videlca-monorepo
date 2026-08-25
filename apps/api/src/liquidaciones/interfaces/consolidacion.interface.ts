@@ -1,5 +1,5 @@
 export type ServicioAgrupado = {
-  tipoServicio: string;
+  armado: boolean;
   servicioAplicacion: string;
   codigoServicioSiigo: string;
   valorLiquidarAplicacion: number;

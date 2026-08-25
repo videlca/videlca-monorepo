@@ -1,4 +1,7 @@
 export enum TipoHoraDescripcionInterface { 
+
+    // SEGURO VIDA
+    SEGURO_VIDA = "seguro de vida",
     
     // DIURNO
     DIURNO = "valor hora diurna",

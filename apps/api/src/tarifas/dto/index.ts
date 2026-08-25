@@ -2,7 +2,7 @@
 export { SaveTarifaDto } from "./tarifa/save-tarifa.dto";
 export { CreateTarifaDto } from "./tarifa/create-tarifa.dto";
 export { UpdateTarifaDto } from "./tarifa/update-tarifa.dto";
-export { CalcularPreciosTarifaDto } from "./tarifa/calcular-precios-tarifa.dto";
+export { CalcularPreciosTarifaDto, CalcularPrecioServicioDto } from "./tarifa/calcular-precios-tarifa.dto";
 
 // TIPO TARIFA
 export { CreateTipoTarifaDto } from "./tipo-tarifa/create-tipo-tarifa.dto";

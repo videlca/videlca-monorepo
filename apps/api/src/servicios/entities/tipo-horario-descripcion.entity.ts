@@ -1,5 +1,5 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Servicio, TipoHorario } from ".";
+import { Servicio } from ".";
 
 @Entity({name: "tipo_horario_descripcion"})
 export class TipoHorarioDescripcion {
@@ -35,15 +35,9 @@ export class TipoHorarioDescripcion {
     estado: boolean;
 
     @OneToMany(
-        () => Servicio, 
+        () => Servicio,
         (servicio) => servicio.idTipoHorarioDescripcion
     )
     servicios: Servicio[];
-    
-    @OneToMany(
-        () => TipoHorario, 
-        (tipoHorario) => tipoHorario.idTipoHorarioDescripcion
-    )
-    horarios: TipoHorario[];
 
 }

@@ -1,9 +1,9 @@
 export enum TipoDuracionInterface { 
     
-    // FIJA
-    FIJA = "fija",
+    HRS_8 = "8 horas",
 
-    // FLEXIBLE
-    FLEXIBLE = "flexible",
+    HRS_12 = "12 horas",
+
+    HRS_24 = "24 horas",
 
 }

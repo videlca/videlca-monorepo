@@ -1,9 +1,7 @@
 export enum TipoServicioInterface { 
-    
-    // VIGILANCIA
-    ARMADO = "Armado",
 
-    // MONITOREO
-    MONITOREO = "Monitoreo"
+    VIGILANCIA_Y_ESCOLTA = "Vigilancia y escolta",
+
+    MONITOREO_ALARMAS = "Monitoreo de alarmas",
 
 }
