@@ -10,6 +10,7 @@ import { TipoServicioInterface } from '../../servicios/interfaces/tipo-servicio.
 
 import { toUTCDateOnly, endOfMonth, minDate, maxDate, round2 } from '../../common/utils/date-helpers';
 import { PrecioOrdenDto } from '../../orden-servicio/dto';
+import { OrigenServicioEnum } from '../../orden-servicio/interfaces/origen-servicio.interface';
 
 import { EmailService, CorreoDefaultService } from '../../common/services';
 import { ReporteConsolidacionService, ReporteInterfaseService, ReporteLiquidacionService, ReporteAnexoFacturacionService } from '../../reportes/services';
@@ -184,196 +185,154 @@ export class LiquidacionesService {
 
   }
 
+  // CREA LA LIQUIDACION MENSUAL DE UNA ORDEN DE SERVICIO PARA EL MES/ANIO INDICADO.
+  //
+  // CATALOGO: cada fila del desglose (OrdenServicioDetalle) cubre TODO el rango de fechas de la orden (no un dia
+  // especifico), asi que su precio se puede recalcular pidiendole a obtenerPrecio el tramo "desde-hasta" que cae
+  // dentro del mes que se esta liquidando (dias * tarifa), sin importar la hora.
+  //
+  // A LA MEDIDA: cada fila del desglose YA es un dia especifico con su precio ya calculado y guardado (ver
+  // calcularPrecioAMedida), por lo que aca NO se recalcula nada; solo se toman las filas cuya "fecha" cae dentro del
+  // mes que se esta liquidando y se usan sus valores tal cual (esto es lo que requiere el "trato especial" por horas:
+  // una orden de 3 dias que cruza de mes debe repartir cada dia al mes que le corresponde, no prorratear el total)
   private async crearLiquidacionMensualOrden(
-    queryRunner: QueryRunner, 
-    idGrupoLiquidacion: number, 
-    ordenId: number, 
-    anio: number, 
+    queryRunner: QueryRunner,
+    idGrupoLiquidacion: number,
+    ordenId: number,
+    anio: number,
     mes: number
   ){
-    
+
     const ordenServicioLiquidar = await this.ordenRepo
       .createQueryBuilder('os')
       .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
+      .leftJoinAndSelect('os.detalles', 'detalles')
+      .leftJoinAndSelect('detalles.idTarifa', 'tarifa')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
       .where('os.idOrdenServicio = :id', { id: ordenId })
       .andWhere('estado.nombre <> :estado', { estado: 'ANULADA' })
-      .leftJoinAndSelect('os.tarifas', 'ost')
-      // Servicio directo de OrdenServicioTarifa: siempre existe, incluso para servicios mixto por hora que no tienen tarifa guardada
-      .leftJoinAndSelect('ost.idServicio', 'ostServicio')
-      // La condicion "t.estado = 1" va en el propio JOIN (no en un andWhere aparte), para que las filas sin tarifa
-      // (idTarifa null, servicios mixto por hora) no se descarten de "ost" al no cumplir la condicion
-      .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
-      .leftJoinAndSelect('t.idServicio', 's')
-      .leftJoinAndSelect('s.idTipoTarifa', 'tt')
-      .leftJoinAndSelect('t.idPeriodo', 'p', 'p.periodoActivoFacturacion = 1 OR (CURRENT_DATE BETWEEN p.fechaInicio AND p.fechaFin)')
-      .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
-      .orderBy('ost.idOrdenServicioTarifa', 'ASC')
-      .distinct(true)
+      .orderBy('detalles.idOrdenServicioDetalle', 'ASC')
       .getOne()
 
     if (!ordenServicioLiquidar) throw new BadRequestException('Orden no encontrada');
+
+    const esCatalogo = ordenServicioLiquidar.origenServicio === OrigenServicioEnum.CATALOGO;
+
+    const mesIni = new Date(Date.UTC(anio, mes - 1, 1));
+    const mesFin = endOfMonth(mesIni);
+    const start = toUTCDateOnly(ordenServicioLiquidar.fechaInicio);
+
+    let desde: Date;
+    let hasta: Date;
 
     if (ordenServicioLiquidar.fechaFin !== null) {
 
       const total = Number(ordenServicioLiquidar.precioTotal ?? 0);
 
-      const mesIni = new Date(Date.UTC(anio, mes - 1, 1));
-      const start = toUTCDateOnly(ordenServicioLiquidar.fechaInicio);
+      const end = toUTCDateOnly(ordenServicioLiquidar.fechaFin);
 
-      const end = ordenServicioLiquidar.fechaFin ? toUTCDateOnly(ordenServicioLiquidar.fechaFin) : null;
-      const mesFin = endOfMonth(mesIni);
-
-      const desde = maxDate(start, mesIni);
-      const hasta = end ? minDate(end, mesFin) : mesFin;
+      desde = maxDate(start, mesIni);
+      hasta = minDate(end, mesFin);
 
       if (!isFinite(total) || total <= 0) throw new BadRequestException('PrecioTotal inválido');
 
       if (hasta < desde) throw new BadRequestException('La orden no tiene días en el mes solicitado');
 
-      let totalTarifas = 0;
+    } else {
 
-      // 3) inserta liquidación con FK del grupo
-      const liquidacionOrden = queryRunner.manager.create(Liquidacione, {
-        valor_liquidacion: 0,
-        ordenServicio: ordenServicioLiquidar,
-        idGrupoLiquidacion: idGrupoLiquidacion,
-        aniomes_liquidacion: `${anio}${mes}`
-      })
-
-      await queryRunner.manager.save(Liquidacione, liquidacionOrden);
-
-      for (const tarifa of ordenServicioLiquidar.tarifas ?? []) {
-
-        // Los servicios de horario mixto por hora no tienen tarifa guardada (tarifa.idTarifa es null), en ese caso
-        // se calcula con el idServicio directo y el valor hora del periodo activo de facturacion
-        const precioOrden: PrecioOrdenDto = {
-          fechaInicio: desde,
-          fechaFin: hasta,
-          servicios: [{
-            idTarifa: tarifa.idTarifa ? tarifa.idTarifa.idTarifa : undefined,
-            idServicio: tarifa.idServicio.idServicio,
-            horaInicio: tarifa.horaInicio,
-            horaFin: tarifa.horaFin,
-          }],
-        };
-
-        // obtenerPrecio ya calcula el valor a cobrar exactamente para el rango de fechas que se le envia
-        // (en este caso "desde"-"hasta", el tramo de la orden que cae dentro del mes que se esta liquidando),
-        // no hay que volver a prorratear ese resultado
-        const {
-
-          costosDirectos,
-          seguroVida,
-          aui,
-          costosDirectosSeguroVida,
-          precioAntesIva,
-          iva,
-          precio,
-
-        } = await this.ordenServicioService.obtenerPrecio(precioOrden);
-
-        const liquidacionServicio = queryRunner.manager.create(LiquidacionServicioOrdenServicio, {
-          idLiquidacion: liquidacionOrden,
-          idTarifa: tarifa.idTarifa ?? null,
-          idServicio: tarifa.idServicio,
-          costosDirectos,
-          seguroVida,
-          costosDirectosSeguroVida,
-          aui,
-          precioAntesIva,
-          iva,
-          precioTotal: precio
-        });
-
-        const savedLiquidacionServicio = await queryRunner.manager.save(LiquidacionServicioOrdenServicio, liquidacionServicio);
-
-        totalTarifas += +precio;
-
+      // ORDENES INDEFINIDAS: no aplica para "a la medida" (esas siempre requieren fecha de fin, ver validacion al crear)
+      if (!esCatalogo) {
+        throw new BadRequestException('No se puede liquidar una orden a la medida indefinida (sin fecha de fin)');
       }
 
-      liquidacionOrden.valor_liquidacion = round2(totalTarifas);
-
-      const savedLiquidacionOrden = await queryRunner.manager.save(Liquidacione, liquidacionOrden);
-
-    }
-
-    // INDEFINIDAS
-    else if (!ordenServicioLiquidar.fechaFin) {
-
-      const start = toUTCDateOnly(ordenServicioLiquidar.fechaInicio);
-
-      const mesIni = new Date(Date.UTC(anio, mes - 1, 1));
-      const mesFin = endOfMonth(mesIni);
-
-      // Validación de solapamiento con el mes
       if (mesFin < start) throw new BadRequestException('La orden no tiene días en el mes solicitado');
 
-      const desde = maxDate(start, mesIni);
-      const hasta = mesFin;
+      desde = maxDate(start, mesIni);
+      hasta = mesFin;
 
-      //lógica de orden indefinida.
-      let totalTarifas = 0;
+    }
 
-      const liquidacionOrden = queryRunner.manager.create(Liquidacione, {
-        valor_liquidacion: 0,
-        ordenServicio: ordenServicioLiquidar,
-        idGrupoLiquidacion: idGrupoLiquidacion,
-        aniomes_liquidacion: `${anio}${mes}`
-      })
+    let totalTarifas = 0;
 
-      await queryRunner.manager.save(Liquidacione, liquidacionOrden);
+    const liquidacionOrden = queryRunner.manager.create(Liquidacione, {
+      valor_liquidacion: 0,
+      ordenServicio: ordenServicioLiquidar,
+      idGrupoLiquidacion: idGrupoLiquidacion,
+      aniomes_liquidacion: `${anio}${mes}`
+    })
 
-      for (const tarifa of ordenServicioLiquidar.tarifas ?? []) {
+    await queryRunner.manager.save(Liquidacione, liquidacionOrden);
 
+    for (const detalle of ordenServicioLiquidar.detalles ?? []) {
+
+      let costosDirectos: number, seguroVida: number, aui: number, costosDirectosSeguroVida: number, precioAntesIva: number, iva: number, precio: number;
+
+      if (esCatalogo) {
+
+        // CATALOGO: la fila cubre todo el rango de la orden, se recalcula para el tramo "desde-hasta" de este mes.
+        // obtenerPrecio ya calcula el valor exacto para ese rango (dias * tarifa), no hay que volver a prorratear
         const precioOrden: PrecioOrdenDto = {
+          origenServicio: OrigenServicioEnum.CATALOGO,
           fechaInicio: desde,
           fechaFin: hasta,
           servicios: [{
-            idTarifa: tarifa.idTarifa ? tarifa.idTarifa.idTarifa : undefined,
-            idServicio: tarifa.idServicio.idServicio,
-            horaInicio: tarifa.horaInicio,
-            horaFin: tarifa.horaFin,
+            idTarifa: detalle.idTarifa.idTarifa,
+            horaInicio: detalle.horaInicio,
+            horaFin: detalle.horaFin,
           }],
         };
 
-        // obtenerPrecio ya calcula el valor a cobrar exactamente para el rango de fechas que se le envia
-        // (en este caso "desde"-"hasta", el tramo del mes que se esta liquidando), no hay que volver a prorratear
-        const {
+        const resultado = await this.ordenServicioService.obtenerPrecio(precioOrden);
 
-          costosDirectos,
-          seguroVida,
-          aui,
-          costosDirectosSeguroVida,
-          precioAntesIva,
-          iva,
-          precio,
+        costosDirectos = resultado.costosDirectos;
+        seguroVida = resultado.seguroVida;
+        aui = resultado.aui;
+        costosDirectosSeguroVida = resultado.costosDirectosSeguroVida;
+        precioAntesIva = resultado.precioAntesIva;
+        iva = resultado.iva;
+        precio = resultado.precio;
 
-        } = await this.ordenServicioService.obtenerPrecio(precioOrden);
+      } else {
 
-        const liquidacionServicio = queryRunner.manager.create(LiquidacionServicioOrdenServicio, {
-          idLiquidacion: liquidacionOrden,
-          idTarifa: tarifa.idTarifa ?? null,
-          idServicio: tarifa.idServicio,
-          costosDirectos,
-          seguroVida,
-          costosDirectosSeguroVida,
-          aui,
-          precioAntesIva,
-          iva,
-          precioTotal: precio
-        });
+        // A LA MEDIDA: la fila ya es un dia especifico con su precio ya calculado. Si su fecha no cae en el mes
+        // que se esta liquidando, se omite (le corresponde a otro mes); si cae, se usa el valor ya guardado tal cual
+        if (!detalle.fecha) continue;
 
-        const savedLiquidacionServicio = await queryRunner.manager.save(LiquidacionServicioOrdenServicio, liquidacionServicio);
+        const fechaDetalle = toUTCDateOnly(detalle.fecha);
 
-        totalTarifas += +precio;
+        if (fechaDetalle < desde || fechaDetalle > hasta) continue;
+
+        costosDirectos = Number(detalle.costosDirectos ?? 0);
+        seguroVida = Number(detalle.seguroVida ?? 0);
+        aui = Number(detalle.aui ?? 0);
+        costosDirectosSeguroVida = Number(detalle.costosDirectosSeguroVida ?? 0);
+        precioAntesIva = Number(detalle.precioAntesIva ?? 0);
+        iva = Number(detalle.iva ?? 0);
+        precio = Number(detalle.precio ?? 0);
 
       }
 
-      liquidacionOrden.valor_liquidacion = round2(totalTarifas);
+      const liquidacionServicio = queryRunner.manager.create(LiquidacionServicioOrdenServicio, {
+        idLiquidacion: liquidacionOrden,
+        idTarifa: detalle.idTarifa,
+        costosDirectos,
+        seguroVida,
+        costosDirectosSeguroVida,
+        aui,
+        precioAntesIva,
+        iva,
+        precioTotal: precio
+      });
 
-      const savedLiquidacionOrden = await queryRunner.manager.save(Liquidacione, liquidacionOrden);
+      await queryRunner.manager.save(LiquidacionServicioOrdenServicio, liquidacionServicio);
+
+      totalTarifas += +precio;
 
     }
+
+    liquidacionOrden.valor_liquidacion = round2(totalTarifas);
+
+    await queryRunner.manager.save(Liquidacione, liquidacionOrden);
 
   }
 
@@ -399,10 +358,8 @@ export class LiquidacionesService {
       })
       .andWhere('eos.nombre <> :estado', { estado: 'ANULADA' })
       .leftJoinAndSelect('os.ordenServicioId', 'osid')
-      .leftJoinAndSelect('os.tarifas', 'ost')
-      // Servicio directo de OrdenServicioTarifa: siempre existe, incluso para servicios mixto por hora sin tarifa guardada
-      .leftJoinAndSelect('ost.idServicio', 'ostServicio')
-      .leftJoinAndSelect('ost.idTarifa', 't', 't.estado = 1')
+      .leftJoinAndSelect('os.detalles', 'detalles')
+      .leftJoinAndSelect('detalles.idTarifa', 't', 't.estado = 1')
       .leftJoinAndSelect(
         't.idPeriodo',
         'p',
@@ -422,7 +379,7 @@ export class LiquidacionesService {
       })
       .andWhere('liq.idLiquidacion IS NULL')
       .orderBy('os.idOrdenServicio', 'ASC')
-      .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
+      .addOrderBy('detalles.idOrdenServicioDetalle', 'ASC')
       .distinct(true);
 
     return qb.getMany();
@@ -674,21 +631,15 @@ export class LiquidacionesService {
       .leftJoinAndSelect('liqsos.idTarifa', 'tarifaLiq')
       .leftJoinAndSelect('tarifaLiq.idServicio', 'servicioLiq')
       .leftJoinAndSelect('servicioLiq.idTipoServicio', 'tipoServicioLiq')
-      // Servicio directo de la liquidacion: siempre existe, incluso para servicios mixto por hora sin tarifa guardada
-      .leftJoinAndSelect('liqsos.idServicio', 'servicioLiqDirecto')
-      .leftJoinAndSelect('servicioLiqDirecto.idTipoServicio', 'tipoServicioLiqDirecto')
       .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
       .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
-      .leftJoinAndSelect('orden.tarifas', 'ost')
-      .leftJoinAndSelect('ost.idTarifa', 'tarifa')
-      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
       .orderBy('cliente.nombre', 'ASC')
       .addOrderBy('orden.idOrdenServicio', 'ASC')
-      .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
+      .addOrderBy('liqsos.idLiquidacionServicioOrdenServicio', 'ASC')
       .getMany();
 
     console.log(`Liquidaciones encontradas para el grupo ${grupoId}: ${liquidaciones.length}`);
@@ -726,15 +677,13 @@ export class LiquidacionesService {
     
       for (const liquidacionServicioOrdenServicio of liq.liquidacionServiciosOrdenServicio) {
 
-        // Se usa el servicio directo (siempre existe) en vez de idTarifa.idServicio, ya que idTarifa puede ser
-        // null para servicios de horario mixto por hora. Se agrupa por idServicio en vez de por idTarifa por la misma razon
-        const servicio = liquidacionServicioOrdenServicio.idServicio;
+        const servicio = liquidacionServicioOrdenServicio.idTarifa.idServicio;
         const idServicio = servicio.idServicio;
 
         if (!agrupado[clienteId].servicios[idServicio]) {
 
           agrupado[clienteId].servicios[idServicio] = {
-            tipoServicio: servicio.idTipoServicio.requierePersonal ? TipoServicioInterface.ARMADO : TipoServicioInterface.MONITOREO,
+            armado: servicio.armado,
             servicioAplicacion: servicio.descripcion,
             codigoServicioSiigo: servicio.codigo,
             valorLiquidarAplicacion: 0,
@@ -807,10 +756,6 @@ export class LiquidacionesService {
       .leftJoinAndSelect('tarifaLiq.idServicio', 'servicioLiq')
       .leftJoinAndSelect('servicioLiq.idTipoServicio', 'tipoServicioLiq')
       .leftJoinAndSelect('servicioLiq.idTipoHorarioDescripcion', 'tipoHorario') // 🆕 nuevo join
-      // Servicio directo de la liquidacion: siempre existe, incluso para servicios mixto por hora sin tarifa guardada
-      .leftJoinAndSelect('liqsos.idServicio', 'servicioLiqDirecto')
-      .leftJoinAndSelect('servicioLiqDirecto.idTipoServicio', 'tipoServicioLiqDirecto')
-      .leftJoinAndSelect('servicioLiqDirecto.idTipoHorarioDescripcion', 'tipoHorarioDirecto')
       .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
       .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
@@ -818,13 +763,10 @@ export class LiquidacionesService {
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
       .leftJoinAndSelect('cliente.idSubSegmentacion', 'subsegmentacion') // 🆕 nuevo join
-      .leftJoinAndSelect('orden.tarifas', 'ost')
-      .leftJoinAndSelect('ost.idTarifa', 'tarifa')
-      .leftJoinAndSelect('tarifa.idPeriodo', 'periodo')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
       .orderBy('cliente.nombre', 'ASC')
       .addOrderBy('orden.idOrdenServicio', 'ASC')
-      .addOrderBy('ost.idOrdenServicioTarifa', 'ASC')
+      .addOrderBy('liqsos.idLiquidacionServicioOrdenServicio', 'ASC')
       .getMany();
 
     console.log(`Liquidaciones encontradas para el grupo ${grupoId}: ${liquidaciones.length}`);
@@ -861,9 +803,7 @@ export class LiquidacionesService {
 
       for (const liquidacionServicioOrdenServicio of liq.liquidacionServiciosOrdenServicio) {
 
-        // Se usa el servicio directo (siempre existe) en vez de idTarifa.idServicio, ya que idTarifa puede ser
-        // null para servicios de horario mixto por hora
-        const servicio = liquidacionServicioOrdenServicio.idServicio;
+        const servicio = liquidacionServicioOrdenServicio.idTarifa.idServicio;
 
         agrupado[clienteId].servicios.push({
           ordenServicio: liq.ordenServicio.ordenServicioId.descripcionId,
@@ -871,7 +811,7 @@ export class LiquidacionesService {
           ciudad: liq.ordenServicio.idLocacion.idCiudad.descripcion,
           puesto: liq.ordenServicio.idLocacion.nombre,
           descripcionServicio: servicio.descripcion,
-          tipoServicio: servicio.idTipoServicio.requierePersonal ? TipoServicioInterface.ARMADO : TipoServicioInterface.MONITOREO,
+          tipoServicio: servicio.armado ? "Armado" : "Monitoreo",
           codigoServicioSiigo: servicio.codigo,
           horarioServicio: servicio.idTipoHorarioDescripcion.nombre,
 

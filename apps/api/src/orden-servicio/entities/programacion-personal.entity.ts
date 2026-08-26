@@ -1,5 +1,4 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { OrdenServicioTarifa } from "./orden-servicio-tarifa.entity";
 import { Personal } from "../../personal/entities";
 
 @Entity({name: "programacion_personal"})
@@ -10,16 +9,6 @@ export class ProgramacionPersonal {
         name: 'idProgramacionPersonal',
     })
     idProgramacionPersonal: number;
-
-    @ManyToOne(
-        () => OrdenServicioTarifa, 
-        (ordenServicioTarifa) => ordenServicioTarifa.programaciones, 
-        {
-            onDelete: 'CASCADE',
-        }
-    )
-    @JoinColumn({name: 'idOrdenServicioTarifa'})
-    idOrdenServicioTarifa: OrdenServicioTarifa;
 
     @ManyToOne(
         () => Personal, 

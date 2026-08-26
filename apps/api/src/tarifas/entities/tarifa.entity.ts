@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany, CreateDateColumn, UpdateDateColumn } from "typeorm";
 import { Periodo } from "../../periodos/entities/periodo.entity";
 import { Servicio } from "../../servicios/entities";
-import { OrdenServicioTarifa } from "../../orden-servicio/entities/orden-servicio-tarifa.entity";
+import { OrdenServicioDetalle } from "../../orden-servicio/entities/orden-servicio-detalle.entity";
 import { LiquidacionServicioOrdenServicio } from "../../liquidaciones/entities/liquidacion_servicio_orden_servicio.entity";
 
 @Entity({name: 'tarifa'})
@@ -122,10 +122,10 @@ export class Tarifa {
     fechaActualizacion: Date;
 
     @OneToMany(
-        () => OrdenServicioTarifa,
-        (ordenServicioTarifa) => ordenServicioTarifa.idTarifa
+        () => OrdenServicioDetalle,
+        (ordenServicioDetalle) => ordenServicioDetalle.idTarifa
     )
-    ordenesServicio: OrdenServicioTarifa[];
+    ordenesServicio: OrdenServicioDetalle[];
 
     @OneToMany(
         () => LiquidacionServicioOrdenServicio,

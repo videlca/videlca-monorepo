@@ -82,11 +82,6 @@ export class OrdenServicioController {
     return this.ordenServicioService.obtenerPrecio(obtenerPrecioOrdenDto);
   }
   
-  @Post('empleados-disponibles')
-  validarEmpleadosDisponibles(@Body() validarEmpleadosDisponiblesDto: ValidarEmpleadosDisponiblesDto){
-    return this.ordenServicioService.getEmpleadosDisponibles(validarEmpleadosDisponiblesDto);
-  }
-  
   @Post('validar-rango-horarios-orden')
   validarRangoHorariosPersonal(@Body() validarRangoHorarioEmpleado: ValidarRangoHorarioPersonalOrdenDto){
     return this.ordenServicioService.validarAsignaciones(validarRangoHorarioEmpleado);

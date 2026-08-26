@@ -5,9 +5,8 @@ import { es } from 'date-fns/locale';
 
 import { PrinterService } from '../../common/services';
 
-import { OrdenServicio } from '../../orden-servicio/entities';
-import { OrdenServicioTarifa } from '../../orden-servicio/entities';
-import { CostoHoraOrdenServicioTarifa } from '../../orden-servicio/entities';
+import { OrdenServicio, OrdenServicioDetalle } from '../../orden-servicio/entities';
+import { OrigenServicioEnum } from '../../orden-servicio/interfaces/origen-servicio.interface';
 
 // ===================================================================
 // PALETA DE COLORES
@@ -433,36 +432,60 @@ export class ReporteOrdenServicioService {
 
   private buildServicios(ordenServicio: OrdenServicio): Content {
 
+    // CATALOGO: cada fila del desglose es un servicio distinto del catalogo, se muestran uno por uno
+    if (ordenServicio.origenServicio === OrigenServicioEnum.CATALOGO) {
+
+      const filas: TableCell[][] = [
+        [
+          { text: 'SERVICIO', style: 'label' },
+          { text: 'HORARIO', style: 'label' },
+          { text: 'TARIFA', style: 'label' },
+        ],
+      ];
+
+      ordenServicio.detalles.forEach((servicioOrden, index) => {
+
+        const servicio = servicioOrden.idTarifa.idServicio;
+
+        filas.push([
+          { text: `${index + 1}. ${servicio.descripcion}\n`, bold: true, fontSize: 9.5, color: PALETTE.textDark,
+            margin: [0, 4, 0, 0],
+          },
+          { text: `${servicioOrden.horaInicio} - ${servicioOrden.horaFin}`, margin: [0, 4, 0, 0] },
+          { text: servicio.idTipoTarifa?.nombre ?? '-', margin: [0, 4, 0, 0] },
+        ]);
+
+        filas.push([
+          { text: `Código: ${servicio.codigo}`, colSpan: 3, fontSize: 8, italics: true, color: PALETTE.textMuted, margin: [0, 0, 0, 4] },
+          { text: '' }, { text: '' },
+        ]);
+
+      });
+
+      return this.card(PALETTE.servicios, ['40%', '30%', '30%'], 'Servicios asociados', filas);
+
+    }
+
+    // A LA MEDIDA: es un unico servicio continuo, cada fila del desglose es un dia (no servicios distintos).
+    // Se muestra un resumen: rango horario del primer y ultimo dia, y la cantidad de dias en total
+    const detalles = ordenServicio.detalles;
+    const primerDetalle = detalles[0];
+    const ultimoDetalle = detalles[detalles.length - 1];
+
     const filas: TableCell[][] = [
       [
         { text: 'SERVICIO', style: 'label' },
         { text: 'HORARIO', style: 'label' },
-        { text: 'PERSONAL', style: 'label' },
-        { text: 'TARIFA', style: 'label' },
+        { text: 'DÍAS', style: 'label' },
+      ],
+      [
+        { text: 'Servicio a la medida', bold: true, fontSize: 9.5, color: PALETTE.textDark, margin: [0, 4, 0, 4] },
+        { text: primerDetalle ? `${primerDetalle.horaInicio} - ${ultimoDetalle.horaFin}` : '-', margin: [0, 4, 0, 4] },
+        { text: detalles.length.toString(), margin: [0, 4, 0, 4] },
       ],
     ];
 
-    ordenServicio.tarifas.forEach((servicioOrden, index) => {
-
-      const servicio = servicioOrden.idServicio;
-
-      filas.push([
-        { text: `${index + 1}. ${servicio.descripcion}\n`, bold: true, fontSize: 9.5, color: PALETTE.textDark,
-          margin: [0, 4, 0, 0],
-        },
-        { text: `${servicioOrden.horaInicio} - ${servicioOrden.horaFin}`, margin: [0, 4, 0, 0] },
-        { text: servicioOrden.cantidadPersonal?.toString() ?? '0', margin: [0, 4, 0, 0] },
-        { text: servicio.idTipoTarifa?.nombre ?? '-', margin: [0, 4, 0, 0] },
-      ]);
-
-      filas.push([
-        { text: `Código: ${servicio.codigo}`, colSpan: 4, fontSize: 8, italics: true, color: PALETTE.textMuted, margin: [0, 0, 0, 4] },
-        { text: '' }, { text: '' }, { text: '' },
-      ]);
-
-    });
-
-    return this.card(PALETTE.servicios, ['34%', '26%', '16%', '24%'], 'Servicios asociados', filas);
+    return this.card(PALETTE.servicios, ['40%', '30%', '30%'], 'Servicios asociados', filas);
 
   }
 
@@ -500,7 +523,7 @@ export class ReporteOrdenServicioService {
 
   }
 
-  private buildTablaPrecioServicio(servicioOrden: OrdenServicioTarifa): ContentTable {
+  private buildTablaPrecioServicio(servicioOrden: OrdenServicioDetalle): ContentTable {
 
     return {
       margin: [0, 4, 0, 4],
@@ -540,36 +563,35 @@ export class ReporteOrdenServicioService {
 
   }
 
-  private buildTablaCostosHoras(costosHoras: CostoHoraOrdenServicioTarifa[]): ContentTable {
+  // DESGLOSE DIA A DIA PARA ORDENES A LA MEDIDA: cada fila de OrdenServicioDetalle representa un dia completo
+  // (costos directos ya combinan las horas diurnas/nocturnas de ese dia, ver calcularPrecioAMedida). No tienen un
+  // campo fecha propio, se numeran secuencialmente en el orden en que fueron creadas (orden cronologico)
+  private buildTablaDesgloseDias(detalles: OrdenServicioDetalle[]): ContentTable {
 
-    const filas = [...costosHoras]
-      .sort((a, b) => `${a.fecha}${a.horaInicio}`.localeCompare(`${b.fecha}${b.horaInicio}`))
-      .map(segmento => ([
-        { text: this.formatearFechaCorta(segmento.fecha), fontSize: 7.5 },
-        { text: `${segmento.horaInicio} - ${segmento.horaFin}`, fontSize: 7.5 },
-        { text: segmento.tipoHorario === 'diurno' ? 'Diurno' : 'Nocturno', fontSize: 7.5 },
-        { text: segmento.dominical ? 'Dominical/Festivo' : 'Ordinario', fontSize: 7.5, color: segmento.dominical ? '#DC2626' : PALETTE.textDark },
-        { text: Number(segmento.horas).toString(), fontSize: 7.5, alignment: 'center' },
-        { text: this.formatearMoneda(segmento.costosDirectos), fontSize: 7.5 },
-        { text: this.formatearMoneda(segmento.seguroVida), fontSize: 7.5 },
-        { text: this.formatearMoneda(segmento.aui), fontSize: 7.5 },
-      ]));
+    const filas = detalles.map((detalle, index) => ([
+      { text: `Día ${index + 1}`, fontSize: 7.5 },
+      { text: `${detalle.horaInicio} - ${detalle.horaFin}`, fontSize: 7.5 },
+      { text: detalle.cantidadHoras != null ? detalle.cantidadHoras.toString() : '-', fontSize: 7.5, alignment: 'center' },
+      { text: this.formatearMoneda(detalle.costosDirectos), fontSize: 7.5 },
+      { text: this.formatearMoneda(detalle.seguroVida), fontSize: 7.5 },
+      { text: this.formatearMoneda(detalle.aui), fontSize: 7.5 },
+      { text: this.formatearMoneda(detalle.precio), fontSize: 7.5, bold: true, color: PALETTE.navy.accent },
+    ]));
 
     return {
       margin: [0, 2, 0, 8],
       table: {
         headerRows: 1,
-        widths: ['12%', '15%', '10%', '17%', '8%', '13%', '13%', '12%'],
+        widths: ['12%', '18%', '10%', '16%', '16%', '13%', '15%'],
         body: [
           [
-            { text: 'FECHA', style: 'miniLabel', fontSize: 7 },
-            { text: 'HORARIO', style: 'miniLabel', fontSize: 7 },
-            { text: 'TIPO', style: 'miniLabel', fontSize: 7 },
             { text: 'DÍA', style: 'miniLabel', fontSize: 7 },
+            { text: 'HORARIO', style: 'miniLabel', fontSize: 7 },
             { text: 'HORAS', style: 'miniLabel', fontSize: 7 },
             { text: 'C. DIRECTOS', style: 'miniLabel', fontSize: 7 },
             { text: 'SEGURO VIDA', style: 'miniLabel', fontSize: 7 },
             { text: 'AUI', style: 'miniLabel', fontSize: 7 },
+            { text: 'TOTAL', style: 'miniLabel', fontSize: 7 },
           ],
           ...filas,
         ],
@@ -618,31 +640,43 @@ export class ReporteOrdenServicioService {
 
     }
 
-    for (const servicioOrden of ordenServicio.tarifas) {
+    if (ordenServicio.origenServicio === OrigenServicioEnum.CATALOGO) {
 
+      // CATALOGO: cada fila del desglose es un servicio distinto, se muestra su propia tabla de precio
+      for (const servicioOrden of ordenServicio.detalles) {
+
+        contenido.push({
+          text: servicioOrden.idTarifa.idServicio.descripcion,
+          bold: true,
+          fontSize: 10,
+          color: PALETTE.textDark,
+          margin: [0, 6, 0, 0],
+        });
+
+        contenido.push(this.buildTablaPrecioServicio(servicioOrden));
+
+      }
+
+    } else {
+
+      // A LA MEDIDA: es un unico servicio continuo, se muestra el desglose dia a dia (cada fila = un dia)
       contenido.push({
-        text: servicioOrden.idServicio.descripcion,
+        text: 'Servicio a la medida',
         bold: true,
         fontSize: 10,
         color: PALETTE.textDark,
         margin: [0, 6, 0, 0],
       });
 
-      contenido.push(this.buildTablaPrecioServicio(servicioOrden));
+      contenido.push({
+        text: 'Desglose por día',
+        fontSize: 8.5,
+        italics: true,
+        color: PALETTE.textMuted,
+        margin: [0, 2, 0, 2],
+      });
 
-      if (servicioOrden.costosHoras && servicioOrden.costosHoras.length > 0) {
-
-        contenido.push({
-          text: 'Desglose por horas (horario mixto)',
-          fontSize: 8.5,
-          italics: true,
-          color: PALETTE.textMuted,
-          margin: [0, 2, 0, 2],
-        });
-
-        contenido.push(this.buildTablaCostosHoras(servicioOrden.costosHoras));
-
-      }
+      contenido.push(this.buildTablaDesgloseDias(ordenServicio.detalles));
 
     }
 

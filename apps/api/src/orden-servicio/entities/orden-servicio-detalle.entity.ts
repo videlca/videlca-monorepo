@@ -1,23 +1,20 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { OrdenServicio } from "./orden-servicio.entity";
 import { Tarifa } from "../../tarifas/entities";
-import { Servicio } from "../../servicios/entities";
-import { ProgramacionPersonal } from "./programacion-personal.entity";
-import { CostoHoraOrdenServicioTarifa } from "./orden-servicio-tarifa-costo-hora.entity";
 
-@Entity({name: "orden_servicio_tarifa"})
-export class OrdenServicioTarifa {
+@Entity({name: "orden_servicio_detalle"})
+export class OrdenServicioDetalle {
 
     @PrimaryGeneratedColumn({
         type: 'int',
-        name: 'idOrdenServicioTarifa',
+        name: 'idOrdenServicioDetalle',
     })
-    idOrdenServicioTarifa: number;
+    idOrdenServicioDetalle: number;
 
     // orden de servicio -> relacion
     @ManyToOne(
         () => OrdenServicio,
-        (ordenServicio) => ordenServicio.tarifas,
+        (ordenServicio) => ordenServicio.detalles,
         {
             onDelete: 'CASCADE'
         }
@@ -26,36 +23,33 @@ export class OrdenServicioTarifa {
     idOrdenServicio: OrdenServicio;
 
     // tarifa de la orden de servicio -> relacion
-    // Nullable: los servicios de horario mixto por hora no tienen una tarifa guardada (su precio depende
-    // del valor hora del periodo activo de facturacion), en ese caso esta columna queda en null
     @ManyToOne(
         () => Tarifa,
         (tarifa) => tarifa.ordenesServicio,
         {
-            eager: true,
-            nullable: true
-        }
-    )
-    @JoinColumn({name: 'idTarifa'})
-    idTarifa: Tarifa | null;
-
-    // servicio de la orden -> relacion
-    // Se guarda siempre (incluso cuando idTarifa existe) para no depender de idTarifa a la hora de saber que servicio es
-    @ManyToOne(
-        () => Servicio,
-        {
             eager: true
         }
     )
-    @JoinColumn({name: 'idServicio'})
-    idServicio: Servicio;
+    @JoinColumn({name: 'idTarifa'})
+    idTarifa: Tarifa;
 
     @Column({
         type: 'int',
-        name: 'cantidadPersonal',
-        default: 0
+        name: 'cantidadHoras',
+        nullable: true
     })
-    cantidadPersonal: number;
+    cantidadHoras: number | null;
+
+    // DIA CALENDARIO AL QUE PERTENECE ESTA FILA. Solo aplica para ordenes de origen "a_medida" (cada fila = un dia),
+    // ya que ahi se necesita saber la fecha exacta de cada fila para poder liquidar solo los dias de un mes especifico
+    // cuando la orden abarca varios meses. Las ordenes "catalogo" quedan en null (su fila cubre todo el rango de fechas
+    // de la orden, no un dia especifico)
+    @Column({
+        type: 'date',
+        name: 'fecha',
+        nullable: true
+    })
+    fecha: Date | null;
 
     @Column({
         type: 'varchar',
@@ -92,6 +86,15 @@ export class OrdenServicioTarifa {
         nullable: true
     })
     seguroVida: number | null;
+    
+    @Column({
+        type: 'decimal',
+        name: 'costosDirectosSeguroVida',
+        precision: 20,
+        scale: 2,
+        nullable: true
+    })
+    costosDirectosSeguroVida: number | null;
 
     @Column({
         type: 'decimal',
@@ -129,25 +132,5 @@ export class OrdenServicioTarifa {
         nullable: true
     })
     precio: number | null;
-
-    @OneToMany(
-        () => ProgramacionPersonal,
-        (programacion) => programacion.idOrdenServicioTarifa,
-        {
-            cascade: true,
-        }
-    )
-    programaciones: ProgramacionPersonal[];
-
-    // DESGLOSE HORA A HORA DEL PRECIO (solo tiene datos cuando el servicio es de horario mixto por hora)
-    @OneToMany(
-        () => CostoHoraOrdenServicioTarifa,
-        (costoHora) => costoHora.idOrdenServicioTarifa,
-        {
-            cascade: true,
-            eager: true
-        }
-    )
-    costosHoras: CostoHoraOrdenServicioTarifa[];
 
 }

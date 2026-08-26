@@ -585,6 +585,43 @@ export class TarifasService {
 
   }
 
+  // BUSCA LA TARIFA DE UN SERVICIO DE VIGILANCIA Y ESCOLTA, TIPO TARIFA TURNO, CON LAS HORAS FIJAS Y EL TIPO DE
+  // HORARIO/DOMINICAL INDICADOS, PARA UN PERIODO ESPECIFICO. USADO PARA ORDENES A LA MEDIDA, DONDE SE NECESITA
+  // ENCONTRAR LA TARIFA CATALOGO (turno 12 horas diurno/nocturno/dominical, o turno 24 horas) QUE CORRESPONDE
+  // A CADA SEGMENTO/DIA CALCULADO, EN VEZ DE RECIBIR UN idTarifa DIRECTO DESDE EL FRONTEND
+  async findOneTurnoVigilanciaByPeriodo(
+    idPeriodo: number,
+    horasFijas: number,
+    tipoHorarioNombre: string,
+    dominical: boolean,
+  ): Promise<Tarifa> {
+
+    const tarifa = await this.tarifaRepository
+      .createQueryBuilder('tarifa')
+      .leftJoinAndSelect('tarifa.idServicio', 'servicio')
+      .leftJoinAndSelect('servicio.idTipoServicio', 'tipoServicio')
+      .leftJoinAndSelect('servicio.idTipoTarifa', 'tipoTarifa')
+      .leftJoinAndSelect('servicio.idTipoHorarioDescripcion', 'tipoHorarioDescripcion')
+      .where('tarifa.idPeriodo = :idPeriodo', { idPeriodo })
+      .andWhere('tipoServicio.nombre = :tipoServicioNombre', { tipoServicioNombre: TipoServicioInterface.VIGILANCIA_Y_ESCOLTA })
+      .andWhere('tipoTarifa.nombre = :tipoTarifaNombre', { tipoTarifaNombre: TipoTarifaInterface.TURNO })
+      .andWhere('servicio.horasFijas = :horasFijas', { horasFijas })
+      .andWhere('tipoHorarioDescripcion.nombre = :tipoHorarioNombre', { tipoHorarioNombre })
+      .andWhere('servicio.dominical = :dominical', { dominical })
+      .andWhere('tarifa.estado = :estado', { estado: true })
+      .getOne();
+
+    if (!tarifa) {
+      throw new BadRequestException(
+        `No se ha encontrado una tarifa de un servicio de Vigilancia y escolta, por turno, de ${horasFijas} horas, ` +
+        `horario ${tipoHorarioNombre}${dominical ? ' dominical y festivo' : ''}, para el periodo indicado`
+      );
+    }
+
+    return tarifa;
+
+  }
+
   // ACTUALIZAR UNA TARIFA: NO SE PUEDE CAMBIAR EL SERVICIO NI EL PERIODO AL QUE PERTENECE (eso implicaria que ya no es
   // la misma tarifa), en su lugar esta funcion RECALCULA el precio del servicio de esta tarifa siguiendo las mismas
   // reglas de calcularPreciosServicios, usando las tarifas por hora vigentes del periodo de esta tarifa. Solo se acepta

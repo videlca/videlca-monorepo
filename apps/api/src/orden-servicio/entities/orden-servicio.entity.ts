@@ -3,9 +3,10 @@ import { OrdenServicioId } from "./orden-servicio-id.entity";
 import { User } from "../../users/entities/user.entity";
 import { EstadoOrdenServicio } from "../../common/entities";
 import { Locacion } from "../../clientes/entities";
-import { OrdenServicioTarifa } from "./orden-servicio-tarifa.entity";
+import { OrdenServicioDetalle } from "./orden-servicio-detalle.entity";
 import { ObservacionOrdenServicio } from "./observaciones-orden.entity";
 import { Liquidacione } from "src/liquidaciones/entities/liquidacione.entity";
+import { OrigenServicioEnum } from "../interfaces/origen-servicio.interface";
 
 @Entity({name: "orden_servicio"})
 export class OrdenServicio {
@@ -62,6 +63,14 @@ export class OrdenServicio {
     )
     @JoinColumn({name: 'idLocacion'})
     idLocacion: Locacion;
+
+    @Column({
+        type: 'enum',
+        enum: OrigenServicioEnum,
+        name: 'origenServicio',
+        nullable: false
+    })
+    origenServicio: string; 
     
     @Column({
         type: 'date',
@@ -125,14 +134,14 @@ export class OrdenServicio {
     observacionesOrdenServicio: ObservacionOrdenServicio[];
 
     @OneToMany(
-        () => OrdenServicioTarifa, 
-        (ordenServicioTarifa) => ordenServicioTarifa.idOrdenServicio, 
+        () => OrdenServicioDetalle, 
+        (ordenServicioDetalle) => ordenServicioDetalle.idOrdenServicio, 
         {
             cascade: true,
             eager: true
         }
     )
-    tarifas: OrdenServicioTarifa[];
+    detalles: OrdenServicioDetalle[];
   
     @OneToMany(
         () => Liquidacione, 
@@ -142,6 +151,5 @@ export class OrdenServicio {
         }
     )
     liquidaciones: Liquidacione[];
-
 
 }

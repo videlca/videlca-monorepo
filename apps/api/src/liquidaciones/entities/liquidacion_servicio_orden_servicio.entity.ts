@@ -1,7 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Liquidacione } from "./liquidacione.entity";
 import { Tarifa } from "../../tarifas/entities";
-import { Servicio } from "../../servicios/entities";
 
 @Entity({name: 'liquidacion_servicio_orden_servicio'})
 export class LiquidacionServicioOrdenServicio {
@@ -21,29 +20,19 @@ export class LiquidacionServicioOrdenServicio {
     idLiquidacion: Liquidacione;
 
     // tarifa -> relacion
-    // Nullable: los servicios de horario mixto por hora no tienen una tarifa guardada (su precio depende
-    // del valor hora del periodo activo de facturacion), en ese caso esta columna queda en null
+    // Toda fila de OrdenServicioDetalle tiene siempre una tarifa (ya no existen servicios de horario mixto por hora
+    // sin tarifa guardada), por lo que esta relacion es obligatoria. El servicio liquidado se obtiene a traves de
+    // idTarifa.idServicio, no hace falta guardarlo aparte
     @ManyToOne(
         () => Tarifa,
         (tarifa) => tarifa.liquidacionServiciosOrdenServicio,
         {
             eager: true,
-            nullable: true
+            nullable: false
         }
     )
     @JoinColumn({name: 'idTarifa'})
-    idTarifa: Tarifa | null;
-
-    // servicio liquidado -> relacion
-    // Se guarda siempre (incluso cuando idTarifa existe) para no depender de idTarifa a la hora de saber que servicio es
-    @ManyToOne(
-        () => Servicio,
-        {
-            eager: true
-        }
-    )
-    @JoinColumn({name: 'idServicio'})
-    idServicio: Servicio;
+    idTarifa: Tarifa;
 
     // COSTOS DIRECTOS
     @Column({

@@ -1,22 +1,20 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Transform } from "class-transformer";
-import { IsString, Matches, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength, IsOptional, IsDate } from 'class-validator';
+import { IsString, Matches, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength, IsEnum, ValidateIf } from 'class-validator';
+import { OrigenServicioEnum } from "../../interfaces/origen-servicio.interface";
 
 export class ValidarHorarioServicioDto {
-    
-    @ApiProperty({ description: 'Id de tarifa', example: 1, required:true})
-    @IsOptional()
+
+    @ApiProperty({ description: 'Origen del servicio (catalogo o a la medida)', example: OrigenServicioEnum.CATALOGO, required:true})
+    @IsEnum(OrigenServicioEnum, { message: 'El campo origen del servicio debe ser un valor válido' })
+    @IsNotEmpty({ message: 'El campo origen del servicio no puede estar vacío'})
+    origenServicio: OrigenServicioEnum;
+
+    @ApiProperty({ description: 'Id de tarifa. Obligatorio y unicamente aplica cuando origenServicio es "catalogo"', example: 1, required:false})
+    @ValidateIf(dto => dto.origenServicio === OrigenServicioEnum.CATALOGO)
     @IsNumber({}, {message: 'El valor del campo tarifa debe ser un número'})
     @IsPositive({message: 'El valor del campo tarifa debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo tarifa debe ser minimo 1'})
     idTarifa?: number;
-    
-    @ApiProperty({ description: 'Id de servicio', example: 1, required:true})
-    @IsNumber({}, {message: 'El valor del campo servicio debe ser un número'})
-    @IsOptional()
-    @IsPositive({message: 'El valor del campo servicio debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo servicio debe ser minimo 1'})
-    idServicio?: number;
 
     @ApiProperty({ description: 'Hora de inicio por dia del servicio', example: '06:00:00', required:true})
     @IsString({ message: 'El campo Hora de inicio debe ser un string'})
@@ -26,7 +24,7 @@ export class ValidarHorarioServicioDto {
         message: 'horaInicio debe tener formato HH:mm:ss'
     })
     horaInicio: string;
-    
+
     @ApiProperty({ description: 'Hora de finalizacion por dia del servicio', example: '18:00:00', required:true})
     @IsString({ message: 'El campo Hora de fin debe ser un string'})
     @IsNotEmpty({ message: 'El campo Hora de fin no puede estar vacío'})

@@ -18,23 +18,25 @@ import {
   OrdenServicio,
   OrdenServicioId,
   OrdenServicioIdAnulado,
-  OrdenServicioTarifa,
-  CostoHoraOrdenServicioTarifa,
+  OrdenServicioDetalle,
   ObservacionOrdenServicio,
-  ProgramacionPersonal
+  ProgramacionPersonal,
+  OrigenServicio
 } from './entities';
 
-import { 
+import {
   OrdenServicioService,
-  OrdenServicioIdService, 
+  OrdenServicioIdService,
   ObservacionesOrdenServicioService,
-  OrdenServicioScheduler
+  OrdenServicioScheduler,
+  OrigenServicioService
 } from './services';
 
-import { 
-  OrdenServicioController, 
+import {
+  OrdenServicioController,
   OrdenServicioIdController,
-  ObservacionesOrdenServicioController, 
+  ObservacionesOrdenServicioController,
+  OrigenServicioController
 } from './controllers';
 
 @Module({
@@ -44,10 +46,10 @@ import {
       OrdenServicio,
       OrdenServicioId,
       OrdenServicioIdAnulado,
-      OrdenServicioTarifa,
-      CostoHoraOrdenServicioTarifa,
+      OrdenServicioDetalle,
       ObservacionOrdenServicio,
       ProgramacionPersonal,
+      OrigenServicio,
     ]),
     ConfigModule,
     CommonModule,
@@ -67,12 +69,14 @@ import {
     OrdenServicioController,
     OrdenServicioIdController,
     ObservacionesOrdenServicioController,
+    OrigenServicioController,
   ],
   providers: [
     OrdenServicioService,
     OrdenServicioIdService,
     ObservacionesOrdenServicioService,
     OrdenServicioScheduler,
+    OrigenServicioService,
   ],
   exports: [
     TypeOrmModule,

@@ -1,56 +1,33 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsOptional, Matches, IsNumber, IsPositive, Min, IsNotEmpty, MaxLength, IsDate, IsArray, ArrayMinSize, ValidateNested } from 'class-validator';
+import {
+    IsString,
+    IsOptional,
+    IsEnum,
+    Matches,
+    IsNumber,
+    IsPositive,
+    Min,
+    IsNotEmpty,
+    MaxLength,
+    IsDate,
+    IsArray,
+    ArrayMinSize,
+    ValidateNested
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { OrigenServicioEnum } from "../../interfaces/origen-servicio.interface";
 
-export class CreatePersonalServicioDto {
-    
-    @ApiProperty({ description: 'Id de personal', example: 1, required:true})
-    @IsNumber({}, {message: 'El valor del campo id personal debe ser un número'})
-    @IsPositive({message: 'El valor del campo id personal debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo id personal debe ser minimo 1'})
-    idPersonal: number;
+// EL DESGLOSE (idTarifa, horaInicio, horaFin, cantidadHoras y el precio) DE CADA FILA SE OBTIENE PREVIAMENTE
+// DESDE /obtener-precio Y SE ENVIA AQUI TAL CUAL SE RECIBIO, PARA NO VOLVER A CALCULAR EL PRECIO AL CREAR LA ORDEN
+export class CreateOrdenServicioDetalleDto {
 
-    @ApiProperty({ description: 'Hora de inicio por dia del empleado para este servicio en una orden', example: '06:00:00', required:true})
-    @IsString({ message: 'El campo Hora de inicio debe ser un string'})
-    @IsNotEmpty({ message: 'El campo Hora de inicio no puede estar vacío'})
-    @MaxLength(8, { message: 'El campo Hora de inicio no puede exceder los 8 caracteres' })
-    @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, {
-        message: 'horaInicio debe tener formato HH:mm:ss'
-    })
-    horaInicio: string;
-    
-    @ApiProperty({ description: 'Hora de finalizacion por dia del empleado para este servicio en una orden', example: '18:00:00', required:true})
-    @IsString({ message: 'El campo Hora de fin debe ser un string'})
-    @IsNotEmpty({ message: 'El campo Hora de fin no puede estar vacío'})
-    @MaxLength(8, { message: 'El campo Hora de fin no puede exceder los 8 caracteres' })
-    @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, {
-        message: 'horaFin debe tener formato HH:mm:ss'
-    })
-    horaFin: string;  
-
-}
-
-export class CreateOrdenServicioTarifaDto {
-
-    @ApiProperty({ description: 'Id de tarifa. Opcional: los servicios de horario mixto con tarifa por hora no tienen una tarifa guardada, en ese caso solo enviar idServicio', example: 1, required:false})
-    @IsOptional()
+    @ApiProperty({ description: 'Id de la tarifa del catalogo a la que pertenece esta fila del desglose', example: 1, required:true})
     @IsNumber({}, {message: 'El valor del campo tarifa debe ser un número'})
     @IsPositive({message: 'El valor del campo tarifa debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo tarifa debe ser minimo 1'})
-    idTarifa?: number;
+    idTarifa: number;
 
-    @ApiProperty({ description: 'Id de servicio', example: 1, required:true})
-    @IsNumber({}, {message: 'El valor del campo servicio debe ser un número'})
-    @IsPositive({message: 'El valor del campo servicio debe ser un numero positivo'})
-    @Min(1, {message: 'El valor del campo servicio debe ser minimo 1'})
-    idServicio: number;
-    
-    @ApiProperty({ description: 'cantidad personal', example: 1, required:true})
-    @IsOptional()
-    @IsNumber({}, {message: 'El valor del campo cantidad personal debe ser un número'})
-    cantidadPersonal?: number | null;
-    
-    @ApiProperty({ description: 'Hora de inicio por dia del servicio', example: '06:00:00', required:true})
+    @ApiProperty({ description: 'Hora de inicio de esta fila del desglose', example: '06:00:00', required:true})
     @IsString({ message: 'El campo Hora de inicio debe ser un string'})
     @IsNotEmpty({ message: 'El campo Hora de inicio no puede estar vacío'})
     @MaxLength(8, { message: 'El campo Hora de inicio no puede exceder los 8 caracteres' })
@@ -58,40 +35,71 @@ export class CreateOrdenServicioTarifaDto {
         message: 'horaInicio debe tener formato HH:mm:ss'
     })
     horaInicio: string;
-    
-    @ApiProperty({ description: 'Hora de finalizacion por dia del servicio', example: '18:00:00', required:true})
+
+    @ApiProperty({ description: 'Hora de finalizacion de esta fila del desglose', example: '18:00:00', required:true})
     @IsString({ message: 'El campo Hora de fin debe ser un string'})
     @IsNotEmpty({ message: 'El campo Hora de fin no puede estar vacío'})
     @MaxLength(8, { message: 'El campo Hora de fin no puede exceder los 8 caracteres' })
     @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, {
         message: 'horaFin debe tener formato HH:mm:ss'
     })
-    horaFin: string;   
-    
-    @ApiProperty({ description: 'Precio del servicio de la orden de servicio', example: 14000000, required: false}) 
-    @IsOptional()   
+    horaFin: string;
+
+    @ApiProperty({ description: 'Cantidad de horas de esta fila. Solo aplica para ordenes de origen "a_medida"', example: 4, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo cantidad de horas debe ser un número'})
+    @IsPositive({message: 'El valor del campo cantidad de horas debe ser un numero positivo'})
+    cantidadHoras?: number;
+
+    @ApiProperty({ description: 'Dia calendario al que pertenece esta fila. Solo aplica para ordenes de origen "a_medida" (cada fila es un dia)', example: 'ISO String 2024-03-15T00:00:00.000Z', required: false})
+    @IsOptional()
+    @Transform(({ value }) => value ? new Date(value) : null)
+    @IsDate()
+    fecha?: Date | null;
+
+    @ApiProperty({ description: 'Costos directos de esta fila del desglose. Solo se envia si la orden tiene fecha de fin (es definida)', example: 100000, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo costos directos debe ser un número'})
+    costosDirectos?: number;
+
+    @ApiProperty({ description: 'Seguro de vida de esta fila del desglose', example: 373, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo seguro de vida debe ser un número'})
+    seguroVida?: number;
+
+    @ApiProperty({ description: 'Costos directos + seguro de vida de esta fila del desglose', example: 100373, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo costos directos + seguro de vida debe ser un número'})
+    costosDirectosSeguroVida?: number;
+
+    @ApiProperty({ description: 'AUI de esta fila del desglose', example: 10038, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo aui debe ser un número'})
+    aui?: number;
+
+    @ApiProperty({ description: 'Precio antes de iva de esta fila del desglose', example: 110411, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo precio antes de iva debe ser un número'})
+    precioAntesIva?: number;
+
+    @ApiProperty({ description: 'Iva de esta fila del desglose', example: 2098, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo iva debe ser un número'})
+    iva?: number;
+
+    @ApiProperty({ description: 'Precio total (con iva) de esta fila del desglose', example: 112509, required: false})
+    @IsOptional()
     @IsNumber({}, {message: 'El valor del campo precio debe ser un número'})
-    precio?: number | null;
-    
-    // Array de servicios para una orden (opcional)
-    @ApiProperty({ 
-        description: 'Lista de personal asignado al servicio', 
-        type: [CreatePersonalServicioDto],
-        required: false,
-        example: [
-            { idPersonal: 1, horaInicio: '06:00:00', horaFin: '18:00:00'},
-            { idPersonal: 2, horaInicio: '06:00:00', horaFin: '18:00:00' }
-        ]
-    })
-    @IsArray()
-    @IsOptional()   
-    @ValidateNested({ each: true })
-    @Type(() => CreatePersonalServicioDto)
-    personal?: CreatePersonalServicioDto[];
+    precio?: number;
 
 }
 
 export class CreateOrdenServicioDto {
+
+    @ApiProperty({ description: 'Origen de la orden de servicio', example: OrigenServicioEnum.CATALOGO, required:true})
+    @IsEnum(OrigenServicioEnum, { message: 'El campo origen de la orden de servicio debe ser un valor válido' })
+    @IsNotEmpty({ message: 'El campo origen de la orden de servicio no puede estar vacío'})
+    origenServicio: OrigenServicioEnum;
 
     @ApiProperty({ description: 'Numero de orden de la orden de servicio', example: 'A-23456', required:true})
     @IsString({ message: 'El campo numero orden de servicio debe ser un string'})
@@ -105,49 +113,39 @@ export class CreateOrdenServicioDto {
     @Min(1, {message: 'El valor del campo locacion debe ser minimo 1'})
     idLocacion: number;
 
-    @ApiProperty({ description: 'Fecha de inicio de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
+    @ApiProperty({ description: 'Fecha de inicio de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})
     @Transform(({ value }) => new Date(value))
     @IsDate()
     fechaInicio: Date;
-    
-    @ApiProperty({ description: 'Fecha de fin de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: false}) 
-    @IsOptional()   
+
+    @ApiProperty({ description: 'Fecha de fin de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: false})
+    @IsOptional()
     @Transform(({ value }) => value ? new Date(value) : null)
     @IsDate()
     fechaFin?: Date | null;
-    
-    @ApiProperty({ description: 'Precio total de la orden de servicio', example: 14000000, required: false}) 
-    @IsOptional()   
-    @IsNumber({}, {message: 'El valor del campo precio total debe ser un número'})
-    precioTotal?: number | null;
 
-    @ApiProperty({ description: 'Fecha de creacion de la orden de servicio, se toma desde el front para tomar fecha del sistema', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})    
+    @ApiProperty({ description: 'Fecha de creacion de la orden de servicio, se toma desde el front para tomar fecha del sistema', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})
     @Transform(({ value }) => new Date(value))
     @IsDate()
     fechaCreacion: Date;
 
-    // Array de servicios para una orden (mínimo 1)
-    @ApiProperty({ 
-        description: 'Lista de servicios de la orden', 
-        type: [CreateOrdenServicioTarifaDto],
+    // Array del desglose de servicios de la orden (mínimo 1), obtenido previamente desde /obtener-precio
+    @ApiProperty({
+        description: 'Desglose de servicios de la orden, tal como se obtuvo desde /obtener-precio',
+        type: [CreateOrdenServicioDetalleDto],
         required: true,
         example: [
             {
                 idTarifa: 1,
-                cantidadPersonal: 2,
                 horaInicio: '06:00:00',
                 horaFin: '18:00:00',
-                personal: [
-                    { idPersonal: 1, horaInicio: '06:00:00', horaFin: '18:00:00'},
-                    { idPersonal: 2, horaInicio: '06:00:00', horaFin: '18:00:00' }
-                ]
             }
         ]
     })
     @IsArray()
     @ArrayMinSize(1, { message: 'La orden de servicio debe tener al menos un servicio' })
     @ValidateNested({ each: true })
-    @Type(() => CreateOrdenServicioTarifaDto)
-    servicios: CreateOrdenServicioTarifaDto[];
+    @Type(() => CreateOrdenServicioDetalleDto)
+    servicios: CreateOrdenServicioDetalleDto[];
 
 }

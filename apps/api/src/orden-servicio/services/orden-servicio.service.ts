@@ -16,27 +16,24 @@ import { SendMailOptions } from '../../common/services/email/email.service';
 import { EstadoOrdenServicioService, EmailService, CorreoDefaultService, FestivosService } from '../../common/services';
 import { LocacionService } from '../../clientes/services';
 import { TarifasService, TarifaHoraService, TarifaHoraDescripcionService } from '../../tarifas/services';
-import { ServiciosService, TipoHorarioService } from '../../servicios/services';
-import { PersonalService } from '../../personal/services';
+import { TipoHorarioService } from '../../servicios/services';
 import { ReporteOrdenServicioService } from '../../reportes/services';
 import { PeriodosService } from '../../periodos/periodos.service';
 
 import { EstadoOrdenServicio } from '../../common/interfaces/estado-orden-servicio.interface';
-import { TipoDuracionInterface } from '../../servicios/interfaces/tipo-duracion.interface';
 import { TipoHorarioInterface } from 'src/servicios/interfaces/tipo-horario.interface';
+import { TipoServicioInterface } from '../../servicios/interfaces/tipo-servicio.interface';
 import { TipoTarifaInterface } from '../../tarifas/interfaces/tipo-tarifa.interface';
+import { TipoHoraDescripcionInterface } from '../../tarifas/interfaces/tipo-hora-descripcion.interface';
+import { OrigenServicioEnum } from '../interfaces/origen-servicio.interface';
 
-import { Personal } from '../../personal/entities';
-import { Servicio } from '../../servicios/entities';
-import { Tarifa, TarifaHora } from '../../tarifas/entities';
+import { Tarifa } from '../../tarifas/entities';
 
 import {
   OrdenServicio,
   OrdenServicioId,
   OrdenServicioIdAnulado,
-  OrdenServicioTarifa,
-  CostoHoraOrdenServicioTarifa,
-  ProgramacionPersonal
+  OrdenServicioDetalle,
 } from '../entities';
 
 import {
@@ -80,20 +77,14 @@ export class OrdenServicioService {
     private readonly ordenServicioIdRepository: Repository<OrdenServicioId>,
     @InjectRepository(OrdenServicioIdAnulado)
     private readonly ordenServicioIdAnuladoRepository: Repository<OrdenServicioIdAnulado>,
-    @InjectRepository(OrdenServicioTarifa)
-    private readonly ordenServicioTarifaRepository: Repository<OrdenServicioTarifa>,
-    @InjectRepository(ProgramacionPersonal)
-    private readonly programacionPersonalRepository: Repository<ProgramacionPersonal>,
-    @InjectRepository(Personal)
-    private readonly personalRepository: Repository<Personal>,
-    private readonly personalService: PersonalService,
+    @InjectRepository(OrdenServicioDetalle)
+    private readonly ordenServicioDetalleRepository: Repository<OrdenServicioDetalle>,
     private readonly estadoOrdenService: EstadoOrdenServicioService,
     private readonly locacionService: LocacionService,
     private readonly tarifasService: TarifasService,
     private readonly tarifaHoraService: TarifaHoraService,
     private readonly tarifaHoraDescripcionService: TarifaHoraDescripcionService,
     private readonly tipoHorarioService: TipoHorarioService,
-    private readonly servicioService: ServiciosService,
     private readonly periodosService: PeriodosService,
     private readonly festivosService: FestivosService,
     private readonly emailService: EmailService, // Servicio de email para envio de correos
@@ -167,12 +158,6 @@ export class OrdenServicioService {
 
       }
 
-      if (createOrdenServicioDto.precioTotal == null || createOrdenServicioDto.precioTotal == 0) {
-
-        throw new BadRequestException('se debe enviar el precio total al ser una orden definida');
-
-      }
-
     }
 
     // FECHA CREACION ORDEN SERVICIO
@@ -182,6 +167,31 @@ export class OrdenServicioService {
     const [añoCreacion, mesCreacion, diaCreacion] = fechaCreacionSplit.split('-').map(Number);
 
     const fechaCreacionOrden = new Date(añoCreacion, mesCreacion - 1, diaCreacion);
+
+    // OBTENER LAS TARIFAS DE CADA SERVICIO DE LA ORDEN (se reutilizan mas abajo, evita volver a consultarlas)
+    const tarifasPorItem = new Map<number, Tarifa>();
+
+    for (const detalleDto of createOrdenServicioDto.servicios) {
+
+      if (!tarifasPorItem.has(detalleDto.idTarifa)) {
+        tarifasPorItem.set(detalleDto.idTarifa, await this.tarifasService.findOne(detalleDto.idTarifa));
+      }
+
+    }
+
+    // SI LA ORDEN ES INDEFINIDA (SIN FECHA FIN), NINGUN SERVICIO PUEDE SER DE TIPO TARIFA "POR SERVICIO" (recogida de
+    // dinero): ese tipo de tarifa se cobra por cada dia exacto, por lo que la orden debe tener si o si fecha de fin
+    if (createOrdenServicioDto.fechaFin == null) {
+
+      const tieneServicioPorServicio = [...tarifasPorItem.values()].some(
+        tarifa => tarifa.idServicio.idTipoTarifa.nombre === TipoTarifaInterface.SERVICIO
+      );
+
+      if (tieneServicioPorServicio) {
+        throw new BadRequestException('La orden debe tener fecha de fin, ya que tiene un servicio con tipo de tarifa "por servicio" (recogida de dinero)');
+      }
+
+    }
 
     // OBTENER ID ESTADO ORDEN SERVICIO
     //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
@@ -222,139 +232,51 @@ export class OrdenServicioService {
         idUsuarioCreacion: user,
         idEstadoOrdenServicio: estadoOrdenServicio,
         idLocacion: locacion,
+        origenServicio: createOrdenServicioDto.origenServicio,
         fechaInicio: fechaInicioOrden,
         fechaInicioOrden: fechaInicioOrden,
         fechaFin: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
         fechaFinOrden: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
-        precioTotal: createOrdenServicioDto.precioTotal,
+        precioTotal: null,
         fechaCreacion: fechaCreacionOrden,
         fechaActualizacion: fechaCreacionOrden
       });
 
       const savedOrdenServicio = await queryRunner.manager.save(OrdenServicio, ordenServicio);
 
-      const servicios = createOrdenServicioDto.servicios;
-
-      const nombreServicios = []
-
+      // EL DESGLOSE (idTarifa, horas, precios) YA SE CALCULO PREVIAMENTE EN /obtener-precio Y SE RECIBE TAL CUAL SE
+      // ENTREGO ALLA, NO SE VUELVE A CALCULAR AQUI. Solo se recalcula el precioTotal de la orden como la suma de los
+      // precios de cada fila del desglose, en vez de confiar en un precioTotal que envie el front directamente
       let precioTotalCalculado = 0;
 
-      for (const servicio of servicios) {
+      for (const detalleDto of createOrdenServicioDto.servicios) {
 
-        // OBTENER TARIFA (si aplica) Y SERVICIO
-        // Los servicios de horario mixto por hora no tienen tarifa guardada, en ese caso solo se envia idServicio
-        let tarifa: Tarifa | null = null;
+        const tarifa = tarifasPorItem.get(detalleDto.idTarifa);
 
-        if (servicio.idTarifa) {
-          tarifa = await this.tarifasService.findOne(servicio.idTarifa);
-        }
-
-        const servicioEntidad = tarifa ? tarifa.idServicio : await this.servicioService.findOne(servicio.idServicio);
-
-        nombreServicios.push(servicioEntidad.descripcion);
-
-        let calculoPrecio: Awaited<ReturnType<OrdenServicioService['calcularPrecioServicioOrden']>> | null = null;
-
-        // Validar si se debe enviar el precio del servicio, y calcular el desglose real (costos directos, seguro vida, aui, iva, etc)
-        // usando la misma logica de obtenerPrecio, en lugar de confiar unicamente en el precio que envia el front
-        if (createOrdenServicioDto.fechaFin != null) {
-
-          if (servicio.precio == null || servicio.precio == 0) {
-
-            throw new BadRequestException(`se debe enviar el precio del servicio ${servicioEntidad.descripcion} al ser una orden definida`);
-
-          }
-
-          calculoPrecio = await this.calcularPrecioServicioOrden(
-            {
-              idTarifa: servicio.idTarifa,
-              idServicio: servicioEntidad.idServicio,
-              horaInicio: servicio.horaInicio,
-              horaFin: servicio.horaFin,
-            },
-            fechaInicioOrden,
-            fechaFinOrden,
-          );
-
-          precioTotalCalculado += calculoPrecio.precio;
-
-        }
-
-        // TODO!: FEATURE PERSONAL
-        // Validar si el servicio requiere personal
-        // if (tarifa.idServicio.idTipoServicio.requierePersonal && servicio.personal.length <= 0){
-
-        //   throw new BadRequestException(`El servicio ${tarifa.idServicio.descripcion} requiere personal, por favor asignar`);
-
-        // }
-
-        // Crear el servicio para la orden
         // Si la orden es indefinida (sin fecha fin) todos los valores de precio quedan en null, ya que se cobra mes a mes al liquidar/finalizar
-        const servicioOrden = queryRunner.manager.create(OrdenServicioTarifa, {
+        const detalleOrden = queryRunner.manager.create(OrdenServicioDetalle, {
           idOrdenServicio: savedOrdenServicio,
           idTarifa: tarifa,
-          idServicio: servicioEntidad,
-          cantidadPersonal: servicio.cantidadPersonal ? servicio.cantidadPersonal : 0,
-          horaInicio: servicio.horaInicio,
-          horaFin: servicio.horaFin,
-          costosDirectos: calculoPrecio ? calculoPrecio.costosDirectos : null,
-          seguroVida: calculoPrecio ? calculoPrecio.seguroVida : null,
-          aui: calculoPrecio ? calculoPrecio.aui : null,
-          precioAntesIva: calculoPrecio ? calculoPrecio.precioAntesIva : null,
-          iva: calculoPrecio ? calculoPrecio.iva : null,
-          precio: calculoPrecio ? calculoPrecio.precio : null,
+          horaInicio: detalleDto.horaInicio,
+          horaFin: detalleDto.horaFin,
+          fecha: detalleDto.fecha ?? null,
+          cantidadHoras: createOrdenServicioDto.fechaFin != null ? (detalleDto.cantidadHoras ?? null) : null,
+          costosDirectos: createOrdenServicioDto.fechaFin != null ? (detalleDto.costosDirectos ?? null) : null,
+          seguroVida: createOrdenServicioDto.fechaFin != null ? (detalleDto.seguroVida ?? null) : null,
+          costosDirectosSeguroVida: createOrdenServicioDto.fechaFin != null ? (detalleDto.costosDirectosSeguroVida ?? null) : null,
+          aui: createOrdenServicioDto.fechaFin != null ? (detalleDto.aui ?? null) : null,
+          precioAntesIva: createOrdenServicioDto.fechaFin != null ? (detalleDto.precioAntesIva ?? null) : null,
+          iva: createOrdenServicioDto.fechaFin != null ? (detalleDto.iva ?? null) : null,
+          precio: createOrdenServicioDto.fechaFin != null ? (detalleDto.precio ?? null) : null,
         });
 
-        const savedServicio = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
+        await queryRunner.manager.save(OrdenServicioDetalle, detalleOrden);
 
-        // GUARDAR EL DESGLOSE HORA A HORA (solo trae datos cuando el servicio es de horario mixto por hora)
-        if (calculoPrecio && calculoPrecio.costos_horas.length > 0) {
-
-          for (const segmento of calculoPrecio.costos_horas) {
-
-            const costoHora = queryRunner.manager.create(CostoHoraOrdenServicioTarifa, {
-              idOrdenServicioTarifa: savedServicio,
-              fecha: segmento.fecha,
-              horaInicio: segmento.horaInicio,
-              horaFin: segmento.horaFin,
-              tipoHorario: segmento.tipoHorario,
-              dominical: segmento.dominical,
-              horas: segmento.horas,
-              costosDirectos: segmento.costosDirectos,
-              seguroVida: segmento.seguroVida,
-              aui: segmento.aui,
-            });
-
-            await queryRunner.manager.save(CostoHoraOrdenServicioTarifa, costoHora);
-
-          }
-
-        }
-
-        // agregar el personal si es necesario
-        const personalServicio = servicio.personal;
-
-        for (const personalAsignado of personalServicio) {
-
-          // OBTENER PERSONAL
-          const personal = await this.personalService.findOne(personalAsignado.idPersonal);
-
-          // asignar personal para el servicio
-          const asignarPersonal = queryRunner.manager.create(ProgramacionPersonal, {
-            idOrdenServicioTarifa: savedServicio,
-            idPersonal: personal,
-            horaInicio: personalAsignado.horaInicio,
-            horaFin: personalAsignado.horaFin
-          });
-
-          const savedPersonal = await queryRunner.manager.save(ProgramacionPersonal, asignarPersonal);
-
-        }
+        precioTotalCalculado += detalleDto.precio ?? 0;
 
       }
 
-      // SI LA ORDEN ES DEFINIDA, EL PRECIO TOTAL DE LA ORDEN SE RECALCULA COMO LA SUMA DE LOS PRECIOS YA CALCULADOS DE CADA SERVICIO
-      // (en vez de confiar en el precioTotal que envia el front)
+      // SI LA ORDEN ES DEFINIDA, EL PRECIO TOTAL DE LA ORDEN SE RECALCULA COMO LA SUMA DE LOS PRECIOS DE CADA FILA DEL DESGLOSE
       if (createOrdenServicioDto.fechaFin != null) {
 
         savedOrdenServicio.precioTotal = Math.round(precioTotalCalculado);
@@ -567,11 +489,9 @@ export class OrdenServicioService {
       .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
-      .leftJoinAndSelect('orden.tarifas', 'tarifas')
-      .leftJoinAndSelect('tarifas.idTarifa', 'tarifa')
+      .leftJoinAndSelect('orden.detalles', 'detalles')
+      .leftJoinAndSelect('detalles.idTarifa', 'tarifa')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .leftJoinAndSelect('tarifas.idServicio', 'tarifaServicioDirecto')
-      .leftJoinAndSelect('tarifas.costosHoras', 'tarifaCostosHoras')
       .where(`${dbColumn} LIKE :query`, {
         query: `%${query}%`,
       })
@@ -631,12 +551,10 @@ export class OrdenServicioService {
         ordenServicioId: true,
         idUsuarioCreacion: true,
         idEstadoOrdenServicio: true,
-        tarifas: {
+        detalles: {
           idTarifa: {
             idServicio: true
           },
-          idServicio: true,
-          costosHoras: true,
         },
         idLocacion: {
           correos: true,
@@ -693,87 +611,33 @@ export class OrdenServicioService {
 
   }
 
+  // VALIDA QUE LAS HORAS SELECCIONADAS PARA UN SERVICIO DEL CATALOGO COINCIDAN CON SU DURACION CONFIGURADA.
+  // A LA MEDIDA: las horas solo se usan para calcular el precio (/obtener-precio), no hay un servicio del catalogo
+  // contra el cual validar su duracion, por lo que no aplica ninguna validacion.
+  // CATALOGO: si el servicio es de 24 horas (dia completo, incluye siempre a Monitoreo de alarmas, que es mensual y
+  // 24 horas fijas) no se elige horario, es de 00:00:00 a 23:59:00 siempre, no aplica validar horas. Si es de 8 o 12
+  // horas, la duracion seleccionada debe coincidir exactamente con las horas fijas del servicio.
   async validacionHorarios(validarHorarioServicioDto: ValidarHorarioServicioDto) {
 
-    const { idTarifa, idServicio, horaInicio, horaFin } = validarHorarioServicioDto;
+    const { origenServicio, idTarifa, horaInicio, horaFin } = validarHorarioServicioDto;
 
-    //! VALIDACION HORARIOS
-
-    // Validar que la tarifa exista
-    // const tarifa = await this.tarifasService.findOne(idTarifa);
-
-    const servicio = await this.servicioService.findOne(idServicio);
-
-    const tipohorarioDescripcion = servicio?.idTipoHorarioDescripcion;
-
-    if (tipohorarioDescripcion.nombre === TipoHorarioInterface.DIA_COMPLETO) {
-
-      // Si el tipo de horario es 24 horas no se valida horario ya que son 24 hrs fijas
-
+    if (origenServicio === OrigenServicioEnum.A_MEDIDA) {
       return;
-
     }
 
-    if (tipohorarioDescripcion.nombre === TipoHorarioInterface.MIXTO && horaInicio > horaFin) {
+    const tarifa = await this.tarifasService.findOne(idTarifa);
 
-      throw new BadRequestException(`El horario ${tipohorarioDescripcion.nombre} debe estar en un rango valido`);
+    const servicio = tarifa.idServicio;
 
+    if (servicio.idTipoServicio.nombre === TipoServicioInterface.MONITOREO_ALARMAS || servicio.horasFijas === 24) {
+      return;
     }
 
-    if (tipohorarioDescripcion.nombre === TipoHorarioInterface.DIURNO || tipohorarioDescripcion.nombre === TipoHorarioInterface.NOCTURNO) {
+    const duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
 
-      const tipoHorario = await this.tipoHorarioService.findOneVigenteByName(tipohorarioDescripcion.nombre);
+    if (duracionServicio !== servicio.horasFijas) {
 
-      const { horaInicio: tipoHorariohoraInicio, horaFin: tipoHorarioHoraFin } = tipoHorario;
-
-      if (horaInicio < tipoHorariohoraInicio || horaFin > tipoHorarioHoraFin) {
-
-        throw new BadRequestException(`El horario ${tipohorarioDescripcion.nombre} debe estar dentro del rango de ${tipoHorariohoraInicio} a ${tipoHorarioHoraFin}`);
-
-      }
-
-    }
-
-    let duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
-
-    if (!Number.isInteger(duracionServicio)) {
-
-      throw new BadRequestException(`La duracion del servicio debe ser horas exactas`);
-
-    }
-
-    const tipoDuracion = servicio.idTipoDuracion;
-
-    // Validar que la duracion del servicio sea correcta
-    if (tipoDuracion.descripcion === TipoDuracionInterface.FIJA) {
-
-      const horasFijas = servicio.horasFijas;
-
-      if (duracionServicio !== horasFijas) {
-
-        throw new BadRequestException(`La duracion del servicio debe ser de ${horasFijas} horas`);
-
-      }
-
-    }
-
-    // Validar que la duracion del servicio sea correcta
-    if (tipoDuracion.descripcion === TipoDuracionInterface.FLEXIBLE) {
-
-      const horasMinimas = servicio.horasMinimas;
-      const horasMaximas = servicio.horasMaximas;
-
-      if (duracionServicio < horasMinimas) {
-
-        throw new BadRequestException(`La duracion del servicio debe ser de al menos ${horasMinimas} horas`);
-
-      }
-
-      if (duracionServicio > horasMaximas) {
-
-        throw new BadRequestException(`La duracion del servicio no puede ser mayor a ${horasMaximas} horas`);
-
-      }
+      throw new BadRequestException(`La duracion del servicio debe ser de ${servicio.horasFijas} horas`);
 
     }
 
@@ -801,37 +665,42 @@ export class OrdenServicioService {
 
   }
 
-  // CALCULA EL PRECIO DE UNA ORDEN DE SERVICIO CON UNO O VARIOS SERVICIOS.
-  // Retorna los totales de la orden (mismos campos de siempre) y ademas, en "servicios", el desglose individual de cada servicio
-  async obtenerPrecio(validarPrecioOrdenDto: PrecioOrdenDto) {
+  // CALCULA EL PRECIO DE UNA ORDEN DE SERVICIO (CATALOGO O A LA MEDIDA).
+  // Retorna los totales de la orden y ademas, en "servicios", el desglose para persistir en OrdenServicioDetalle
+  async obtenerPrecio(precioOrdenDto: PrecioOrdenDto) {
 
-    const { servicios, fechaInicio, fechaFin } = validarPrecioOrdenDto;
+    const { origenServicio, fechaInicio, fechaFin } = precioOrdenDto;
 
     if (!fechaFin) {
 
+      const mensajeIndefinida = 'La orden de servicio es indefinida, el precio se calculara al momento de hacer la liquidacion o al finalizar el servicio';
+
       return {
-        "message": "La orden de servicio es indefinida, el precio se calculara al momento de hacer la liquidacion o al finalizar el servicio",
-        "precio": null,
-        "costosDirectos": null,
-        "seguroVida": null,
-        "costosDirectosSeguroVida": null,
-        "aui": null,
-        "precioAntesIva": null,
-        "iva": null,
-        "servicios": servicios.map(item => ({
-          idServicio: item.idServicio,
-          idTarifa: item.idTarifa ?? null,
-          "message": "La orden de servicio es indefinida, el precio se calculara al momento de hacer la liquidacion o al finalizar el servicio",
-          "precio": null,
-          "costosDirectos": null,
-          "seguroVida": null,
-          "costosDirectosSeguroVida": null,
-          "aui": null,
-          "precioAntesIva": null,
-          "iva": null,
-          "costos_horas": []
-        }))
-      }
+        message: mensajeIndefinida,
+        precio: null,
+        costosDirectos: null,
+        seguroVida: null,
+        costosDirectosSeguroVida: null,
+        aui: null,
+        precioAntesIva: null,
+        iva: null,
+        servicios: origenServicio === OrigenServicioEnum.CATALOGO
+          ? precioOrdenDto.servicios.map(item => ({
+            idTarifa: item.idTarifa,
+            horaInicio: item.horaInicio,
+            horaFin: item.horaFin,
+            cantidadHoras: null,
+            message: mensajeIndefinida,
+            costosDirectos: null,
+            seguroVida: null,
+            costosDirectosSeguroVida: null,
+            aui: null,
+            precioAntesIva: null,
+            iva: null,
+            precio: null,
+          }))
+          : [],
+      };
 
     }
 
@@ -839,325 +708,192 @@ export class OrdenServicioService {
     const fechaInicioOrden = this.normalizarFecha(fechaInicio);
     const fechaFinOrden = this.normalizarFecha(fechaFin);
 
-    const resultadosServicios = [];
+    const detalles = origenServicio === OrigenServicioEnum.CATALOGO
+      ? await this.calcularPrecioCatalogo(precioOrdenDto.servicios, fechaInicioOrden, fechaFinOrden)
+      : await this.calcularPrecioAMedida(precioOrdenDto.horaInicio, fechaInicioOrden, precioOrdenDto.horaFin, fechaFinOrden);
 
-    for (const item of servicios) {
-
-      resultadosServicios.push(
-        await this.calcularPrecioServicioOrden(item, fechaInicioOrden, fechaFinOrden)
-      );
-
-    }
-
-    // TOTALES DE LA ORDEN: se suman los valores base (costosDirectos, seguroVida, aui) de cada servicio
-    // y se calcula el iva/precioTotal una sola vez sobre el total, para no arrastrar errores de redondeo por servicio
-    const baseTotales = resultadosServicios.reduce((acumulado, resultado) => ({
-      costosDirectos: acumulado.costosDirectos + (resultado.costosDirectos ?? 0),
-      seguroVida: acumulado.seguroVida + (resultado.seguroVida ?? 0),
-      aui: acumulado.aui + (resultado.aui ?? 0),
+    // TOTALES DE LA ORDEN: se suman los valores YA CALCULADOS (costosDirectos, seguroVida, aui) de cada fila del
+    // desglose, y se calcula el iva/precioTotal una sola vez sobre el total, para no arrastrar errores de redondeo
+    const baseTotales = detalles.reduce((acumulado, detalle) => ({
+      costosDirectos: acumulado.costosDirectos + detalle.costosDirectos,
+      seguroVida: acumulado.seguroVida + detalle.seguroVida,
+      aui: acumulado.aui + detalle.aui,
     }), { costosDirectos: 0, seguroVida: 0, aui: 0 });
 
-    const totales = this.calcularTotalesTarifa(baseTotales.costosDirectos, baseTotales.seguroVida, baseTotales.aui);
+    const totalesOrden = this.calcularTotalesOrden(baseTotales.costosDirectos, baseTotales.seguroVida, baseTotales.aui);
 
     return {
-      ...this.armarRespuestaPrecio(`Precio calculado para ${resultadosServicios.length} servicio(s)`, totales),
-      servicios: resultadosServicios,
+      message: `Precio calculado para ${detalles.length} fila(s) del desglose`,
+      precio: totalesOrden.precioTotal,
+      costosDirectos: totalesOrden.costosDirectos,
+      seguroVida: totalesOrden.seguroVida,
+      costosDirectosSeguroVida: totalesOrden.costosDirectosSeguroVida,
+      aui: totalesOrden.aui,
+      precioAntesIva: totalesOrden.precioAntesIva,
+      iva: totalesOrden.iva,
+      servicios: detalles,
     };
 
   }
 
-  // CALCULA EL PRECIO DE UN SOLO SERVICIO DENTRO DE LA ORDEN
-  private async calcularPrecioServicioOrden(
-    item: PrecioOrdenServicioItemDto,
+  // CALCULA EL PRECIO DE CADA SERVICIO DEL CATALOGO SELECCIONADO PARA LA ORDEN (cada uno ya tiene su propia tarifa)
+  private async calcularPrecioCatalogo(
+    items: PrecioOrdenServicioItemDto[],
     fechaInicioOrden: Date,
     fechaFinOrden: Date,
   ) {
 
-    const { idTarifa, idServicio, horaInicio, horaFin } = item;
+    const dias = this.calcularDuracionServicioDias(new Date(fechaInicioOrden), new Date(fechaFinOrden));
 
-    // OBTENER TARIFA (si aplica) Y SERVICIO
-    // Los servicios de horario mixto con tarifa por hora no tienen tarifa guardada (su precio depende
-    // del valor hora del periodo activo de facturacion), en ese caso solo se envia idServicio
-    let tarifa: Tarifa | null = null;
-    let servicio: Servicio;
+    const detalles: {
+      idTarifa: number; horaInicio: string; horaFin: string; cantidadHoras: number | null; fecha: Date | null; message: string;
+      costosDirectos: number; seguroVida: number; costosDirectosSeguroVida: number; aui: number;
+      precioAntesIva: number; iva: number; precio: number;
+    }[] = [];
 
-    if (idTarifa) {
+    for (const item of items) {
 
-      tarifa = await this.tarifasService.findOne(idTarifa);
-      servicio = tarifa.idServicio;
+      const tarifa = await this.tarifasService.findOne(item.idTarifa);
 
-    } else {
+      const servicio = tarifa.idServicio;
+      const tipoServicioNombre = servicio.idTipoServicio.nombre;
+      const tipoTarifaNombre = servicio.idTipoTarifa.nombre;
 
-      servicio = await this.servicioService.findOne(idServicio);
+      let desglose: ReturnType<OrdenServicioService['calcularTotalesTarifa']>;
+      let mensaje: string;
 
-    }
+      // MONITOREO DE ALARMAS: SIEMPRE MENSUAL, NO COBRA SEGURO DE VIDA
+      if (tipoServicioNombre === TipoServicioInterface.MONITOREO_ALARMAS) {
 
-    const tipoHorarioNombre = servicio.idTipoHorarioDescripcion.nombre;
-    const tipoDuracionDescripcion = servicio.idTipoDuracion.descripcion;
-    const tipoTarifaNombre = servicio.idTipoTarifa.nombre;
+        if (this.esMesExacto(fechaInicioOrden, fechaFinOrden)) {
 
-    const esMixtoPorHora = tipoHorarioNombre === TipoHorarioInterface.MIXTO && tipoTarifaNombre === TipoTarifaInterface.HORA;
+          desglose = this.tomarTotalesDeTarifa(tarifa);
+          mensaje = 'Monitoreo de alarmas, es un mes exacto, se cobra la tarifa mensual completa';
 
-    if (!tarifa && !esMixtoPorHora) {
-      throw new BadRequestException(`Debe enviar el campo idTarifa para calcular el precio del servicio ${idServicio}`);
-    }
+        } else {
 
-    let resultado: ReturnType<OrdenServicioService['armarRespuestaPrecio']> & { costos_horas?: any[] };
+          const costosDirectos = (Number(tarifa.costosDirectos) / 30) * dias;
 
-    // ================= HORARIO DIA COMPLETO (24 HORAS) =================
-    // Precio ya estipulado en la tarifa (mensual o por turno), no aplica festivos ni dominicales
-    if (tipoHorarioNombre === TipoHorarioInterface.DIA_COMPLETO) {
+          desglose = this.calcularTotalesTarifa(costosDirectos, 0, 0.10);
+          mensaje = `Monitoreo de alarmas, ${dias} dia(s), proporcional a la tarifa mensual (no cobra seguro de vida)`;
 
-      resultado = this.calcularPrecioMensualOTurnoFijo(tarifa, fechaInicioOrden, fechaFinOrden);
-
-    }
-
-    // ================= HORARIO MIXTO =================
-    else if (tipoHorarioNombre === TipoHorarioInterface.MIXTO) {
-
-      // POR SERVICIO: se cobra el valor total del servicio por cada dia, no aplica festivos ni dominicales
-      if (tipoTarifaNombre === TipoTarifaInterface.SERVICIO) {
-
-        const dias = this.calcularDuracionServicioDias(new Date(fechaInicioOrden), new Date(fechaFinOrden));
-
-        const costosDirectos = Number(tarifa.costosDirectos) * dias;
-        const seguroVida = Number(tarifa.seguroVida) * dias;
-        const aui = Number(tarifa.aui) * dias;
-
-        resultado = this.armarRespuestaPrecio(
-          `El servicio se cobra por servicio, tiene una duracion de ${dias} dia(s)`,
-          this.calcularTotalesTarifa(costosDirectos, seguroVida, aui)
-        );
-
-      } else {
-
-        // POR HORA: no hay tarifa guardada, se calcula tomando la tarifa hora del periodo activo de facturacion,
-        // separando por horas diurnas/nocturnas y ordinarias/dominicales-festivas segun corresponda.
-        // Este es el unico caso que devuelve el desglose en "costos_horas"
-        resultado = await this.calcularPrecioMixtoPorHora(fechaInicioOrden, horaInicio, fechaFinOrden, horaFin);
+        }
 
       }
 
-    }
+      // POR SERVICIO O POR TURNO: costos directos * dias, seguro de vida (mensual, de tarifa_hora) / 30 * dias, aui flat 10%
+      else if (tipoTarifaNombre === TipoTarifaInterface.SERVICIO || tipoTarifaNombre === TipoTarifaInterface.TURNO) {
 
-    // ================= HORARIO DIURNO / NOCTURNO =================
+        const costosDirectos = Number(tarifa.costosDirectos) * dias;
 
-    // FIJA + MENSUAL O POR TURNO: precio ya estipulado en la tarifa, no aplica festivos ni dominicales
-    else if (tipoDuracionDescripcion === TipoDuracionInterface.FIJA) {
+        const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(tarifa.idPeriodo.idPeriodo);
+        const seguroVida = Math.ceil(seguroVidaMensual / 30) * dias;
 
-      resultado = this.calcularPrecioMensualOTurnoFijo(tarifa, fechaInicioOrden, fechaFinOrden);
+        desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, 0.10);
+        mensaje = `${tipoTarifaNombre === TipoTarifaInterface.SERVICIO ? 'Por servicio' : 'Por turno'}, ${dias} dia(s)`;
 
-    }
+      }
 
-    // FLEXIBLE + POR HORA: se calcula dia a dia con la tarifa hora ordinaria o dominical/festiva del periodo de la tarifa
-    else if (tipoDuracionDescripcion === TipoDuracionInterface.FLEXIBLE && tipoTarifaNombre === TipoTarifaInterface.HORA) {
+      // MENSUAL: si es un mes exacto se cobra la tarifa completa, sino se prorratea por dias. AUI 10% armado / 8% sin armado
+      else if (tipoTarifaNombre === TipoTarifaInterface.MES) {
 
-      const horasPorDia = await this.calcularDuracionServicio(horaInicio, horaFin);
+        if (this.esMesExacto(fechaInicioOrden, fechaFinOrden)) {
 
-      resultado = await this.calcularPrecioDiurnoNocturnoPorDia(
-        servicio,
-        tarifa.idPeriodo.idPeriodo,
-        fechaInicioOrden,
-        fechaFinOrden,
-        horasPorDia,
-        `El servicio tiene una duracion de ${horasPorDia} hora(s) por dia`
-      );
+          desglose = this.tomarTotalesDeTarifa(tarifa);
+          mensaje = 'Es un mes exacto, se cobra la tarifa mensual completa';
 
-    }
+        } else {
 
-    else {
+          const costosDirectos = (Number(tarifa.costosDirectos) / 30) * dias;
 
-      throw new BadRequestException(`No se pudo determinar la forma de calculo del precio para el servicio ${idServicio}`);
+          const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(tarifa.idPeriodo.idPeriodo);
+          const seguroVida = Math.ceil(seguroVidaMensual / 30) * dias;
 
-    }
+          const porcentajeAui = servicio.armado ? 0.10 : 0.08;
 
-    return {
-      idServicio: servicio.idServicio,
-      idTarifa: tarifa ? tarifa.idTarifa : null,
-      ...resultado,
-      // "costos_horas" solo trae datos para el servicio mixto por hora, para los demas siempre es un arreglo vacio
-      costos_horas: resultado.costos_horas ?? [],
-    };
+          desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, porcentajeAui);
+          mensaje = `${dias} dia(s), proporcional a la tarifa mensual (AUI ${servicio.armado ? '10% armado' : '8% sin armado'})`;
 
-  }
-
-  // A PARTIR DE COSTOS DIRECTOS, SEGURO VIDA Y AUI CALCULA EL RESTO DE CAMPOS DE UN PRECIO
-  // costosDirectosSeguroVida = costosDirectos + seguroVida
-  // precioAntesIva = costosDirectosSeguroVida + aui
-  // iva = precioAntesIva * 19%
-  // precioTotal = precioAntesIva + iva
-  private calcularTotalesTarifa(costosDirectos: number, seguroVida: number, aui: number) {
-
-    const costosDirectosSeguroVida = costosDirectos + seguroVida;
-    const precioAntesIva = costosDirectosSeguroVida + aui;
-    const iva = Math.round(precioAntesIva * 0.19); // IVA del 19%
-    const precioTotal = Math.round(precioAntesIva + iva);
-
-    return { costosDirectos, seguroVida, costosDirectosSeguroVida, aui, precioAntesIva, iva, precioTotal };
-
-  }
-
-  // ARMA LA RESPUESTA DE obtenerPrecio MANTENIENDO SIEMPRE LA MISMA FORMA DEL OBJETO
-  private armarRespuestaPrecio(
-    mensaje: string,
-    totales: { costosDirectos: number, seguroVida: number, costosDirectosSeguroVida: number, aui: number, precioAntesIva: number, iva: number, precioTotal: number }
-  ) {
-
-    return {
-      "message": mensaje,
-      "precio": totales.precioTotal,
-      "costosDirectos": totales.costosDirectos,
-      "seguroVida": totales.seguroVida,
-      "costosDirectosSeguroVida": totales.costosDirectosSeguroVida,
-      "aui": totales.aui,
-      "precioAntesIva": totales.precioAntesIva,
-      "iva": totales.iva
-    };
-
-  }
-
-  // CALCULA EL PRECIO DE UN SERVICIO DE DURACION FIJA (DIURNO/NOCTURNO/DIA COMPLETO) CUYO TIPO DE TARIFA ES MENSUAL O POR TURNO.
-  // No aplica festivos ni dominicales, ya que el valor es una tarifa fija (mensual o por turno) previamente estipulada.
-  private calcularPrecioMensualOTurnoFijo(tarifa: Tarifa, fechaInicioOrden: Date, fechaFinOrden: Date) {
-
-    const esMensual = tarifa.idServicio.idTipoTarifa.nombre === TipoTarifaInterface.MES;
-
-    // POR TURNO: se multiplica el valor del turno por el numero de dias solicitados
-    if (!esMensual) {
-
-      const dias = this.calcularDuracionServicioDias(new Date(fechaInicioOrden), new Date(fechaFinOrden));
-
-      const costosDirectos = Number(tarifa.costosDirectos) * dias;
-      const seguroVida = Number(tarifa.seguroVida) * dias;
-      const aui = Number(tarifa.aui) * dias;
-
-      return this.armarRespuestaPrecio(
-        `El servicio se cobra por turno, tiene una duracion de ${dias} dia(s)`,
-        this.calcularTotalesTarifa(costosDirectos, seguroVida, aui)
-      );
-
-    }
-
-    // MENSUAL: si el rango de fechas es un mes exacto se cobra la tarifa mensual completa
-    if (this.esMesExacto(fechaInicioOrden, fechaFinOrden)) {
-
-      return this.armarRespuestaPrecio(
-        'El servicio es por un mes exacto, se cobra la tarifa mensual completa',
-        {
-          costosDirectos: Number(tarifa.costosDirectos),
-          seguroVida: Number(tarifa.seguroVida),
-          costosDirectosSeguroVida: Number(tarifa.costosDirectosSeguroVida),
-          aui: Number(tarifa.aui),
-          precioAntesIva: Number(tarifa.precioAntesIva),
-          iva: Number(tarifa.iva),
-          precioTotal: Number(tarifa.precioTotal),
         }
-      );
+
+      }
+
+      else {
+
+        throw new BadRequestException(`No se pudo determinar la forma de calculo del precio para la tarifa "${item.idTarifa}"`);
+
+      }
+
+      detalles.push({
+        idTarifa: tarifa.idTarifa,
+        horaInicio: item.horaInicio,
+        horaFin: item.horaFin,
+        cantidadHoras: null,
+        fecha: null,
+        message: mensaje,
+        costosDirectos: desglose.costosDirectos,
+        seguroVida: desglose.seguroVida,
+        costosDirectosSeguroVida: desglose.costosDirectosSeguroVida,
+        aui: desglose.aui,
+        precioAntesIva: desglose.precioAntesIva,
+        iva: desglose.iva,
+        precio: desglose.precioTotal,
+      });
 
     }
 
-    // MENSUAL PERO NO ES UN MES EXACTO: se divide el precio mensual entre 30 y se multiplica por los dias solicitados
-    // (matematicamente equivalente a cobrar meses completos + el proporcional de los dias restantes)
-    const dias = this.calcularDuracionServicioDias(new Date(fechaInicioOrden), new Date(fechaFinOrden));
-
-    const costosDirectos = (Number(tarifa.costosDirectos) / 30) * dias;
-    const seguroVida = (Number(tarifa.seguroVida) / 30) * dias;
-    const aui = (Number(tarifa.aui) / 30) * dias;
-
-    return this.armarRespuestaPrecio(
-      `El servicio tiene una duracion de ${dias} dia(s), se cobra proporcional al mes (tarifa mensual / 30)`,
-      this.calcularTotalesTarifa(costosDirectos, seguroVida, aui)
-    );
+    return detalles;
 
   }
 
-  // CALCULA EL PRECIO DIA A DIA PARA UN SERVICIO DIURNO O NOCTURNO (POR TURNO O POR HORA), APLICANDO LA TARIFA HORA
-  // DOMINICAL/FESTIVA EN LUGAR DE LA ORDINARIA EN LOS DIAS QUE SEAN DOMINGO O FESTIVO
-  private async calcularPrecioDiurnoNocturnoPorDia(
-    servicio: Servicio,
-    idPeriodo: number,
+  // TOMA LOS TOTALES YA CALCULADOS Y GUARDADOS EN UNA TARIFA (usado cuando se cobra el mes/tarifa completa tal cual)
+  private tomarTotalesDeTarifa(tarifa: Tarifa) {
+
+    return {
+      costosDirectos: Number(tarifa.costosDirectos),
+      seguroVida: Number(tarifa.seguroVida),
+      costosDirectosSeguroVida: Number(tarifa.costosDirectosSeguroVida),
+      aui: Number(tarifa.aui),
+      precioAntesIva: Number(tarifa.precioAntesIva),
+      iva: Number(tarifa.iva),
+      precioTotal: Number(tarifa.precioTotal),
+    };
+
+  }
+
+  // CALCULA EL PRECIO DE UNA ORDEN A LA MEDIDA, DIA POR DIA: cada dia se separa en horas diurnas y nocturnas segun
+  // el horario vigente (diurno/nocturno) y se calculan sus costos directos con el valor hora de la tarifa catalogo
+  // de turno de 12 horas correspondiente (diurna/nocturna, ordinaria/dominical-festiva segun el dia). El seguro de
+  // vida se cobra una unica vez por dia completo (no se divide entre las horas diurnas/nocturnas de ese dia). Cada
+  // dia genera una fila del desglose asociada a la tarifa catalogo de "turno de 24 horas" (ordinaria o dominical
+  // segun el dia), ya que esa es la que representa el dia completo (diurno + nocturno)
+  private async calcularPrecioAMedida(
+    horaInicio: string,
     fechaInicioOrden: Date,
+    horaFin: string,
     fechaFinOrden: Date,
-    horasPorDia: number,
-    mensajePrefijo: string,
   ) {
-
-    const diurno = servicio.idTipoHorarioDescripcion.nombre === TipoHorarioInterface.DIURNO;
-
-    const valorHoraOrdinaria = await this.obtenerValorHoraPeriodo(idPeriodo, diurno, false);
-    const valorHoraDominical = await this.obtenerValorHoraPeriodo(idPeriodo, diurno, true);
-
-    let costosDirectos = 0;
-    let seguroVida = 0;
-    let aui = 0;
-    let dias = 0;
-    let diasDominicales = 0;
-
-    const fechaIter = new Date(fechaInicioOrden);
-
-    while (fechaIter <= fechaFinOrden) {
-
-      const esDominicalDia = await this.esDiaDominicalOFestivo(fechaIter);
-
-      const valorHora = esDominicalDia ? valorHoraDominical : valorHoraOrdinaria;
-
-      costosDirectos += Number(valorHora.costosDirectos) * horasPorDia;
-      seguroVida += Number(valorHora.seguroVida ?? 0) * horasPorDia;
-      aui += Number(valorHora.aui) * horasPorDia;
-
-      if (esDominicalDia) diasDominicales++;
-      dias++;
-
-      fechaIter.setDate(fechaIter.getDate() + 1);
-
-    }
-
-    return this.armarRespuestaPrecio(
-      `${mensajePrefijo}, ${dias} dia(s) en total (${diasDominicales} dominical/festivo)`,
-      this.calcularTotalesTarifa(costosDirectos, seguroVida, aui)
-    );
-
-  }
-
-  // CALCULA EL PRECIO HORA A HORA PARA UN SERVICIO DE HORARIO MIXTO POR HORA (no tiene tarifa guardada).
-  // Recorre el rango completo (fechaInicioOrden+horaInicio -> fechaFinOrden+horaFin) partiendolo en segmentos
-  // segun los limites vigentes de diurno/nocturno y segun si cada dia es domingo/festivo (dominical) u ordinario
-  private async calcularPrecioMixtoPorHora(fechaInicioOrden: Date, horaInicio: string, fechaFinOrden: Date, horaFin: string) {
 
     const periodoActivo = await this.periodosService.obtenerPeriodoActivo();
 
     if (!periodoActivo) {
-      throw new BadRequestException('No hay un periodo activo de facturacion configurado para calcular el precio de este servicio');
+      throw new BadRequestException('No hay un periodo activo de facturacion configurado para calcular el precio de esta orden');
     }
 
-    const tipoHorarioDiurnoVigente = await this.tipoHorarioService.findOneVigenteByName(TipoHorarioInterface.DIURNO);
+    const tipoHorarioVigente = await this.tipoHorarioService.findVigenteActual();
 
-    const minutosInicioDiurno = this.horaAMinutos(tipoHorarioDiurnoVigente.horaInicio);
-    const minutosFinDiurno = this.horaAMinutos(tipoHorarioDiurnoVigente.horaFin);
+    const rangoDiurno = this.tipoHorarioService.obtenerRangoHorario(tipoHorarioVigente, TipoHorarioInterface.DIURNO);
 
-    // RESOLVER LOS 4 VALORES DE TARIFA HORA DEL PERIODO ACTIVO (diurna/nocturna x ordinaria/dominical)
-    const valoresHora = {
-      diurnoOrdinario: await this.obtenerValorHoraPeriodo(periodoActivo.idPeriodo, true, false),
-      diurnoDominical: await this.obtenerValorHoraPeriodo(periodoActivo.idPeriodo, true, true),
-      nocturnoOrdinario: await this.obtenerValorHoraPeriodo(periodoActivo.idPeriodo, false, false),
-      nocturnoDominical: await this.obtenerValorHoraPeriodo(periodoActivo.idPeriodo, false, true),
-    };
+    const minutosInicioDiurno = this.horaAMinutos(rangoDiurno.horaInicio);
+    const minutosFinDiurno = this.horaAMinutos(rangoDiurno.horaFin);
 
-    let costosDirectos = 0;
-    let seguroVida = 0;
-    let aui = 0;
+    const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(periodoActivo.idPeriodo);
+    const seguroVidaDia = Math.ceil(seguroVidaMensual / 30);
 
-    // DESGLOSE HORA A HORA DEL SERVICIO MIXTO POR HORA (unico caso que llena este arreglo)
-    const costosHoras: {
-      fecha: string;
-      horaInicio: string;
-      horaFin: string;
-      tipoHorario: 'diurno' | 'nocturno';
-      dominical: boolean;
-      horas: number;
-      costosDirectos: number;
-      seguroVida: number;
-      aui: number;
+    const detalles: {
+      idTarifa: number; horaInicio: string; horaFin: string; cantidadHoras: number | null; fecha: Date | null; message: string;
+      costosDirectos: number; seguroVida: number; costosDirectosSeguroVida: number; aui: number;
+      precioAntesIva: number; iva: number; precio: number;
     }[] = [];
 
     const fechaIter = new Date(fechaInicioOrden);
@@ -1180,6 +916,9 @@ export class OrdenServicioService {
 
         const puntos = [minutosInicioVentana, ...limites, minutosFinVentana];
 
+        let horasDiurnas = 0;
+        let horasNocturnas = 0;
+
         for (let i = 0; i < puntos.length - 1; i++) {
 
           const inicioSegmento = puntos[i];
@@ -1192,28 +931,43 @@ export class OrdenServicioService {
           const puntoMedio = (inicioSegmento + finSegmento) / 2;
           const esDiurno = puntoMedio >= minutosInicioDiurno && puntoMedio < minutosFinDiurno;
 
-          const valorHora = esDiurno
-            ? (esDominicalDia ? valoresHora.diurnoDominical : valoresHora.diurnoOrdinario)
-            : (esDominicalDia ? valoresHora.nocturnoDominical : valoresHora.nocturnoOrdinario);
+          if (esDiurno) horasDiurnas += horasSegmento;
+          else horasNocturnas += horasSegmento;
 
-          const costosDirectosSegmento = Number(valorHora.costosDirectos) * horasSegmento;
-          const seguroVidaSegmento = Number(valorHora.seguroVida ?? 0) * horasSegmento;
-          const auiSegmento = Number(valorHora.aui) * horasSegmento;
+        }
 
-          costosDirectos += costosDirectosSegmento;
-          seguroVida += seguroVidaSegmento;
-          aui += auiSegmento;
+        const cantidadHoras = horasDiurnas + horasNocturnas;
 
-          costosHoras.push({
-            fecha: this.formatearFecha(fechaIter),
-            horaInicio: this.minutosAHora(inicioSegmento),
-            horaFin: this.minutosAHora(finSegmento),
-            tipoHorario: esDiurno ? 'diurno' : 'nocturno',
-            dominical: esDominicalDia,
-            horas: horasSegmento,
-            costosDirectos: costosDirectosSegmento,
-            seguroVida: seguroVidaSegmento,
-            aui: auiSegmento,
+        if (cantidadHoras > 0) {
+
+          const valorHoraDiurno = horasDiurnas > 0
+            ? Number((await this.tarifasService.findOneTurnoVigilanciaByPeriodo(periodoActivo.idPeriodo, 12, TipoHorarioInterface.DIURNO, esDominicalDia)).costosDirectos) / 12
+            : 0;
+
+          const valorHoraNocturno = horasNocturnas > 0
+            ? Number((await this.tarifasService.findOneTurnoVigilanciaByPeriodo(periodoActivo.idPeriodo, 12, TipoHorarioInterface.NOCTURNO, esDominicalDia)).costosDirectos) / 12
+            : 0;
+
+          const costosDirectosDia = (horasDiurnas * valorHoraDiurno) + (horasNocturnas * valorHoraNocturno);
+
+          const tarifa24h = await this.tarifasService.findOneTurnoVigilanciaByPeriodo(periodoActivo.idPeriodo, 24, TipoHorarioInterface.DIA_COMPLETO, esDominicalDia);
+
+          const desglose = this.calcularTotalesTarifa(costosDirectosDia, seguroVidaDia, 0.10);
+
+          detalles.push({
+            idTarifa: tarifa24h.idTarifa,
+            horaInicio: this.minutosAHora(minutosInicioVentana),
+            horaFin: this.minutosAHora(minutosFinVentana),
+            cantidadHoras: Math.round(cantidadHoras),
+            fecha: new Date(fechaIter),
+            message: `${this.formatearFecha(fechaIter)}: ${horasDiurnas}h diurnas + ${horasNocturnas}h nocturnas${esDominicalDia ? ' (dominical/festivo)' : ''}`,
+            costosDirectos: desglose.costosDirectos,
+            seguroVida: desglose.seguroVida,
+            costosDirectosSeguroVida: desglose.costosDirectosSeguroVida,
+            aui: desglose.aui,
+            precioAntesIva: desglose.precioAntesIva,
+            iva: desglose.iva,
+            precio: desglose.precioTotal,
           });
 
         }
@@ -1224,27 +978,58 @@ export class OrdenServicioService {
 
     }
 
-    const respuesta = this.armarRespuestaPrecio(
-      'Calculado por horas con la tarifa hora del periodo activo de facturacion (diurna/nocturna y ordinaria/dominical-festiva)',
-      this.calcularTotalesTarifa(costosDirectos, seguroVida, aui)
-    );
-
-    return { ...respuesta, costos_horas: costosHoras };
+    return detalles;
 
   }
 
-  // OBTENER EL VALOR DE LA TARIFA HORA (diurna/nocturna, ordinaria/dominical) PARA UN PERIODO
-  private async obtenerValorHoraPeriodo(idPeriodo: number, diurno: boolean, dominical: boolean): Promise<TarifaHora> {
+  // OBTIENE EL VALOR MENSUAL DEL SEGURO DE VIDA CONFIGURADO EN LAS TARIFAS POR HORA DE UN PERIODO
+  private async obtenerSeguroVidaMensualPeriodo(idPeriodo: number): Promise<number> {
 
-    const tarifaHoraDescripcion = await this.tarifaHoraDescripcionService.findOneByTipo(diurno, dominical);
+    const seguroVidaDescripcion = await this.tarifaHoraDescripcionService.findOneByName(TipoHoraDescripcionInterface.SEGURO_VIDA);
 
-    const valorHora = await this.tarifaHoraService.findOneByPeriodoYDescripcion(idPeriodo, tarifaHoraDescripcion.idTarifaHoraDescripcion);
+    const tarifaHora = await this.tarifaHoraService.findOneByPeriodoYDescripcion(idPeriodo, seguroVidaDescripcion.idTarifaHoraDescripcion);
 
-    if (!valorHora) {
-      throw new BadRequestException(`No se ha configurado el valor de la tarifa hora "${tarifaHoraDescripcion.nombre}" para este periodo`);
+    if (!tarifaHora || tarifaHora.precio == null) {
+      throw new BadRequestException('No se ha configurado el valor del seguro de vida en las tarifas por hora de este periodo');
     }
 
-    return valorHora;
+    return Number(tarifaHora.precio);
+
+  }
+
+  // A PARTIR DE COSTOS DIRECTOS, SEGURO VIDA Y EL PORCENTAJE DE AUI QUE APLIQUE, CALCULA EL RESTO DE CAMPOS DE UNA
+  // FILA DEL DESGLOSE. EL IVA DE ESTA TARIFA (POR HORA) ES DEL 1.9% (0.019).
+  // TODOS LOS VALORES SE REDONDEAN HACIA ARRIBA AL SIGUIENTE NUMERO ENTERO
+  private calcularTotalesTarifa(costosDirectos: number, seguroVida: number, porcentajeAui: number) {
+
+    const costosDirectosSeguroVida = Math.ceil(costosDirectos + seguroVida);
+    const aui = Math.ceil(costosDirectosSeguroVida * porcentajeAui);
+    const precioAntesIva = costosDirectosSeguroVida + aui;
+    const iva = Math.ceil(precioAntesIva * 0.019);
+    const precioTotal = Math.ceil(precioAntesIva + iva);
+
+    return {
+      costosDirectos: Math.ceil(costosDirectos),
+      seguroVida: Math.ceil(seguroVida),
+      costosDirectosSeguroVida,
+      aui,
+      precioAntesIva,
+      iva,
+      precioTotal,
+    };
+
+  }
+
+  // SUMA LOS VALORES BASE (costosDirectos, seguroVida, aui) YA CALCULADOS POR CADA FILA DEL DESGLOSE Y CALCULA
+  // EL IVA/PRECIO TOTAL UNA SOLA VEZ SOBRE EL TOTAL DE LA ORDEN, PARA NO ARRASTRAR ERRORES DE REDONDEO POR FILA
+  private calcularTotalesOrden(costosDirectos: number, seguroVida: number, aui: number) {
+
+    const costosDirectosSeguroVida = costosDirectos + seguroVida;
+    const precioAntesIva = costosDirectosSeguroVida + aui;
+    const iva = Math.ceil(precioAntesIva * 0.019);
+    const precioTotal = Math.ceil(precioAntesIva + iva);
+
+    return { costosDirectos, seguroVida, costosDirectosSeguroVida, aui, precioAntesIva, iva, precioTotal };
 
   }
 
@@ -1454,69 +1239,6 @@ export class OrdenServicioService {
     return false;
   }
 
-  /** Empleados disponibles según tu regla:
-   *  - Si fechaFin: filtra programaciones cuya ORDEN se superpone a [fechaInicio, fechaFin]
-   *  - Si fechaFin=null: filtra programaciones cuya ORDEN tenga fechaFin NULL o >= fechaInicio
-   *  - Luego marca ocupados si se SOLAPAN las horas
-   *  - Devuelve personal.laborando = true que NO estén ocupados
-   */
-  async getEmpleadosDisponibles(
-    validarEmpleadosDisponiblesDto: ValidarEmpleadosDisponiblesDto,      // "HH:mm:ss"
-  ): Promise<Personal[]> {
-
-    const { fechaInicio, fechaFin, horaInicio, horaFin } = validarEmpleadosDisponiblesDto;
-
-    // 1) Traer programaciones relevantes por FECHA (sin validar horas aquí)
-    const qb = this.dataSource
-      .createQueryBuilder()
-      .select([
-        "pp.idPersonal AS idPersonal",
-        "pp.horaInicio AS horaInicio",
-        "pp.horaFin AS horaFin",
-      ])
-      .from(ProgramacionPersonal, "pp")
-      .innerJoin(OrdenServicioTarifa, "ost", "pp.idOrdenServicioTarifa = ost.idOrdenServicioTarifa")
-      .innerJoin(OrdenServicio, "os", "ost.idOrdenServicio = os.idOrdenServicio")
-      .innerJoin(EstadoOrdenEntity, "eos", "os.idEstadoOrdenServicio = eos.idEstadoOrdenServicio")
-      .where("eos.nombre NOT IN (:...estadosIgnorados)", {
-        estadosIgnorados: [EstadoOrdenServicio.CANCELADA, EstadoOrdenServicio.ANULADA, EstadoOrdenServicio.TERMINADO]
-      });
-
-    if (fechaFin) {
-      // Overlap entre [fechaInicio, fechaFin] y [os.fechaInicio, os.fechaFin (o +∞)]
-      qb.where("os.fechaInicio <= :fFin", { fFin: fechaFin })
-        .andWhere(
-          new Brackets((w) => {
-            w.where("os.fechaFin IS NULL").orWhere("os.fechaFin >= :fIni", { fIni: fechaInicio });
-          })
-        );
-    } else {
-      // Indefinido hacia adelante: órdenes con fechaFin NULL o que no han terminado antes de fechaInicio
-      qb.where("os.fechaFin IS NULL OR os.fechaFin >= :fIni", { fIni: fechaInicio });
-    }
-
-    const programaciones = await qb.getRawMany<{ idPersonal: number; horaInicio: string; horaFin: string }>();
-
-    // 2) Marcar OCUPADOS solo si las HORAS se solapan (incluye nocturnos/24h)
-    const idsOcupados = new Set<number>();
-    for (const p of programaciones) {
-      if (this.horasSeSolapan(horaInicio, horaFin, p.horaInicio, p.horaFin)) {
-        idsOcupados.add(p.idPersonal);
-      }
-    }
-
-    // 3) Disponibles = personal laborando y NO en ocupados
-    const disponiblesQB = this.personalRepository
-      .createQueryBuilder("p")
-      .where("p.laborando = true");
-
-    if (idsOcupados.size > 0) {
-      disponiblesQB.andWhere("p.idPersonal NOT IN (:...ids)", { ids: Array.from(idsOcupados) });
-    }
-
-    return await disponiblesQB.getMany();
-  }
-
   // VALIDA SI UN CAMBIO DE FECHAS ES VALIDO SEGUN EL ESTADO ACTUAL DE LA ORDEN.
   // La usan tanto updateValidarFechasOrdenServicio (precheck informativo) como updateOrdenServicio (la que realmente persiste),
   // para que la restriccion quede garantizada por el backend y no dependa de que el front haya llamado primero al precheck
@@ -1651,6 +1373,9 @@ export class OrdenServicioService {
 
   }
 
+  // ACTUALIZAR UNA ORDEN DE SERVICIO: LO UNICO QUE EL USUARIO PUEDE MODIFICAR EN UNA ORDEN YA CREADA SON LAS FECHAS
+  // (fechaInicio/fechaFin), Y ES EL CAMBIO DE FECHAS LO QUE HACE QUE CAMBIE EL PRECIO. SI LAS FECHAS ENVIADAS SON
+  // IGUALES A LAS QUE YA TIENE LA ORDEN, NO SE HACE NINGUN CAMBIO
   async updateOrdenServicio(id: number, updateOrdenServicioDto: UpdateOrdenServicioDto) {
 
     const { fechaInicio, fechaFin, fechaActualizacion } = updateOrdenServicioDto;
@@ -1665,15 +1390,9 @@ export class OrdenServicioService {
 
     }
 
-    if (fechaFinOrden != null && (updateOrdenServicioDto.precioTotal == null || updateOrdenServicioDto.precioTotal == 0)) {
-
-      throw new BadRequestException('se debe enviar el precio total al ser una orden definida');
-
-    }
-
     const fechaActualizacionOrden = this.normalizarFecha(fechaActualizacion);
 
-    // OBTENER LA ORDEN CON SUS SERVICIOS (tarifas) ACTUALES
+    // OBTENER LA ORDEN CON SU DESGLOSE (detalles) ACTUAL
     const ordenServicio = await this.findOneOrdenRelations(id);
 
     const fechaInicioOrdenString = this.formatearFecha(new Date(ordenServicio.fechaInicio));
@@ -1681,6 +1400,11 @@ export class OrdenServicioService {
 
     const fechaInicioNuevaString = this.formatearFecha(fechaInicioOrden);
     const fechaFinNuevaString = fechaFinOrden ? this.formatearFecha(fechaFinOrden) : null;
+
+    // SI LAS FECHAS NO CAMBIAN, NO SE HACE NADA
+    if (fechaInicioNuevaString == fechaInicioOrdenString && fechaFinNuevaString === fechaFinOrdenString) {
+      return ordenServicio;
+    }
 
     const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.nombre;
 
@@ -1734,72 +1458,123 @@ export class OrdenServicioService {
 
       let precioTotalCalculado = 0;
 
-      // ACTUALIZAR EL PRECIO DE CADA SERVICIO YA EXISTENTE, SIN BORRAR/RECREAR LAS FILAS DE OrdenServicioTarifa
-      // (borrar y recrear eliminaba en cascada el personal ya asignado en ProgramacionPersonal)
-      for (const servicioOrden of ordenServicio.tarifas) {
+      if (fechaFinOrden == null) {
 
-        let calculoPrecio: Awaited<ReturnType<OrdenServicioService['calcularPrecioServicioOrden']>> | null = null;
+        // LA ORDEN QUEDA INDEFINIDA: TODOS LOS VALORES DE PRECIO DE CADA FILA DEL DESGLOSE QUEDAN EN NULL
+        // (se cobra mes a mes al liquidar/finalizar)
+        for (const detalleExistente of ordenServicio.detalles) {
 
-        // Si la orden queda definida, recalcular el precio real del servicio con las nuevas fechas,
-        // usando la misma logica de obtenerPrecio (en lugar de confiar en un precio que ya no aplica)
-        if (fechaFinOrden != null) {
+          detalleExistente.cantidadHoras = null;
+          detalleExistente.costosDirectos = null;
+          detalleExistente.seguroVida = null;
+          detalleExistente.costosDirectosSeguroVida = null;
+          detalleExistente.aui = null;
+          detalleExistente.precioAntesIva = null;
+          detalleExistente.iva = null;
+          detalleExistente.precio = null;
 
-          calculoPrecio = await this.calcularPrecioServicioOrden(
-            {
-              idTarifa: servicioOrden.idTarifa ? servicioOrden.idTarifa.idTarifa : undefined,
-              idServicio: servicioOrden.idServicio.idServicio,
-              horaInicio: servicioOrden.horaInicio,
-              horaFin: servicioOrden.horaFin,
-            },
-            fechaInicioOrden,
-            fechaFinOrden,
-          );
-
-          precioTotalCalculado += calculoPrecio.precio;
-
-        }
-
-        // Si la orden es indefinida, todos los valores de precio quedan en null (se cobra mes a mes al liquidar/finalizar)
-        servicioOrden.costosDirectos = calculoPrecio ? calculoPrecio.costosDirectos : null;
-        servicioOrden.seguroVida = calculoPrecio ? calculoPrecio.seguroVida : null;
-        servicioOrden.aui = calculoPrecio ? calculoPrecio.aui : null;
-        servicioOrden.precioAntesIva = calculoPrecio ? calculoPrecio.precioAntesIva : null;
-        servicioOrden.iva = calculoPrecio ? calculoPrecio.iva : null;
-        servicioOrden.precio = calculoPrecio ? calculoPrecio.precio : null;
-
-        const savedServicioOrden = await queryRunner.manager.save(OrdenServicioTarifa, servicioOrden);
-
-        // REEMPLAZAR EL DESGLOSE HORA A HORA: a diferencia del personal, estos tramos no tienen identidad propia,
-        // dependen enteramente de las fechas/horas, asi que se recalculan desde cero en cada actualizacion
-        await queryRunner.manager.delete(CostoHoraOrdenServicioTarifa, { idOrdenServicioTarifa: savedServicioOrden.idOrdenServicioTarifa });
-
-        if (calculoPrecio && calculoPrecio.costos_horas.length > 0) {
-
-          for (const segmento of calculoPrecio.costos_horas) {
-
-            const costoHora = queryRunner.manager.create(CostoHoraOrdenServicioTarifa, {
-              idOrdenServicioTarifa: savedServicioOrden,
-              fecha: segmento.fecha,
-              horaInicio: segmento.horaInicio,
-              horaFin: segmento.horaFin,
-              tipoHorario: segmento.tipoHorario,
-              dominical: segmento.dominical,
-              horas: segmento.horas,
-              costosDirectos: segmento.costosDirectos,
-              seguroVida: segmento.seguroVida,
-              aui: segmento.aui,
-            });
-
-            await queryRunner.manager.save(CostoHoraOrdenServicioTarifa, costoHora);
-
-          }
+          await queryRunner.manager.save(OrdenServicioDetalle, detalleExistente);
 
         }
 
       }
 
-      // EL PRECIO TOTAL DE LA ORDEN SE RECALCULA COMO LA SUMA DE LOS PRECIOS YA CALCULADOS DE CADA SERVICIO
-      // (en vez de confiar en el precioTotal que envia el front)
+      else if (ordenServicio.origenServicio === OrigenServicioEnum.CATALOGO) {
+
+        const itemsDto = updateOrdenServicioDto.servicios;
+
+        if (!itemsDto || itemsDto.length === 0) {
+          throw new BadRequestException('Debe enviar el horario (horaInicio, horaFin) de cada servicio de la orden para poder recalcular el precio');
+        }
+
+        // EL CATALOGO DE SERVICIOS DE LA ORDEN NO CAMBIA, SOLO SE REENVIA SU HORARIO: VALIDAR QUE SEAN EXACTAMENTE LOS MISMOS idTarifa YA EXISTENTES
+        const idsTarifaExistentes = new Set(ordenServicio.detalles.map(detalle => detalle.idTarifa.idTarifa));
+        const idsTarifaEnviados = new Set(itemsDto.map(item => item.idTarifa));
+
+        if (idsTarifaExistentes.size !== idsTarifaEnviados.size || [...idsTarifaExistentes].some(idTarifa => !idsTarifaEnviados.has(idTarifa))) {
+          throw new BadRequestException('Debe enviar el horario de exactamente los mismos servicios (idTarifa) que ya tiene la orden, no se pueden agregar ni quitar servicios al actualizar');
+        }
+
+        // VALIDAR EL HORARIO DE CADA SERVICIO (misma validacion que al crear la orden)
+        for (const itemDto of itemsDto) {
+          await this.validacionHorarios({
+            origenServicio: OrigenServicioEnum.CATALOGO,
+            idTarifa: itemDto.idTarifa,
+            horaInicio: itemDto.horaInicio,
+            horaFin: itemDto.horaFin,
+          });
+        }
+
+        const detallesCalculados = await this.calcularPrecioCatalogo(itemsDto, fechaInicioOrden, fechaFinOrden);
+
+        // ACTUALIZAR CADA FILA EXISTENTE, SIN BORRAR/RECREAR (para no perder su identidad/referencias)
+        for (const detalleCalculado of detallesCalculados) {
+
+          const detalleExistente = ordenServicio.detalles.find(detalle => detalle.idTarifa.idTarifa === detalleCalculado.idTarifa);
+
+          detalleExistente.horaInicio = detalleCalculado.horaInicio;
+          detalleExistente.horaFin = detalleCalculado.horaFin;
+          detalleExistente.costosDirectos = detalleCalculado.costosDirectos;
+          detalleExistente.seguroVida = detalleCalculado.seguroVida;
+          detalleExistente.costosDirectosSeguroVida = detalleCalculado.costosDirectosSeguroVida;
+          detalleExistente.aui = detalleCalculado.aui;
+          detalleExistente.precioAntesIva = detalleCalculado.precioAntesIva;
+          detalleExistente.iva = detalleCalculado.iva;
+          detalleExistente.precio = detalleCalculado.precio;
+
+          await queryRunner.manager.save(OrdenServicioDetalle, detalleExistente);
+
+          precioTotalCalculado += detalleCalculado.precio;
+
+        }
+
+      }
+
+      else {
+
+        // A LA MEDIDA: EL DESGLOSE SE RECALCULA DESDE CERO (dia por dia), YA QUE LA CANTIDAD DE FILAS CAMBIA CON LAS FECHAS
+        if (!updateOrdenServicioDto.horaInicio || !updateOrdenServicioDto.horaFin) {
+          throw new BadRequestException('Debe enviar horaInicio y horaFin para poder recalcular el precio de esta orden a la medida');
+        }
+
+        await queryRunner.manager.delete(OrdenServicioDetalle, { idOrdenServicio: ordenServicio.idOrdenServicio });
+
+        const detallesCalculados = await this.calcularPrecioAMedida(
+          updateOrdenServicioDto.horaInicio,
+          fechaInicioOrden,
+          updateOrdenServicioDto.horaFin,
+          fechaFinOrden,
+        );
+
+        for (const detalleCalculado of detallesCalculados) {
+
+          const tarifa = await this.tarifasService.findOne(detalleCalculado.idTarifa);
+
+          const nuevoDetalle = queryRunner.manager.create(OrdenServicioDetalle, {
+            idOrdenServicio: ordenServicio,
+            idTarifa: tarifa,
+            horaInicio: detalleCalculado.horaInicio,
+            horaFin: detalleCalculado.horaFin,
+            cantidadHoras: detalleCalculado.cantidadHoras,
+            fecha: detalleCalculado.fecha,
+            costosDirectos: detalleCalculado.costosDirectos,
+            seguroVida: detalleCalculado.seguroVida,
+            costosDirectosSeguroVida: detalleCalculado.costosDirectosSeguroVida,
+            aui: detalleCalculado.aui,
+            precioAntesIva: detalleCalculado.precioAntesIva,
+            iva: detalleCalculado.iva,
+            precio: detalleCalculado.precio,
+          });
+
+          await queryRunner.manager.save(OrdenServicioDetalle, nuevoDetalle);
+
+          precioTotalCalculado += detalleCalculado.precio;
+
+        }
+
+      }
+
+      // EL PRECIO TOTAL DE LA ORDEN SE RECALCULA COMO LA SUMA DE LOS PRECIOS DE CADA FILA DEL DESGLOSE
       ordenServicio.precioTotal = fechaFinOrden != null ? Math.round(precioTotalCalculado) : null;
 
       const savedOrdenServicio = await queryRunner.manager.save(OrdenServicio, ordenServicio);
@@ -2504,11 +2279,9 @@ export class OrdenServicioService {
       .leftJoinAndSelect('o.idEstadoOrdenServicio', 'estado')
       .leftJoinAndSelect('o.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
-      .leftJoinAndSelect('o.tarifas', 'tarifas')
-      .leftJoinAndSelect('tarifas.idTarifa', 'tarifa')
+      .leftJoinAndSelect('o.detalles', 'detalles')
+      .leftJoinAndSelect('detalles.idTarifa', 'tarifa')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .leftJoinAndSelect('tarifas.idServicio', 'tarifaServicioDirecto')
-      .leftJoinAndSelect('tarifas.costosHoras', 'tarifaCostosHoras')
       .where('o.fechaInicio BETWEEN :from AND :to', { from, to })
       .getMany();
 
@@ -2550,7 +2323,7 @@ export class OrdenServicioService {
     const serviciosCount: Record<string, number> = {};
 
     for (const o of ordenes) {
-      for (const t of o.tarifas) {
+      for (const t of o.detalles) {
         const servicio = t.idTarifa.idServicio;
         if (!servicio) continue;
 
