@@ -112,48 +112,48 @@ function RouteComponent() {
         return <StateLabel state={row.original.requierePersonal} />;
       },
     },
-    {
-      header: "Estado",
-      cell: ({ row }) => {
-        return <StateLabel state={row.original.estado} />;
-      },
-    },
-    {
-      header: "Acciones",
-      cell: ({ row }) => (
-        <MoreActionsButton
-          menuId={`actions-${row.original.idTipoServicio}`}
-          actions={[
-            {
-              label: "Editar",
-              onClick: () => {
-                setIsOpenEditTipoServicio(true);
-                setIdTipoServicio(row.original.idTipoServicio);
-                resetEditar({
-                  nombre: row.original.nombre,
-                  descripcion: row.original.descripcion,
-                  prefijo: row.original.prefijo,
-                  requierePersonal: row.original.requierePersonal,
-                  estado: row.original.estado,
-                });
-              },
-            },
-            {
-              label: "Eliminar",
-              onClick: () => {
-                setIdTipoServicio(row.original.idTipoServicio);
-                setIsOpenDeleteTipoServicio(true);
-              },
-              color: "red" as const,
-            },
-          ]}
-        />
-      ),
-    },
+    // {
+    //   header: "Estado",
+    //   cell: ({ row }) => {
+    //     return <StateLabel state={row.original.estado} />;
+    //   },
+    // },
+    // {
+    //   header: "Acciones",
+    //   cell: ({ row }) => (
+    //     <MoreActionsButton
+    //       menuId={`actions-${row.original.idTipoServicio}`}
+    //       actions={[
+    //         {
+    //           label: "Editar",
+    //           onClick: () => {
+    //             setIsOpenEditTipoServicio(true);
+    //             setIdTipoServicio(row.original.idTipoServicio);
+    //             resetEditar({
+    //               nombre: row.original.nombre,
+    //               descripcion: row.original.descripcion,
+    //               prefijo: row.original.prefijo,
+    //               requierePersonal: row.original.requierePersonal,
+    //               estado: row.original.estado,
+    //             });
+    //           },
+    //         },
+    //         {
+    //           label: "Eliminar",
+    //           onClick: () => {
+    //             setIdTipoServicio(row.original.idTipoServicio);
+    //             setIsOpenDeleteTipoServicio(true);
+    //           },
+    //           color: "red" as const,
+    //         },
+    //       ]}
+    //     />
+    //   ),
+    // },
   ];
   return (
     <Section>
-      <div className="flex justify-end">
+      {/* <div className="flex justify-end">
         <ButtonAction
           Icon={PlusIcon}
           label="Agregar Tipo de Servicio"
@@ -161,48 +161,48 @@ function RouteComponent() {
             setIsOpenAddTipoServicio(true);
           }}
         />
-      </div>
+      </div> */}
       <Table
         columns={columns}
         data={filteredTipoServicios ?? tipoServicios?.data?.data ?? []}
-        serverPagination={!filteredTipoServicios}
-        totalRows={
-          filteredTipoServicios
-            ? filteredTipoServicios.length
-            : (tipoServicios?.data?.pagination?.total ?? 0)
-        }
-        currentPage={page}
-        onPageChange={setPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(0);
-        }}
-        enableSorting={true}
-        enablePagination={true}
-        pageSize={pageSize}
-        enableFiltering={true}
-        filterColumns={[
-          { label: "Nombre", value: TipoServicioFilterColumn.NOMBRE },
-          { label: "Descripción", value: TipoServicioFilterColumn.DESCRIPCION },
-          { label: "Prefijo", value: TipoServicioFilterColumn.PREFIJO },
-        ] satisfies ServerFilterColumn[]}
-        onServerFilter={(column, query) => {
-          const filter = { column: column as TipoServicioFilterColumn, query, pagination: false };
-          setCurrentFilter(filter);
-          filterTipoServicio(
-            filter,
-            {
-              onSuccess: (data) => {
-                setFilteredTipoServicios(data.data?.data ?? []);
-              },
-            },
-          );
-        }}
-        onServerFilterClear={() => {
-          setFilteredTipoServicios(null);
-          setCurrentFilter(undefined);
-        }}
-        serverFilterLoading={isFilteringTipoServicios}
+        // serverPagination={!filteredTipoServicios}
+        // totalRows={
+        //   filteredTipoServicios
+        //     ? filteredTipoServicios.length
+        //     : (tipoServicios?.data?.pagination?.total ?? 0)
+        // }
+        // currentPage={page}
+        // onPageChange={setPage}
+        // onPageSizeChange={(size) => {
+        //   setPageSize(size);
+        //   setPage(0);
+        // }}
+        enableSorting={false}
+        enablePagination={false}
+        // pageSize={pageSize}
+        // enableFiltering={true}
+        // filterColumns={[
+        //   { label: "Nombre", value: TipoServicioFilterColumn.NOMBRE },
+        //   { label: "Descripción", value: TipoServicioFilterColumn.DESCRIPCION },
+        //   { label: "Prefijo", value: TipoServicioFilterColumn.PREFIJO },
+        // ] satisfies ServerFilterColumn[]}
+        // onServerFilter={(column, query) => {
+        //   const filter = { column: column as TipoServicioFilterColumn, query, pagination: false };
+        //   setCurrentFilter(filter);
+        //   filterTipoServicio(
+        //     filter,
+        //     {
+        //       onSuccess: (data) => {
+        //         setFilteredTipoServicios(data.data?.data ?? []);
+        //       },
+        //     },
+        //   );
+        // }}
+        // onServerFilterClear={() => {
+        //   setFilteredTipoServicios(null);
+        //   setCurrentFilter(undefined);
+        // }}
+        // serverFilterLoading={isFilteringTipoServicios}
       />
       <SimpleModal
         isOpen={isOpenAddTipoServicio}
