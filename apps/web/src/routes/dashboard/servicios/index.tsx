@@ -208,126 +208,126 @@ function RouteComponent() {
         );
       },
     },
-    {
-      header: "Duración",
-      accessorKey: "idTipoDuracion.descripcion",
-      cell: ({ row }) => {
-        return (
-          <span className="whitespace-nowrap">
-            {row.original.idTipoDuracion.descripcion}
-          </span>
-        );
-      },
-    },
-    {
-      header: "Horario",
-      accessorKey: "idTipoHorarioDescripcion.nombre",
-      cell: ({ row }) => {
-        return (
-          <span className="whitespace-nowrap">
-            {row.original.idTipoHorarioDescripcion.nombre}
-          </span>
-        );
-      },
-    },
-    {
-      header: "Tarifa",
-      cell: ({ row }) => {
-        return (
-          <div className="flex flex-col gap-1 whitespace-nowrap">
-            <span>{row.original.idTipoTarifa?.nombre}</span>
-            {row.original.dominical && (
-              <span className="text-xs text-blue-600">Dominical</span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      header: "Horas",
-      cell: ({ row }) => {
-        if (row.original.idTipoDuracion?.descripcion === "fija") {
-          return (
-            <div className="flex flex-col gap-2">
-              <p>Fijas: {row.original.horasFijas}</p>
-            </div>
-          );
-        }
-        if (row.original.idTipoDuracion?.descripcion === "flexible") {
-          return (
-            <div className="flex flex-col gap-2 whitespace-nowrap">
-              <span>Mínimas: {row.original.horasMinimas}</span>
-              <span>Máximas: {row.original.horasMaximas}</span>
-            </div>
-          );
-        }
-      },
-    },
-    {
-      header: "Estado",
-      cell: ({ row }) => {
-        return <StateLabel state={row.original.estado} />;
-      },
-    },
-    {
-      header: "Acciones",
-      cell: ({ row }) => (
-        <MoreActionsButton
-          menuId={`actions-${row.original.idServicio}`}
-          actions={[
-            {
-              label: "Editar",
-              onClick: () => {
-                setServicioId(row.original.idServicio);
-                resetEditar({
-                  codigo: row.original.codigo,
-                  descripcion: row.original.descripcion,
-                  idTipoServicio: row.original.idTipoServicio.idTipoServicio,
-                  idTipoDuracion: row.original.idTipoDuracion.idTipoDuracion,
-                  idTipoHorarioDescripcion:
-                    row.original.idTipoHorarioDescripcion
-                      .idTipoHorarioDescripcion,
-                  idTipoTarifa: row.original.idTipoTarifa?.idTipoTarifa,
-                  horasFijas: row.original.horasFijas,
-                  horasMinimas: row.original.horasMinimas,
-                  horasMaximas: row.original.horasMaximas,
-                  dominical: row.original.dominical,
-                  estado: row.original.estado,
-                });
-                setCodigoServicio({
-                  parte1: row.original.codigo.split("-")[0],
-                  parte2: row.original.codigo.split("-")[1],
-                  parte3: row.original.codigo.split("-")[2],
-                });
-                setIsOpenEditModal(true);
-                setTipoDuracion(row.original.idTipoDuracion.descripcion);
-                setTipoHorarioNombre(
-                  row.original.idTipoHorarioDescripcion.nombre,
-                );
-              },
-            },
-            {
-              label: "Ver",
-              onClick: () => {
-                obtenerServicioById(row.original.idServicio, {
-                  onSuccess: () => {
-                    setIsOpenViewModal(true);
-                  },
-                });
-              },
-            },
-            {
-              label: "Eliminar",
-              onClick: () => {
-                setServicioId(row.original.idServicio);
-                setIsOpenDeleteModal(true);
-              },
-              color: "red" as const,
-            },
-          ]}
-        />
-      ),
-    },
+    // {
+    //   header: "Duración",
+    //   accessorKey: "idTipoDuracion.descripcion",
+    //   cell: ({ row }) => {
+    //     return (
+    //       <span className="whitespace-nowrap">
+    //         {row.original.idTipoDuracion.descripcion}
+    //       </span>
+    //     );
+    //   },
+    // },
+    // {
+    //   header: "Horario",
+    //   accessorKey: "idTipoHorarioDescripcion.nombre",
+    //   cell: ({ row }) => {
+    //     return (
+    //       <span className="whitespace-nowrap">
+    //         {row.original.idTipoHorarioDescripcion.nombre}
+    //       </span>
+    //     );
+    //   },
+    // },
+    // {
+    //   header: "Tarifa",
+    //   cell: ({ row }) => {
+    //     return (
+    //       <div className="flex flex-col gap-1 whitespace-nowrap">
+    //         <span>{row.original.idTipoTarifa?.nombre}</span>
+    //         {row.original.dominical && (
+    //           <span className="text-xs text-blue-600">Dominical</span>
+    //         )}
+    //       </div>
+    //     );
+    //   },
+    // },
+    // {
+    //   header: "Horas",
+    //   cell: ({ row }) => {
+    //     if (row.original.idTipoDuracion?.descripcion === "fija") {
+    //       return (
+    //         <div className="flex flex-col gap-2">
+    //           <p>Fijas: {row.original.horasFijas}</p>
+    //         </div>
+    //       );
+    //     }
+    //     if (row.original.idTipoDuracion?.descripcion === "flexible") {
+    //       return (
+    //         <div className="flex flex-col gap-2 whitespace-nowrap">
+    //           <span>Mínimas: {row.original.horasMinimas}</span>
+    //           <span>Máximas: {row.original.horasMaximas}</span>
+    //         </div>
+    //       );
+    //     }
+    //   },
+    // },
+    // {
+    //   header: "Estado",
+    //   cell: ({ row }) => {
+    //     return <StateLabel state={row.original.estado} />;
+    //   },
+    // },
+    // {
+    //   header: "Acciones",
+    //   cell: ({ row }) => (
+    //     <MoreActionsButton
+    //       menuId={`actions-${row.original.idServicio}`}
+    //       actions={[
+    //         {
+    //           label: "Editar",
+    //           onClick: () => {
+    //             setServicioId(row.original.idServicio);
+    //             resetEditar({
+    //               codigo: row.original.codigo,
+    //               descripcion: row.original.descripcion,
+    //               idTipoServicio: row.original.idTipoServicio.idTipoServicio,
+    //               idTipoDuracion: row.original.idTipoDuracion.idTipoDuracion,
+    //               idTipoHorarioDescripcion:
+    //                 row.original.idTipoHorarioDescripcion
+    //                   .idTipoHorarioDescripcion,
+    //               idTipoTarifa: row.original.idTipoTarifa?.idTipoTarifa,
+    //               horasFijas: row.original.horasFijas,
+    //               horasMinimas: row.original.horasMinimas,
+    //               horasMaximas: row.original.horasMaximas,
+    //               dominical: row.original.dominical,
+    //               estado: row.original.estado,
+    //             });
+    //             setCodigoServicio({
+    //               parte1: row.original.codigo.split("-")[0],
+    //               parte2: row.original.codigo.split("-")[1],
+    //               parte3: row.original.codigo.split("-")[2],
+    //             });
+    //             setIsOpenEditModal(true);
+    //             setTipoDuracion(row.original.idTipoDuracion.descripcion);
+    //             setTipoHorarioNombre(
+    //               row.original.idTipoHorarioDescripcion.nombre,
+    //             );
+    //           },
+    //         },
+    //         {
+    //           label: "Ver",
+    //           onClick: () => {
+    //             obtenerServicioById(row.original.idServicio, {
+    //               onSuccess: () => {
+    //                 setIsOpenViewModal(true);
+    //               },
+    //             });
+    //           },
+    //         },
+    //         {
+    //           label: "Eliminar",
+    //           onClick: () => {
+    //             setServicioId(row.original.idServicio);
+    //             setIsOpenDeleteModal(true);
+    //           },
+    //           color: "red" as const,
+    //         },
+    //       ]}
+    //     />
+    //   ),
+    // },
   ];
 
   const serviciosData = useMemo(
@@ -336,13 +336,13 @@ function RouteComponent() {
   );
   return (
     <Section>
-      <div className="flex justify-end">
+      {/* <div className="flex justify-end">
         <ButtonAction
           Icon={PlusIcon}
           label="Agregar Servicio"
           onClick={() => setIsOpenAddModal(true)}
         />
-      </div>
+      </div> */}
 
       <div className="flex flex-col gap-6">
         {serviciosData.map(([key, value]: [string, any]) => {
