@@ -125,7 +125,8 @@ export class TarifasService {
 
     // VIGILANCIA Y ESCOLTA
 
-    // "POR SERVICIO": EL USUARIO INGRESA LOS COSTOS DIRECTOS MANUALMENTE, EL RESTO SE CALCULA CON EL SEGURO DE VIDA DEL PERIODO
+    // "POR SERVICIO" (recogida de dinero): EL USUARIO INGRESA LOS COSTOS DIRECTOS MANUALMENTE. EL SEGURO DE VIDA
+    // SE TOMA COMPLETO (SIN DIVIDIR ENTRE 30) YA QUE ESTA TARIFA REPRESENTA EL VALOR MENSUAL DEL SERVICIO
     if (servicio.idTipoTarifa.nombre == TipoTarifaInterface.SERVICIO) {
 
       if (costosDirectosManual == null) {
@@ -138,11 +139,9 @@ export class TarifasService {
         errorServicio('no se ha configurado el valor del seguro de vida en las tarifas por hora de este periodo');
       }
 
-      const seguroVidaDia = Math.ceil(seguroVidaMensual / 30);
-
       return {
         ...base,
-        ...this.calcularTotalesTarifa(costosDirectosManual, seguroVidaDia, 0.10),
+        ...this.calcularTotalesTarifa(costosDirectosManual, seguroVidaMensual, 0.10),
       };
 
     }

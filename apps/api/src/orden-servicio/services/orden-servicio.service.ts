@@ -772,17 +772,30 @@ export class OrdenServicioService {
 
         } else {
 
-          const costosDirectos = (Number(tarifa.costosDirectos) / 30) * dias;
+          const costosDirectos = this.prorratearValorMensual(Number(tarifa.costosDirectos), fechaInicioOrden, fechaFinOrden);
 
           desglose = this.calcularTotalesTarifa(costosDirectos, 0, 0.10);
-          mensaje = `Monitoreo de alarmas, ${dias} dia(s), proporcional a la tarifa mensual (no cobra seguro de vida)`;
+          mensaje = `Monitoreo de alarmas, ${dias} dia(s), proporcional a la tarifa mensual (meses completos a tarifa llena, no cobra seguro de vida)`;
 
         }
 
       }
 
-      // POR SERVICIO O POR TURNO: costos directos * dias, seguro de vida (mensual, de tarifa_hora) / 30 * dias, aui flat 10%
-      else if (tipoTarifaNombre === TipoTarifaInterface.SERVICIO || tipoTarifaNombre === TipoTarifaInterface.TURNO) {
+      // POR SERVICIO (recogida de dinero): costos directos * dias, seguro de vida TOTAL MENSUAL (sin dividir entre 30) * dias, aui flat 10%
+      else if (tipoTarifaNombre === TipoTarifaInterface.SERVICIO) {
+
+        const costosDirectos = Number(tarifa.costosDirectos) * dias;
+
+        const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(tarifa.idPeriodo.idPeriodo);
+        const seguroVida = seguroVidaMensual * dias;
+
+        desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, 0.10);
+        mensaje = `Por servicio, ${dias} dia(s)`;
+
+      }
+
+      // POR TURNO: costos directos * dias, seguro de vida (mensual, de tarifa_hora) / 30 * dias, aui flat 10%
+      else if (tipoTarifaNombre === TipoTarifaInterface.TURNO) {
 
         const costosDirectos = Number(tarifa.costosDirectos) * dias;
 
@@ -790,7 +803,7 @@ export class OrdenServicioService {
         const seguroVida = Math.ceil(seguroVidaMensual / 30) * dias;
 
         desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, 0.10);
-        mensaje = `${tipoTarifaNombre === TipoTarifaInterface.SERVICIO ? 'Por servicio' : 'Por turno'}, ${dias} dia(s)`;
+        mensaje = `Por turno, ${dias} dia(s)`;
 
       }
 
@@ -804,15 +817,15 @@ export class OrdenServicioService {
 
         } else {
 
-          const costosDirectos = (Number(tarifa.costosDirectos) / 30) * dias;
+          const costosDirectos = this.prorratearValorMensual(Number(tarifa.costosDirectos), fechaInicioOrden, fechaFinOrden);
 
           const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(tarifa.idPeriodo.idPeriodo);
-          const seguroVida = Math.ceil(seguroVidaMensual / 30) * dias;
+          const seguroVida = this.prorratearValorMensual(seguroVidaMensual, fechaInicioOrden, fechaFinOrden);
 
           const porcentajeAui = servicio.armado ? 0.10 : 0.08;
 
           desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, porcentajeAui);
-          mensaje = `${dias} dia(s), proporcional a la tarifa mensual (AUI ${servicio.armado ? '10% armado' : '8% sin armado'})`;
+          mensaje = `${dias} dia(s), proporcional a la tarifa mensual (meses completos a tarifa llena, AUI ${servicio.armado ? '10% armado' : '8% sin armado'})`;
 
         }
 
@@ -1100,6 +1113,46 @@ export class OrdenServicioService {
       fechaFin.getMonth() === fechaInicio.getMonth() &&
       fechaFin.getDate() === ultimoDiaDelMes
     );
+
+  }
+
+  // PRORRATEA UN VALOR MENSUAL (costos directos o seguro de vida) A TRAVES DE UN RANGO DE FECHAS QUE PUEDE ABARCAR
+  // VARIOS MESES: recorre mes por mes el rango [fechaInicioOrden, fechaFinOrden] y por cada mes que este COMPLETO
+  // dentro del rango (del dia 1 al ultimo dia de ese mes) cobra el valor mensual completo; los meses parciales
+  // (al inicio o al final del rango) se cobran proporcional por dia (valorMensual / 30 * dias de ese tramo).
+  // Ej: 25 agosto -> 10 octubre = agosto parcial (7 dias) + septiembre completo (tarifa llena) + octubre parcial (10 dias)
+  private prorratearValorMensual(valorMensual: number, fechaInicioOrden: Date, fechaFinOrden: Date): number {
+
+    let total = 0;
+
+    const mesIter = new Date(fechaInicioOrden.getFullYear(), fechaInicioOrden.getMonth(), 1);
+
+    while (mesIter <= fechaFinOrden) {
+
+      const primerDiaMes = new Date(mesIter.getFullYear(), mesIter.getMonth(), 1);
+      const ultimoDiaMes = new Date(mesIter.getFullYear(), mesIter.getMonth() + 1, 0);
+
+      const inicioTramo = fechaInicioOrden > primerDiaMes ? fechaInicioOrden : primerDiaMes;
+      const finTramo = fechaFinOrden < ultimoDiaMes ? fechaFinOrden : ultimoDiaMes;
+
+      const esMesCompleto = inicioTramo.getTime() === primerDiaMes.getTime() && finTramo.getTime() === ultimoDiaMes.getTime();
+
+      if (esMesCompleto) {
+
+        total += valorMensual;
+
+      } else {
+
+        const diasTramo = this.calcularDuracionServicioDias(new Date(inicioTramo), new Date(finTramo));
+        total += (valorMensual / 30) * diasTramo;
+
+      }
+
+      mesIter.setMonth(mesIter.getMonth() + 1);
+
+    }
+
+    return total;
 
   }
 
