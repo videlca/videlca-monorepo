@@ -1,29 +1,17 @@
-export interface Puesto {
-  nombre: string;
-  direccion: string;
-  telefono: string;
-  nombreCliente: string;
-  Ciudad: string;
-}
-
-export interface OrdenServicio {
-  ordenServicioId: string;
-  estado: string;
-  fechaCreacion: string;
-  puesto: Puesto;
-}
-
+// El backend solo genera eventos a partir de las novedades del personal (ver
+// ProgramacionPersonalService.findAll); ya no existe una relacion entre la programacion de
+// personal y las ordenes de servicio, por lo que tipoEvento es el texto libre de
+// TipoNovedad.descripcion y no hay informacion de orden de servicio asociada a un evento.
 export interface Event {
   idEvento: string;
   tituloEvento: string;
-  tipoEvento: "asignado" | "permiso" | "vacaciones" | "incapacidad";
+  tipoEvento: string;
   fechaInicioEvento: string;
   fechaFinEvento: string;
   horaInicioEvento: string;
   horaFinEvento: string;
   horaInicioEmpleado: string;
   horaFinEmpleado: string;
-  ordenServicio?: OrdenServicio;
 }
 
 export interface PersonalAsignado {

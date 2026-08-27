@@ -29,12 +29,10 @@ export const Route = createFileRoute("/dashboard/programaciones/")({
 });
 
 // TODO: Agregar los tipos de programaciones en la base de datos y en este archivo
+// NOTA: ya no existe relacion entre la programacion de personal y las ordenes de servicio
+// (ver ProgramacionPersonalService.findAll en el backend), por lo que todos los eventos
+// vienen de novedades del personal; no hay un tipo "asignado".
 const eventTypes = {
-  asignado: {
-    label: "Asignado",
-    color: "bg-purple-500",
-    textColor: "text-white",
-  },
   permiso: {
     label: "Permiso",
     color: "bg-yellow-500",
