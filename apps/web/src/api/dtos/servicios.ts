@@ -41,9 +41,10 @@ export interface UpdateServicioDto extends Partial<CreateServicioDto> {
 }
 
 export interface CreateTipoHorarioDto {
-  idTipoHorarioDescripcion: number;
-  horaInicio: string;
-  horaFin: string;
+  horaInicioDiurno: string;
+  horaFinDiurno: string;
+  horaInicioNocturno: string;
+  horaFinNocturno: string;
   fechaVigenciaInicio: string;
   fechaVigenciaFin?: string | null;
 }

@@ -9,7 +9,6 @@ import { useState } from "react";
 import {
   useCreateTipoHorario,
   useDeleteTipoHorario,
-  useTipoHorarioDescripcionDiurnoNocturno,
   useTipoHorarios,
   useUpdateTipoHorario,
 } from "../../../api/queryFunctions/servicios";
@@ -19,7 +18,6 @@ import type {
   CreateTipoHorarioDto,
   UpdateTipoHorarioDto,
 } from "../../../api/dtos";
-import { InputSelect } from "../../../components/common/InputSelect";
 import { InputForm } from "../../../components/common/InputForm";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { CheckboxForm } from "../../../components/common/CheckboxForm";
@@ -44,8 +42,6 @@ function RouteComponent() {
   const [isIndefinido, setIsIndefinido] = useState(false);
   // Queries y mutaciones
   const { data: tipoHorarios } = useTipoHorarios();
-  const { data: tipoHorarioDescripcionDiurnoNocturno } =
-    useTipoHorarioDescripcionDiurnoNocturno();
 
   const { mutate: crearTipoHorario, isPending: isLoadingCrearTipoHorario } =
     useCreateTipoHorario();
@@ -61,9 +57,10 @@ function RouteComponent() {
     setValue: setValueCrear,
   } = useForm<CreateTipoHorarioDto>({
     defaultValues: {
-      idTipoHorarioDescripcion: 0,
-      horaInicio: "",
-      horaFin: "",
+      horaInicioDiurno: "",
+      horaFinDiurno: "",
+      horaInicioNocturno: "",
+      horaFinNocturno: "",
       fechaVigenciaInicio: "",
       fechaVigenciaFin: "",
     },
@@ -75,9 +72,10 @@ function RouteComponent() {
     reset: resetEditar,
   } = useForm<UpdateTipoHorarioDto>({
     defaultValues: {
-      idTipoHorarioDescripcion: 0,
-      horaInicio: "",
-      horaFin: "",
+      horaInicioDiurno: "",
+      horaFinDiurno: "",
+      horaInicioNocturno: "",
+      horaFinNocturno: "",
       fechaVigenciaInicio: "",
       fechaVigenciaFin: "",
     },
@@ -94,19 +92,17 @@ function RouteComponent() {
       return;
     }
 
+    const formatHora = (hora: string) =>
+      hora.includes(":") && hora.split(":").length === 2
+        ? `${hora}:00`
+        : hora;
+
     const formattedData = {
       ...data,
-      idTipoHorarioDescripcion: Number(data.idTipoHorarioDescripcion),
-      horaInicio:
-        data.horaInicio.includes(":") &&
-          data.horaInicio.split(":").length === 2
-          ? `${data.horaInicio}:00`
-          : data.horaInicio,
-      horaFin:
-        data.horaFin.includes(":") &&
-          data.horaFin.split(":").length === 2
-          ? `${data.horaFin}:00`
-          : data.horaFin,
+      horaInicioDiurno: formatHora(data.horaInicioDiurno),
+      horaFinDiurno: formatHora(data.horaFinDiurno),
+      horaInicioNocturno: formatHora(data.horaInicioNocturno),
+      horaFinNocturno: formatHora(data.horaFinNocturno),
       fechaVigenciaInicio: new Date(
         data.fechaVigenciaInicio,
       ).toISOString(),
@@ -140,9 +136,10 @@ function RouteComponent() {
     }
     const formattedData = {
       ...data,
-      idTipoHorarioDescripcion: Number(data.idTipoHorarioDescripcion),
-      horaInicio: timeFormat(data.horaInicio || ""),
-      horaFin: timeFormat(data.horaFin || ""),
+      horaInicioDiurno: timeFormat(data.horaInicioDiurno || ""),
+      horaFinDiurno: timeFormat(data.horaFinDiurno || ""),
+      horaInicioNocturno: timeFormat(data.horaInicioNocturno || ""),
+      horaFinNocturno: timeFormat(data.horaFinNocturno || ""),
       fechaVigenciaInicio: new Date(
         data.fechaVigenciaInicio || "",
       ).toISOString(),
@@ -173,16 +170,20 @@ function RouteComponent() {
       accessorKey: "idTipoHorario",
     },
     {
-      header: "Tipo de horario",
-      accessorKey: "idTipoHorarioDescripcion.nombre",
+      header: "Hora inicio diurno",
+      accessorKey: "horaInicioDiurno",
     },
     {
-      header: "Hora de inicio",
-      accessorKey: "horaInicio",
+      header: "Hora fin diurno",
+      accessorKey: "horaFinDiurno",
     },
     {
-      header: "Hora de fin",
-      accessorKey: "horaFin",
+      header: "Hora inicio nocturno",
+      accessorKey: "horaInicioNocturno",
+    },
+    {
+      header: "Hora fin nocturno",
+      accessorKey: "horaFinNocturno",
     },
     {
       header: "Fecha de vigencia de inicio",
@@ -208,10 +209,10 @@ function RouteComponent() {
                 setIsIndefinido(row.original.fechaVigenciaFin === null);
                 setIdTipoHorario(row.original.idTipoHorario);
                 resetEditar({
-                  idTipoHorarioDescripcion:
-                    row.original.idTipoHorarioDescripcion.idTipoHorarioDescripcion,
-                  horaInicio: row.original.horaInicio,
-                  horaFin: row.original.horaFin,
+                  horaInicioDiurno: row.original.horaInicioDiurno,
+                  horaFinDiurno: row.original.horaFinDiurno,
+                  horaInicioNocturno: row.original.horaInicioNocturno,
+                  horaFinNocturno: row.original.horaFinNocturno,
                   fechaVigenciaInicio: row.original.fechaVigenciaInicio,
                   fechaVigenciaFin: row.original.fechaVigenciaFin || null,
                 });
@@ -269,32 +270,33 @@ function RouteComponent() {
           updating={false}
         >
           <div className="flex flex-col gap-4">
-            <InputSelect
-              label="Tipo de horario"
-              placeholder="Selecciona un tipo de horario"
-              id="idTipoHorarioDescripcion"
-              options={
-                tipoHorarioDescripcionDiurnoNocturno?.data?.data.map((tipo) => ({
-                  id: tipo.idTipoHorarioDescripcion,
-                  descripcion: tipo.nombre,
-                })) || []
-              }
-              required={true}
-              {...registerCrear("idTipoHorarioDescripcion", { valueAsNumber: true })}
-            />
             <InputTime24H
-              label="Hora de inicio"
+              label="Hora de inicio diurno"
               placeholder="Selecciona una hora de inicio"
-              id="horaInicio"
+              id="horaInicioDiurno"
               required={true}
-              {...registerCrear("horaInicio")}
+              {...registerCrear("horaInicioDiurno")}
             />
             <InputTime24H
-              label="Hora de fin"
+              label="Hora de fin diurno"
               placeholder="Selecciona una hora de fin"
-              id="horaFin"
+              id="horaFinDiurno"
               required={true}
-              {...registerCrear("horaFin")}
+              {...registerCrear("horaFinDiurno")}
+            />
+            <InputTime24H
+              label="Hora de inicio nocturno"
+              placeholder="Selecciona una hora de inicio"
+              id="horaInicioNocturno"
+              required={true}
+              {...registerCrear("horaInicioNocturno")}
+            />
+            <InputTime24H
+              label="Hora de fin nocturno"
+              placeholder="Selecciona una hora de fin"
+              id="horaFinNocturno"
+              required={true}
+              {...registerCrear("horaFinNocturno")}
             />
             <InputForm
               label="Fecha de vigencia de inicio"
@@ -346,32 +348,33 @@ function RouteComponent() {
           updating={true}
         >
           <div className="flex flex-col gap-4">
-            <InputSelect
-              label="Tipo de horario"
-              placeholder="Selecciona un tipo de horario"
-              id="idTipoHorarioDescripcion"
-              options={
-                tipoHorarioDescripcionDiurnoNocturno?.data?.data.map((tipo) => ({
-                  id: tipo.idTipoHorarioDescripcion,
-                  descripcion: tipo.nombre,
-                })) || []
-              }
-              required={true}
-              {...registerEditar("idTipoHorarioDescripcion", { valueAsNumber: true })}
-            />
             <InputTime24H
-              label="Hora de inicio"
+              label="Hora de inicio diurno"
               placeholder="Selecciona una hora de inicio"
-              id="horaInicio"
+              id="horaInicioDiurno"
               required={true}
-              {...registerEditar("horaInicio")}
+              {...registerEditar("horaInicioDiurno")}
             />
             <InputTime24H
-              label="Hora de fin"
+              label="Hora de fin diurno"
               placeholder="Selecciona una hora de fin"
-              id="horaFin"
+              id="horaFinDiurno"
               required={true}
-              {...registerEditar("horaFin")}
+              {...registerEditar("horaFinDiurno")}
+            />
+            <InputTime24H
+              label="Hora de inicio nocturno"
+              placeholder="Selecciona una hora de inicio"
+              id="horaInicioNocturno"
+              required={true}
+              {...registerEditar("horaInicioNocturno")}
+            />
+            <InputTime24H
+              label="Hora de fin nocturno"
+              placeholder="Selecciona una hora de fin"
+              id="horaFinNocturno"
+              required={true}
+              {...registerEditar("horaFinNocturno")}
             />
             <InputForm
               label="Fecha de vigencia de inicio"

@@ -44,9 +44,10 @@ export interface TipoHorarioDescripcion {
 
 export interface TipoHorario {
   idTipoHorario: number;
-  idTipoHorarioDescripcion: TipoHorarioDescripcion;
-  horaInicio: string;
-  horaFin: string;
+  horaInicioDiurno: string;
+  horaFinDiurno: string;
+  horaInicioNocturno: string;
+  horaFinNocturno: string;
   fechaVigenciaInicio: string;
   fechaVigenciaFin: string | null;
   estado: boolean;
