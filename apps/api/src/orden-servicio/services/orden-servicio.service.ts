@@ -152,7 +152,7 @@ export class OrdenServicioService {
 
       fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
 
-      if (fechaInicioOrden >= fechaFinOrden) {
+      if (fechaInicioOrden > fechaFinOrden) {
 
         throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
 
@@ -601,7 +601,7 @@ export class OrdenServicioService {
 
       fechaFinOrden = new Date(añoFin, mesFin - 1, diaFin);
 
-      if (fechaInicioOrden >= fechaFinOrden) {
+      if (fechaInicioOrden > fechaFinOrden) {
 
         throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
 
