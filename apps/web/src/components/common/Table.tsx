@@ -32,6 +32,14 @@ interface TableProps<TData, TValues> {
   columns: ColumnDef<TData, TValues>[];
   className?: string;
   enableSorting?: boolean;
+  /**
+   * Datos/callbacks que las celdas leen en tiempo de render via context.table.options.meta, en vez de
+   * capturarlos por closure en `columns`. Permite que `columns` (y por lo tanto sus funciones `cell`)
+   * se mantengan memoizadas/estables aunque estos valores cambien en cada tecla: si `cell` cambiara de
+   * referencia en cada render, React la trata como un componente distinto (ver flexRender) y remonta el
+   * contenido de la celda, perdiendo el foco de cualquier input editable dentro de ella.
+   */
+  meta?: object;
   enablePagination?: boolean;
   enableFiltering?: boolean;
   pageSize?: number;
@@ -64,6 +72,7 @@ const Table = <TData, TValues>({
   columns,
   className = "",
   enableSorting = true,
+  meta,
   enablePagination = true,
   enableFiltering = false,
   pageSize = 5,
@@ -108,6 +117,7 @@ const Table = <TData, TValues>({
   const table = useReactTable({
     data,
     columns,
+    meta,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: serverPagination ? undefined : getPaginationRowModel(),

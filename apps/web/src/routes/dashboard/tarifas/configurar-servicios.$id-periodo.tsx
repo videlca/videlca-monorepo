@@ -5,70 +5,79 @@ import {
 } from "@tanstack/react-router";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { Section } from "../../../components/ui/dashboard/Section";
-import {
-  AlertCircle,
-  ArrowLeftIcon,
-  CheckCircle2,
-  ChevronDown,
-  Clock,
-  PlusIcon,
-  Search,
-  UserCheck,
-  X,
-} from "lucide-react";
+import { ArrowLeftIcon, Clock, PlusIcon, UserCheck } from "lucide-react";
 import { usePeriodoById } from "../../../api/queryFunctions/tarifas/periodo";
-import {
-  useServiciosByPeriodo,
-  useTipoServicios,
-} from "../../../api/queryFunctions/servicios";
+import { useServiciosByPeriodo } from "../../../api/queryFunctions/servicios";
 import { InputPrice } from "../../../components/common/InputPrice";
-import { useEffect, useRef, useState } from "react";
-import {
-  useCalcularPrecios,
-  useGuardarTarifas,
-} from "../../../api/queryFunctions/tarifas/tarifa";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   useGuardarTarifasHora,
   useTarifasHoraByPeriodo,
 } from "../../../api/queryFunctions/tarifas/tarifa-hora";
+import {
+  useCalcularPrecios,
+  useGuardarTarifas,
+} from "../../../api/queryFunctions/tarifas/tarifa";
 import type {
+  CalcularPrecioServicioDto,
   CreateTarifaDto,
   CreateTarifaHoraDto,
 } from "../../../api/dtos/tarifas";
+import type { Servicio } from "../../../api/types/servicio";
+import type { ServicioPrecioCalculado } from "../../../api/types/periodo";
+import type { ColumnDef } from "@tanstack/react-table";
+import Table from "../../../components/common/Table";
 import { toast } from "sonner";
 import { priceFormat } from "../../../utils/PriceFormat";
-import type { ServicioPrecioCalculado } from "../../../api/types/periodo";
 
-// Interfaz para manejar, localmente, un servicio ya calculado/configurado (calculados y manuales
-// se manejan de la misma forma en el front, la unica diferencia es si "calculado" viene en true o false)
-interface ServicioConfigurado
-  extends Omit<
-    ServicioPrecioCalculado,
-    | "costosDirectos"
-    | "seguroVida"
-    | "aui"
-    | "costosDirectosSeguroVida"
-    | "precioAntesIva"
-    | "iva"
-    | "precioTotal"
-  > {
-  costosDirectos: number | string;
-  seguroVida: number | string;
-  aui: number | string;
-  costosDirectosSeguroVida: number;
-  precioAntesIva: number;
-  iva: number;
-  precioTotal: number;
-}
-
-// Interfaz para manejar, localmente, las 4 filas editables de la tarifa hora de un periodo
+// Interfaz para manejar, localmente, las 5 filas editables de la tarifa hora de un periodo
 interface TarifaHoraFila {
   idTarifaHora: number | null;
   idTarifaHoraDescripcion: number;
   nombre: string;
   costosDirectos: string;
-  seguroVida: string;
-  aui: string;
+}
+
+// Columnas de desglose que se agregan a la tabla de servicios una vez que se calculan sus precios
+// (respuesta de /tarifas/calcular-precios), en el mismo orden en el que vienen en esa respuesta
+const COLUMNAS_PRECIO_CALCULADO: {
+  campo: keyof Pick<
+    ServicioPrecioCalculado,
+    | "costosDirectos"
+    | "seguroVida"
+    | "costosDirectosSeguroVida"
+    | "aui"
+    | "precioAntesIva"
+    | "iva"
+    | "precioTotal"
+  >;
+  header: string;
+}[] = [
+  { campo: "costosDirectos", header: "Costos Directos" },
+  { campo: "seguroVida", header: "Seguro de Vida" },
+  { campo: "costosDirectosSeguroVida", header: "Costos Directos + Seguro Vida" },
+  { campo: "aui", header: "AUI" },
+  { campo: "precioAntesIva", header: "Precio Antes de IVA" },
+  { campo: "iva", header: "IVA" },
+  { campo: "precioTotal", header: "Precio Total" },
+];
+
+// El precio de un servicio "Monitoreo de Alarmas" o de tipo de tarifa "por servicio" (Recogida de
+// dinero) no se puede derivar de la tarifa por hora del periodo: el backend exige que se le envíe el
+// costo directo ingresado manualmente. Misma regla que valida /tarifas/calcular-precios. Se define fuera
+// del componente porque no depende de ningun estado/prop: solo del servicio recibido.
+const requiereCostosDirectosManual = (servicio: Servicio) =>
+  servicio.idTipoServicio?.nombre === "Monitoreo de alarmas" ||
+  servicio.idTipoTarifa?.nombre === "por servicio";
+
+// Datos que las columnas de la tabla de servicios leen via context.table.options.meta (ver Table.tsx)
+// en vez de por closure, para que `columnasServicios` pueda quedar memoizada/estable y no se pierda el
+// foco del input de costo directo en cada tecla (ver flexRender: una funcion `cell` nueva en cada
+// render se trata como un componente distinto y React remonta la celda).
+interface ServiciosTableMeta {
+  costosDirectosManual: Record<number, string>;
+  onChangeCostoDirecto: (idServicio: number, valor: string) => void;
+  preciosCalculados: Record<number, ServicioPrecioCalculado>;
 }
 
 // Formatea un valor numerico (o string) con separador de miles, quitando comas previas
@@ -92,27 +101,22 @@ function RouteComponent() {
   });
   const idPeriodo = Number(idPeriodoParam);
 
-  // Estados - servicios / precios
-  const [serviciosSeleccionados, setServiciosSeleccionados] = useState<
-    number[]
-  >([]);
-  const [serviciosConfigurados, setServiciosConfigurados] = useState<
-    ServicioConfigurado[]
-  >([]);
-  const [mostrarSoloSeleccionados, setMostrarSoloSeleccionados] =
-    useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filtroTipoServicio, setFiltroTipoServicio] = useState<number | null>(
-    null,
-  );
-
   // Estados - tarifa hora del periodo
   const [tarifaHoraRows, setTarifaHoraRows] = useState<TarifaHoraFila[]>([]);
+
+  // Estados - calculo de precios de los servicios disponibles. costosDirectosManual solo aplica a los
+  // servicios que lo requieren (Monitoreo de Alarmas y el tipo de tarifa "por servicio", ver
+  // requiereCostosDirectosManual). preciosCalculados se llena con la respuesta de /tarifas/calcular-precios.
+  const [costosDirectosManual, setCostosDirectosManual] = useState<
+    Record<number, string>
+  >({});
+  const [preciosCalculados, setPreciosCalculados] = useState<
+    Record<number, ServicioPrecioCalculado>
+  >({});
 
   // Queries y mutaciones
   const { data: periodo } = usePeriodoById(idPeriodo);
   const { data: servicios } = useServiciosByPeriodo(idPeriodo);
-  const { data: tiposServicios } = useTipoServicios();
   const { data: tarifasHoraData } = useTarifasHoraByPeriodo(idPeriodo);
   const { mutate: guardarTarifasHora, isPending: isLoadingGuardarTarifasHora } =
     useGuardarTarifasHora();
@@ -138,125 +142,15 @@ function RouteComponent() {
         idTarifaHoraDescripcion: th.idTarifaHoraDescripcion.idTarifaHoraDescripcion,
         nombre: th.idTarifaHoraDescripcion.nombre,
         costosDirectos:
-          th.costosDirectos != null ? formatMiles(String(th.costosDirectos)) : "",
-        seguroVida:
-          th.seguroVida != null ? formatMiles(String(th.seguroVida)) : "",
-        aui: th.aui != null ? formatMiles(String(th.aui)) : "",
+          th.precio != null ? formatMiles(String(th.precio)) : "",
       })),
     );
   }, [tarifasHoraData?.data]);
 
-  // Función para verificar si un servicio ya fue calculado/configurado
-  const isServicioConfigurado = (idServicio: number) => {
-    return serviciosConfigurados.some((sc) => sc.idServicio === idServicio);
-  };
-
-  // Función para obtener la configuración (precio calculado/manual) de un servicio
-  const getServicioConfigurado = (idServicio: number) => {
-    return serviciosConfigurados.find((sc) => sc.idServicio === idServicio);
-  };
-
-  // Función para obtener los datos completos de un servicio (tipo de servicio, requierePersonal, etc.),
-  // que no vienen en la respuesta de calcular-precios
-  const obtenerServicioCompleto = (idServicio: number) => {
-    return servicios?.data?.data.find((s) => s.idServicio === idServicio);
-  };
-
-  // Función para editar un campo (costos directos, seguro vida o aui) de un servicio ya calculado/configurado
-  // y recalcular el resto de los totales (aplica tanto a calculados como a manuales, ya que ambos son editables)
-  const actualizarServicioConfigurado = (
-    idServicio: number,
-    campo: "costosDirectos" | "seguroVida" | "aui",
-    valor: string,
-  ) => {
-    setServiciosConfigurados((prev) =>
-      prev.map((sc) => {
-        if (sc.idServicio !== idServicio) return sc;
-
-        const actualizado = { ...sc, [campo]: formatMiles(valor) };
-
-        const costosDirectos = soloNumero(actualizado.costosDirectos);
-        const seguroVida = soloNumero(actualizado.seguroVida);
-        const aui = soloNumero(actualizado.aui);
-
-        const costosDirectosSeguroVida = costosDirectos + seguroVida;
-        const precioAntesIva = costosDirectosSeguroVida + aui;
-        const iva = Math.round(precioAntesIva * 0.19); // IVA del 19%
-        const precioTotal = Math.round(precioAntesIva + iva);
-
-        return {
-          ...actualizado,
-          costosDirectosSeguroVida,
-          precioAntesIva,
-          iva,
-          precioTotal,
-        };
-      }),
-    );
-  };
-
-  // Función para remover un servicio de la selección/configuración
-  const removerServicioConfigurado = (idServicio: number) => {
-    setServiciosConfigurados((prev) =>
-      prev.filter((sc) => sc.idServicio !== idServicio),
-    );
-    setServiciosSeleccionados((prev) => prev.filter((id) => id !== idServicio));
-  };
-
-  // Función para calcular el precio de los servicios recién seleccionados (los que aún no se han calculado),
-  // usando la tarifa hora del periodo. No se recalculan los que ya están configurados para no perder ediciones manuales.
-  const handleCalcularPrecios = () => {
-    const pendientes = serviciosSeleccionados.filter(
-      (id) => !isServicioConfigurado(id),
-    );
-
-    if (pendientes.length === 0) {
-      toast.error("No hay servicios nuevos seleccionados para calcular");
-      return;
-    }
-
-    calcularPrecios(
-      { idPeriodo, idsServicios: pendientes },
-      {
-        onSuccess: (response) => {
-          if (
-            (response.status !== 200 && response.status !== 201) ||
-            !response.data
-          ) {
-            return;
-          }
-
-          const { calculados, manuales } = response.data;
-
-          const nuevos: ServicioConfigurado[] = [...calculados, ...manuales].map(
-            (item) => ({
-              ...item,
-              costosDirectos:
-                item.costosDirectos != null
-                  ? formatMiles(String(item.costosDirectos))
-                  : "",
-              seguroVida:
-                item.seguroVida != null
-                  ? formatMiles(String(item.seguroVida))
-                  : "",
-              aui: item.aui != null ? formatMiles(String(item.aui)) : "",
-              costosDirectosSeguroVida: item.costosDirectosSeguroVida ?? 0,
-              precioAntesIva: item.precioAntesIva ?? 0,
-              iva: item.iva ?? 0,
-              precioTotal: item.precioTotal ?? 0,
-            }),
-          );
-
-          setServiciosConfigurados((prev) => [...prev, ...nuevos]);
-        },
-      },
-    );
-  };
-
   // Función para editar una fila de la tarifa hora del periodo
   const actualizarTarifaHoraRow = (
     idTarifaHoraDescripcion: number,
-    campo: "costosDirectos" | "seguroVida" | "aui",
+    campo: "costosDirectos",
     valor: string,
   ) => {
     setTarifaHoraRows((prev) =>
@@ -268,57 +162,91 @@ function RouteComponent() {
     );
   };
 
-  // Función para guardar (upsert) las 4 tarifas por hora del periodo
+  // Función para guardar (upsert) las 5 tarifas por hora del periodo
   const handleGuardarTarifaHora = () => {
     const tarifas: CreateTarifaHoraDto[] = tarifaHoraRows.map((row) => ({
       idPeriodo,
       idTarifaHoraDescripcion: row.idTarifaHoraDescripcion,
-      costosDirectos: soloNumero(row.costosDirectos),
-      seguroVida: row.seguroVida ? soloNumero(row.seguroVida) : undefined,
-      aui: soloNumero(row.aui),
+      precio: soloNumero(row.costosDirectos),
     }));
 
     guardarTarifasHora({ idPeriodo, tarifas });
   };
 
-  // Función para enviar las tarifas de los servicios al endpoint
-  const handleAgregarServiciosSeleccionados = () => {
-    if (serviciosConfigurados.length === 0) {
-      toast.error("No hay servicios configurados para agregar");
+  // Función para calcular el precio de todos los servicios disponibles del periodo, usando la tarifa
+  // hora configurada arriba y, para los servicios que lo requieren, el costo directo ingresado
+  // manualmente. Si falta un costo directo obligatorio, el backend rechaza todo el lote (no es parcial).
+  const handleCalcularPrecios = () => {
+    const todosLosServicios = Object.values(serviciosPorTipo).flat();
+
+    if (todosLosServicios.length === 0) {
+      toast.error("No hay servicios disponibles para calcular");
       return;
     }
 
-    // Validar que al menos un servicio tenga el precio completo (calculado o ingresado manualmente)
-    const serviciosCompletos = serviciosConfigurados.filter(
-      (sc) => sc.precioAntesIva > 0,
+    const serviciosDto: CalcularPrecioServicioDto[] = todosLosServicios.map(
+      (servicio) => ({
+        idServicio: servicio.idServicio,
+        ...(requiereCostosDirectosManual(servicio)
+          ? {
+              costosDirectos: soloNumero(
+                costosDirectosManual[servicio.idServicio] || "",
+              ),
+            }
+          : {}),
+      }),
     );
 
-    if (serviciosCompletos.length === 0) {
+    calcularPrecios(
+      { idPeriodo, servicios: serviciosDto },
+      {
+        onSuccess: (response) => {
+          if (
+            (response.status !== 200 && response.status !== 201) ||
+            !response.data
+          ) {
+            return;
+          }
+
+          setPreciosCalculados((prev) => {
+            const actualizado = { ...prev };
+            response.data!.forEach((item) => {
+              actualizado[item.idServicio] = item;
+            });
+            return actualizado;
+          });
+        },
+      },
+    );
+  };
+
+  // Función para guardar en el periodo las tarifas de los servicios ya calculados (POST
+  // /tarifas/guardar-tarifas). No se recalcula nada aca: se envían tal cual los valores que devolvió
+  // /tarifas/calcular-precios (el backend los persiste directo, ver bulkCreate en tarifas.service.ts).
+  const handleGuardarTarifas = () => {
+    const calculados = Object.values(preciosCalculados);
+
+    if (calculados.length === 0) {
       toast.error(
-        "Debe completar el precio (costos directos y aui) de al menos un servicio",
+        "Debe calcular los precios de los servicios antes de guardar la tarifa",
       );
       return;
     }
 
-    // Crear el DTO para enviar al endpoint
-    const tarifasData: CreateTarifaDto[] = serviciosCompletos.map((sc) => ({
+    const tarifas: CreateTarifaDto[] = calculados.map((sc) => ({
       idPeriodo,
       idServicio: sc.idServicio,
-      idTipoTarifa: sc.idTipoTarifa,
-      precioAntesIva: sc.precioAntesIva,
-      costosDirectos: soloNumero(sc.costosDirectos),
-      seguroVida: soloNumero(sc.seguroVida),
+      costosDirectos: sc.costosDirectos,
+      seguroVida: sc.seguroVida,
       costosDirectosSeguroVida: sc.costosDirectosSeguroVida,
-      aui: soloNumero(sc.aui),
+      aui: sc.aui,
+      precioAntesIva: sc.precioAntesIva,
       iva: sc.iva,
       precioTotal: sc.precioTotal,
     }));
 
     guardarTarifas(
-      {
-        idPeriodo,
-        tarifas: tarifasData,
-      },
+      { idPeriodo, tarifas },
       {
         onSuccess: () => {
           navigate({
@@ -332,27 +260,155 @@ function RouteComponent() {
     );
   };
 
-  // Filtrar servicios según búsqueda y filtros
-  const serviciosFiltrados =
-    servicios?.data?.data.filter((servicio) => {
-      const matchSearch =
-        !searchTerm ||
-        servicio.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        servicio.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        servicio.idTipoServicio?.descripcion
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
+  // Agrupa los servicios disponibles del periodo por tipo de servicio, igual que la vista de
+  // Servicios (/dashboard/servicios), para mostrarlos como una tabla por grupo en vez de una lista plana.
+  // El orden de cada grupo es fijo (código ascendente, orden natural: "0-1-9" antes que "0-1-10") y no es
+  // interactivo, por eso se ordena aca en vez de dejarselo al sort de la tabla (ver enableSorting={false}).
+  const serviciosPorTipo = useMemo(() => {
+    const lista = servicios?.data?.data || [];
 
-      const matchTipo =
-        !filtroTipoServicio ||
-        servicio.idTipoServicio?.idTipoServicio === filtroTipoServicio;
+    const agrupados = lista.reduce(
+      (acc, servicio) => {
+        const tipo = servicio.idTipoServicio?.descripcion || "Sin tipo";
 
-      const matchSeleccionados =
-        !mostrarSoloSeleccionados ||
-        serviciosSeleccionados.includes(servicio.idServicio);
+        if (!acc[tipo]) {
+          acc[tipo] = [];
+        }
 
-      return matchSearch && matchTipo && matchSeleccionados;
-    }) || [];
+        acc[tipo].push(servicio);
+
+        return acc;
+      },
+      {} as Record<string, Servicio[]>,
+    );
+
+    Object.values(agrupados).forEach((grupo) =>
+      grupo.sort((a, b) =>
+        a.codigo.localeCompare(b.codigo, undefined, { numeric: true }),
+      ),
+    );
+
+    return agrupados;
+  }, [servicios?.data?.data]);
+
+  // Solo se agrega la columna de Precio una vez que hay al menos un resultado de /tarifas/calcular-precios
+  const huboCalculo = Object.keys(preciosCalculados).length > 0;
+
+  // Memoizado y sin cerrar sobre costosDirectosManual/preciosCalculados (que cambian en cada tecla):
+  // esos valores se leen en cada celda via context.table.options.meta (ver el prop `meta` mas abajo),
+  // para que las funciones `cell` no cambien de referencia en cada render y no se pierda el foco del
+  // input de costo directo (ver el comentario de ServiciosTableMeta arriba).
+  const columnasServicios: ColumnDef<Servicio>[] = useMemo(() => {
+    const columnas: ColumnDef<Servicio>[] = [
+      {
+        header: "Código",
+        accessorKey: "codigo",
+      },
+      {
+        header: "Descripción",
+        accessorKey: "descripcion",
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap">{row.original.descripcion}</span>
+        ),
+      },
+      {
+        header: "Costo Directo",
+        cell: ({ row, table }) => {
+          const servicio = row.original;
+
+          if (!requiereCostosDirectosManual(servicio)) {
+            return <span className="text-gray-400">—</span>;
+          }
+
+          const meta = table.options.meta as ServiciosTableMeta;
+
+          return (
+            <InputPrice
+              label=""
+              size="md"
+              value={meta.costosDirectosManual[servicio.idServicio] || ""}
+              onChange={(e) =>
+                meta.onChangeCostoDirecto(servicio.idServicio, e.target.value)
+              }
+            />
+          );
+        },
+      },
+    ];
+
+    if (huboCalculo) {
+      COLUMNAS_PRECIO_CALCULADO.forEach(({ campo, header }) => {
+        columnas.push({
+          header,
+          cell: ({ row, table }) => {
+            const meta = table.options.meta as ServiciosTableMeta;
+            const calculado = meta.preciosCalculados[row.original.idServicio];
+
+            if (!calculado) return <span className="text-gray-400">—</span>;
+
+            return (
+              <span
+                className={
+                  campo === "precioTotal" ? "font-semibold text-green-700" : ""
+                }
+              >
+                {priceFormat(calculado[campo])}
+              </span>
+            );
+          },
+        });
+      });
+    }
+
+    return columnas;
+  }, [huboCalculo]);
+
+  // Separar la fila de "Seguro de Vida" (valor mensual) del resto de tarifas por hora
+  // (valores diurnos/nocturnos) para poder mostrarlas como dos grupos distintos en la tabla
+  const filaSeguroVida = tarifaHoraRows.find((row) =>
+    row.nombre.toLowerCase().includes("seguro de vida"),
+  );
+  const filasHora = tarifaHoraRows.filter(
+    (row) => !row.nombre.toLowerCase().includes("seguro de vida"),
+  );
+
+  // Renderiza una fila editable de la tabla de tarifa hora del periodo
+  const renderTarifaHoraRow = (row: TarifaHoraFila) => (
+    <tr key={row.idTarifaHoraDescripcion}>
+      <td className="px-6 py-3 font-medium text-gray-900 capitalize">
+        {row.nombre}
+      </td>
+      <td className="px-6 py-3">
+        <InputPrice
+          label=""
+          size="md"
+          value={row.costosDirectos}
+          onChange={(e) =>
+            actualizarTarifaHoraRow(
+              row.idTarifaHoraDescripcion,
+              "costosDirectos",
+              e.target.value,
+            )
+          }
+        />
+      </td>
+    </tr>
+  );
+
+  // Actualiza el costo directo ingresado manualmente para un servicio (Monitoreo de Alarmas / Recogida
+  // de dinero). Se pasa a la tabla de servicios via `meta` en vez de closure, ver columnasServicios.
+  const actualizarCostoDirectoManual = (idServicio: number, valor: string) => {
+    setCostosDirectosManual((prev) => ({
+      ...prev,
+      [idServicio]: formatMiles(valor),
+    }));
+  };
+
+  const serviciosTableMeta: ServiciosTableMeta = {
+    costosDirectosManual,
+    onChangeCostoDirecto: actualizarCostoDirectoManual,
+    preciosCalculados,
+  };
 
   return (
     <Section>
@@ -388,9 +444,11 @@ function RouteComponent() {
           />
           <ButtonAction
             Icon={PlusIcon}
-            label="Agregar Servicios seleccionados"
-            onClick={handleAgregarServiciosSeleccionados}
-            disabled={isLoadingGuardarTarifas}
+            label="Guardar tarifa"
+            onClick={handleGuardarTarifas}
+            disabled={
+              isLoadingGuardarTarifas || Object.keys(preciosCalculados).length === 0
+            }
           />
         </div>
       </div>
@@ -401,376 +459,134 @@ function RouteComponent() {
           <div>
             <h3 className="flex items-center gap-2 text-lg font-medium text-gray-900">
               <Clock className="h-5 w-5 text-blue-600" />
-              Tarifa Hora del Periodo
+              Valores para Servicio de Vigilancia y Escolta
             </h3>
             <p className="mt-1 text-sm text-gray-600">
-              Valor de la hora diurna, diurna dominical/festiva, nocturna y
-              nocturna dominical/festiva. Se usa para calcular
-              automáticamente el precio de los servicios diurnos/nocturnos.
+              Valor de la hora diurna, diurna dominical/festiva, nocturna,
+              nocturna dominical/festiva y seguro de vida. Se usa para
+              calcular automáticamente el precio de los servicios
+              diurnos/nocturnos.
             </p>
           </div>
           <ButtonAction
             Icon={PlusIcon}
-            label="Guardar Tarifa Hora"
+            label="Guardar valores"
             onClick={handleGuardarTarifaHora}
             disabled={isLoadingGuardarTarifasHora || tarifaHoraRows.length === 0}
           />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
-              <tr>
-                <th className="px-6 py-3">Tarifa Hora</th>
-                <th className="px-6 py-3">Costos Directos *</th>
-                <th className="px-6 py-3">Seguro de Vida</th>
-                <th className="px-6 py-3">AUI *</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {tarifaHoraRows.length === 0 ? (
+        {tarifaHoraRows.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed text-left text-sm">
+              <colgroup>
+                <col className="w-2/5" />
+                <col />
+              </colgroup>
+              <thead className="bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
                 <tr>
-                  <td colSpan={4} className="px-6 py-6 text-center text-gray-500">
+                  <th className="px-6 py-3">Tarifa Hora</th>
+                  <th className="px-6 py-3">Costos Directos *</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                <tr>
+                  <td colSpan={2} className="px-6 py-6 text-center text-gray-500">
                     No hay tarifas por hora configuradas para este periodo
                     todavía.
                   </td>
                 </tr>
-              ) : (
-                tarifaHoraRows.map((row) => (
-                  <tr key={row.idTarifaHoraDescripcion}>
-                    <td className="px-6 py-3 font-medium text-gray-900 capitalize">
-                      {row.nombre}
-                    </td>
-                    <td className="px-6 py-3">
-                      <InputPrice
-                        label=""
-                        size="md"
-                        value={row.costosDirectos}
-                        onChange={(e) =>
-                          actualizarTarifaHoraRow(
-                            row.idTarifaHoraDescripcion,
-                            "costosDirectos",
-                            e.target.value,
-                          )
-                        }
-                      />
-                    </td>
-                    <td className="px-6 py-3">
-                      <InputPrice
-                        label=""
-                        size="md"
-                        value={row.seguroVida}
-                        onChange={(e) =>
-                          actualizarTarifaHoraRow(
-                            row.idTarifaHoraDescripcion,
-                            "seguroVida",
-                            e.target.value,
-                          )
-                        }
-                      />
-                    </td>
-                    <td className="px-6 py-3">
-                      <InputPrice
-                        label=""
-                        size="md"
-                        value={row.aui}
-                        onChange={(e) =>
-                          actualizarTarifaHoraRow(
-                            row.idTarifaHoraDescripcion,
-                            "aui",
-                            e.target.value,
-                          )
-                        }
-                      />
-                    </td>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <>
+            {filaSeguroVida && (
+              <div className="overflow-x-auto border-b border-gray-200">
+                <table className="w-full table-fixed text-left text-sm">
+                  <colgroup>
+                    <col className="w-2/5" />
+                    <col />
+                  </colgroup>
+                  <thead className="bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
+                    <tr>
+                      <th className="px-6 py-3">Valor Seguro De Vida (Mensual)</th>
+                      <th className="px-6 py-3">Valor Mensual *</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {renderTarifaHoraRow(filaSeguroVida)}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed text-left text-sm">
+                <colgroup>
+                  <col className="w-2/5" />
+                  <col />
+                </colgroup>
+                <thead className="bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
+                  <tr>
+                    <th className="px-6 py-3">Tarifa Hora</th>
+                    <th className="px-6 py-3">Costos Directos *</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filasHora.map((row) => renderTarifaHoraRow(row))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-blue-500"></div>
-              <span className="text-sm font-medium text-gray-700">
-                Servicios Seleccionados: {serviciosSeleccionados.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-full bg-green-500"></div>
-              <span className="text-sm font-medium text-gray-700">
-                Servicios Calculados: {serviciosConfigurados.length}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="mostrarSoloSeleccionados"
-                checked={mostrarSoloSeleccionados}
-                onChange={(e) => setMostrarSoloSeleccionados(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label
-                htmlFor="mostrarSoloSeleccionados"
-                className="text-sm text-gray-700"
-              >
-                Mostrar solo seleccionados
-              </label>
-            </div>
-            <ButtonAction
-              Icon={PlusIcon}
-              label="Calcular precios de seleccionados"
-              onClick={handleCalcularPrecios}
-              disabled={isLoadingCalcularPrecios}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar servicios por código, descripción o tipo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
-          <div className="relative w-48">
-            <select
-              value={filtroTipoServicio || ""}
-              onChange={(e) =>
-                setFiltroTipoServicio(
-                  e.target.value ? Number(e.target.value) : null,
-                )
-              }
-              className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 pr-8 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="">Todos los tipos</option>
-              {tiposServicios?.data?.data.map((tipo) => (
-                <option key={tipo.idTipoServicio} value={tipo.idTipoServicio}>
-                  {tipo.nombre}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          </div>
-        </div>
-      </div>
-
-      {/* Lista de servicios configurados */}
-      {serviciosConfigurados.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              Servicios Configurados
-            </h3>
-            <p className="mt-1 text-sm text-gray-600">
-              Servicios listos para ser agregados al período
-            </p>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {serviciosConfigurados.map((sc) => {
-              const servicioCompleto = obtenerServicioCompleto(sc.idServicio);
-
-              return (
-                <div key={sc.idServicio} className="px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-1 items-center gap-4">
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-center gap-3">
-                          <span className="font-medium text-gray-900">
-                            {sc.codigo}
-                          </span>
-                          {servicioCompleto?.idTipoServicio?.descripcion && (
-                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                              {servicioCompleto.idTipoServicio.descripcion}
-                            </span>
-                          )}
-                          {servicioCompleto?.idTipoServicio?.requierePersonal && (
-                            <UserCheck className="h-4 w-4 text-blue-500" />
-                          )}
-                          {sc.calculado ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                              <CheckCircle2 className="h-3 w-3" /> Calculado
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                              <AlertCircle className="h-3 w-3" /> Manual
-                            </span>
-                          )}
-                        </div>
-                        <p className="mb-2 text-sm text-gray-600">
-                          {sc.descripcion}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-4 text-sm">
-                          <span className="font-semibold capitalize">
-                            Tipo de Tarifa: {sc.tipoTarifa}
-                          </span>
-                          <span className="font-semibold">
-                            Precio Antes de IVA: {priceFormat(sc.precioAntesIva)}
-                          </span>
-                          <span className="font-semibold">
-                            IVA: {priceFormat(sc.iva)}
-                          </span>
-                          <span className="font-semibold">
-                            Total: {priceFormat(sc.precioTotal)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => removerServicioConfigurado(sc.idServicio)}
-                      className="ml-4 text-red-500 hover:text-red-700"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="border-b border-gray-200 px-6 py-4">
+      {/* Servicios disponibles del periodo, agrupados por tipo de servicio (igual que /dashboard/servicios) */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
           <h3 className="text-lg font-medium text-gray-900">
             Servicios Disponibles
           </h3>
           <p className="mt-1 text-sm text-gray-600">
-            Seleccione los servicios que estarán disponibles en el periodo y
-            use "Calcular precios de seleccionados" para obtener su precio
-            (o ingréselo manualmente cuando el sistema no pueda calcularlo)
+            Los servicios de Monitoreo de Alarmas y el servicio "Recogida de
+            dinero" requieren ingresar el costo directo manualmente antes de
+            calcular su precio; el resto se calcula automáticamente a partir
+            de la tarifa hora configurada arriba.
           </p>
         </div>
+        <ButtonAction
+          Icon={PlusIcon}
+          label="Calcular precios"
+          onClick={handleCalcularPrecios}
+          disabled={isLoadingCalcularPrecios}
+        />
+      </div>
 
-        <div className="divide-y divide-gray-200">
-          {serviciosFiltrados.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500">
-              No hay servicios disponibles con los filtros aplicados
-            </div>
-          ) : (
-            serviciosFiltrados.map((item) => {
-              const servicioConfig = getServicioConfigurado(item.idServicio);
-              const seleccionado = serviciosSeleccionados.includes(
-                item.idServicio,
-              );
+      <div className="flex flex-col gap-6">
+        {Object.entries(serviciosPorTipo).map(([tipo, lista]) => (
+          <div
+            key={tipo}
+            className="rounded-lg border border-blue-200 bg-blue-100/70 pt-2"
+          >
+            <h2 className="mb-2 w-fit rounded-lg p-2 px-4 text-xl font-medium text-blue-600">
+              {tipo}
+            </h2>
+            <Table
+              columns={columnasServicios}
+              data={lista}
+              enablePagination={false}
+              enableSorting={false}
+              meta={serviciosTableMeta}
+            />
+          </div>
+        ))}
 
-              return (
-                <div key={item.idServicio} className="px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-1 items-center gap-4">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={seleccionado}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setServiciosSeleccionados((prev) => [
-                                ...prev,
-                                item.idServicio,
-                              ]);
-                            } else {
-                              removerServicioConfigurado(item.idServicio);
-                            }
-                          }}
-                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      </div>
-
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-center gap-3">
-                          <span className="font-medium text-gray-900">
-                            {item.codigo}
-                          </span>
-                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                            {item.idTipoServicio?.descripcion}
-                          </span>
-                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 capitalize">
-                            {item.idTipoTarifa?.nombre}
-                          </span>
-                          {item.idTipoServicio?.requierePersonal && (
-                            <UserCheck className="h-4 w-4 text-blue-500" />
-                          )}
-                        </div>
-                        <p className="mb-2 text-sm text-gray-600">
-                          {item.descripcion}
-                        </p>
-
-                        {seleccionado && !servicioConfig && (
-                          <p className="mb-4 text-sm text-amber-600">
-                            Seleccionado — use "Calcular precios de
-                            seleccionados" para continuar.
-                          </p>
-                        )}
-
-                        {servicioConfig && (
-                          <>
-                            <p className="mb-4 text-sm text-gray-500 italic">
-                              {servicioConfig.mensaje}
-                            </p>
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                              <div className="space-y-2">
-                                <InputPrice
-                                  label="Costos Directos:"
-                                  size="full"
-                                  value={servicioConfig.costosDirectos}
-                                  onChange={(e) => {
-                                    actualizarServicioConfigurado(
-                                      item.idServicio,
-                                      "costosDirectos",
-                                      e.target.value,
-                                    );
-                                  }}
-                                />
-                                <InputPrice
-                                  label="Seguro de Vida:"
-                                  size="full"
-                                  value={servicioConfig.seguroVida}
-                                  onChange={(e) => {
-                                    actualizarServicioConfigurado(
-                                      item.idServicio,
-                                      "seguroVida",
-                                      e.target.value,
-                                    );
-                                  }}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <InputPrice
-                                  label="AUI:"
-                                  size="full"
-                                  value={servicioConfig.aui}
-                                  onChange={(e) => {
-                                    actualizarServicioConfigurado(
-                                      item.idServicio,
-                                      "aui",
-                                      e.target.value,
-                                    );
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        {Object.keys(serviciosPorTipo).length === 0 && (
+          <div className="rounded-lg border border-gray-200 bg-white px-6 py-8 text-center text-gray-500 shadow-sm">
+            No hay servicios disponibles para este periodo.
+          </div>
+        )}
       </div>
     </Section>
   );

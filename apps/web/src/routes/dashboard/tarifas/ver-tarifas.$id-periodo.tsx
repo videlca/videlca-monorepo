@@ -239,24 +239,6 @@ function RouteComponent() {
       },
     },
     {
-      header: "Tipo de tarifa",
-      accessorKey: "idTipoTarifa.nombre",
-      cell: ({ row }) => {
-        return (
-          <span className="rounded-full bg-blue-100 px-3 py-1 text-center text-sm whitespace-nowrap text-blue-600">
-            {row.original.idTipoTarifa?.nombre || "-"}
-          </span>
-        );
-      },
-    },
-    {
-      header: "Estado",
-      accessorKey: "estado",
-      cell: ({ row }) => {
-        return <StateLabel state={row.original.estado} />;
-      },
-    },
-    {
       header: "Acciones",
       cell: ({ row }) => {
         return (
@@ -267,34 +249,6 @@ function RouteComponent() {
                 label: "Ver",
                 onClick: () => {
                   setIsOpenSeeTarifa(true);
-                  setTarifaSelected(row.original);
-                },
-              },
-              {
-                label: "Editar",
-                onClick: () => {
-                  setIsOpenEditTarifa(true);
-                  setTarifaSelected(row.original);
-                  reset({
-                    idPeriodo: row.original.idPeriodo?.idPeriodo || 0,
-                    idServicio: row.original.idServicio?.idServicio || 0,
-                    idTipoTarifa: row.original.idTipoTarifa?.idTipoTarifa || 0,
-                    precioAntesIva: row.original.precioAntesIva,
-                    iva: row.original.iva,
-                    precioTotal: row.original.precioTotal,
-                    costosDirectos: row.original.costosDirectos,
-                    seguroVida: row.original.seguroVida || 0,
-                    costosDirectosSeguroVida:
-                      row.original.costosDirectosSeguroVida || 0,
-                    aui: row.original.aui,
-                    estado: row.original.estado,
-                  });
-                },
-              },
-              {
-                label: "Eliminar",
-                onClick: () => {
-                  setIsOpenDeleteTarifa(true);
                   setTarifaSelected(row.original);
                 },
               },

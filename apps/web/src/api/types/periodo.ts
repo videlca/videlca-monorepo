@@ -56,45 +56,40 @@ export interface TarifaHoraDescripcion {
   diurno: boolean;
 }
 
-// Tarifa hora (valor por periodo de cada una de las 4 tarifa hora descripcion)
+// Tarifa hora (valor por periodo de cada una de las 5 tarifa hora descripcion)
 export interface TarifaHora {
   idTarifaHora: number | null;
   idPeriodo: Periodo;
   idTarifaHoraDescripcion: TarifaHoraDescripcion;
-  costosDirectos: number | null;
-  seguroVida: number | null;
-  aui: number | null;
+  precio: number | null;
   fechaCreacion: string | null;
   fechaActualizacion: string | null;
 }
 
-// Respuesta de POST /tarifas/calcular-precios
+// Respuesta de POST /tarifas/calcular-precios: un elemento por cada servicio enviado, en el mismo orden
 export interface ServicioPrecioCalculado {
   idServicio: number;
   codigo: string;
   descripcion: string;
+  idTipoServicio: number;
+  tipoServicio: string;
   idTipoHorarioDescripcion: number;
   tipoHorario: string;
-  idTipoDuracion: number;
-  tipoDuracion: string;
   idTipoTarifa: number;
   tipoTarifa: string;
+  horasFijas: number;
   dominical: boolean;
-  calculado: boolean;
-  mensaje: string;
-  costosDirectos: number | null;
-  seguroVida: number | null;
-  costosDirectosSeguroVida: number | null;
-  aui: number | null;
-  precioAntesIva: number | null;
-  iva: number | null;
-  precioTotal: number | null;
+  armado: boolean;
+  costosDirectos: number;
+  seguroVida: number;
+  costosDirectosSeguroVida: number;
+  aui: number;
+  precioAntesIva: number;
+  iva: number;
+  precioTotal: number;
 }
 
-export interface CalcularPreciosResponse {
-  calculados: ServicioPrecioCalculado[];
-  manuales: ServicioPrecioCalculado[];
-}
+export type CalcularPreciosResponse = ServicioPrecioCalculado[];
 
 // Comparativa de periodos
 export interface ComparativaPeriodosResponse {
