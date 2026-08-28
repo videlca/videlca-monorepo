@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { priceFormat } from "../../../utils/PriceFormat";
+import { safeParseDate } from "../../../utils/DateUtils";
 import type { Puesto } from "../../../types";
 import type {
   CreateOrdenServicioDto,
@@ -122,7 +123,7 @@ export const PreviewInformacionOrden = ({
             <Calendar className="h-4 w-4 text-purple-600" />
             <span className="font-medium text-gray-700">Fecha de Inicio:</span>{" "}
             <span className="text-gray-600">
-              {new Date(formOrdenServicio.fechaInicio).toLocaleDateString()}
+              {safeParseDate(formOrdenServicio.fechaInicio).toLocaleDateString()}
             </span>
           </span>
           <span className="flex items-center gap-2 text-sm">
@@ -131,7 +132,7 @@ export const PreviewInformacionOrden = ({
               {isIndefinite
                 ? "Indefinida"
                 : formOrdenServicio.fechaFin
-                  ? new Date(formOrdenServicio.fechaFin).toLocaleDateString()
+                  ? safeParseDate(formOrdenServicio.fechaFin).toLocaleDateString()
                   : "No especificada"}
             </span>
           </span>
@@ -148,16 +149,17 @@ export const PreviewInformacionOrden = ({
             <div className="divide-y divide-gray-100">
               {configuracionServicioTarifa.map((config, index) => {
                 // Datos del servicio (codigo, descripcion, horas...) ya estan disponibles en selectedServices,
-                // no hace falta buscarlos por idTarifa contra la tarifa del periodo activo
+                // no hace falta buscarlos por idTarifa contra la tarifa del periodo activo. En ordenes "a la
+                // medida" no hay seleccion de servicio (cada fila es un dia), por lo que no habra match aqui
                 const servicio = selectedServices?.find(
                   (s) => s.idServicio === config.idServicio,
                 );
 
-                // El desglose de precio de este servicio puntual dentro de la orden viene directo en la
-                // respuesta de POST /orden-servicio/obtener-precio, ya no hay que recalcularlo en el front
-                const detalle = precioOrdenDetalle?.servicios.find(
-                  (s) => s.idServicio === config.idServicio,
-                );
+                // El desglose de precio de esta fila viene directo en la respuesta de POST
+                // /orden-servicio/obtener-precio, ya no hay que recalcularlo en el front. Se hace match por
+                // posicion (configuracionServicioTarifa se guarda tal cual llego esa respuesta, en el mismo
+                // orden) en vez de por id: en modo "a la medida" varias filas pueden compartir el mismo idTarifa
+                const detalle = precioOrdenDetalle?.servicios[index];
 
                 return (
                   <div key={index} className="p-4">
@@ -166,7 +168,15 @@ export const PreviewInformacionOrden = ({
                       <div>
                         <h5 className="text-sm font-semibold text-gray-900">
                           {servicio?.codigo ? `${servicio.codigo} — ` : ""}
-                          {servicio?.descripcion || "Servicio no especificado"}
+                          {servicio?.descripcion ||
+                            // Ordenes "a la medida": no hay servicio de catalogo, cada fila es un dia.
+                            // Se recorta a "YYYY-MM-DD" antes de parsear (config.fecha puede venir como
+                            // timestamp ISO completo) para que safeParseDate no corra el dia por timezone
+                            (config.fecha
+                              ? safeParseDate(
+                                  config.fecha.slice(0, 10),
+                                ).toLocaleDateString()
+                              : "Servicio no especificado")}
                         </h5>
                         <p className="text-xs text-gray-500">
                           {servicio?.idTipoServicio?.descripcion || "Tipo no especificado"}

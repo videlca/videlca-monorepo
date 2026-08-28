@@ -52,33 +52,34 @@ export const SeleccionarServicio = ({
                     : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                 }`}
                 onClick={() => {
+                  // handleSelectedServices alterna el servicio dentro/fuera de selectedServices: hay que
+                  // leer si ya estaba seleccionado ANTES de alternarlo, para saber si esta seleccionando o
+                  // deseleccionando y reflejar lo mismo en configuracionServicioTarifa
+                  const yaEstabaSeleccionado = selectedServices.includes(
+                    tarifa.idServicio,
+                  );
+
                   handleSelectedServices(tarifa.idServicio);
                   setConfiguracionServicioTarifa(
                     (prev: CreateOrdenServicioTarifaDto[]) => {
-                      const newArray = [...prev];
-                      const index = newArray.findIndex(
-                        (s) => s.idServicio === tarifa.idServicio.idServicio,
-                      );
-
-                      const newConfig = {
-                        idTarifa: tarifa.idTarifa,
-                        idServicio: tarifa.idServicio.idServicio,
-                        cantidadPersonal: 0,
-                        horaInicio: "",
-                        horaFin: "",
-                        precio: 0,
-                        personal: [],
-                      };
-
-                      if (index >= 0) {
-                        // Update existing
-                        newArray[index] = newConfig;
-                      } else {
-                        // Add new
-                        newArray.push(newConfig);
+                      if (yaEstabaSeleccionado) {
+                        // Se esta deseleccionando: eliminar su fila, si no queda con horaInicio/horaFin
+                        // vacios en el arreglo (se enviaria igual al backend en el paso siguiente)
+                        return prev.filter(
+                          (s) => s.idServicio !== tarifa.idServicio.idServicio,
+                        );
                       }
 
-                      return newArray;
+                      return [
+                        ...prev,
+                        {
+                          idTarifa: tarifa.idTarifa,
+                          idServicio: tarifa.idServicio.idServicio,
+                          horaInicio: "",
+                          horaFin: "",
+                          precio: 0,
+                        },
+                      ];
                     },
                   );
                 }}

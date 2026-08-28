@@ -1,12 +1,22 @@
+// Origen de la orden de servicio (ver GET /origen-servicio). "catalogo": uno o mas servicios ya tarifados del
+// catalogo del periodo. "a_medida": el cliente pide un horario especifico y el precio se calcula dia por dia
+// (solo aplica para tipo de servicio "Vigilancia y escolta"; "Monitoreo de alarmas" siempre es "catalogo")
+export enum OrigenServicioEnum {
+  CATALOGO = 'catalogo',
+  A_MEDIDA = 'a_medida',
+}
 
 export interface CreateOrdenServicioDto {
+  origenServicio: OrigenServicioEnum;
   numeroOrdenServicio: string;
   idLocacion: number;
   fechaInicio: string;
   fechaFin: string | null;
-  precioTotal: number;
+  // Solo se usa en el front para mostrar el total en el paso de vista previa (PreviewInformacionOrden):
+  // el backend ya no lo recibe, por eso es opcional y no se incluye en el payload al crear la orden
+  precioTotal?: number;
   fechaCreacion: string;
-  servicios: CreateOrdenServicioTarifaDto[];
+  servicios: CreateOrdenServicioDetalleDto[];
 }
 
 export interface UpdateOrdenServicioDto {
@@ -17,14 +27,30 @@ export interface UpdateOrdenServicioDto {
   // servicios: UpdateOrdenServicioTarifaDto[];
 }
 
-export interface CreateOrdenServicioTarifaDto {
-  idTarifa?: number;
-  idServicio?: number;
-  cantidadPersonal: number;
+// Forma exacta que espera el backend en el arreglo "servicios" al crear la orden. El desglose completo
+// (horaInicio/horaFin, cantidadHoras, fecha y los campos de precio) se obtiene tal cual desde la respuesta de
+// POST /orden-servicio/obtener-precio y se reenvia sin modificar, no se vuelve a calcular nada en el front
+export interface CreateOrdenServicioDetalleDto {
+  idTarifa: number;
   horaInicio: string;
   horaFin: string;
-  precio: number;
-  personal: CreatePersonalServicioDto[];
+  // Solo trae valor en modo "a_medida" (cada fila es un dia del rango)
+  cantidadHoras?: number | null;
+  fecha?: string | null;
+  costosDirectos?: number | null;
+  seguroVida?: number | null;
+  costosDirectosSeguroVida?: number | null;
+  aui?: number | null;
+  precioAntesIva?: number | null;
+  iva?: number | null;
+  precio?: number | null;
+}
+
+// idServicio es solo para uso interno del front (matchear contra selectedServices en los pasos de seleccion de
+// servicio y vista previa), se elimina antes de enviar el arreglo al backend (ver handleSaveOrder en el index
+// de ordenes de servicio)
+export interface CreateOrdenServicioTarifaDto extends CreateOrdenServicioDetalleDto {
+  idServicio?: number;
 }
 
 export interface UpdateOrdenServicioTarifaDto {
@@ -34,6 +60,10 @@ export interface UpdateOrdenServicioTarifaDto {
   horaFin: string;
   precio: number;
   personal: UpdatePersonalServicioDto[];
+  // Uso interno del front (ver CreateOrdenServicioTarifaDto): idServicio para matchear contra selectedServices,
+  // fecha solo aplica a filas "a la medida". Nunca se envian al backend (servicios va comentado en el update)
+  idServicio?: number;
+  fecha?: string | null;
 }
 
 export interface CreatePersonalServicioDto {
@@ -56,26 +86,32 @@ export interface UpdateValidarFechaOrdenServicioDto {
   fechaFin: string | null;
 }
 
+// Solo aplica (y es obligatorio) cuando origenServicio es "catalogo". En "a_medida" no se llama a este
+// endpoint: no hay servicio de catalogo contra el cual validar el horario elegido
 export interface ValidarHorarioServicioDto {
-  idTarifa: number | null;
-  idServicio: number;
+  origenServicio: OrigenServicioEnum;
+  idTarifa?: number;
   horaInicio: string;
   horaFin: string;
 }
 
-// El endpoint ahora recibe la lista completa de servicios de la orden y calcula el precio de todos
-// de una sola vez (antes se llamaba una vez por servicio con PrecioOrdenServicioDto suelto)
+// CATALOGO: cada servicio ya tiene una tarifa (idTarifa) elegida del catalogo del periodo
 export interface PrecioOrdenServicioItemDto {
-  idTarifa?: number; // opcional: los servicios de horario Mixto + Por hora no tienen tarifa guardada
-  idServicio: number;
+  idTarifa: number;
   horaInicio: string;
   horaFin: string;
 }
 
 export interface PrecioOrdenDto {
+  origenServicio: OrigenServicioEnum;
   fechaInicio: string;
   fechaFin: string | null;
-  servicios: PrecioOrdenServicioItemDto[];
+  // CATALOGO: obligatorio, uno o mas servicios del catalogo a los que se les calcula el precio
+  servicios?: PrecioOrdenServicioItemDto[];
+  // A LA MEDIDA: obligatorio, un unico rango horario continuo (aplica el primer y el ultimo dia del rango,
+  // los dias intermedios se calculan completos automaticamente) — no va arreglo "servicios"
+  horaInicio?: string;
+  horaFin?: string;
 }
 
 export interface CreateObservacionOrdenServicioDto {

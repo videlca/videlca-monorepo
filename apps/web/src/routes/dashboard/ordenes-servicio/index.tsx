@@ -30,9 +30,11 @@ import {
 import {
   type CreateOrdenServicioDto,
   type CreateOrdenServicioTarifaDto,
+  type CreateOrdenServicioDetalleDto,
   type UpdateOrdenServicioDto,
   type UpdateOrdenServicioTarifaDto,
   OrdenServicioFilterColumn,
+  OrigenServicioEnum,
 } from "../../../api/dtos";
 import type { OrdenServicio, PrecioOrdenResponse } from "../../../api/types/orden-servicio";
 import { useTipoServiciosActivo } from "../../../api/queryFunctions/servicios";
@@ -47,8 +49,10 @@ import { toast } from "sonner";
 import type { Servicio } from "../../../api/types/servicio";
 import { SeleccionarIdentificadorOrden } from "../../../components/common/stepsOrdenServicio/SeleccionarIdentificadorOrden";
 import { ConfigurarFechaOrdenServicio } from "../../../components/common/stepsOrdenServicio/ConfigurarFechaOrdenServicio";
+import { SeleccionarOrigenServicio } from "../../../components/common/stepsOrdenServicio/SeleccionarOrigenServicio";
 import { SeleccionarServicio } from "../../../components/common/stepsOrdenServicio/SeleccionarServicio";
 import { ConfigurarHorariosServicios } from "../../../components/common/stepsOrdenServicio/ConfigurarHorariosServicios";
+import { ConfigurarHorarioAMedida } from "../../../components/common/stepsOrdenServicio/ConfigurarHorarioAMedida";
 import { AsignacionPersonalServicio } from "../../../components/common/stepsOrdenServicio/AsignacionPersonalServicio";
 import { PreviewInformacionOrden } from "../../../components/common/stepsOrdenServicio/PreviewInformacionOrden";
 import { SeleccionarPuestoCliente } from "../../../components/common/stepsOrdenServicio/SeleccionarPuestoCliente";
@@ -106,6 +110,17 @@ function RouteComponent() {
     useState<PrecioOrdenResponse | null>(null);
 
   const [isIndefinite, setIsIndefinite] = useState(false);
+
+  // Paso 4: origen de la orden de servicio (catalogo / a la medida). "a la medida" reemplaza los pasos de
+  // seleccionar servicios + horarios por un unico horario para toda la orden (ver ConfigurarHorarioAMedida)
+  const [origenServicio, setOrigenServicio] = useState<OrigenServicioEnum | null>(null);
+  const [horarioAMedida, setHorarioAMedida] = useState<{ horaInicio: string; horaFin: string }>({
+    horaInicio: "",
+    horaFin: "",
+  });
+  // El flujo "a la medida" no tiene paso de seleccionar servicios ni de configurar horarios por servicio, por
+  // lo que tiene un paso menos que el flujo por catalogo
+  const totalSteps = origenServicio === OrigenServicioEnum.A_MEDIDA ? 6 : 7;
 
   const { mutate: filterOrdenesServicio, isPending: isFilteringOrdenesServicio } = useFilterOrdenesServicio();
   const [filteredOrdenesServicio, setFilteredOrdenesServicio] = useState<OrdenServicio[] | null>(null);
@@ -243,6 +258,8 @@ function RouteComponent() {
     setIsIndefinite(false);
     setPrecioOrdenDetalle(null);
     setMensajeRespuesta("");
+    setOrigenServicio(null);
+    setHorarioAMedida({ horaInicio: "", horaFin: "" });
     resetCreate();
     resetEdit();
     setIdentificador({ prefijo: "", codigo: nextIdOrdenServicioQuery?.data || 0, codigoTipoServicio: 0 });
@@ -268,8 +285,13 @@ function RouteComponent() {
           descripcionId: numeroStr,
         },
         {
-          onSuccess: () => {
-            setCurrentStep(2);
+          // apiHandler no rechaza las llamadas POST que responden con error (ver src/api/config.ts): resuelve
+          // con status 4xx/5xx en vez de lanzar, por eso onSuccess se dispara igual y hay que revisar el status
+          // de la respuesta antes de avanzar de paso (el toast de error ya lo muestra el hook internamente)
+          onSuccess: (response) => {
+            if (response.status === 200 || response.status === 201) {
+              setCurrentStep(2);
+            }
           },
         },
       );
@@ -295,11 +317,15 @@ function RouteComponent() {
             : dateFormat(new Date(watchCreate("fechaFin") || "")),
         },
         {
-          onSuccess: () => {
-            tarifasPeriodoActivoByIdTipoServicio(
-              identificador.codigoTipoServicio,
-            );
-            setCurrentStep(4);
+          // Ver nota en el paso 1: apiHandler resuelve (no rechaza) las respuestas de error de POST, hay que
+          // revisar el status antes de avanzar (ej: fecha de fin anterior a la fecha de inicio)
+          onSuccess: (response) => {
+            if (response.status === 200 || response.status === 201) {
+              tarifasPeriodoActivoByIdTipoServicio(
+                identificador.codigoTipoServicio,
+              );
+              setCurrentStep(4);
+            }
           },
         },
       );
@@ -307,22 +333,78 @@ function RouteComponent() {
       return;
     }
 
-    if (currentStep === 5) {
-      const campoHorario = configuracionServicioTarifa.some(
-        (service) => service.horaInicio === "" && service.horaFin === "",
-      );
-      if (campoHorario) {
-        toast.error("Los campos de hora son requeridos");
+    // Paso 4: origen de la orden de servicio (catalogo / a la medida)
+    if (currentStep === 4) {
+      if (!origenServicio) {
+        toast.error("Debe seleccionar el origen de la orden de servicio");
         return;
       }
+
+      // Al entrar/cambiar de origen se descarta cualquier seleccion de servicio u horario del otro camino
+      setSelectedServices([]);
+      setConfiguracionServicioTarifa([]);
+      setHorarioAMedida({ horaInicio: "", horaFin: "" });
+      setCurrentStep(5);
+      return;
+    }
+
+    // Paso 5 (solo A LA MEDIDA): un unico horario para toda la orden + calculo de precio dia por dia
+    if (currentStep === 5 && origenServicio === OrigenServicioEnum.A_MEDIDA) {
+      if (horarioAMedida.horaInicio === "" || horarioAMedida.horaFin === "") {
+        toast.error("Las horas de inicio y fin son requeridas");
+        return;
+      }
+
+      try {
+        const responsePrecioOrden = await getPrecioOrdenServicio({
+          origenServicio: OrigenServicioEnum.A_MEDIDA,
+          fechaInicio: watchCreate("fechaInicio"),
+          fechaFin: isIndefinite ? null : watchCreate("fechaFin"),
+          horaInicio: timeFormat(horarioAMedida.horaInicio),
+          horaFin: timeFormat(horarioAMedida.horaFin),
+        });
+
+        const precioValidado =
+          (responsePrecioOrden.status === 200 || responsePrecioOrden.status === 201) &&
+          !!responsePrecioOrden.data;
+
+        if (precioValidado && responsePrecioOrden.data) {
+          const precioData = responsePrecioOrden.data;
+          setPrecioOrdenDetalle(precioData);
+          setMensajeRespuesta(precioData.message);
+          setValueCreate("precioTotal", precioData.precio || 0);
+
+          // Se guarda tal cual el desglose que devolvio el backend (una fila por cada dia del rango), es
+          // exactamente lo que se reenvia al crear la orden, sin volver a calcular nada en el front
+          setConfiguracionServicioTarifa(precioData.servicios);
+
+          toast.success("Precio de la orden de servicio calculado correctamente");
+          setCurrentStep(6);
+        }
+      } catch (error) {
+        console.log(error);
+        toast.error("Error al calcular el precio de la orden de servicio");
+      }
+      return;
+    }
+
+    // Paso 6 (solo CATALOGO): validar horario de cada servicio elegido + calculo de precio
+    if (currentStep === 6 && origenServicio === OrigenServicioEnum.CATALOGO) {
+      // const campoHorario = configuracionServicioTarifa.some(
+      //   (service) => service.horaInicio === "" && service.horaFin === "",
+      // );
+      // if (campoHorario) {
+      //   toast.error("Los campos de hora son requeridos");
+      //   return;
+      // }
 
       try {
         const [responseHorarioServicio, responsePrecioOrden] = await Promise.all([
           Promise.allSettled(
             configuracionServicioTarifa.map(async (servicio) => {
               return validarHorarioServicioOrdenServicio({
-                idTarifa: servicio.idTarifa || null,
-                idServicio: servicio.idServicio || 0,
+                origenServicio: OrigenServicioEnum.CATALOGO,
+                idTarifa: servicio.idTarifa,
                 horaInicio: timeFormat(servicio.horaInicio),
                 horaFin:
                   servicio.horaFin === ""
@@ -332,12 +414,11 @@ function RouteComponent() {
             }),
           ),
           getPrecioOrdenServicio({
+            origenServicio: OrigenServicioEnum.CATALOGO,
             fechaInicio: watchCreate("fechaInicio"),
             fechaFin: isIndefinite ? null : watchCreate("fechaFin"),
             servicios: configuracionServicioTarifa.map((servicio) => ({
-              idServicio: servicio.idServicio || 0,
-              // Los servicios de horario Mixto + Por hora no tienen tarifa guardada, no se envia idTarifa para esos
-              ...(servicio.idTarifa ? { idTarifa: servicio.idTarifa } : {}),
+              idTarifa: servicio.idTarifa || 0,
               horaInicio: servicio.horaInicio,
               horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
             })),
@@ -354,30 +435,36 @@ function RouteComponent() {
           setMensajeRespuesta(precioData.message);
           setValueCreate("precioTotal", precioData.precio || 0);
 
+          // Se guarda tal cual el desglose que devolvio el backend (conserva el idServicio interno de cada
+          // fila, usado en los pasos ya recorridos y en la vista previa), es lo que se reenvia al crear la orden
           setConfiguracionServicioTarifa((prev) =>
-            prev.map((servicio) => {
-              const detalle = precioData.servicios.find(
-                (s) => s.idServicio === servicio.idServicio,
-              );
-              return detalle ? { ...servicio, precio: detalle.precio || 0 } : servicio;
+            precioData.servicios.map((detalle) => {
+              const original = prev.find((s) => s.idTarifa === detalle.idTarifa);
+              return { ...detalle, idServicio: original?.idServicio };
             }),
           );
         }
 
+        // apiHandler no rechaza las llamadas POST/PATCH/etc que responden con error (ver src/api/config.ts):
+        // devuelve un ApiResponse con status 4xx/5xx en vez de lanzar. Por eso "fulfilled" en Promise.allSettled
+        // no significa que la validacion haya pasado, hay que revisar el status de cada respuesta resuelta
         const allValidated =
-          responseHorarioServicio.every((r) => r.status === "fulfilled") &&
-          precioValidado;
+          responseHorarioServicio.every(
+            (r) =>
+              r.status === "fulfilled" &&
+              (r.value.status === 200 || r.value.status === 201),
+          ) && precioValidado;
 
         if (allValidated) {
           toast.success(
-            "Rango horario personal y precio de orden de servicio validados correctamente",
+            "Horario y precio de la orden de servicio validados correctamente",
           );
-          setCurrentStep(6);
+          setCurrentStep(7);
         }
       } catch (error) {
         console.log(error);
         toast.error(
-          "Error al validar el rango horario personal y el precio de la orden de servicio",
+          "Error al validar el horario y el precio de la orden de servicio",
         );
       }
       return;
@@ -439,7 +526,7 @@ function RouteComponent() {
     //   return;
     // }
 
-    if (currentStep < 6) {
+    if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -456,15 +543,24 @@ function RouteComponent() {
           },
         },
         {
-          onSuccess: async () => {
+          // Ver nota en handleNext: apiHandler resuelve (no rechaza) las respuestas de error de POST, hay que
+          // revisar el status antes de calcular el precio y avanzar (si no, una fecha invalida seguiria de
+          // largo hasta el precio y podria terminar avanzando de paso igual)
+          onSuccess: async (response) => {
+            if (response.status !== 200 && response.status !== 201) {
+              return;
+            }
+
             try {
+              // La edicion solo soporta ordenes de origen "catalogo" (no hay forma de editar el horario unico
+              // de una orden "a la medida" desde aqui, servicios va comentado en el update de todas formas)
               // Igual que en la creacion, un solo llamado calcula el precio de todos los servicios de la orden
               const responsePrecioOrden = await getPrecioOrdenServicio({
+                origenServicio: OrigenServicioEnum.CATALOGO,
                 fechaInicio: watchEdit("fechaInicio"),
                 fechaFin: isIndefinite ? null : watchEdit("fechaFin"),
                 servicios: configuracionServicioTarifaEdit.map((servicio) => ({
-                  idServicio: servicio.idServicio || 0,
-                  ...(servicio.idTarifa ? { idTarifa: servicio.idTarifa } : {}),
+                  idTarifa: servicio.idTarifa || 0,
                   horaInicio: servicio.horaInicio,
                   horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
                 })),
@@ -480,11 +576,11 @@ function RouteComponent() {
                 setMensajeRespuesta(precioData.message);
                 setValueEdit("precioTotal", precioData.precio || 0);
 
+                // Se hace match por posicion: precioData.servicios respeta el mismo orden en que se enviaron
+                // (ya no trae idServicio para matchear por id, ver PrecioServicioOrdenResponse)
                 setConfiguracionServicioTarifaEdit((prev) =>
-                  prev.map((servicio) => {
-                    const detalle = precioData.servicios.find(
-                      (s) => s.idServicio === servicio.idServicio,
-                    );
+                  prev.map((servicio, index) => {
+                    const detalle = precioData.servicios[index];
                     return detalle ? { ...servicio, precio: detalle.precio || 0 } : servicio;
                   }),
                 );
@@ -572,29 +668,50 @@ function RouteComponent() {
 
   const handleSaveOrder = async () => {
     const data = watchCreate();
+
+    // configuracionServicioTarifa guarda tal cual cada fila que devolvio /obtener-precio (ver handleNext), que
+    // trae ademas "message" (y en teoria "costos_horas") e idServicio (uso interno del front, ver
+    // CreateOrdenServicioTarifaDto). El backend valida con forbidNonWhitelisted: cualquier propiedad fuera de
+    // CreateOrdenServicioDetalleDto revienta la creacion ("property X should not exist"), por eso se arma el
+    // objeto explicitamente en vez de solo quitar los campos que no se necesitan
+    const servicios: CreateOrdenServicioDetalleDto[] = configuracionServicioTarifa.map((servicio) => ({
+      idTarifa: servicio.idTarifa,
+      horaInicio: servicio.horaInicio,
+      horaFin: servicio.horaFin,
+      cantidadHoras: servicio.cantidadHoras,
+      fecha: servicio.fecha,
+      costosDirectos: servicio.costosDirectos,
+      seguroVida: servicio.seguroVida,
+      costosDirectosSeguroVida: servicio.costosDirectosSeguroVida,
+      aui: servicio.aui,
+      precioAntesIva: servicio.precioAntesIva,
+      iva: servicio.iva,
+      precio: servicio.precio,
+    }));
+
     const ordenesDeServicioMutation: CreateOrdenServicioDto = {
+      origenServicio: origenServicio || OrigenServicioEnum.CATALOGO,
       numeroOrdenServicio: data.numeroOrdenServicio,
       idLocacion: data.idLocacion || 0,
       fechaInicio: data.fechaInicio,
       fechaFin: isIndefinite ? null : data.fechaFin,
-      precioTotal: data.precioTotal,
       fechaCreacion: new Date().toISOString(),
-      servicios: configuracionServicioTarifa,
+      servicios,
     };
 
     crearOrdenServicio(ordenesDeServicioMutation, {
-      onSuccess: () => {
-        handleCloseModal();
+      // Ver nota en handleNext: apiHandler resuelve (no rechaza) las respuestas de error de POST, hay que
+      // revisar el status antes de cerrar el modal (si no, un error del backend al crear cerraria el modal
+      // igual y se perderia toda la informacion ya diligenciada)
+      onSuccess: (response) => {
+        if (response.status === 200 || response.status === 201) {
+          handleCloseModal();
+        }
       },
     });
   };
 
   const handleUpdateOrder = async () => {
-    // Clean the services data to match UpdateOrdenServicioTarifaDto structure
-    const cleanedServicios = configuracionServicioTarifaEdit.map(
-      ({ idServicio, ...rest }) => rest,
-    );
-
     const data = watchEdit();
     const ordenesDeServicioMutation: UpdateOrdenServicioDto = {
       fechaInicio: data.fechaInicio,
@@ -610,9 +727,14 @@ function RouteComponent() {
         data: ordenesDeServicioMutation,
       },
       {
-        onSuccess: () => {
-          handleCloseModal();
-          setIsEditing(false);
+        // Ver nota en handleSaveOrder: apiHandler resuelve (no rechaza) las respuestas de error de POST/PATCH,
+        // hay que revisar el status antes de cerrar el modal (si no, un error del backend al actualizar
+        // cerraria el modal igual y se perderia la edicion)
+        onSuccess: (response) => {
+          if (response.status === 200 || response.status === 201) {
+            handleCloseModal();
+            setIsEditing(false);
+          }
         },
       },
     );
@@ -629,21 +751,24 @@ function RouteComponent() {
       // servicios: [],
     });
 
+    // El backend expone el desglose de la orden como "detalles" (ya no "tarifas"), y cada fila ya no trae
+    // cantidadPersonal/personal (ver OrdenServicioDetalle en el backend) — se dejan en blanco solo para
+    // cumplir con UpdateOrdenServicioTarifaDto, no se usan ni se envian en la actualizacion
     setConfiguracionServicioTarifaEdit(
-      ordenServicioById?.data?.tarifas.map((servicio) => ({
-        idTarifa: servicio.idTarifa?.idTarifa || 0,
-        cantidadPersonal: servicio.cantidadPersonal,
-        horaInicio: servicio.horaInicio,
-        horaFin: servicio.horaFin,
-        precio: servicio.precio || 0,
+      ordenServicioById?.data?.detalles?.map((detalle) => ({
+        idTarifa: detalle.idTarifa?.idTarifa || 0,
+        cantidadPersonal: 0,
+        horaInicio: detalle.horaInicio,
+        horaFin: detalle.horaFin,
+        precio: detalle.precio || 0,
         personal: [],
-        idServicio: servicio.idTarifa?.idServicio.idServicio,
+        idServicio: detalle.idTarifa?.idServicio?.idServicio,
       })) || [],
     );
 
     setSelectedServices(
-      ordenServicioById?.data?.tarifas.map((servicio) => ({
-        ...servicio?.idTarifa.idServicio,
+      ordenServicioById?.data?.detalles?.map((detalle) => ({
+        ...detalle?.idTarifa?.idServicio,
       })) || [],
     );
 
@@ -868,6 +993,12 @@ function RouteComponent() {
     },
   ];
 
+  // Tipo de servicio seleccionado en el paso 1 (usado en el paso 4 para saber si se debe preguntar el origen
+  // de la orden o fijarlo automaticamente, ver SeleccionarOrigenServicio)
+  const tipoServicioSeleccionado = tipoServiciosQuery?.data?.data?.find(
+    (tipo) => tipo.idTipoServicio === identificador.codigoTipoServicio,
+  );
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -900,6 +1031,22 @@ function RouteComponent() {
 
       case 4:
         return (
+          <SeleccionarOrigenServicio
+            tipoServicioNombre={tipoServicioSeleccionado?.nombre}
+            origenServicio={origenServicio}
+            setOrigenServicio={setOrigenServicio}
+          />
+        );
+
+      // A LA MEDIDA: unico horario para toda la orden, no hay paso de seleccionar servicios
+      // CATALOGO: seleccionar uno o varios servicios del catalogo del periodo activo
+      case 5:
+        return origenServicio === OrigenServicioEnum.A_MEDIDA ? (
+          <ConfigurarHorarioAMedida
+            horarioAMedida={horarioAMedida}
+            setHorarioAMedida={setHorarioAMedida}
+          />
+        ) : (
           <SeleccionarServicio
             selectedServices={selectedServices}
             tarifasPeriodoActivoByIdTipoServicioData={
@@ -907,15 +1054,6 @@ function RouteComponent() {
             }
             tipoServiciosQuery={tipoServiciosQuery?.data?.data || []}
             handleSelectedServices={handleSelectedServices}
-            setConfiguracionServicioTarifa={setConfiguracionServicioTarifa}
-          />
-        );
-
-      case 5:
-        return (
-          <ConfigurarHorariosServicios
-            selectedServices={selectedServices}
-            configuracionServicioTarifa={configuracionServicioTarifa}
             setConfiguracionServicioTarifa={setConfiguracionServicioTarifa}
           />
         );
@@ -937,7 +1075,30 @@ function RouteComponent() {
       //       }
       //     />
       //   );
-      case 6: // antes paso 7
+
+      // A LA MEDIDA: el paso 5 ya calculo el precio, aqui va directo a la vista previa (ultimo paso)
+      // CATALOGO: configurar horarios por servicio (aqui se calcula el precio, ver handleNext)
+      case 6:
+        return origenServicio === OrigenServicioEnum.A_MEDIDA ? (
+          <PreviewInformacionOrden
+            selectedPuesto={selectedPuesto}
+            formOrdenServicio={watchCreate()}
+            configuracionServicioTarifa={configuracionServicioTarifa}
+            selectedServices={selectedServices}
+            mensajeRespuesta={mensajeRespuesta}
+            isIndefinite={isIndefinite}
+            precioOrdenDetalle={precioOrdenDetalle}
+          />
+        ) : (
+          <ConfigurarHorariosServicios
+            selectedServices={selectedServices}
+            configuracionServicioTarifa={configuracionServicioTarifa}
+            setConfiguracionServicioTarifa={setConfiguracionServicioTarifa}
+          />
+        );
+
+      // CATALOGO unicamente: vista previa (para A LA MEDIDA la vista previa ya es el paso 6)
+      case 7:
         return (
           <PreviewInformacionOrden
             selectedPuesto={selectedPuesto}
@@ -1067,7 +1228,7 @@ function RouteComponent() {
         <>
           {/* Step Indicator */}
           <div className="flex items-center justify-center px-6 py-6">
-            {[1, 2, 3, 4, 5, 6].map((step) => (
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step < currentStep
@@ -1079,7 +1240,7 @@ function RouteComponent() {
                 >
                   {step < currentStep ? <Check className="h-4 w-4" /> : step}
                 </div>
-                {step < 6 && (
+                {step < totalSteps && (
                   <div
                     className={`mx-2 h-0.5 w-16 ${step < currentStep ? `bg-green-500` : `bg-gray-200`}`}
                   />
@@ -1096,7 +1257,7 @@ function RouteComponent() {
           {/* Footer */}
           <div className="flex items-center justify-between border-t border-gray-200 px-6 pt-6 pb-4">
             <div className="text-sm text-gray-500">
-              Paso {currentStep} de {6}
+              Paso {currentStep} de {totalSteps}
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -1119,7 +1280,7 @@ function RouteComponent() {
               )}
               <button
                 type="button"
-                onClick={currentStep < 6 ? handleNext : handleSaveOrder}
+                onClick={currentStep < totalSteps ? handleNext : handleSaveOrder}
                 disabled={
                   isValidateFechasOrdenServicioPending ||
                   isGetPrecioOrdenPending ||
@@ -1132,11 +1293,17 @@ function RouteComponent() {
                       identificador.codigo === 0)) ||
                   (currentStep === 2 && !watchCreate("idLocacion")) ||
                   (currentStep === 3 && !watchCreate("fechaInicio")) ||
-                  (currentStep === 4 &&
-                    configuracionServicioTarifa.length === 0)
+                  (currentStep === 4 && !origenServicio) ||
+                  (currentStep === 5 &&
+                    origenServicio === OrigenServicioEnum.CATALOGO &&
+                    configuracionServicioTarifa.length === 0) ||
+                  (currentStep === 5 &&
+                    origenServicio === OrigenServicioEnum.A_MEDIDA &&
+                    (horarioAMedida.horaInicio === "" ||
+                      horarioAMedida.horaFin === ""))
                   // TODO: Revisar validaciones de los pasos
                 }
-                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${currentStep < 6
+                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${currentStep < totalSteps
                   ? "bg-blue-600 hover:bg-blue-700"
                   : "bg-green-600 hover:bg-green-700"
                   } ${isCrearOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
@@ -1146,7 +1313,7 @@ function RouteComponent() {
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                     Creando...
                   </div>
-                ) : currentStep < 6 ? (
+                ) : currentStep < totalSteps ? (
                   "Siguiente"
                 ) : (
                   "Crear Orden"

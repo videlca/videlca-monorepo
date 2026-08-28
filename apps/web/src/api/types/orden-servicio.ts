@@ -1,7 +1,6 @@
 import type { EstadoOrden, Puesto, Usuario } from "../../types";
 import type { GruposLiquidaciones } from "./liquidaciones";
 import type { Tarifa } from "./periodo";
-import type { Servicio } from "./servicio";
 import type { PersonalAsignado } from "./programacion-personal";
 
 export interface OrdenServicio {
@@ -18,25 +17,38 @@ export interface OrdenServicio {
   fechaCreacion: string;
   fechaActualizacion: string;
   observacionesOrdenServicio: ObservacionOrdenServicio[];
-  tarifas: TarifaOrdenServicio[];
+  detalles: OrdenServicioDetalle[];
   // TODO: Verificar tipo
   liquidaciones: any[];
 }
 
-export interface TarifaOrdenServicio {
-  idOrdenServicioTarifa: number;
-  idTarifa: Tarifa | null;
-  idServicio: Servicio;
-  cantidadPersonal: number;
+// Fila del desglose de una orden ya creada (GET /orden-servicio/:id). idTarifa siempre viene con su idServicio
+// cargado (ver findOneOrdenRelations en el backend). En modo "catalogo" cada fila es un servicio elegido del
+// catalogo (cantidadHoras/fecha en null); en modo "a_medida" cada fila es un dia del rango (idTarifa apunta a
+// la tarifa de turno de 24h que el backend resolvio internamente para ese dia, puede repetirse entre filas)
+export interface OrdenServicioDetalle {
+  idOrdenServicioDetalle: number;
+  idTarifa: Tarifa;
+  cantidadHoras: number | null;
+  fecha: string | null;
   horaInicio: string;
   horaFin: string;
   costosDirectos: number | null;
   seguroVida: number | null;
+  costosDirectosSeguroVida: number | null;
   aui: number | null;
   precioAntesIva: number | null;
   iva: number | null;
   precio: number | null;
-  costosHoras: CostoHoraOrdenServicio[];
+}
+
+// Fila fija de catalogo (GET /origen-servicio), solo se ajusta desde el backend (se llena por BD).
+// code trae el valor de OrigenServicioEnum (ver api/dtos/orden-servicio.ts): "catalogo" | "a_medida"
+export interface OrigenServicio {
+  idOrigenServicio: number;
+  nombre: string;
+  descripcion: string;
+  code: string;
 }
 
 export interface OrdenServicioId {
@@ -106,9 +118,15 @@ export interface CostoHoraOrdenServicio {
   aui: number;
 }
 
+// idTarifa: en modo "catalogo" identifica el servicio elegido; en modo "a_medida" identifica la tarifa de
+// turno (24h ordinaria/dominical) que el backend resuelve internamente para ese dia (puede repetirse entre filas)
 export interface PrecioServicioOrdenResponse {
-  idServicio: number;
-  idTarifa: number | null;
+  idTarifa: number;
+  horaInicio: string;
+  horaFin: string;
+  // Solo vienen con datos en modo "a_medida" (cada fila es un dia del rango); en modo "catalogo" son null
+  cantidadHoras: number | null;
+  fecha: string | null;
   message: string;
   precio: number | null;
   costosDirectos: number | null;
@@ -117,7 +135,9 @@ export interface PrecioServicioOrdenResponse {
   aui: number | null;
   precioAntesIva: number | null;
   iva: number | null;
-  costos_horas: CostoHoraOrdenServicio[];
+  // El backend ya no devuelve el desglose hora a hora (servicio Mixto + Por hora dejo de existir en este refactor),
+  // se deja opcional para no obligar a tocar el bloque de Preview que aun lo referencia
+  costos_horas?: CostoHoraOrdenServicio[];
 }
 
 export interface PrecioOrdenResponse {
