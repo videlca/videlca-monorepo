@@ -146,8 +146,8 @@ export class TarifasService {
 
     }
 
-    // POR TURNO O MENSUAL: SE CALCULA A PARTIR DE LAS TARIFAS POR HORA DEL PERIODO Y LAS HORAS FIJAS DEL SERVICIO (8, 12 o 24)
-    if (servicio.idTipoTarifa.nombre == TipoTarifaInterface.TURNO || servicio.idTipoTarifa.nombre == TipoTarifaInterface.MES) {
+    // POR TURNO: SE CALCULA A PARTIR DE LAS TARIFAS POR HORA DEL PERIODO Y LAS HORAS FIJAS DEL SERVICIO (8, 12 o 24)
+    if (servicio.idTipoTarifa.nombre == TipoTarifaInterface.TURNO) {
 
       const costosDirectosPorTurno = this.calcularCostosDirectosPorTurno(servicio, mapaTarifaHora);
 
@@ -161,21 +161,49 @@ export class TarifasService {
         errorServicio('no se ha configurado el valor del seguro de vida en las tarifas por hora de este periodo');
       }
 
-      if (servicio.idTipoTarifa.nombre == TipoTarifaInterface.TURNO) {
+      const seguroVidaDia = Math.ceil(seguroVidaMensual / 30);
 
-        const seguroVidaDia = Math.ceil(seguroVidaMensual / 30);
+      return {
+        ...base,
+        ...this.calcularTotalesTarifa(costosDirectosPorTurno, seguroVidaDia, 0.10),
+      };
+
+    }
+
+    // MENSUAL
+    if (servicio.idTipoTarifa.nombre == TipoTarifaInterface.MES) {
+
+      const seguroVidaMensual = mapaTarifaHora.get(TipoHoraDescripcionInterface.SEGURO_VIDA);
+
+      if (seguroVidaMensual == null) {
+        errorServicio('no se ha configurado el valor del seguro de vida en las tarifas por hora de este periodo');
+      }
+
+      const porcentajeAui = servicio.armado ? 0.10 : 0.08;
+
+      // MENSUAL + 8 HORAS: EL USUARIO INGRESA LOS COSTOS DIRECTOS MANUALMENTE (igual que "por servicio" y Monitoreo de alarmas)
+      if (servicio.horasFijas == 8) {
+
+        if (costosDirectosManual == null) {
+          errorServicio('debe ingresar el valor de costos directos para calcular el precio (mensual, 8 horas)');
+        }
 
         return {
           ...base,
-          ...this.calcularTotalesTarifa(costosDirectosPorTurno, seguroVidaDia, 0.10),
+          ...this.calcularTotalesTarifa(costosDirectosManual, seguroVidaMensual, porcentajeAui),
         };
 
       }
 
-      // MENSUAL: EL VALOR POR TURNO/DIA SE MULTIPLICA POR 30, EL SEGURO DE VIDA YA ES UN VALOR MENSUAL (NO SE DIVIDE)
-      // EL AUI ES 10% SI EL SERVICIO ES ARMADO, U 8% SI ES SIN ARMA
+      // MENSUAL 12 O 24 HORAS: EL VALOR POR TURNO/DIA (calculado con la tarifa hora del periodo) SE MULTIPLICA POR 30.
+      // EL SEGURO DE VIDA YA ES UN VALOR MENSUAL (NO SE DIVIDE)
+      const costosDirectosPorTurno = this.calcularCostosDirectosPorTurno(servicio, mapaTarifaHora);
+
+      if (costosDirectosPorTurno == null) {
+        errorServicio(`no se ha configurado el valor de la tarifa hora necesaria (diurna/nocturna${servicio.dominical ? ' dominical y festiva' : ''}) para este periodo`);
+      }
+
       const costosDirectosMes = costosDirectosPorTurno * 30;
-      const porcentajeAui = servicio.armado ? 0.10 : 0.08;
 
       return {
         ...base,
