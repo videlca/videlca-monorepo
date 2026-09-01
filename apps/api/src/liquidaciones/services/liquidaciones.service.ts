@@ -80,6 +80,104 @@ export class LiquidacionesService {
     return { items, total, page, limit: take };
   }
 
+  // DEVUELVE UNA ORDEN DE SERVICIO "COMO EL FINDONE NORMAL" PERO CON LOS PRECIOS DE UNA LIQUIDACION ESPECIFICA
+  // (lo que realmente se cobro ese mes), en vez de los precios totales de la orden completa.
+  //
+  // CATALOGO: se toman los valores ya guardados en liquidacionServiciosOrdenServicio (recalculados por
+  // crearLiquidacionMensualOrden para el tramo del mes) y se les completa horaInicio/horaFin cruzando por idTarifa
+  // contra los detalles de la orden (sin ambiguedad: catalogo tiene una sola fila por idTarifa).
+  //
+  // A LA MEDIDA: liquidacionServiciosOrdenServicio no guarda fecha/horaInicio/horaFin (solo el precio ya copiado),
+  // asi que en vez de usarla se recalcula el mismo desde/hasta que uso crearLiquidacionMensualOrden y se filtran
+  // directamente los detalles de la orden por fecha: esas filas ya tienen su horario real de ese dia especifico.
+  async findOrdenLiquidada(idLiquidacion: number) {
+
+    const liquidacion = await this.liquidacionRepo
+      .createQueryBuilder('l')
+      .leftJoinAndSelect('l.liquidacionServiciosOrdenServicio', 'lsos')
+      .leftJoinAndSelect('lsos.idTarifa', 'lsosTarifa')
+      .leftJoinAndSelect('lsosTarifa.idServicio', 'lsosServicio')
+      .leftJoinAndSelect('l.ordenServicio', 'os')
+      .leftJoinAndSelect('os.ordenServicioId', 'osid')
+      .leftJoinAndSelect('os.idUsuarioCreacion', 'usuario')
+      .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
+      .leftJoinAndSelect('os.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.correos', 'correos')
+      .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('cliente.idTipoCliente', 'tipoCliente')
+      .leftJoinAndSelect('locacion.idCiudad', 'ciudad')
+      .leftJoinAndSelect('os.detalles', 'detalle')
+      .leftJoinAndSelect('detalle.idTarifa', 'detalleTarifa')
+      .leftJoinAndSelect('detalleTarifa.idServicio', 'detalleServicio')
+      .where('l.idLiquidacion = :id', { id: idLiquidacion })
+      .getOne();
+
+    if (!liquidacion)
+      throw new NotFoundException(`Liquidacion con id "${idLiquidacion}" no se ha encontrado`);
+
+    const anio = Number(liquidacion.aniomes_liquidacion.slice(0, 4));
+    const mes = Number(liquidacion.aniomes_liquidacion.slice(4));
+
+    const mesIni = new Date(Date.UTC(anio, mes - 1, 1));
+    const mesFin = endOfMonth(mesIni);
+    const start = toUTCDateOnly(liquidacion.ordenServicio.fechaInicio);
+    const end = liquidacion.ordenServicio.fechaFin ? toUTCDateOnly(liquidacion.ordenServicio.fechaFin) : mesFin;
+
+    const desde = maxDate(start, mesIni);
+    const hasta = minDate(end, mesFin);
+
+    const esCatalogo = liquidacion.ordenServicio.origenServicio === OrigenServicioEnum.CATALOGO;
+
+    const detallesOrden = liquidacion.ordenServicio.detalles ?? [];
+
+    const detalles = esCatalogo
+      ? liquidacion.liquidacionServiciosOrdenServicio.map(lsos => {
+          const detalleOrden = detallesOrden.find(d => d.idTarifa.idTarifa === lsos.idTarifa.idTarifa);
+          return {
+            idTarifa: lsos.idTarifa,
+            fecha: null,
+            horaInicio: detalleOrden?.horaInicio ?? null,
+            horaFin: detalleOrden?.horaFin ?? null,
+            costosDirectos: lsos.costosDirectos,
+            seguroVida: lsos.seguroVida,
+            costosDirectosSeguroVida: lsos.costosDirectosSeguroVida,
+            aui: lsos.aui,
+            precioAntesIva: lsos.precioAntesIva,
+            iva: lsos.iva,
+            precio: lsos.precioTotal,
+          };
+        })
+      : detallesOrden
+          .filter(d => d.fecha && toUTCDateOnly(d.fecha) >= desde && toUTCDateOnly(d.fecha) <= hasta)
+          .sort((a, b) => +new Date(a.fecha!) - +new Date(b.fecha!))
+          .map(d => ({
+            idTarifa: d.idTarifa,
+            fecha: d.fecha,
+            horaInicio: d.horaInicio,
+            horaFin: d.horaFin,
+            costosDirectos: d.costosDirectos,
+            seguroVida: d.seguroVida,
+            costosDirectosSeguroVida: d.costosDirectosSeguroVida,
+            aui: d.aui,
+            precioAntesIva: d.precioAntesIva,
+            iva: d.iva,
+            precio: d.precio,
+          }));
+
+    const { detalles: _detallesOrden, liquidaciones: _liquidacionesOrden, ...ordenServicioBase } = liquidacion.ordenServicio as any;
+
+    return {
+      ...ordenServicioBase,
+      fechaInicio: desde,
+      fechaFin: hasta,
+      precioTotal: liquidacion.valor_liquidacion,
+      detalles,
+      idLiquidacion: liquidacion.idLiquidacion,
+      aniomes_liquidacion: liquidacion.aniomes_liquidacion,
+    };
+
+  }
+
   // --- RETRY helper para 1205/1213 ---
   private async withRetry<T>(fn: () => Promise<T>, max = 2): Promise<T> {
     let last: any;

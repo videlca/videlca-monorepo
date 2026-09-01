@@ -31,6 +31,13 @@ export class LiquidacionesController {
     return this.service.findAll({ page, limit, ordenId: oid });
   }
 
+  @Get(':idLiquidacion/orden')
+  findOrdenLiquidada(
+    @Param('idLiquidacion', ParseIntPipe) idLiquidacion: number,
+  ) {
+    return this.service.findOrdenLiquidada(idLiquidacion);
+  }
+
   @Post('generar-mes')
   async generarGrupoMensual(@Body() crearGrupoMensualDto: CrearGrupoMensualDto) {
     return this.service.generarGrupoMensual(crearGrupoMensualDto);
