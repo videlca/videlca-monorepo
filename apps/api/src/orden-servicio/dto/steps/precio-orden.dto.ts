@@ -9,6 +9,7 @@ import {
     IsNotEmpty,
     MaxLength,
     IsOptional,
+    IsBoolean,
     IsDate,
     IsArray,
     ArrayMinSize,
@@ -44,6 +45,47 @@ export class PrecioOrdenServicioItemDto {
         message: 'horaFin debe tener formato HH:mm:ss'
     })
     horaFin: string;
+
+    // DIAS DE LA SEMANA EN QUE SE PRESTA ESTE SERVICIO. Si no se envian, quedan en true por defecto (equivale a "todos los dias")
+    @ApiProperty({ description: 'Se presta el lunes', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo lunes debe ser boolean'})
+    lunes?: boolean;
+
+    @ApiProperty({ description: 'Se presta el martes', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo martes debe ser boolean'})
+    martes?: boolean;
+
+    @ApiProperty({ description: 'Se presta el miercoles', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo miercoles debe ser boolean'})
+    miercoles?: boolean;
+
+    @ApiProperty({ description: 'Se presta el jueves', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo jueves debe ser boolean'})
+    jueves?: boolean;
+
+    @ApiProperty({ description: 'Se presta el viernes', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo viernes debe ser boolean'})
+    viernes?: boolean;
+
+    @ApiProperty({ description: 'Se presta el sabado', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo sabado debe ser boolean'})
+    sabado?: boolean;
+
+    @ApiProperty({ description: 'Se presta el domingo', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo domingo debe ser boolean'})
+    domingo?: boolean;
+
+    @ApiProperty({ description: 'Ademas de los dias de semana marcados, cuenta tambien cualquier dia festivo sin importar en que dia de la semana caiga', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo incluye festivos debe ser boolean'})
+    incluyeFestivos?: boolean;
 
 }
 

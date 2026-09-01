@@ -67,6 +67,36 @@ export class OrdenServicioDetalle {
     })
     horaFin: string; // Formato 'HH:mm:ss'
 
+    // DIAS DE LA SEMANA EN QUE SE PRESTA ESTE SERVICIO. Solo aplica para ordenes de origen "catalogo" (en "a_medida"
+    // el cliente pide un rango continuo de fechas/horas, no se seleccionan dias de la semana sueltos). Por defecto
+    // todos en true (equivale a "todos los dias"), tanto para filas creadas antes de esta funcionalidad como para
+    // filas nuevas donde el usuario no cambio la seleccion
+    @Column({ type: 'boolean', name: 'lunes', default: true })
+    lunes: boolean;
+
+    @Column({ type: 'boolean', name: 'martes', default: true })
+    martes: boolean;
+
+    @Column({ type: 'boolean', name: 'miercoles', default: true })
+    miercoles: boolean;
+
+    @Column({ type: 'boolean', name: 'jueves', default: true })
+    jueves: boolean;
+
+    @Column({ type: 'boolean', name: 'viernes', default: true })
+    viernes: boolean;
+
+    @Column({ type: 'boolean', name: 'sabado', default: true })
+    sabado: boolean;
+
+    @Column({ type: 'boolean', name: 'domingo', default: true })
+    domingo: boolean;
+
+    // ADEMAS DE LOS DIAS DE SEMANA MARCADOS ARRIBA, CUENTA TAMBIEN CUALQUIER DIA QUE SEA FESTIVO, SIN IMPORTAR EN
+    // QUE DIA DE LA SEMANA CAIGA (ej: servicio marcado "solo domingo" + incluyeFestivos=true -> un festivo en martes tambien cuenta)
+    @Column({ type: 'boolean', name: 'incluyeFestivos', default: true })
+    incluyeFestivos: boolean;
+
     // DESGLOSE DEL PRECIO DEL SERVICIO. Todos nulos si la orden es indefinida (fechaFin null), ya que en ese caso
     // el precio se calcula mes a mes al momento de liquidar/finalizar, no se conoce de antemano
     @Column({

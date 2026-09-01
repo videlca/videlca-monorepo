@@ -3,6 +3,7 @@ import {
     IsString,
     IsOptional,
     IsEnum,
+    IsBoolean,
     Matches,
     IsNumber,
     IsPositive,
@@ -44,6 +45,49 @@ export class CreateOrdenServicioDetalleDto {
         message: 'horaFin debe tener formato HH:mm:ss'
     })
     horaFin: string;
+
+    // DIAS DE LA SEMANA EN QUE SE PRESTA ESTE SERVICIO. Solo aplica para ordenes de origen "catalogo" (en "a_medida"
+    // no se seleccionan dias de la semana sueltos, es un rango continuo de fechas/horas). Si no se envian, quedan
+    // en true por defecto (equivale a "todos los dias")
+    @ApiProperty({ description: 'Se presta el lunes. Solo aplica para ordenes de origen "catalogo"', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo lunes debe ser boolean'})
+    lunes?: boolean;
+
+    @ApiProperty({ description: 'Se presta el martes. Solo aplica para ordenes de origen "catalogo"', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo martes debe ser boolean'})
+    martes?: boolean;
+
+    @ApiProperty({ description: 'Se presta el miercoles. Solo aplica para ordenes de origen "catalogo"', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo miercoles debe ser boolean'})
+    miercoles?: boolean;
+
+    @ApiProperty({ description: 'Se presta el jueves. Solo aplica para ordenes de origen "catalogo"', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo jueves debe ser boolean'})
+    jueves?: boolean;
+
+    @ApiProperty({ description: 'Se presta el viernes. Solo aplica para ordenes de origen "catalogo"', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo viernes debe ser boolean'})
+    viernes?: boolean;
+
+    @ApiProperty({ description: 'Se presta el sabado. Solo aplica para ordenes de origen "catalogo"', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo sabado debe ser boolean'})
+    sabado?: boolean;
+
+    @ApiProperty({ description: 'Se presta el domingo. Solo aplica para ordenes de origen "catalogo"', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo domingo debe ser boolean'})
+    domingo?: boolean;
+
+    @ApiProperty({ description: 'Ademas de los dias de semana marcados, cuenta tambien cualquier dia festivo sin importar en que dia de la semana caiga. Solo aplica para ordenes de origen "catalogo"', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo incluye festivos debe ser boolean'})
+    incluyeFestivos?: boolean;
 
     @ApiProperty({ description: 'Cantidad de horas de esta fila. Solo aplica para ordenes de origen "a_medida"', example: 4, required: false})
     @IsOptional()

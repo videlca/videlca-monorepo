@@ -63,6 +63,18 @@ import {
   GetReporteInicioDto
 } from '../dto';
 
+// PATRON DE DIAS DE LA SEMANA EN QUE SE PRESTA UN SERVICIO DEL CATALOGO DENTRO DE UNA ORDEN (ver OrdenServicioDetalle)
+interface PatronDiasSemana {
+  lunes: boolean;
+  martes: boolean;
+  miercoles: boolean;
+  jueves: boolean;
+  viernes: boolean;
+  sabado: boolean;
+  domingo: boolean;
+  incluyeFestivos: boolean;
+}
+
 @Injectable()
 export class OrdenServicioService {
 
@@ -260,6 +272,14 @@ export class OrdenServicioService {
           horaInicio: detalleDto.horaInicio,
           horaFin: detalleDto.horaFin,
           fecha: detalleDto.fecha ?? null,
+          lunes: detalleDto.lunes ?? true,
+          martes: detalleDto.martes ?? true,
+          miercoles: detalleDto.miercoles ?? true,
+          jueves: detalleDto.jueves ?? true,
+          viernes: detalleDto.viernes ?? true,
+          sabado: detalleDto.sabado ?? true,
+          domingo: detalleDto.domingo ?? true,
+          incluyeFestivos: detalleDto.incluyeFestivos ?? true,
           cantidadHoras: createOrdenServicioDto.fechaFin != null ? (detalleDto.cantidadHoras ?? null) : null,
           costosDirectos: createOrdenServicioDto.fechaFin != null ? (detalleDto.costosDirectos ?? null) : null,
           seguroVida: createOrdenServicioDto.fechaFin != null ? (detalleDto.seguroVida ?? null) : null,
@@ -625,6 +645,12 @@ export class OrdenServicioService {
       return;
     }
 
+    const patron = this.construirPatronDias(validarHorarioServicioDto);
+
+    if (!this.patronTieneAlMenosUnDia(patron)) {
+      throw new BadRequestException('Debe seleccionar al menos un dia de la semana en que se presta el servicio');
+    }
+
     const tarifa = await this.tarifasService.findOne(idTarifa);
 
     const servicio = tarifa.idServicio;
@@ -736,14 +762,74 @@ export class OrdenServicioService {
 
   }
 
+  // CONSTRUYE EL PATRON DE DIAS DE SEMANA DE UN SERVICIO A PARTIR DE LO QUE ENVIE EL FRONT (idTarifa/horaInicio/horaFin
+  // + los 7 dias + incluyeFestivos). LOS CAMPOS QUE NO SE ENVIEN QUEDAN EN true (equivale a "todos los dias")
+  private construirPatronDias(datos: {
+    lunes?: boolean; martes?: boolean; miercoles?: boolean; jueves?: boolean;
+    viernes?: boolean; sabado?: boolean; domingo?: boolean; incluyeFestivos?: boolean;
+  }): PatronDiasSemana {
+
+    return {
+      lunes: datos.lunes ?? true,
+      martes: datos.martes ?? true,
+      miercoles: datos.miercoles ?? true,
+      jueves: datos.jueves ?? true,
+      viernes: datos.viernes ?? true,
+      sabado: datos.sabado ?? true,
+      domingo: datos.domingo ?? true,
+      incluyeFestivos: datos.incluyeFestivos ?? true,
+    };
+
+  }
+
+  private patronTieneAlMenosUnDia(patron: PatronDiasSemana): boolean {
+
+    return patron.lunes || patron.martes || patron.miercoles || patron.jueves || patron.viernes || patron.sabado || patron.domingo;
+
+  }
+
+  private esPatronTodosLosDias(patron: PatronDiasSemana): boolean {
+
+    return patron.lunes && patron.martes && patron.miercoles && patron.jueves && patron.viernes && patron.sabado && patron.domingo;
+
+  }
+
+  // CUENTA CUANTOS DIAS DE [fechaInicio, fechaFin] CUMPLEN EL PATRON DE DIAS DE SEMANA DE UN SERVICIO.
+  // SI TODOS LOS DIAS ESTAN MARCADOS, SE USA EL CONTEO PLANO DE FECHAS (SIN CONSULTAR FESTIVOS, YA QUE EN ESE CASO
+  // CUALQUIER DIA CUENTA). SI NO, SE RECORRE DIA POR DIA: CUENTA SI SU DIA DE SEMANA ESTA MARCADO, O SI ES FESTIVO
+  // Y incluyeFestivos ESTA ACTIVO (independiente de que dia de la semana sea ese festivo)
+  private async contarDiasSegunPatron(fechaInicio: Date, fechaFin: Date, patron: PatronDiasSemana): Promise<number> {
+
+    if (this.esPatronTodosLosDias(patron)) {
+      return this.calcularDuracionServicioDias(new Date(fechaInicio), new Date(fechaFin));
+    }
+
+    // getDay(): 0 = domingo, 1 = lunes, ..., 6 = sabado
+    const diasSemanaMarcados = [patron.domingo, patron.lunes, patron.martes, patron.miercoles, patron.jueves, patron.viernes, patron.sabado];
+
+    let cantidad = 0;
+    const fechaIter = new Date(fechaInicio);
+
+    while (fechaIter <= fechaFin) {
+
+      const aplica = diasSemanaMarcados[fechaIter.getDay()] || (patron.incluyeFestivos && await this.festivosService.esFestivo(fechaIter));
+
+      if (aplica) cantidad++;
+
+      fechaIter.setDate(fechaIter.getDate() + 1);
+
+    }
+
+    return cantidad;
+
+  }
+
   // CALCULA EL PRECIO DE CADA SERVICIO DEL CATALOGO SELECCIONADO PARA LA ORDEN (cada uno ya tiene su propia tarifa)
   private async calcularPrecioCatalogo(
     items: PrecioOrdenServicioItemDto[],
     fechaInicioOrden: Date,
     fechaFinOrden: Date,
   ) {
-
-    const dias = this.calcularDuracionServicioDias(new Date(fechaInicioOrden), new Date(fechaFinOrden));
 
     const detalles: {
       idTarifa: number; horaInicio: string; horaFin: string; cantidadHoras: number | null; fecha: Date | null; message: string;
@@ -759,23 +845,28 @@ export class OrdenServicioService {
       const tipoServicioNombre = servicio.idTipoServicio.nombre;
       const tipoTarifaNombre = servicio.idTipoTarifa.nombre;
 
+      // PATRON DE DIAS DE SEMANA DE ESTE SERVICIO EN ESTA ORDEN (por defecto "todos los dias" si no se envia)
+      const patron = this.construirPatronDias(item);
+      const todosLosDias = this.esPatronTodosLosDias(patron);
+
       let desglose: ReturnType<OrdenServicioService['calcularTotalesTarifa']>;
       let mensaje: string;
 
       // MONITOREO DE ALARMAS: SIEMPRE MENSUAL, NO COBRA SEGURO DE VIDA
       if (tipoServicioNombre === TipoServicioInterface.MONITOREO_ALARMAS) {
 
-        if (this.esMesExacto(fechaInicioOrden, fechaFinOrden)) {
+        if (todosLosDias && this.esMesExacto(fechaInicioOrden, fechaFinOrden)) {
 
           desglose = this.tomarTotalesDeTarifa(tarifa);
           mensaje = 'Monitoreo de alarmas, es un mes exacto, se cobra la tarifa mensual completa';
 
         } else {
 
-          const costosDirectos = this.prorratearValorMensual(Number(tarifa.costosDirectos), fechaInicioOrden, fechaFinOrden);
+          const costosDirectos = await this.prorratearValorMensual(Number(tarifa.costosDirectos), fechaInicioOrden, fechaFinOrden, patron);
+          const diasAplicables = await this.contarDiasSegunPatron(fechaInicioOrden, fechaFinOrden, patron);
 
           desglose = this.calcularTotalesTarifa(costosDirectos, 0, 0.10);
-          mensaje = `Monitoreo de alarmas, ${dias} dia(s), proporcional a la tarifa mensual (meses completos a tarifa llena, no cobra seguro de vida)`;
+          mensaje = `Monitoreo de alarmas, ${diasAplicables} dia(s) segun el patron de dias seleccionado, proporcional a la tarifa mensual (no cobra seguro de vida)`;
 
         }
 
@@ -784,48 +875,54 @@ export class OrdenServicioService {
       // POR SERVICIO (recogida de dinero): costos directos * dias, seguro de vida TOTAL MENSUAL (sin dividir entre 30) * dias, aui flat 10%
       else if (tipoTarifaNombre === TipoTarifaInterface.SERVICIO) {
 
-        const costosDirectos = Number(tarifa.costosDirectos) * dias;
+        const diasAplicables = await this.contarDiasSegunPatron(fechaInicioOrden, fechaFinOrden, patron);
+
+        const costosDirectos = Number(tarifa.costosDirectos) * diasAplicables;
 
         const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(tarifa.idPeriodo.idPeriodo);
-        const seguroVida = seguroVidaMensual * dias;
+        const seguroVida = seguroVidaMensual * diasAplicables;
 
         desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, 0.10);
-        mensaje = `Por servicio, ${dias} dia(s)`;
+        mensaje = `Por servicio, ${diasAplicables} dia(s) segun el patron de dias seleccionado`;
 
       }
 
       // POR TURNO: costos directos * dias, seguro de vida (mensual, de tarifa_hora) / 30 * dias, aui flat 10%
       else if (tipoTarifaNombre === TipoTarifaInterface.TURNO) {
 
-        const costosDirectos = Number(tarifa.costosDirectos) * dias;
+        const diasAplicables = await this.contarDiasSegunPatron(fechaInicioOrden, fechaFinOrden, patron);
+
+        const costosDirectos = Number(tarifa.costosDirectos) * diasAplicables;
 
         const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(tarifa.idPeriodo.idPeriodo);
-        const seguroVida = Math.ceil(seguroVidaMensual / 30) * dias;
+        const seguroVida = Math.ceil(seguroVidaMensual / 30) * diasAplicables;
 
         desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, 0.10);
-        mensaje = `Por turno, ${dias} dia(s)`;
+        mensaje = `Por turno, ${diasAplicables} dia(s) segun el patron de dias seleccionado`;
 
       }
 
-      // MENSUAL: si es un mes exacto se cobra la tarifa completa, sino se prorratea por dias. AUI 10% armado / 8% sin armado
+      // MENSUAL: si es un mes exacto (y aplican todos los dias) se cobra la tarifa completa, sino se prorratea por dias.
+      // AUI 10% armado / 8% sin armado
       else if (tipoTarifaNombre === TipoTarifaInterface.MES) {
 
-        if (this.esMesExacto(fechaInicioOrden, fechaFinOrden)) {
+        if (todosLosDias && this.esMesExacto(fechaInicioOrden, fechaFinOrden)) {
 
           desglose = this.tomarTotalesDeTarifa(tarifa);
           mensaje = 'Es un mes exacto, se cobra la tarifa mensual completa';
 
         } else {
 
-          const costosDirectos = this.prorratearValorMensual(Number(tarifa.costosDirectos), fechaInicioOrden, fechaFinOrden);
+          const costosDirectos = await this.prorratearValorMensual(Number(tarifa.costosDirectos), fechaInicioOrden, fechaFinOrden, patron);
 
           const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(tarifa.idPeriodo.idPeriodo);
-          const seguroVida = this.prorratearValorMensual(seguroVidaMensual, fechaInicioOrden, fechaFinOrden);
+          const seguroVida = await this.prorratearValorMensual(seguroVidaMensual, fechaInicioOrden, fechaFinOrden, patron);
 
           const porcentajeAui = servicio.armado ? 0.10 : 0.08;
+          const diasAplicables = await this.contarDiasSegunPatron(fechaInicioOrden, fechaFinOrden, patron);
 
           desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, porcentajeAui);
-          mensaje = `${dias} dia(s), proporcional a la tarifa mensual (meses completos a tarifa llena, AUI ${servicio.armado ? '10% armado' : '8% sin armado'})`;
+          mensaje = `${diasAplicables} dia(s) segun el patron de dias seleccionado, proporcional a la tarifa mensual (AUI ${servicio.armado ? '10% armado' : '8% sin armado'})`;
 
         }
 
@@ -1117,11 +1214,18 @@ export class OrdenServicioService {
   }
 
   // PRORRATEA UN VALOR MENSUAL (costos directos o seguro de vida) A TRAVES DE UN RANGO DE FECHAS QUE PUEDE ABARCAR
-  // VARIOS MESES: recorre mes por mes el rango [fechaInicioOrden, fechaFinOrden] y por cada mes que este COMPLETO
-  // dentro del rango (del dia 1 al ultimo dia de ese mes) cobra el valor mensual completo; los meses parciales
-  // (al inicio o al final del rango) se cobran proporcional por dia (valorMensual / 30 * dias de ese tramo).
-  // Ej: 25 agosto -> 10 octubre = agosto parcial (7 dias) + septiembre completo (tarifa llena) + octubre parcial (10 dias)
-  private prorratearValorMensual(valorMensual: number, fechaInicioOrden: Date, fechaFinOrden: Date): number {
+  // VARIOS MESES, RESPETANDO EL PATRON DE DIAS DE SEMANA DEL SERVICIO: recorre mes por mes el rango
+  // [fechaInicioOrden, fechaFinOrden].
+  // SI EL PATRON ES "TODOS LOS DIAS": por cada mes que este COMPLETO dentro del rango (del dia 1 al ultimo dia de
+  // ese mes) cobra el valor mensual completo; los meses parciales se cobran proporcional por dia (valorMensual/30 *
+  // dias de ese tramo). Ej: 25 agosto -> 10 octubre = agosto parcial (7 dias) + septiembre completo (tarifa llena) +
+  // octubre parcial (10 dias).
+  // SI EL PATRON TIENE DIAS ESPECIFICOS (ej: "solo lunes"): no aplica el atajo de "mes completo" (un mes no tiene
+  // una cantidad fija de lunes), asi que TODOS los meses se cobran proporcional, contando cuantos dias del patron
+  // cayeron en cada mes (valorMensual/30 * esa cantidad)
+  private async prorratearValorMensual(valorMensual: number, fechaInicioOrden: Date, fechaFinOrden: Date, patron: PatronDiasSemana): Promise<number> {
+
+    const todosLosDias = this.esPatronTodosLosDias(patron);
 
     let total = 0;
 
@@ -1135,7 +1239,9 @@ export class OrdenServicioService {
       const inicioTramo = fechaInicioOrden > primerDiaMes ? fechaInicioOrden : primerDiaMes;
       const finTramo = fechaFinOrden < ultimoDiaMes ? fechaFinOrden : ultimoDiaMes;
 
-      const esMesCompleto = inicioTramo.getTime() === primerDiaMes.getTime() && finTramo.getTime() === ultimoDiaMes.getTime();
+      const esMesCompleto = todosLosDias
+        && inicioTramo.getTime() === primerDiaMes.getTime()
+        && finTramo.getTime() === ultimoDiaMes.getTime();
 
       if (esMesCompleto) {
 
@@ -1143,7 +1249,7 @@ export class OrdenServicioService {
 
       } else {
 
-        const diasTramo = this.calcularDuracionServicioDias(new Date(inicioTramo), new Date(finTramo));
+        const diasTramo = await this.contarDiasSegunPatron(new Date(inicioTramo), new Date(finTramo), patron);
         total += (valorMensual / 30) * diasTramo;
 
       }
