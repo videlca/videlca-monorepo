@@ -97,6 +97,13 @@ export class LiquidacionesService {
       .leftJoinAndSelect('l.liquidacionServiciosOrdenServicio', 'lsos')
       .leftJoinAndSelect('lsos.idTarifa', 'lsosTarifa')
       .leftJoinAndSelect('lsosTarifa.idServicio', 'lsosServicio')
+      // idTipoServicio/idTipoDuracion/idTipoTarifa/idTipoHorarioDescripcion son "eager: true" en Servicio,
+      // pero eso solo aplica cuando se consulta con el repository (find/findOne, ver findOneOrdenRelations);
+      // con createQueryBuilder hay que unirlas a mano o quedan sin cargar (undefined) en la respuesta
+      .leftJoinAndSelect('lsosServicio.idTipoServicio', 'lsosServicioTipoServicio')
+      .leftJoinAndSelect('lsosServicio.idTipoDuracion', 'lsosServicioTipoDuracion')
+      .leftJoinAndSelect('lsosServicio.idTipoTarifa', 'lsosServicioTipoTarifa')
+      .leftJoinAndSelect('lsosServicio.idTipoHorarioDescripcion', 'lsosServicioTipoHorario')
       .leftJoinAndSelect('l.ordenServicio', 'os')
       .leftJoinAndSelect('os.ordenServicioId', 'osid')
       .leftJoinAndSelect('os.idUsuarioCreacion', 'usuario')
@@ -109,6 +116,10 @@ export class LiquidacionesService {
       .leftJoinAndSelect('os.detalles', 'detalle')
       .leftJoinAndSelect('detalle.idTarifa', 'detalleTarifa')
       .leftJoinAndSelect('detalleTarifa.idServicio', 'detalleServicio')
+      .leftJoinAndSelect('detalleServicio.idTipoServicio', 'detalleServicioTipoServicio')
+      .leftJoinAndSelect('detalleServicio.idTipoDuracion', 'detalleServicioTipoDuracion')
+      .leftJoinAndSelect('detalleServicio.idTipoTarifa', 'detalleServicioTipoTarifa')
+      .leftJoinAndSelect('detalleServicio.idTipoHorarioDescripcion', 'detalleServicioTipoHorario')
       .where('l.idLiquidacion = :id', { id: idLiquidacion })
       .getOne();
 
@@ -212,8 +223,8 @@ export class LiquidacionesService {
     if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes))
      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    if (today.getMonth() + 1 === mes && today.getDate() < 20)
-      throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
+    // if (today.getMonth() + 1 === mes && today.getDate() < 20)
+    //   throw new BadRequestException('No se puede liquidar antes del 20 del mes actual')
 
     // Crear QueryRunner para manejar la transacción
     const queryRunner = this.dataSource.createQueryRunner();
