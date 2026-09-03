@@ -2,6 +2,7 @@ import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config"
 import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
 import type { ApiResponse, Personal , PaginatedResponse } from "../../types/common";
 import type { OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
+import type { LiquidacionesOrdenPage } from "../../types/liquidaciones";
 
 export const createOrdenServicio = async (data: CreateOrdenServicioDto): Promise<ApiResponse<OrdenServicio>> => {
   return await apiPost<OrdenServicio>("/orden-servicio", data);
@@ -25,6 +26,11 @@ export const getOrdenServicioById = async (id: number): Promise<ApiResponse<Orde
 
 export const deleteOrdenServicio = async (id: number): Promise<ApiResponse<any>> => {
   return await apiDelete<any>(`/orden-servicio/${id}`);
+}
+
+// Historial de liquidaciones (una por mes) de una orden especifica, paginado
+export const getLiquidacionesByOrdenId = async (ordenId: number, page: number, limit: number): Promise<ApiResponse<LiquidacionesOrdenPage>> => {
+  return await apiGet<LiquidacionesOrdenPage>(`/orden-servicio/${ordenId}/liquidaciones`, { page, limit });
 }
 
 export const cancelarOrdenServicio = async (id: number): Promise<ApiResponse<any>> => {

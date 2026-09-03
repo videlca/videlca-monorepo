@@ -3,7 +3,7 @@ import type { GruposLiquidaciones } from "../../api/types/liquidaciones";
 import { priceFormat } from "../../utils/PriceFormat";
 import { getStatusColor } from "../../utils/StatusColor";
 import { OrdenDetalles } from "../ui/modals/OrdenDetalles";
-import { useGetOrdenServicioById } from "../../api/queryFunctions/orden-servicio";
+import { useGetOrdenLiquidada } from "../../api/queryFunctions/liquidaciones";
 import { toast } from "sonner";
 
 export const OrdenServicioCard = ({
@@ -15,11 +15,13 @@ export const OrdenServicioCard = ({
 }) => {
   const [isOpenDetalles, setIsOpenDetalles] = useState(false);
 
+  // Se muestra el snapshot de la liquidacion (lo realmente cobrado ese mes), no el findOne de la orden completa:
+  // si la orden abarca varios meses, el total de la orden no coincide con lo que se liquido en este mes puntual
   const {
-    mutateAsync: getOrdenServicioByIdMutation,
-    data: ordenServicioData,
+    mutateAsync: getOrdenLiquidadaMutation,
+    data: ordenLiquidadaData,
     isPending,
-  } = useGetOrdenServicioById();
+  } = useGetOrdenLiquidada();
 
   return (
     <>
@@ -33,22 +35,19 @@ export const OrdenServicioCard = ({
               }`}
               onClick={() => {
                 if (isPending) return;
-                getOrdenServicioByIdMutation(
-                  liquidacion.ordenServicio.idOrdenServicio,
-                  {
-                    onSuccess: (data) => {
-                      if (data.status === 200 || data.status === 201) {
-                        setIsOpenDetalles(true);
-                      }
-                    },
-                    onError: (error) => {
-                      toast.error(
-                        error.message ||
-                          "Error al obtener la orden de servicio",
-                      );
-                    },
+                getOrdenLiquidadaMutation(liquidacion.idLiquidacion, {
+                  onSuccess: (data) => {
+                    if (data.status === 200 || data.status === 201) {
+                      setIsOpenDetalles(true);
+                    }
                   },
-                );
+                  onError: (error) => {
+                    toast.error(
+                      error.message ||
+                        "Error al obtener el detalle de la liquidación",
+                    );
+                  },
+                });
               }}
             >
               <div className="mb-2 flex items-center justify-between">
@@ -73,6 +72,14 @@ export const OrdenServicioCard = ({
                   {liquidacion.ordenServicio.idLocacion?.direccion}
                 </div>
               </div>
+
+              {/* Valor liquidado de esta orden puntual (ya viene en el objeto, no requiere otra consulta) */}
+              <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2">
+                <span className="text-xs text-gray-500">Liquidado</span>
+                <span className="text-sm font-semibold text-green-600">
+                  {priceFormat(liquidacion.valor_liquidacion)}
+                </span>
+              </div>
             </div>
           ))}
         </div>
@@ -88,11 +95,11 @@ export const OrdenServicioCard = ({
         )}
       </div>
 
-      {ordenServicioData?.data && (
+      {ordenLiquidadaData?.data && (
         <OrdenDetalles
           isOpenDetails={isOpenDetalles}
           setIsOpenDetails={setIsOpenDetalles}
-          selectedOrderDetail={ordenServicioData.data}
+          selectedOrderDetail={ordenLiquidadaData.data}
         />
       )}
     </>

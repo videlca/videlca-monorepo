@@ -1,19 +1,44 @@
+import { useState } from "react";
 import {
   Calendar,
   CheckCircle2,
   CircleDollarSign,
   FileText,
   MapPin,
+  Receipt,
   User,
 } from "lucide-react";
 import { SimpleModal } from "../../common/SimpleModal";
 import type { OrdenServicio } from "../../../api/types/orden-servicio";
+import type { OrdenLiquidada } from "../../../api/types/liquidaciones";
+import { useGetLiquidacionesByOrdenId } from "../../../api/queryFunctions/orden-servicio";
+import { useGetOrdenLiquidada } from "../../../api/queryFunctions/liquidaciones";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
 
 const priceOrNA = (value: number | null | undefined) =>
   value === null || value === undefined ? "N/A" : priceFormat(value);
+
+// "202609" -> "Septiembre 2026". aniomes_liquidacion siempre viene con este formato (ver findOrdenLiquidada)
+const formatAniomes = (aniomes: string) => {
+  const anio = aniomes.slice(0, 4);
+  const mes = Number(aniomes.slice(4));
+  const nombre = new Date(Date.UTC(Number(anio), mes - 1, 1)).toLocaleDateString(
+    "es-ES",
+    { month: "long", timeZone: "UTC" },
+  );
+  return `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${anio}`;
+};
+
+// selectedOrderDetail acepta tanto una orden real (findOne) como el snapshot de una liquidacion especifica
+// (GET /liquidaciones/:idLiquidacion/orden), que trae la misma forma con los precios de ese mes. Se distinguen
+// por la presencia de idLiquidacion (ver esSnapshotLiquidacion)
+type DetalleOrdenOSnapshot = OrdenServicio | OrdenLiquidada;
+
+const esSnapshotLiquidacion = (
+  orden: DetalleOrdenOSnapshot,
+): orden is OrdenLiquidada => "idLiquidacion" in orden;
 
 export const OrdenDetalles = ({
   isOpenDetails,
@@ -23,10 +48,35 @@ export const OrdenDetalles = ({
 }: {
   isOpenDetails: boolean;
   setIsOpenDetails: (isOpen: boolean) => void;
-  selectedOrderDetail: OrdenServicio;
+  selectedOrderDetail: DetalleOrdenOSnapshot;
   setSelectedOrderDetail?: (selectedOrderDetail: OrdenServicio | null) => void;
 }) => {
+  // Historial de liquidaciones de esta orden (una por mes ya liquidado). Solo aplica cuando se esta viendo la
+  // orden real, no tiene sentido mostrar "liquidaciones de esta liquidacion" dentro del snapshot de una liquidacion
+  const esSnapshot = esSnapshotLiquidacion(selectedOrderDetail);
+
+  const [paginaLiquidaciones, setPaginaLiquidaciones] = useState(1);
+  const LIMITE_LIQUIDACIONES = 5;
+
+  const { data: liquidacionesOrden, isLoading: isLoadingLiquidacionesOrden } =
+    useGetLiquidacionesByOrdenId(
+      selectedOrderDetail.idOrdenServicio,
+      paginaLiquidaciones,
+      LIMITE_LIQUIDACIONES,
+      isOpenDetails && !esSnapshot,
+    );
+
+  const {
+    mutate: getOrdenLiquidadaMutation,
+    data: ordenLiquidadaData,
+    isPending: isLoadingOrdenLiquidada,
+  } = useGetOrdenLiquidada();
+
+  const [isOpenLiquidacionDetalle, setIsOpenLiquidacionDetalle] =
+    useState(false);
+
   return (
+    <>
     <SimpleModal
       isOpen={isOpenDetails}
       onClose={() => {
@@ -35,10 +85,22 @@ export const OrdenDetalles = ({
           setSelectedOrderDetail(null);
         }
       }}
-      title="Detalles de la orden de servicio"
+      title={
+        esSnapshotLiquidacion(selectedOrderDetail)
+          ? `Detalle liquidado — ${formatAniomes(selectedOrderDetail.aniomes_liquidacion)}`
+          : "Detalles de la orden de servicio"
+      }
       size="3xl"
     >
       <div className="space-y-6 p-6">
+        {esSnapshotLiquidacion(selectedOrderDetail) && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            Mostrando lo realmente liquidado en{" "}
+            <b>{formatAniomes(selectedOrderDetail.aniomes_liquidacion)}</b>{" "}
+            (liquidación #{selectedOrderDetail.idLiquidacion}), no el total de
+            toda la orden.
+          </div>
+        )}
         {/* Puesto */}
         <div className="rounded-lg border border-gray-200 p-4">
           <div className="mb-3 flex items-center space-x-2">
@@ -331,7 +393,7 @@ export const OrdenDetalles = ({
 
               return (
                 <div
-                  key={detalle.idOrdenServicioDetalle}
+                  key={detalle.idOrdenServicioDetalle ?? index}
                   className="rounded-lg border border-gray-300 bg-white p-4"
                 >
                   <h4 className="mb-3 text-base font-semibold text-gray-900">
@@ -405,30 +467,39 @@ export const OrdenDetalles = ({
                               {servicio.descripcion}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-600">
-                              Tipo de Servicio
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              {servicio.idTipoServicio?.nombre}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-600">
-                              Duración
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              {servicio.idTipoDuracion?.descripcion}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-600">
-                              Horario
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              {servicio.idTipoHorarioDescripcion?.nombre}
-                            </p>
-                          </div>
+                          {/* Cada campo solo se muestra si realmente trae valor: no tiene sentido pintar
+                              una etiqueta vacia cuando la relacion no vino cargada (ver findOrdenLiquidada
+                              en el backend) o simplemente no aplica para este servicio */}
+                          {servicio.idTipoServicio?.nombre && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-600">
+                                Tipo de Servicio
+                              </p>
+                              <p className="text-sm text-gray-900">
+                                {servicio.idTipoServicio.nombre}
+                              </p>
+                            </div>
+                          )}
+                          {servicio.idTipoDuracion?.descripcion && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-600">
+                                Duración
+                              </p>
+                              <p className="text-sm text-gray-900">
+                                {servicio.idTipoDuracion.descripcion}
+                              </p>
+                            </div>
+                          )}
+                          {servicio.idTipoHorarioDescripcion?.nombre && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-600">
+                                Horario
+                              </p>
+                              <p className="text-sm text-gray-900">
+                                {servicio.idTipoHorarioDescripcion.nombre}
+                              </p>
+                            </div>
+                          )}
                           <div>
                             <p className="text-xs font-medium text-gray-600">
                               Horas Fijas
@@ -437,27 +508,30 @@ export const OrdenDetalles = ({
                               {servicio.horasFijas}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-600">
-                              Tipo Tarifa
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              {servicio.idTipoTarifa?.nombre}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-600">
-                              Cantidad Tiempo
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              {servicio.idTipoTarifa?.cantidadTiempo ||
-                                "N/A"}{" "}
-                              {
-                                servicio.idTipoTarifa?.idTipoUnidadTiempo
-                                  ?.descripcion
-                              }
-                            </p>
-                          </div>
+                          {servicio.idTipoTarifa?.nombre && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-600">
+                                Tipo Tarifa
+                              </p>
+                              <p className="text-sm text-gray-900">
+                                {servicio.idTipoTarifa.nombre}
+                              </p>
+                            </div>
+                          )}
+                          {servicio.idTipoTarifa?.cantidadTiempo != null && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-600">
+                                Cantidad Tiempo
+                              </p>
+                              <p className="text-sm text-gray-900">
+                                {servicio.idTipoTarifa.cantidadTiempo}{" "}
+                                {
+                                  servicio.idTipoTarifa.idTipoUnidadTiempo
+                                    ?.descripcion
+                                }
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -529,6 +603,82 @@ export const OrdenDetalles = ({
             )}
           </div>
         </div>
+
+        {/* Historial de Liquidaciones: solo tiene sentido sobre la orden real, no dentro del snapshot de
+            una liquidacion puntual (evita anidar "liquidaciones de esta liquidacion") */}
+        {!esSnapshot && (
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="mb-3 flex items-center space-x-2">
+              <Receipt className="h-5 w-5 text-teal-600" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Historial de Liquidaciones
+              </h3>
+            </div>
+
+            {isLoadingLiquidacionesOrden ? (
+              <p className="text-sm text-gray-500">Cargando liquidaciones...</p>
+            ) : liquidacionesOrden?.data?.items &&
+              liquidacionesOrden.data.items.length > 0 ? (
+              <>
+                <div className="divide-y divide-gray-200 overflow-hidden rounded-md border border-gray-200">
+                  {liquidacionesOrden.data.items.map((liquidacion) => (
+                    <button
+                      key={liquidacion.idLiquidacion}
+                      type="button"
+                      disabled={isLoadingOrdenLiquidada}
+                      className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
+                      onClick={() =>
+                        getOrdenLiquidadaMutation(liquidacion.idLiquidacion, {
+                          onSuccess: (response) => {
+                            if (response.status === 200 || response.status === 201) {
+                              setIsOpenLiquidacionDetalle(true);
+                            }
+                          },
+                        })
+                      }
+                    >
+                      <span className="text-sm font-medium text-gray-900">
+                        {formatAniomes(liquidacion.aniomes_liquidacion)}
+                      </span>
+                      <span className="text-sm font-semibold text-green-700">
+                        {priceFormat(liquidacion.valor_liquidacion)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {liquidacionesOrden.data.total > LIMITE_LIQUIDACIONES && (
+                  <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                    <button
+                      type="button"
+                      disabled={paginaLiquidaciones <= 1}
+                      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={() => setPaginaLiquidaciones((p) => p - 1)}
+                    >
+                      Anterior
+                    </button>
+                    <span>Página {paginaLiquidaciones}</span>
+                    <button
+                      type="button"
+                      disabled={
+                        paginaLiquidaciones * LIMITE_LIQUIDACIONES >=
+                        liquidacionesOrden.data.total
+                      }
+                      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={() => setPaginaLiquidaciones((p) => p + 1)}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Esta orden todavía no tiene liquidaciones registradas
+              </p>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-end border-t border-gray-200 px-6 pt-6 pb-4">
         <button
@@ -540,5 +690,14 @@ export const OrdenDetalles = ({
         </button>
       </div>
     </SimpleModal>
+
+    {ordenLiquidadaData?.data && (
+      <OrdenDetalles
+        isOpenDetails={isOpenLiquidacionDetalle}
+        setIsOpenDetails={setIsOpenLiquidacionDetalle}
+        selectedOrderDetail={ordenLiquidadaData.data}
+      />
+    )}
+    </>
   );
 };

@@ -62,13 +62,59 @@ const COLUMNAS_PRECIO_CALCULADO: {
   { campo: "precioTotal", header: "Precio Total" },
 ];
 
-// El precio de un servicio "Monitoreo de Alarmas" o de tipo de tarifa "por servicio" (Recogida de
-// dinero) no se puede derivar de la tarifa por hora del periodo: el backend exige que se le envíe el
-// costo directo ingresado manualmente. Misma regla que valida /tarifas/calcular-precios. Se define fuera
-// del componente porque no depende de ningun estado/prop: solo del servicio recibido.
-const requiereCostosDirectosManual = (servicio: Servicio) =>
+// De las columnas del desglose calculado, solo estas 3 son valores base editables (costosDirectosSeguroVida,
+// precioAntesIva, iva y precioTotal quedan derivados de ellas, ver recalcularPrecioCalculado)
+const CAMPOS_EDITABLES_PRECIO_CALCULADO = [
+  "costosDirectos",
+  "seguroVida",
+  "aui",
+] as const;
+
+type CampoEditablePrecioCalculado = (typeof CAMPOS_EDITABLES_PRECIO_CALCULADO)[number];
+
+const esCampoEditablePrecioCalculado = (
+  campo: string,
+): campo is CampoEditablePrecioCalculado =>
+  (CAMPOS_EDITABLES_PRECIO_CALCULADO as readonly string[]).includes(campo);
+
+// Recalcula el desglose completo de un servicio ya calculado a partir de sus 3 valores base (costosDirectos,
+// seguroVida, aui), igual que calcularTotalesTarifa en el backend (mismo 1.9% de IVA, mismo redondeo hacia
+// arriba) — se usa cuando el usuario edita a mano el resultado de /tarifas/calcular-precios antes de guardar
+const recalcularPrecioCalculado = (
+  actual: ServicioPrecioCalculado,
+  campo: CampoEditablePrecioCalculado,
+  nuevoValor: number,
+): ServicioPrecioCalculado => {
+  const costosDirectos = campo === "costosDirectos" ? nuevoValor : actual.costosDirectos;
+  const seguroVida = campo === "seguroVida" ? nuevoValor : actual.seguroVida;
+  const aui = campo === "aui" ? nuevoValor : actual.aui;
+
+  const costosDirectosSeguroVida = Math.ceil(costosDirectos + seguroVida);
+  const precioAntesIva = costosDirectosSeguroVida + aui;
+  const iva = Math.ceil(precioAntesIva * 0.019); // IVA del 1.9%, igual que calcularTotalesTarifa en el backend
+  const precioTotal = Math.ceil(precioAntesIva + iva);
+
+  return {
+    ...actual,
+    costosDirectos,
+    seguroVida,
+    aui,
+    costosDirectosSeguroVida,
+    precioAntesIva,
+    iva,
+    precioTotal,
+  };
+};
+
+// El precio de un servicio "Monitoreo de Alarmas", de tipo de tarifa "por servicio" (Recogida de dinero), o
+// mensual de 8 horas, nunca se puede derivar de la tarifa por hora del periodo (no depende de una tarifa
+// hora vigente, siempre es un valor propio de ese servicio/cliente): el costo directo se pide desde el
+// inicio, antes de calcular siquiera. El resto de servicios (ver serviciosRequierenManual) se intentan
+// calcular solos primero, y solo si el backend responde que no pudo se revela su campo manual.
+const requiereCostosDirectosManualDesdeElInicio = (servicio: Servicio) =>
   servicio.idTipoServicio?.nombre === "Monitoreo de alarmas" ||
-  servicio.idTipoTarifa?.nombre === "por servicio";
+  servicio.idTipoTarifa?.nombre === "por servicio" ||
+  (servicio.idTipoTarifa?.nombre === "mensual" && servicio.horasFijas === 8);
 
 // Datos que las columnas de la tabla de servicios leen via context.table.options.meta (ver Table.tsx)
 // en vez de por closure, para que `columnasServicios` pueda quedar memoizada/estable y no se pierda el
@@ -78,6 +124,18 @@ interface ServiciosTableMeta {
   costosDirectosManual: Record<number, string>;
   onChangeCostoDirecto: (idServicio: number, valor: string) => void;
   preciosCalculados: Record<number, ServicioPrecioCalculado>;
+  // Edita a mano (post-calculo) uno de los 3 valores base de un servicio ya calculado, recalculando el
+  // resto del desglose (ver recalcularPrecioCalculado)
+  onChangePrecioCalculado: (
+    idServicio: number,
+    campo: CampoEditablePrecioCalculado,
+    valor: string,
+  ) => void;
+  // idServicio de los servicios que no son de los tipos conocidos de antemano (ver
+  // requiereCostosDirectosManualDesdeElInicio) pero para los que /tarifas/calcular-precios ya respondio que
+  // igual necesita el costo directo ingresado manualmente (ver handleCalcularPrecios). Se descubren despues
+  // de intentar calcular, no se asumen por tipo
+  serviciosRequierenManual: Set<number>;
 }
 
 // Formatea un valor numerico (o string) con separador de miles, quitando comas previas
@@ -104,15 +162,21 @@ function RouteComponent() {
   // Estados - tarifa hora del periodo
   const [tarifaHoraRows, setTarifaHoraRows] = useState<TarifaHoraFila[]>([]);
 
-  // Estados - calculo de precios de los servicios disponibles. costosDirectosManual solo aplica a los
-  // servicios que lo requieren (Monitoreo de Alarmas y el tipo de tarifa "por servicio", ver
-  // requiereCostosDirectosManual). preciosCalculados se llena con la respuesta de /tarifas/calcular-precios.
+  // Estados - calculo de precios de los servicios disponibles. costosDirectosManual solo se usa para los
+  // servicios en serviciosRequierenManual (ver handleCalcularPrecios). preciosCalculados se llena con la
+  // respuesta de /tarifas/calcular-precios.
   const [costosDirectosManual, setCostosDirectosManual] = useState<
     Record<number, string>
   >({});
   const [preciosCalculados, setPreciosCalculados] = useState<
     Record<number, ServicioPrecioCalculado>
   >({});
+  // idServicio de los servicios que ya se sabe (por un intento previo de calculo) que necesitan el costo
+  // directo manual. Ningun servicio empieza aca: no se asume por tipo de servicio/tarifa quien lo necesita,
+  // se descubre cuando /tarifas/calcular-precios lo rechaza (ver handleCalcularPrecios)
+  const [serviciosRequierenManual, setServiciosRequierenManual] = useState<
+    Set<number>
+  >(new Set());
 
   // Queries y mutaciones
   const { data: periodo } = usePeriodoById(idPeriodo);
@@ -174,8 +238,16 @@ function RouteComponent() {
   };
 
   // Función para calcular el precio de todos los servicios disponibles del periodo, usando la tarifa
-  // hora configurada arriba y, para los servicios que lo requieren, el costo directo ingresado
-  // manualmente. Si falta un costo directo obligatorio, el backend rechaza todo el lote (no es parcial).
+  // hora configurada arriba y el costo directo ingresado manualmente para los servicios que lo necesitan.
+  // Dos formas de saber que un servicio lo necesita:
+  // 1. De antemano, por su tipo (Monitoreo de Alarmas / "por servicio", ver
+  //    requiereCostosDirectosManualDesdeElInicio): su campo ya esta visible desde que se entra a la pantalla.
+  // 2. Descubierto: el resto de servicios se intentan calcular solos primero. El backend calcula el lote
+  //    servicio por servicio y se detiene en el primero que no puede resolver automaticamente (no es
+  //    parcial); su mensaje de error trae el codigo de ESE servicio entre parentesis (ver
+  //    calcularPrecioServicio -> errorServicio en el backend). Se usa ese codigo para revelar el campo de
+  //    costo directo manual justo de ese servicio (serviciosRequierenManual) y dejar que el usuario lo
+  //    complete y vuelva a calcular; los servicios que ya habian calculado bien no se tocan.
   const handleCalcularPrecios = () => {
     const todosLosServicios = Object.values(serviciosPorTipo).flat();
 
@@ -187,7 +259,8 @@ function RouteComponent() {
     const serviciosDto: CalcularPrecioServicioDto[] = todosLosServicios.map(
       (servicio) => ({
         idServicio: servicio.idServicio,
-        ...(requiereCostosDirectosManual(servicio)
+        ...(requiereCostosDirectosManualDesdeElInicio(servicio) ||
+        serviciosRequierenManual.has(servicio.idServicio)
           ? {
               costosDirectos: soloNumero(
                 costosDirectosManual[servicio.idServicio] || "",
@@ -205,6 +278,20 @@ function RouteComponent() {
             (response.status !== 200 && response.status !== 201) ||
             !response.data
           ) {
+            // El mensaje del backend es del tipo: Servicio "Descripcion" (codigo): debe ingresar el valor...
+            const codigoFaltante = response.message?.match(/\(([^)]+)\)/)?.[1];
+            const servicioFaltante = todosLosServicios.find(
+              (s) => s.codigo === codigoFaltante,
+            );
+
+            if (servicioFaltante) {
+              setServiciosRequierenManual((prev) => {
+                const actualizado = new Set(prev);
+                actualizado.add(servicioFaltante.idServicio);
+                return actualizado;
+              });
+            }
+
             return;
           }
 
@@ -315,12 +402,17 @@ function RouteComponent() {
         header: "Costo Directo",
         cell: ({ row, table }) => {
           const servicio = row.original;
+          const meta = table.options.meta as ServiciosTableMeta;
 
-          if (!requiereCostosDirectosManual(servicio)) {
+          // El campo manual aparece desde el inicio para Monitoreo de Alarmas / "por servicio" (siempre lo
+          // requieren), o mas tarde para cualquier otro servicio que un intento previo de "Calcular precios"
+          // ya haya determinado que tambien lo necesita (ver handleCalcularPrecios)
+          if (
+            !requiereCostosDirectosManualDesdeElInicio(servicio) &&
+            !meta.serviciosRequierenManual.has(servicio.idServicio)
+          ) {
             return <span className="text-gray-400">—</span>;
           }
-
-          const meta = table.options.meta as ServiciosTableMeta;
 
           return (
             <InputPrice
@@ -345,6 +437,26 @@ function RouteComponent() {
             const calculado = meta.preciosCalculados[row.original.idServicio];
 
             if (!calculado) return <span className="text-gray-400">—</span>;
+
+            // Costos directos, seguro de vida y aui son los 3 valores base editables una vez que el
+            // servicio ya se calculo; el resto (costos directos + seguro vida, precio antes de iva, iva,
+            // precio total) queda derivado de ellos, ver recalcularPrecioCalculado
+            if (esCampoEditablePrecioCalculado(campo)) {
+              return (
+                <InputPrice
+                  label=""
+                  size="md"
+                  value={formatMiles(String(calculado[campo]))}
+                  onChange={(e) =>
+                    meta.onChangePrecioCalculado(
+                      row.original.idServicio,
+                      campo,
+                      e.target.value,
+                    )
+                  }
+                />
+              );
+            }
 
             return (
               <span
@@ -395,8 +507,8 @@ function RouteComponent() {
     </tr>
   );
 
-  // Actualiza el costo directo ingresado manualmente para un servicio (Monitoreo de Alarmas / Recogida
-  // de dinero). Se pasa a la tabla de servicios via `meta` en vez de closure, ver columnasServicios.
+  // Actualiza el costo directo ingresado manualmente para un servicio. Se pasa a la tabla de servicios
+  // via `meta` en vez de closure, ver columnasServicios.
   const actualizarCostoDirectoManual = (idServicio: number, valor: string) => {
     setCostosDirectosManual((prev) => ({
       ...prev,
@@ -404,10 +516,31 @@ function RouteComponent() {
     }));
   };
 
+  // Edita a mano uno de los 3 valores base (costos directos, seguro de vida, aui) del resultado ya
+  // calculado de un servicio, y recalcula el resto del desglose (costos directos + seguro vida, precio
+  // antes de iva, iva, precio total). Solo aplica a servicios que ya tienen un resultado en preciosCalculados
+  const actualizarPrecioCalculado = (
+    idServicio: number,
+    campo: CampoEditablePrecioCalculado,
+    valor: string,
+  ) => {
+    setPreciosCalculados((prev) => {
+      const actual = prev[idServicio];
+      if (!actual) return prev;
+
+      return {
+        ...prev,
+        [idServicio]: recalcularPrecioCalculado(actual, campo, soloNumero(valor)),
+      };
+    });
+  };
+
   const serviciosTableMeta: ServiciosTableMeta = {
     costosDirectosManual,
     onChangeCostoDirecto: actualizarCostoDirectoManual,
     preciosCalculados,
+    onChangePrecioCalculado: actualizarPrecioCalculado,
+    serviciosRequierenManual,
   };
 
   return (
@@ -549,10 +682,13 @@ function RouteComponent() {
             Servicios Disponibles
           </h3>
           <p className="mt-1 text-sm text-gray-600">
-            Los servicios de Monitoreo de Alarmas y el servicio "Recogida de
-            dinero" requieren ingresar el costo directo manualmente antes de
-            calcular su precio; el resto se calcula automáticamente a partir
-            de la tarifa hora configurada arriba.
+            Los servicios de Monitoreo de Alarmas, el servicio "Recogida de
+            dinero" y los servicios mensuales de 8 horas siempre requieren
+            ingresar el costo directo manualmente antes de calcular. Para el
+            resto, al hacer clic en "Calcular precios" se intenta calcular
+            automáticamente a partir de la tarifa hora configurada arriba; si
+            algún servicio no se puede calcular solo, aparecerá su campo de
+            costo directo para ingresarlo manualmente y volver a calcular.
           </p>
         </div>
         <ButtonAction

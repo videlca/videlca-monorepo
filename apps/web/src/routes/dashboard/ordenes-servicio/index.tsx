@@ -410,6 +410,16 @@ function RouteComponent() {
                   servicio.horaFin === ""
                     ? "00:00:00"
                     : timeFormat(servicio.horaFin),
+                // Dias de la semana en que se presta el servicio (ver SelectorDiasSemana en
+                // ConfigurarHorariosServicios), default true si el usuario no los toco
+                lunes: servicio.lunes,
+                martes: servicio.martes,
+                miercoles: servicio.miercoles,
+                jueves: servicio.jueves,
+                viernes: servicio.viernes,
+                sabado: servicio.sabado,
+                domingo: servicio.domingo,
+                incluyeFestivos: servicio.incluyeFestivos,
               });
             }),
           ),
@@ -421,6 +431,14 @@ function RouteComponent() {
               idTarifa: servicio.idTarifa || 0,
               horaInicio: servicio.horaInicio,
               horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+              lunes: servicio.lunes,
+              martes: servicio.martes,
+              miercoles: servicio.miercoles,
+              jueves: servicio.jueves,
+              viernes: servicio.viernes,
+              sabado: servicio.sabado,
+              domingo: servicio.domingo,
+              incluyeFestivos: servicio.incluyeFestivos,
             })),
           }),
         ]);
@@ -436,11 +454,24 @@ function RouteComponent() {
           setValueCreate("precioTotal", precioData.precio || 0);
 
           // Se guarda tal cual el desglose que devolvio el backend (conserva el idServicio interno de cada
-          // fila, usado en los pasos ya recorridos y en la vista previa), es lo que se reenvia al crear la orden
+          // fila, usado en los pasos ya recorridos y en la vista previa), es lo que se reenvia al crear la orden.
+          // El backend no devuelve de vuelta los dias de la semana seleccionados (no forman parte del desglose
+          // de precio), por eso tambien se conservan desde el estado anterior para no perderlos
           setConfiguracionServicioTarifa((prev) =>
             precioData.servicios.map((detalle) => {
               const original = prev.find((s) => s.idTarifa === detalle.idTarifa);
-              return { ...detalle, idServicio: original?.idServicio };
+              return {
+                ...detalle,
+                idServicio: original?.idServicio,
+                lunes: original?.lunes,
+                martes: original?.martes,
+                miercoles: original?.miercoles,
+                jueves: original?.jueves,
+                viernes: original?.viernes,
+                sabado: original?.sabado,
+                domingo: original?.domingo,
+                incluyeFestivos: original?.incluyeFestivos,
+              };
             }),
           );
         }
@@ -680,6 +711,16 @@ function RouteComponent() {
       horaFin: servicio.horaFin,
       cantidadHoras: servicio.cantidadHoras,
       fecha: servicio.fecha,
+      // Dias de la semana tal cual se seleccionaron en el paso de horarios (solo tienen valor en modo
+      // catalogo; en a_medida quedan undefined y el backend los ignora)
+      lunes: servicio.lunes,
+      martes: servicio.martes,
+      miercoles: servicio.miercoles,
+      jueves: servicio.jueves,
+      viernes: servicio.viernes,
+      sabado: servicio.sabado,
+      domingo: servicio.domingo,
+      incluyeFestivos: servicio.incluyeFestivos,
       costosDirectos: servicio.costosDirectos,
       seguroVida: servicio.seguroVida,
       costosDirectosSeguroVida: servicio.costosDirectosSeguroVida,

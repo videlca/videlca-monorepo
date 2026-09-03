@@ -2,12 +2,18 @@ import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config"
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
 import type { OrdenServicio } from "../../types/orden-servicio";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
-import type { GruposLiquidaciones } from "../../types/liquidaciones";
+import type { GruposLiquidaciones, OrdenLiquidada } from "../../types/liquidaciones";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 import type { EnviarCorreoDto } from "../../dtos";
 
 export const getLiquidacionesPorMes = async (anio: number, mes: number): Promise<ApiResponse<OrdenServicio[]>> => {
   return await apiGet<OrdenServicio[]>(`/liquidaciones/ordenes-por-mes?anio=${anio}&mes=${mes}`);
+};
+
+// Detalle de una orden "como el findOne normal", pero con los precios reales de una liquidacion (mes) especifica
+// en vez del total de toda la orden. Ver OrdenLiquidada para la forma exacta de la respuesta
+export const getOrdenLiquidada = async (idLiquidacion: number): Promise<ApiResponse<OrdenLiquidada>> => {
+  return await apiGet<OrdenLiquidada>(`/liquidaciones/${idLiquidacion}/orden`);
 };
 
 export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number): Promise<ApiResponse<GruposLiquidaciones[]>> => {

@@ -27,10 +27,26 @@ export interface UpdateOrdenServicioDto {
   // servicios: UpdateOrdenServicioTarifaDto[];
 }
 
+// Dias de la semana en que se presta un servicio de catalogo (ver PatronDiasSemana en el backend). Solo aplica
+// para ordenes de origen "catalogo" (en "a_medida" es un rango continuo de fechas/horas, no se seleccionan dias
+// sueltos). Todos opcionales, quedan en true por defecto si no se envian (equivale a "todos los dias")
+export interface PatronDiasSemanaDto {
+  lunes?: boolean;
+  martes?: boolean;
+  miercoles?: boolean;
+  jueves?: boolean;
+  viernes?: boolean;
+  sabado?: boolean;
+  domingo?: boolean;
+  // Ademas de los dias de semana marcados arriba, cuenta tambien cualquier dia festivo sin importar en que
+  // dia de la semana caiga
+  incluyeFestivos?: boolean;
+}
+
 // Forma exacta que espera el backend en el arreglo "servicios" al crear la orden. El desglose completo
 // (horaInicio/horaFin, cantidadHoras, fecha y los campos de precio) se obtiene tal cual desde la respuesta de
 // POST /orden-servicio/obtener-precio y se reenvia sin modificar, no se vuelve a calcular nada en el front
-export interface CreateOrdenServicioDetalleDto {
+export interface CreateOrdenServicioDetalleDto extends PatronDiasSemanaDto {
   idTarifa: number;
   horaInicio: string;
   horaFin: string;
@@ -88,7 +104,7 @@ export interface UpdateValidarFechaOrdenServicioDto {
 
 // Solo aplica (y es obligatorio) cuando origenServicio es "catalogo". En "a_medida" no se llama a este
 // endpoint: no hay servicio de catalogo contra el cual validar el horario elegido
-export interface ValidarHorarioServicioDto {
+export interface ValidarHorarioServicioDto extends PatronDiasSemanaDto {
   origenServicio: OrigenServicioEnum;
   idTarifa?: number;
   horaInicio: string;
@@ -96,7 +112,7 @@ export interface ValidarHorarioServicioDto {
 }
 
 // CATALOGO: cada servicio ya tiene una tarifa (idTarifa) elegida del catalogo del periodo
-export interface PrecioOrdenServicioItemDto {
+export interface PrecioOrdenServicioItemDto extends PatronDiasSemanaDto {
   idTarifa: number;
   horaInicio: string;
   horaFin: string;

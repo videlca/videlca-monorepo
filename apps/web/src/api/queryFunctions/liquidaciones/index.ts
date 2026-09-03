@@ -1,4 +1,4 @@
-import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, enviarCorreoArchivoLiquidacion, generarArchivoExcelLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial } from "../../functions/liquidaciones"
+import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, enviarCorreoArchivoLiquidacion, generarArchivoExcelLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial, getOrdenLiquidada } from "../../functions/liquidaciones"
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
@@ -6,7 +6,7 @@ import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { OrdenServicio } from "../../types/orden-servicio";
-import type { GruposLiquidaciones } from "../../types";
+import type { GruposLiquidaciones, OrdenLiquidada } from "../../types";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 import type { EnviarCorreoDto } from "../../dtos/common";
 
@@ -39,6 +39,18 @@ export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<Orde
     },
     onError: (error) => {
       showErrorToast(error.message, "Error al crear la liquidación mensual");
+    },
+  });
+};
+
+// Detalle de una orden liquidada (findOne de la orden, con los precios reales de esa liquidacion especifica).
+// Se modela como mutation (igual que useGetOrdenServicioById) porque se dispara al hacer clic sobre una
+// liquidacion puntual, no como parte de la carga inicial de una pantalla
+export const useGetOrdenLiquidada = (): UseMutationResult<ApiResponse<OrdenLiquidada>, Error, number> => {
+  return useMutation({
+    mutationFn: (idLiquidacion: number) => getOrdenLiquidada(idLiquidacion),
+    onError: (error) => {
+      showErrorToast(error.message, "Error al obtener el detalle de la liquidación");
     },
   });
 };

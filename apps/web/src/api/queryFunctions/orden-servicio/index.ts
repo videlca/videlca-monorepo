@@ -1,7 +1,8 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { anularOrdenServicio, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio, getFilteredOrdenesServicio } from "../../functions/orden-servicio";
+import { anularOrdenServicio, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getLiquidacionesByOrdenId, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio, getFilteredOrdenesServicio } from "../../functions/orden-servicio";
 import type { CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
 import type { OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
+import type { LiquidacionesOrdenPage } from "../../types/liquidaciones";
 import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
@@ -81,6 +82,15 @@ export const useGetOrdenServicioById = (): UseMutationResult<ApiResponse<OrdenSe
     onError: (error) => {
       showErrorToast(error.message, "Error al obtener la orden de servicio");
     },
+  });
+}
+
+// Historial de liquidaciones (una por mes) de una orden especifica, paginado
+export const useGetLiquidacionesByOrdenId = (ordenId: number, page: number, limit: number, enabled: boolean): UseQueryResult<ApiResponse<LiquidacionesOrdenPage>, Error> => {
+  return useQuery({
+    queryKey: ["orden-servicio-liquidaciones", ordenId, page, limit],
+    queryFn: () => getLiquidacionesByOrdenId(ordenId, page, limit),
+    enabled: !!ordenId && enabled,
   });
 }
 

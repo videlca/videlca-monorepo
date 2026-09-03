@@ -78,6 +78,16 @@ export const SeleccionarServicio = ({
                           horaInicio: "",
                           horaFin: "",
                           precio: 0,
+                          // Dias de la semana en que se presta el servicio: todos empiezan seleccionados
+                          // (equivale a "todos los dias"), el usuario los ajusta en ConfigurarHorariosServicios
+                          lunes: true,
+                          martes: true,
+                          miercoles: true,
+                          jueves: true,
+                          viernes: true,
+                          sabado: true,
+                          domingo: true,
+                          incluyeFestivos: true,
                         },
                       ];
                     },
