@@ -388,6 +388,14 @@ export class LiquidacionesService {
             idTarifa: detalle.idTarifa.idTarifa,
             horaInicio: detalle.horaInicio,
             horaFin: detalle.horaFin,
+            lunes: detalle.lunes,
+            martes: detalle.martes,
+            miercoles: detalle.miercoles,
+            jueves: detalle.jueves,
+            viernes: detalle.viernes,
+            sabado: detalle.sabado,
+            domingo: detalle.domingo,
+            incluyeFestivos: detalle.incluyeFestivos,
           }],
         };
 
