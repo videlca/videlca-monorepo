@@ -28,11 +28,14 @@ export class CreateOrdenServicioDetalleDto {
     @Min(1, {message: 'El valor del campo tarifa debe ser minimo 1'})
     idTarifa: number;
 
+    // ACEPTA TAMBIEN EL LITERAL '24:00:00': para ordenes "a_medida", calcularPrecioAMedida devuelve ese valor
+    // (via minutosAHora) como horaFin/horaInicio de los dias intermedios/limite de un rango (fin de dia = minuto
+    // 1440), y este desglose se reenvia aqui tal cual se recibio de /obtener-precio (ver comentario de la clase)
     @ApiProperty({ description: 'Hora de inicio de esta fila del desglose', example: '06:00:00', required:true})
     @IsString({ message: 'El campo Hora de inicio debe ser un string'})
     @IsNotEmpty({ message: 'El campo Hora de inicio no puede estar vacío'})
     @MaxLength(8, { message: 'El campo Hora de inicio no puede exceder los 8 caracteres' })
-    @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, {
+    @Matches(/^(([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]|24:00:00)$/, {
         message: 'horaInicio debe tener formato HH:mm:ss'
     })
     horaInicio: string;
@@ -41,7 +44,7 @@ export class CreateOrdenServicioDetalleDto {
     @IsString({ message: 'El campo Hora de fin debe ser un string'})
     @IsNotEmpty({ message: 'El campo Hora de fin no puede estar vacío'})
     @MaxLength(8, { message: 'El campo Hora de fin no puede exceder los 8 caracteres' })
-    @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/, {
+    @Matches(/^(([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]|24:00:00)$/, {
         message: 'horaFin debe tener formato HH:mm:ss'
     })
     horaFin: string;
