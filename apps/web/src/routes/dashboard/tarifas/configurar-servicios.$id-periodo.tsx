@@ -28,7 +28,6 @@ import type { ServicioPrecioCalculado } from "../../../api/types/periodo";
 import type { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../components/common/Table";
 import { toast } from "sonner";
-import { priceFormat } from "../../../utils/PriceFormat";
 
 // Interfaz para manejar, localmente, las 5 filas editables de la tarifa hora de un periodo
 interface TarifaHoraFila {
@@ -39,11 +38,13 @@ interface TarifaHoraFila {
 }
 
 // Columnas de desglose que se agregan a la tabla de servicios una vez que se calculan sus precios
-// (respuesta de /tarifas/calcular-precios), en el mismo orden en el que vienen en esa respuesta
+// (respuesta de /tarifas/calcular-precios), en el mismo orden en el que vienen en esa respuesta.
+// "costosDirectos" no esta acá: ya se muestra en la columna "Costo Directo" de mas a la izquierda, que
+// pasa a mostrar (editable) el valor calculado una vez que hay resultado — listarla acá tambien duplicaba
+// la columna.
 const COLUMNAS_PRECIO_CALCULADO: {
   campo: keyof Pick<
     ServicioPrecioCalculado,
-    | "costosDirectos"
     | "seguroVida"
     | "costosDirectosSeguroVida"
     | "aui"
@@ -53,7 +54,6 @@ const COLUMNAS_PRECIO_CALCULADO: {
   >;
   header: string;
 }[] = [
-  { campo: "costosDirectos", header: "Costos Directos" },
   { campo: "seguroVida", header: "Seguro de Vida" },
   { campo: "costosDirectosSeguroVida", header: "Costos Directos + Seguro Vida" },
   { campo: "aui", header: "AUI" },
@@ -62,29 +62,45 @@ const COLUMNAS_PRECIO_CALCULADO: {
   { campo: "precioTotal", header: "Precio Total" },
 ];
 
-// De las columnas del desglose calculado, solo estas 3 son valores base editables (costosDirectosSeguroVida,
-// precioAntesIva, iva y precioTotal quedan derivados de ellas, ver recalcularPrecioCalculado)
+// Todas las columnas del desglose calculado son editables a mano. Las primeras 3 (costosDirectos,
+// seguroVida, aui) son los valores base: al editarlas se recalcula en cascada el resto del desglose (ver
+// recalcularPrecioCalculado). El resto (costosDirectosSeguroVida, precioAntesIva, iva, precioTotal) se
+// sobreescribe directo, sin recalcular hacia atras.
 const CAMPOS_EDITABLES_PRECIO_CALCULADO = [
   "costosDirectos",
   "seguroVida",
+  "costosDirectosSeguroVida",
   "aui",
+  "precioAntesIva",
+  "iva",
+  "precioTotal",
 ] as const;
 
 type CampoEditablePrecioCalculado = (typeof CAMPOS_EDITABLES_PRECIO_CALCULADO)[number];
 
-const esCampoEditablePrecioCalculado = (
-  campo: string,
-): campo is CampoEditablePrecioCalculado =>
-  (CAMPOS_EDITABLES_PRECIO_CALCULADO as readonly string[]).includes(campo);
+// De los campos editables, solo estos 3 son valores base: el resto del desglose se deriva de ellos
+// (ver recalcularPrecioCalculado)
+const CAMPOS_BASE_PRECIO_CALCULADO = ["costosDirectos", "seguroVida", "aui"] as const;
 
-// Recalcula el desglose completo de un servicio ya calculado a partir de sus 3 valores base (costosDirectos,
-// seguroVida, aui), igual que calcularTotalesTarifa en el backend (mismo 1.9% de IVA, mismo redondeo hacia
-// arriba) — se usa cuando el usuario edita a mano el resultado de /tarifas/calcular-precios antes de guardar
+const esCampoBasePrecioCalculado = (
+  campo: CampoEditablePrecioCalculado,
+): campo is (typeof CAMPOS_BASE_PRECIO_CALCULADO)[number] =>
+  (CAMPOS_BASE_PRECIO_CALCULADO as readonly string[]).includes(campo);
+
+// Recalcula el desglose de un servicio ya calculado cuando el usuario edita a mano uno de sus campos,
+// igual que calcularTotalesTarifa en el backend (mismo 1.9% de IVA, mismo redondeo hacia arriba). Si el
+// campo editado es uno de los 3 valores base (costosDirectos, seguroVida, aui) se recalcula en cascada
+// el resto del desglose; si es uno de los campos derivados (costosDirectosSeguroVida, precioAntesIva,
+// iva, precioTotal) se sobreescribe directo, ya que es el usuario quien esta forzando ese valor final.
 const recalcularPrecioCalculado = (
   actual: ServicioPrecioCalculado,
   campo: CampoEditablePrecioCalculado,
   nuevoValor: number,
 ): ServicioPrecioCalculado => {
+  if (!esCampoBasePrecioCalculado(campo)) {
+    return { ...actual, [campo]: nuevoValor };
+  }
+
   const costosDirectos = campo === "costosDirectos" ? nuevoValor : actual.costosDirectos;
   const seguroVida = campo === "seguroVida" ? nuevoValor : actual.seguroVida;
   const aui = campo === "aui" ? nuevoValor : actual.aui;
@@ -124,8 +140,9 @@ interface ServiciosTableMeta {
   costosDirectosManual: Record<number, string>;
   onChangeCostoDirecto: (idServicio: number, valor: string) => void;
   preciosCalculados: Record<number, ServicioPrecioCalculado>;
-  // Edita a mano (post-calculo) uno de los 3 valores base de un servicio ya calculado, recalculando el
-  // resto del desglose (ver recalcularPrecioCalculado)
+  // Edita a mano (post-calculo) uno de los campos del desglose de un servicio ya calculado. Si es uno de
+  // los 3 valores base (costosDirectos, seguroVida, aui) recalcula en cascada el resto del desglose; si es
+  // uno de los derivados, lo sobreescribe directo (ver recalcularPrecioCalculado)
   onChangePrecioCalculado: (
     idServicio: number,
     campo: CampoEditablePrecioCalculado,
@@ -403,10 +420,31 @@ function RouteComponent() {
         cell: ({ row, table }) => {
           const servicio = row.original;
           const meta = table.options.meta as ServiciosTableMeta;
+          const calculado = meta.preciosCalculados[servicio.idServicio];
 
-          // El campo manual aparece desde el inicio para Monitoreo de Alarmas / "por servicio" (siempre lo
-          // requieren), o mas tarde para cualquier otro servicio que un intento previo de "Calcular precios"
-          // ya haya determinado que tambien lo necesita (ver handleCalcularPrecios)
+          // Una vez que el servicio ya se calculo, esta columna pasa a mostrar (editable) el costo directo
+          // del desglose calculado, para todos los servicios — antes solo se editaba acá el valor manual
+          // previo al calculo, y el calculado se repetia en una columna aparte (ver COLUMNAS_PRECIO_CALCULADO)
+          if (calculado) {
+            return (
+              <InputPrice
+                label=""
+                size="md"
+                value={formatMiles(String(calculado.costosDirectos))}
+                onChange={(e) =>
+                  meta.onChangePrecioCalculado(
+                    servicio.idServicio,
+                    "costosDirectos",
+                    e.target.value,
+                  )
+                }
+              />
+            );
+          }
+
+          // Antes de calcular, el campo manual aparece desde el inicio para Monitoreo de Alarmas / "por
+          // servicio" (siempre lo requieren), o mas tarde para cualquier otro servicio que un intento previo
+          // de "Calcular precios" ya haya determinado que tambien lo necesita (ver handleCalcularPrecios)
           if (
             !requiereCostosDirectosManualDesdeElInicio(servicio) &&
             !meta.serviciosRequierenManual.has(servicio.idServicio)
@@ -438,34 +476,22 @@ function RouteComponent() {
 
             if (!calculado) return <span className="text-gray-400">—</span>;
 
-            // Costos directos, seguro de vida y aui son los 3 valores base editables una vez que el
-            // servicio ya se calculo; el resto (costos directos + seguro vida, precio antes de iva, iva,
-            // precio total) queda derivado de ellos, ver recalcularPrecioCalculado
-            if (esCampoEditablePrecioCalculado(campo)) {
-              return (
-                <InputPrice
-                  label=""
-                  size="md"
-                  value={formatMiles(String(calculado[campo]))}
-                  onChange={(e) =>
-                    meta.onChangePrecioCalculado(
-                      row.original.idServicio,
-                      campo,
-                      e.target.value,
-                    )
-                  }
-                />
-              );
-            }
-
+            // Todo el desglose calculado es editable a mano: costos directos, seguro de vida y aui
+            // recalculan en cascada el resto (ver recalcularPrecioCalculado); costos directos + seguro
+            // vida, precio antes de iva, iva y precio total se sobreescriben directo si el usuario los toca.
             return (
-              <span
-                className={
-                  campo === "precioTotal" ? "font-semibold text-green-700" : ""
+              <InputPrice
+                label=""
+                size="md"
+                value={formatMiles(String(calculado[campo]))}
+                onChange={(e) =>
+                  meta.onChangePrecioCalculado(
+                    row.original.idServicio,
+                    campo,
+                    e.target.value,
+                  )
                 }
-              >
-                {priceFormat(calculado[campo])}
-              </span>
+              />
             );
           },
         });
