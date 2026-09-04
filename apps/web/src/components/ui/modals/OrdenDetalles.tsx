@@ -20,8 +20,11 @@ import { safeParseDate } from "../../../utils/DateUtils";
 const priceOrNA = (value: number | null | undefined) =>
   value === null || value === undefined ? "N/A" : priceFormat(value);
 
-// "202609" -> "Septiembre 2026". aniomes_liquidacion siempre viene con este formato (ver findOrdenLiquidada)
-const formatAniomes = (aniomes: string) => {
+// "202609" -> "Septiembre 2026". aniomes_liquidacion deberia venir siempre con este formato (ver
+// findOrdenLiquidada), pero se defiende contra valores nulos/mal formados que puedan venir de registros
+// historicos en el backend para no tumbar todo el modal (ver bug de "Ver" orden en produccion)
+const formatAniomes = (aniomes: string | null | undefined) => {
+  if (!aniomes || aniomes.length < 6) return "N/A";
   const anio = aniomes.slice(0, 4);
   const mes = Number(aniomes.slice(4));
   const nombre = new Date(Date.UTC(Number(anio), mes - 1, 1)).toLocaleDateString(
