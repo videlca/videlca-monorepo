@@ -33,6 +33,16 @@ export interface OrdenServicioDetalle {
   fecha: string | null;
   horaInicio: string;
   horaFin: string;
+  // Dias de la semana en que se presta este servicio de catalogo (default true, ver PatronDiasSemanaDto).
+  // No aplican a ordenes "a_medida" (fila = un dia especifico), pero el backend igual las devuelve en true
+  lunes: boolean;
+  martes: boolean;
+  miercoles: boolean;
+  jueves: boolean;
+  viernes: boolean;
+  sabado: boolean;
+  domingo: boolean;
+  incluyeFestivos: boolean;
   costosDirectos: number | null;
   seguroVida: number | null;
   costosDirectosSeguroVida: number | null;

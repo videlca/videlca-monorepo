@@ -20,14 +20,18 @@ import { safeParseDate } from "../../../utils/DateUtils";
 const priceOrNA = (value: number | null | undefined) =>
   value === null || value === undefined ? "N/A" : priceFormat(value);
 
-// "202609" -> "Septiembre 2026". aniomes_liquidacion deberia venir siempre con este formato (ver
-// findOrdenLiquidada), pero se defiende contra valores nulos/mal formados que puedan venir de registros
-// historicos en el backend para no tumbar todo el modal (ver bug de "Ver" orden en produccion)
+// "202609" -> "Septiembre 2026". aniomes_liquidacion deberia venir siempre con este formato, pero algunos
+// registros historicos se guardaron sin cero a la izquierda en el mes (ej "20269" para septiembre/2026, ver
+// aniomes_liquidacion en liquidaciones.service.ts): se valida por contenido (año de 4 digitos + mes 1-12), no
+// por longitud fija, para no romper esos casos ni los realmente invalidos/nulos (ver bug de "Ver" orden en produccion)
 const formatAniomes = (aniomes: string | null | undefined) => {
-  if (!aniomes || aniomes.length < 6) return "N/A";
-  const anio = aniomes.slice(0, 4);
+  if (!aniomes || aniomes.length < 5) return "N/A";
+  const anio = Number(aniomes.slice(0, 4));
   const mes = Number(aniomes.slice(4));
-  const nombre = new Date(Date.UTC(Number(anio), mes - 1, 1)).toLocaleDateString(
+  if (!Number.isInteger(anio) || !Number.isInteger(mes) || mes < 1 || mes > 12) {
+    return "N/A";
+  }
+  const nombre = new Date(Date.UTC(anio, mes - 1, 1)).toLocaleDateString(
     "es-ES",
     { month: "long", timeZone: "UTC" },
   );
@@ -38,6 +42,34 @@ const formatAniomes = (aniomes: string | null | undefined) => {
 // (GET /liquidaciones/:idLiquidacion/orden), que trae la misma forma con los precios de ese mes. Se distinguen
 // por la presencia de idLiquidacion (ver esSnapshotLiquidacion)
 type DetalleOrdenOSnapshot = OrdenServicio | OrdenLiquidada;
+
+// Dias de la semana en que se presta un servicio de catalogo (ver OrdenServicioDetalle). El snapshot de una
+// liquidacion (LiquidacionOrdenDetalle) no trae estos campos, por eso quedan opcionales aca
+type DiaSemanaKey =
+  | "lunes"
+  | "martes"
+  | "miercoles"
+  | "jueves"
+  | "viernes"
+  | "sabado"
+  | "domingo";
+
+const DIAS_SEMANA_LABELS: Record<DiaSemanaKey, string> = {
+  lunes: "Lunes",
+  martes: "Martes",
+  miercoles: "Miércoles",
+  jueves: "Jueves",
+  viernes: "Viernes",
+  sabado: "Sábado",
+  domingo: "Domingo",
+};
+
+const DIAS_SEMANA_KEYS = Object.keys(DIAS_SEMANA_LABELS) as DiaSemanaKey[];
+
+const diasActivos = (detalle: Partial<Record<DiaSemanaKey, boolean>>) =>
+  DIAS_SEMANA_KEYS.filter((dia) => detalle[dia])
+    .map((dia) => DIAS_SEMANA_LABELS[dia])
+    .join(", ");
 
 const esSnapshotLiquidacion = (
   orden: DetalleOrdenOSnapshot,
@@ -403,6 +435,11 @@ export const OrdenDetalles = ({
                     {servicio?.codigo
                       ? `${servicio.codigo} — ${servicio.descripcion}`
                       : `Detalle ${index + 1}`}
+                    {diasActivos(detalle) && (
+                      <span className="ml-2 text-sm font-normal text-gray-500">
+                        {diasActivos(detalle)}
+                      </span>
+                    )}
                   </h4>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div>

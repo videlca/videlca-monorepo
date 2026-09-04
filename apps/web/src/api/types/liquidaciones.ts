@@ -36,14 +36,31 @@ export interface LiquidacionesOrdenPage {
 }
 
 // Fila del desglose que devuelve GET /liquidaciones/:idLiquidacion/orden. Es mas angosta que
-// OrdenServicioDetalle: no trae idOrdenServicioDetalle ni cantidadHoras (ver findOrdenLiquidada en el backend,
-// esos dos campos no se recalculan/guardan al liquidar)
+// OrdenServicioDetalle: no trae idOrdenServicioDetalle, cantidadHoras, ni los dias de la semana/incluyeFestivos
+// (ver findOrdenLiquidada en el backend, arma el desglose a mano y no copia esos campos)
 export type LiquidacionOrdenDetalle = Omit<
   OrdenServicioDetalle,
-  "idOrdenServicioDetalle" | "cantidadHoras"
+  | "idOrdenServicioDetalle"
+  | "cantidadHoras"
+  | "lunes"
+  | "martes"
+  | "miercoles"
+  | "jueves"
+  | "viernes"
+  | "sabado"
+  | "domingo"
+  | "incluyeFestivos"
 > & {
   idOrdenServicioDetalle?: number;
   cantidadHoras?: number | null;
+  lunes?: boolean;
+  martes?: boolean;
+  miercoles?: boolean;
+  jueves?: boolean;
+  viernes?: boolean;
+  sabado?: boolean;
+  domingo?: boolean;
+  incluyeFestivos?: boolean;
 };
 
 // Respuesta de GET /liquidaciones/:idLiquidacion/orden: misma forma que el findOne normal de una orden
