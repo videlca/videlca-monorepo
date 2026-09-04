@@ -149,6 +149,16 @@ export class LiquidacionesService {
             fecha: null,
             horaInicio: detalleOrden?.horaInicio ?? null,
             horaFin: detalleOrden?.horaFin ?? null,
+            // Dias de la semana del detalle original de la orden (lsos no los tiene, es el snapshot de precio
+            // liquidado). Por defecto true igual que en la entidad, para filas anteriores a esta funcionalidad
+            lunes: detalleOrden?.lunes ?? true,
+            martes: detalleOrden?.martes ?? true,
+            miercoles: detalleOrden?.miercoles ?? true,
+            jueves: detalleOrden?.jueves ?? true,
+            viernes: detalleOrden?.viernes ?? true,
+            sabado: detalleOrden?.sabado ?? true,
+            domingo: detalleOrden?.domingo ?? true,
+            incluyeFestivos: detalleOrden?.incluyeFestivos ?? true,
             costosDirectos: lsos.costosDirectos,
             seguroVida: lsos.seguroVida,
             costosDirectosSeguroVida: lsos.costosDirectosSeguroVida,
@@ -166,6 +176,14 @@ export class LiquidacionesService {
             fecha: d.fecha,
             horaInicio: d.horaInicio,
             horaFin: d.horaFin,
+            lunes: d.lunes,
+            martes: d.martes,
+            miercoles: d.miercoles,
+            jueves: d.jueves,
+            viernes: d.viernes,
+            sabado: d.sabado,
+            domingo: d.domingo,
+            incluyeFestivos: d.incluyeFestivos,
             costosDirectos: d.costosDirectos,
             seguroVida: d.seguroVida,
             costosDirectosSeguroVida: d.costosDirectosSeguroVida,
@@ -367,7 +385,10 @@ export class LiquidacionesService {
       valor_liquidacion: 0,
       ordenServicio: ordenServicioLiquidar,
       idGrupoLiquidacion: idGrupoLiquidacion,
-      aniomes_liquidacion: `${anio}${mes}`
+      // Formato fijo "YYYYMM" (mes con cero a la izquierda): sin el padStart, meses 1-9 quedaban con 5
+      // caracteres (ej "20269" para septiembre/2026) y rompian cualquier lectura que asuma ancho fijo
+      // (ver formatAniomes en el front, mostraba "N/A")
+      aniomes_liquidacion: `${anio}${String(mes).padStart(2, '0')}`
     })
 
     await queryRunner.manager.save(Liquidacione, liquidacionOrden);
@@ -492,7 +513,8 @@ export class LiquidacionesService {
       liq.idOrdenServicio = os.idOrdenServicio AND
       liq.aniomes_liquidacion = :aniomes
     `, {
-        aniomes: `${anio}${mes1a12}`,
+        // Debe coincidir con el formato "YYYYMM" con el que se guarda en crearLiquidacionMensualOrden
+        aniomes: `${anio}${String(mes1a12).padStart(2, '0')}`,
       })
       .andWhere('liq.idLiquidacion IS NULL')
       .orderBy('os.idOrdenServicio', 'ASC')
