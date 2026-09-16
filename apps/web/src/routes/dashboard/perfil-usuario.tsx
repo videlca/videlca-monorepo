@@ -178,7 +178,7 @@ function RouteComponent() {
                 placeholder="Tipo de identificación"
                 id="idTipoIdentificacion"
                 options={
-                  tiposIdentificacion?.data?.map((tipo) => ({
+                  tiposIdentificacion?.data?.data?.map((tipo) => ({
                     id: tipo.idTipoIdentificacion,
                     descripcion: tipo.descripcion,
                   })) || []

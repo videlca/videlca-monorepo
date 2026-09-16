@@ -94,20 +94,17 @@ export const SeleccionarServicio = ({
                   );
                 }}
               >
-                <div className="mb-2 flex items-start justify-between">
+                <div className="mb-2 flex items-start justify-between gap-2">
                   <h4 className="text-sm font-medium text-gray-900">
-                    {tarifa.idServicio.codigo}
+                    {tarifa.idServicio.descripcion}
                   </h4>
                   {selectedServices.includes(tarifa.idServicio) && (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600">
                       <Check className="h-3 w-3 text-white" />
                     </div>
                   )}
                 </div>
-                <p className="mb-3 text-xs text-gray-600">
-                  {tarifa.idServicio.descripcion}
-                </p>
-                <div className="flex items-center justify-between">
+                <div className="mb-3">
                   <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
                     {
                       tipoServiciosQuery?.find(
@@ -117,8 +114,21 @@ export const SeleccionarServicio = ({
                       )?.descripcion
                     }
                   </span>
-                  <span className="font-semibold text-blue-600">
-                    {priceFormat(tarifa.precioTotal)}
+                </div>
+                <div className="flex items-end justify-between gap-2 border-t border-gray-100 pt-2">
+                  <span className="text-xs text-gray-500">
+                    Antes de IVA
+                    <br />
+                    <span className="text-sm font-medium text-gray-700">
+                      {priceFormat(tarifa.precioAntesIva)}
+                    </span>
+                  </span>
+                  <span className="text-right text-xs text-gray-500">
+                    Total
+                    <br />
+                    <span className="text-base font-semibold text-blue-600">
+                      {priceFormat(tarifa.precioTotal)}
+                    </span>
                   </span>
                 </div>
               </div>

@@ -16,6 +16,9 @@ export interface GruposLiquidaciones {
 export interface Liquidaciones {
   idLiquidacion: number;
   valor_liquidacion: number;
+  // Suma de precioAntesIva de las lineas de servicio de esta liquidacion (ver buscarGrupoLiquidaciones
+  // en el backend); valor_liquidacion ya es el total CON iva
+  valorLiquidacionAntesIva: number;
   fechaCreacion: string;
   idServicioOrden: number;
   ordenServicio: OrdenServicio;

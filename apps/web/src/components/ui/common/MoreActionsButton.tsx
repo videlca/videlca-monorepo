@@ -1,5 +1,5 @@
 import { MoreVertical } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 
 export type ActionColor = "default" | "red" | "blue" | "green" | "yellow" | "orange" | "purple";
@@ -36,45 +36,46 @@ export const MoreActionsButton = ({
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
-  // Calcular posición del menú
-  const calculateMenuPosition = () => {
-    if (!buttonRef.current) return { top: 0, left: 0 };
+  // Se mide el menú ya renderizado (menuRef) en vez de asumir una altura fija: con listas de acciones largas
+  // (ej. 7 acciones en ordenes-servicio) una altura estimada de 200px subestima el alto real y el menu no
+  // se volteaba hacia arriba cuando debia, quedando cortado contra el borde inferior del viewport
+  useLayoutEffect(() => {
+    if (!isOpen || !buttonRef.current || !menuRef.current) {
+      if (!isOpen) setMenuPosition(null);
+      return;
+    }
 
+    const margin = 8;
     const buttonRect = buttonRef.current.getBoundingClientRect();
+    const menuRect = menuRef.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
 
-    const menuHeight = 200; // Altura aproximada del menú
-    const menuWidth = 192; // 48 * 4 (w-48 in pixels)
-
     let top = buttonRect.bottom + 4; // Posición por defecto abajo
-    let left = buttonRect.right - menuWidth; // Posición por defecto a la derecha
+    let left = buttonRect.right - menuRect.width; // Posición por defecto a la derecha
 
     // Si el menú saldría fuera de la vista, posicionar arriba
-    if (top + menuHeight > viewportHeight) {
-      top = buttonRect.top - menuHeight - 4;
+    if (top + menuRect.height > viewportHeight - margin) {
+      top = buttonRect.top - menuRect.height - 4;
+    }
+    // El menú es mas alto que el viewport (aun volteado no cabe): pegarlo al borde superior
+    if (top < margin) {
+      top = margin;
     }
 
     // Si el menú saldría fuera del borde izquierdo, alinear a la izquierda del botón
-    if (left < 0) {
+    if (left < margin) {
       left = buttonRect.left;
     }
 
     // Si el menú saldría fuera del borde derecho, alinear al borde derecho de la vista
-    if (left + menuWidth > viewportWidth) {
-      left = viewportWidth - menuWidth - 8;
+    if (left + menuRect.width > viewportWidth - margin) {
+      left = viewportWidth - menuRect.width - margin;
     }
 
-    return { top, left };
-  };
-
-  // Actualizar posición del menú cuando se abre
-  useEffect(() => {
-    if (isOpen) {
-      setMenuPosition(calculateMenuPosition());
-    }
+    setMenuPosition({ top, left });
   }, [isOpen]);
 
   // Cerrar menú cuando se hace clic fuera
@@ -120,12 +121,12 @@ export const MoreActionsButton = ({
   const menuElement = isOpen ? (
     <div
       ref={menuRef}
-      className={`zoom-in-95 animate-in fade-in-0 fixed z-[9999] w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-2xl ${
-        menuPosition.top === 0 && menuPosition.left === 0 ? "hidden" : ""
+      className={`zoom-in-95 animate-in fade-in-0 fixed z-[9999] max-h-[calc(100vh-1rem)] w-48 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-2xl ${
+        menuPosition === null ? "invisible" : ""
       }`}
       style={{
-        top: `${menuPosition.top}px`,
-        left: `${menuPosition.left}px`,
+        top: `${menuPosition?.top ?? 0}px`,
+        left: `${menuPosition?.left ?? 0}px`,
       }}
       role="menu"
       aria-labelledby={`menu-button-${menuId}`}

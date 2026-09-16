@@ -23,6 +23,13 @@ export const OrdenServicioCard = ({
     isPending,
   } = useGetOrdenLiquidada();
 
+  // grupoLiquidacion.total ya viene calculado desde el backend (CON iva); el "antes de iva" no se guarda a
+  // nivel de grupo, solo por liquidacion (ver valorLiquidacionAntesIva), asi que se suma aca
+  const totalAntesIva = grupoLiquidacion.liquidaciones.reduce(
+    (acc, liquidacion) => acc + Number(liquidacion.valorLiquidacionAntesIva ?? 0),
+    0,
+  );
+
   return (
     <>
       <div className="p-4">
@@ -73,18 +80,32 @@ export const OrdenServicioCard = ({
                 </div>
               </div>
 
-              {/* Valor liquidado de esta orden puntual (ya viene en el objeto, no requiere otra consulta) */}
-              <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2">
-                <span className="text-xs text-gray-500">Liquidado</span>
-                <span className="text-sm font-semibold text-green-600">
-                  {priceFormat(liquidacion.valor_liquidacion)}
-                </span>
+              {/* Valores de esta orden puntual (ya vienen en el objeto, no requiere otra consulta) */}
+              <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">Antes de IVA</span>
+                  <span className="text-xs font-medium text-gray-700">
+                    {priceFormat(liquidacion.valorLiquidacionAntesIva)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">Liquidado</span>
+                  <span className="text-sm font-semibold text-green-600">
+                    {priceFormat(liquidacion.valor_liquidacion)}
+                  </span>
+                </div>
               </div>
             </div>
           ))}
         </div>
         {showTotal && (
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex justify-end gap-6">
+            <span className="text-sm text-gray-600">
+              Total antes de IVA:{" "}
+              <span className="font-medium text-gray-700">
+                {priceFormat(totalAntesIva)}
+              </span>
+            </span>
             <span className="text-sm text-gray-600">
               Liquidación Total:{" "}
               <span className="font-medium text-green-600">
