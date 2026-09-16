@@ -537,7 +537,7 @@ export class LiquidacionesService {
     const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
     const finMes = new Date(Date.UTC(anio, mes1a12, 1, 0, 0, 0)); // inicio del mes siguiente
 
-    return this.grupoLiquidacionrepo
+    const grupos = await this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
       .where(`grupo.estado = :estado`, { estado: true })
       .andWhere('grupo.fechaCreacion < :fin AND (grupo.fechaCreacion >= :ini)', {
@@ -551,7 +551,25 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
+      // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
+      // (mismo criterio que buscarGrupoLiquidaciones/findGruposPorCampoEstado, todos alimentan OrdenServicioCard)
+      .leftJoin('liquidaciones.liquidacionServiciosOrdenServicio', 'lsos')
+      .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva'])
       .getMany();
+
+    return grupos.map((grupo) => ({
+      ...grupo,
+      liquidaciones: grupo.liquidaciones.map(({ liquidacionServiciosOrdenServicio, ...liquidacion }) => ({
+        ...liquidacion,
+        valorLiquidacionAntesIva: round2(
+          (liquidacionServiciosOrdenServicio ?? []).reduce(
+            (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
+            0,
+          ),
+        ),
+      })),
+    }));
   }
 
 
@@ -701,7 +719,7 @@ export class LiquidacionesService {
   }
 
   async findGruposPorCampoEstado(campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo', valor: string) {
-    
+
     const query = this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
@@ -711,6 +729,11 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
+      // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
+      // (mismo criterio que buscarGrupoLiquidaciones, ambos alimentan OrdenServicioCard en el front)
+      .leftJoin('liquidaciones.liquidacionServiciosOrdenServicio', 'lsos')
+      .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva'])
 
       if (campo === 'consolidacion_orden') {
         query.where(`grupo.consolidacion_orden = :valor`, { valor: valor === 'true' });
@@ -721,18 +744,31 @@ export class LiquidacionesService {
         query.where('grupo.consolidacion_orden = :cons', { cons: true })
              .andWhere('grupo.generacion_interfase = :valor', { valor: valor === 'true' });
       }
-    
+
       if (campo === 'generacion_anexo') {
         query.where('grupo.consolidacion_orden = :cons', { cons: true })
              .andWhere('grupo.generacion_interfase = :interfase', { interfase: true })
              .andWhere('grupo.generacion_anexo = :valor', { valor: valor === 'true' });
       }
-    
-      return query.getMany();
+
+      const grupos = await query.getMany();
+
+      return grupos.map((grupo) => ({
+        ...grupo,
+        liquidaciones: grupo.liquidaciones.map(({ liquidacionServiciosOrdenServicio, ...liquidacion }) => ({
+          ...liquidacion,
+          valorLiquidacionAntesIva: round2(
+            (liquidacionServiciosOrdenServicio ?? []).reduce(
+              (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
+              0,
+            ),
+          ),
+        })),
+      }));
   }
 
   async buscarGrupoLiquidaciones() {
-    return this.grupoLiquidacionrepo
+    const grupos = await this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
       .where(`grupo.estado = :estado`, { estado: false })
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
@@ -742,7 +778,24 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
+      // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
+      .leftJoin('liquidaciones.liquidacionServiciosOrdenServicio', 'lsos')
+      .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva'])
       .getMany();
+
+    return grupos.map((grupo) => ({
+      ...grupo,
+      liquidaciones: grupo.liquidaciones.map(({ liquidacionServiciosOrdenServicio, ...liquidacion }) => ({
+        ...liquidacion,
+        valorLiquidacionAntesIva: round2(
+          (liquidacionServiciosOrdenServicio ?? []).reduce(
+            (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
+            0,
+          ),
+        ),
+      })),
+    }));
   }
 
   async obtenerServiciosPorCliente(idGrupoLiquidacion: number) {
