@@ -24,7 +24,233 @@ import type { Servicio } from "../../../api/types/servicio";
 import type {
   CostoHoraOrdenServicio,
   PrecioOrdenResponse,
+  PrecioServicioOrdenResponse,
 } from "../../../api/types/orden-servicio";
+import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "./tipoServicioConstantes";
+
+type FilaConfiguracion = CreateOrdenServicioTarifaDto | UpdateOrdenServicioTarifaDto;
+
+// Particiona las filas de configuracionServicioTarifa en los grupos de tarjetas a renderizar: una tarjeta por
+// unidad para el caso general. Puede haber varios servicios distintos de tipo Monitoreo de Alarmas a la vez,
+// cada uno con su propia tarifa/precio y su propia cantidad de unidades (ver SeleccionarServicio), por eso se
+// agrupan por idServicio (mismo criterio que ConfigurarHorariosServicios) y no todos juntos: cada servicio de
+// este tipo obtiene una unica tarjeta que resume todas sus unidades, ubicada en la posicion de la primera de
+// ellas para no alterar el orden del resto de servicios
+const agruparIndicesServicios = (
+  configuracionServicioTarifa: FilaConfiguracion[],
+  selectedServices?: Servicio[],
+): number[][] => {
+  const idServicioMonitoreoPorIndice = configuracionServicioTarifa.map(
+    (config) => {
+      const servicio = selectedServices?.find(
+        (s) => s.idServicio === config.idServicio,
+      );
+      return servicio?.idTipoServicio?.nombre ===
+        TIPO_SERVICIO_MONITOREO_ALARMAS
+        ? servicio.idServicio
+        : null;
+    },
+  );
+
+  const indicesPorServicioMonitoreo = new Map<number, number[]>();
+  idServicioMonitoreoPorIndice.forEach((idServicio, index) => {
+    if (idServicio == null) return;
+    const grupo = indicesPorServicioMonitoreo.get(idServicio) ?? [];
+    grupo.push(index);
+    indicesPorServicioMonitoreo.set(idServicio, grupo);
+  });
+
+  const grupos: number[][] = [];
+  const serviciosYaAgregados = new Set<number>();
+  configuracionServicioTarifa.forEach((_, index) => {
+    const idServicio = idServicioMonitoreoPorIndice[index];
+    if (idServicio == null) {
+      grupos.push([index]);
+    } else if (!serviciosYaAgregados.has(idServicio)) {
+      grupos.push(indicesPorServicioMonitoreo.get(idServicio)!);
+      serviciosYaAgregados.add(idServicio);
+    }
+  });
+  return grupos;
+};
+
+// Suma un campo numerico opcional del desglose de precio a traves de todas las filas del grupo. Devuelve null
+// si ninguna fila tiene valor para ese campo, para distinguir "no vino de la API" de "vino en cero". Se
+// convierte con Number(...) antes de sumar por si el campo llega como string (columnas "numeric" del backend
+// se serializan asi): sumar strings con += concatena en vez de sumar y termina en NaN al formatear el precio
+const sumarCampoPrecio = (
+  indices: number[],
+  precioOrdenDetalle: PrecioOrdenResponse | null | undefined,
+  getter: (detalle: PrecioServicioOrdenResponse) => number | null,
+): number | null => {
+  let total = 0;
+  let algunValor = false;
+  indices.forEach((index) => {
+    const detalle = precioOrdenDetalle?.servicios[index];
+    const valor = detalle ? getter(detalle) : null;
+    if (valor == null) return;
+    const numero = Number(valor);
+    if (Number.isNaN(numero)) return;
+    total += numero;
+    algunValor = true;
+  });
+  return algunValor ? total : null;
+};
+
+// Tarjeta de un servicio de la orden: representa una sola unidad para el caso general, o todas las unidades de
+// un mismo servicio de tipo Monitoreo de Alarmas a la vez. El horario mostrado se toma de la primera fila del
+// grupo (todas comparten el mismo, ver ConfigurarHorariosServicios) y el precio se suma entre todas las filas
+const renderServicioCard = (
+  indices: number[],
+  configuracionServicioTarifa: FilaConfiguracion[],
+  selectedServices: Servicio[] | undefined,
+  precioOrdenDetalle: PrecioOrdenResponse | null | undefined,
+) => {
+  const indicePrincipal = indices[0];
+  const config = configuracionServicioTarifa[indicePrincipal];
+  // Datos del servicio (codigo, descripcion, horas...) ya estan disponibles en selectedServices, no hace falta
+  // buscarlos por idTarifa contra la tarifa del periodo activo. En ordenes "a la medida" no hay seleccion de
+  // servicio (cada fila es un dia), por lo que no habra match aqui
+  const servicio = selectedServices?.find(
+    (s) => s.idServicio === config.idServicio,
+  );
+  // El desglose de precio de esta fila viene directo en la respuesta de POST /orden-servicio/obtener-precio,
+  // ya no hay que recalcularlo en el front. Se hace match por posicion (configuracionServicioTarifa se guarda
+  // tal cual llego esa respuesta, en el mismo orden) en vez de por id: en modo "a la medida" varias filas
+  // pueden compartir el mismo idTarifa
+  const detallePrincipal = precioOrdenDetalle?.servicios[indicePrincipal];
+
+  const precioTotalGrupo = indices.reduce<number | null>((acc, index) => {
+    const fila = configuracionServicioTarifa[index];
+    const valor = fila.precio || precioOrdenDetalle?.servicios[index]?.precio;
+    const numero = valor == null ? null : Number(valor);
+    if (numero == null || Number.isNaN(numero)) return acc;
+    return (acc ?? 0) + numero;
+  }, null);
+  const costosDirectos = sumarCampoPrecio(
+    indices,
+    precioOrdenDetalle,
+    (d) => d.costosDirectos,
+  );
+  const seguroVida = sumarCampoPrecio(
+    indices,
+    precioOrdenDetalle,
+    (d) => d.seguroVida,
+  );
+  const aui = sumarCampoPrecio(indices, precioOrdenDetalle, (d) => d.aui);
+  const precioAntesIva = sumarCampoPrecio(
+    indices,
+    precioOrdenDetalle,
+    (d) => d.precioAntesIva,
+  );
+  const iva = sumarCampoPrecio(indices, precioOrdenDetalle, (d) => d.iva);
+
+  return (
+    <div key={indices.join("-")} className="p-4">
+      {/* Encabezado: codigo/descripcion + tipo de servicio, horario propio de este servicio (o del grupo) */}
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h5 className="text-sm font-semibold text-gray-900">
+            {servicio?.codigo ? `${servicio.codigo} — ` : ""}
+            {servicio?.descripcion ||
+              // Ordenes "a la medida": no hay servicio de catalogo, cada fila es un dia.
+              // Se recorta a "YYYY-MM-DD" antes de parsear (config.fecha puede venir como
+              // timestamp ISO completo) para que safeParseDate no corra el dia por timezone
+              (config.fecha
+                ? safeParseDate(config.fecha.slice(0, 10)).toLocaleDateString()
+                : "Servicio no especificado")}
+            {indices.length > 1 && (
+              <span className="ml-2 text-xs font-normal text-gray-500">
+                ({indices.length} unidades)
+              </span>
+            )}
+          </h5>
+          <p className="text-xs text-gray-500">
+            {servicio?.idTipoServicio?.descripcion || "Tipo no especificado"}
+            {servicio?.idTipoDuracion &&
+              (servicio.idTipoDuracion.descripcion?.toLowerCase() === "fija"
+                ? ` · Horas fijas: ${servicio.horasFijas ?? 0}h`
+                : ` · Horas: ${servicio.horasMinimas ?? 0}h - ${servicio.horasMaximas ?? 0}h`)}
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-gray-700">
+          <Calendar className="h-3 w-3" />
+          {config.horaInicio || "--:--"} - {config.horaFin || "--:--"}
+        </span>
+      </div>
+
+      {/* Personal: comentado a pedido del usuario, no se gestiona por servicio por ahora
+          (se habilitara mas adelante). Se deja el bloque listo para reactivar. */}
+      {/* {(!servicio || servicio.idTipoServicio?.requierePersonal) && (
+        <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
+          <span className="flex items-center gap-1">
+            <Users className="h-3.5 w-3.5" />
+            Personal: {config.cantidadPersonal ?? 0} requeridos,{" "}
+            {("personal" in config && Array.isArray(config.personal)) ? config.personal.length : 0} asignado(s)
+          </span>
+        </div>
+      )} */}
+
+      {/* Precio calculado de este servicio (sumado entre todas las unidades del grupo cuando aplica) */}
+      <div className="mt-3 border-t border-gray-100 pt-3">
+        {detallePrincipal?.message && (
+          <p className="mb-2 flex items-center gap-1.5 text-xs text-gray-500 italic">
+            <DollarSign className="h-3.5 w-3.5 shrink-0 text-green-600" />
+            {detallePrincipal.message}
+          </p>
+        )}
+        <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 text-xs">
+          <p>
+            <span className="block text-gray-500">Costos Directos</span>
+            <span className="font-medium text-gray-800">
+              {costosDirectos != null ? priceFormat(costosDirectos) : "-"}
+            </span>
+          </p>
+          <p>
+            <span className="block text-gray-500">Seguro de Vida</span>
+            <span className="font-medium text-gray-800">
+              {seguroVida != null ? priceFormat(seguroVida) : "-"}
+            </span>
+          </p>
+          <p>
+            <span className="block text-gray-500">AUI</span>
+            <span className="font-medium text-gray-800">
+              {aui != null ? priceFormat(aui) : "-"}
+            </span>
+          </p>
+          <p>
+            <span className="block text-gray-500">Precio sin IVA</span>
+            <span className="font-medium text-gray-800">
+              {precioAntesIva != null ? priceFormat(precioAntesIva) : "-"}
+            </span>
+          </p>
+          <p>
+            <span className="block text-gray-500">IVA</span>
+            <span className="font-medium text-gray-800">
+              {iva != null ? priceFormat(iva) : "-"}
+            </span>
+          </p>
+          <p>
+            <span className="block text-gray-500">Precio Total</span>
+            <span className="font-semibold text-green-600">
+              {precioTotalGrupo != null
+                ? priceFormat(precioTotalGrupo)
+                : "No especificado"}
+            </span>
+          </p>
+        </div>
+
+        {/* Desglose hora por hora: solo viene lleno para servicios de horario Mixto + Por hora, y solo aplica
+            por unidad individual (el grupo unificado de Monitoreo de Alarmas nunca lo usa, es horario fijo) */}
+        {indices.length === 1 &&
+          detallePrincipal?.costos_horas &&
+          detallePrincipal.costos_horas.length > 0 && (
+            <DesgloseCostosHoras costosHoras={detallePrincipal.costos_horas} />
+          )}
+      </div>
+    </div>
+  );
+};
 
 export const PreviewInformacionOrden = ({
   isEditing = false,
@@ -139,7 +365,10 @@ export const PreviewInformacionOrden = ({
         </div>
 
         {/* Servicios de la orden: una fila apilada por servicio (en vez de varias cajas sueltas por
-            servicio), asi la info de N servicios queda agrupada y en el mismo orden en que se seleccionaron */}
+            servicio), asi la info de N servicios queda agrupada y en el mismo orden en que se seleccionaron.
+            Excepcion: cada servicio de tipo Monitoreo de Alarmas comparte un mismo horario entre todas sus
+            unidades (ver ConfigurarHorariosServicios) y se resume en una unica tarjeta con el precio sumado de
+            esas unidades, en vez de repetir la misma fila una vez por unidad */}
         {configuracionServicioTarifa.length > 0 && (
           <div className="rounded-lg border border-gray-200">
             <h4 className="flex items-center gap-2 border-b border-gray-200 px-4 py-3 text-lg font-semibold text-gray-900">
@@ -147,126 +376,17 @@ export const PreviewInformacionOrden = ({
               Servicios ({configuracionServicioTarifa.length})
             </h4>
             <div className="divide-y divide-gray-100">
-              {configuracionServicioTarifa.map((config, index) => {
-                // Datos del servicio (codigo, descripcion, horas...) ya estan disponibles en selectedServices,
-                // no hace falta buscarlos por idTarifa contra la tarifa del periodo activo. En ordenes "a la
-                // medida" no hay seleccion de servicio (cada fila es un dia), por lo que no habra match aqui
-                const servicio = selectedServices?.find(
-                  (s) => s.idServicio === config.idServicio,
-                );
-
-                // El desglose de precio de esta fila viene directo en la respuesta de POST
-                // /orden-servicio/obtener-precio, ya no hay que recalcularlo en el front. Se hace match por
-                // posicion (configuracionServicioTarifa se guarda tal cual llego esa respuesta, en el mismo
-                // orden) en vez de por id: en modo "a la medida" varias filas pueden compartir el mismo idTarifa
-                const detalle = precioOrdenDetalle?.servicios[index];
-
-                return (
-                  <div key={index} className="p-4">
-                    {/* Encabezado: codigo/descripcion + tipo de servicio, horario propio de este servicio */}
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div>
-                        <h5 className="text-sm font-semibold text-gray-900">
-                          {servicio?.codigo ? `${servicio.codigo} — ` : ""}
-                          {servicio?.descripcion ||
-                            // Ordenes "a la medida": no hay servicio de catalogo, cada fila es un dia.
-                            // Se recorta a "YYYY-MM-DD" antes de parsear (config.fecha puede venir como
-                            // timestamp ISO completo) para que safeParseDate no corra el dia por timezone
-                            (config.fecha
-                              ? safeParseDate(
-                                  config.fecha.slice(0, 10),
-                                ).toLocaleDateString()
-                              : "Servicio no especificado")}
-                        </h5>
-                        <p className="text-xs text-gray-500">
-                          {servicio?.idTipoServicio?.descripcion || "Tipo no especificado"}
-                          {servicio?.idTipoDuracion &&
-                            (servicio.idTipoDuracion.descripcion?.toLowerCase() === "fija"
-                              ? ` · Horas fijas: ${servicio.horasFijas ?? 0}h`
-                              : ` · Horas: ${servicio.horasMinimas ?? 0}h - ${servicio.horasMaximas ?? 0}h`)}
-                        </p>
-                      </div>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-gray-700">
-                        <Calendar className="h-3 w-3" />
-                        {config.horaInicio || "--:--"} - {config.horaFin || "--:--"}
-                      </span>
-                    </div>
-
-                    {/* Personal: comentado a pedido del usuario, no se gestiona por servicio por ahora
-                        (se habilitara mas adelante). Se deja el bloque listo para reactivar. */}
-                    {/* {(!servicio || servicio.idTipoServicio?.requierePersonal) && (
-                      <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5" />
-                          Personal: {config.cantidadPersonal ?? 0} requeridos,{" "}
-                          {("personal" in config && Array.isArray(config.personal)) ? config.personal.length : 0} asignado(s)
-                        </span>
-                      </div>
-                    )} */}
-
-                    {/* Precio calculado de este servicio */}
-                    <div className="mt-3 border-t border-gray-100 pt-3">
-                      {detalle?.message && (
-                        <p className="mb-2 flex items-center gap-1.5 text-xs text-gray-500 italic">
-                          <DollarSign className="h-3.5 w-3.5 shrink-0 text-green-600" />
-                          {detalle.message}
-                        </p>
-                      )}
-                      <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 text-xs">
-                        <p>
-                          <span className="block text-gray-500">Costos Directos</span>
-                          <span className="font-medium text-gray-800">
-                            {detalle?.costosDirectos != null
-                              ? priceFormat(detalle.costosDirectos)
-                              : "-"}
-                          </span>
-                        </p>
-                        <p>
-                          <span className="block text-gray-500">Seguro de Vida</span>
-                          <span className="font-medium text-gray-800">
-                            {detalle?.seguroVida != null
-                              ? priceFormat(detalle.seguroVida)
-                              : "-"}
-                          </span>
-                        </p>
-                        <p>
-                          <span className="block text-gray-500">AUI</span>
-                          <span className="font-medium text-gray-800">
-                            {detalle?.aui != null ? priceFormat(detalle.aui) : "-"}
-                          </span>
-                        </p>
-                        <p>
-                          <span className="block text-gray-500">Precio sin IVA</span>
-                          <span className="font-medium text-gray-800">
-                            {detalle?.precioAntesIva != null
-                              ? priceFormat(detalle.precioAntesIva)
-                              : "-"}
-                          </span>
-                        </p>
-                        <p>
-                          <span className="block text-gray-500">IVA</span>
-                          <span className="font-medium text-gray-800">
-                            {detalle?.iva != null ? priceFormat(detalle.iva) : "-"}
-                          </span>
-                        </p>
-                        <p>
-                          <span className="block text-gray-500">Precio Total</span>
-                          <span className="font-semibold text-green-600">
-                            {(config.precio || detalle?.precio) != null
-                              ? priceFormat(config.precio || detalle?.precio || 0)
-                              : "No especificado"}
-                          </span>
-                        </p>
-                      </div>
-
-                      {/* Desglose hora por hora: solo viene lleno para servicios de horario Mixto + Por hora */}
-                      {detalle?.costos_horas && detalle.costos_horas.length > 0 && (
-                        <DesgloseCostosHoras costosHoras={detalle.costos_horas} />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {agruparIndicesServicios(
+                configuracionServicioTarifa,
+                selectedServices,
+              ).map((indices) =>
+                renderServicioCard(
+                  indices,
+                  configuracionServicioTarifa,
+                  selectedServices,
+                  precioOrdenDetalle,
+                ),
+              )}
             </div>
           </div>
         )}

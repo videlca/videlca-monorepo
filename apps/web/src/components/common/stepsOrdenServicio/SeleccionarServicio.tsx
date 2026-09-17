@@ -1,27 +1,22 @@
-import { Check } from "lucide-react";
+import { Check, Minus, Plus } from "lucide-react";
 import { priceFormat } from "../../../utils/PriceFormat";
 import type { Servicio, TipoServicio } from "../../../api/types/servicio";
 import type { Tarifa } from "../../../api/types/periodo";
-import type { CreateOrdenServicioTarifaDto } from "../../../api/dtos/orden-servicio";
 
 export const SeleccionarServicio = ({
   selectedServices,
   tarifasPeriodoActivoByIdTipoServicioData,
   tipoServiciosQuery,
-  handleSelectedServices,
-  setConfiguracionServicioTarifa,
+  handleIncrementarServicio,
+  handleDecrementarServicio,
+  handleSetCantidadServicio,
 }: {
   selectedServices: Servicio[];
   tarifasPeriodoActivoByIdTipoServicioData: Tarifa[];
   tipoServiciosQuery: TipoServicio[];
-  handleSelectedServices: (services: Servicio) => void;
-  setConfiguracionServicioTarifa: (
-    configuracionServicioTarifa:
-      | CreateOrdenServicioTarifaDto[]
-      | ((
-          prev: CreateOrdenServicioTarifaDto[],
-        ) => CreateOrdenServicioTarifaDto[]),
-  ) => void;
+  handleIncrementarServicio: (tarifa: Tarifa) => void;
+  handleDecrementarServicio: (tarifa: Tarifa) => void;
+  handleSetCantidadServicio: (tarifa: Tarifa, cantidad: number) => void;
 }) => {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -30,7 +25,8 @@ export const SeleccionarServicio = ({
           Servicio a Prestar
         </h3>
         <p className="text-sm text-gray-600">
-          Seleccione el tipo de servicio que se prestará
+          Seleccione el tipo de servicio que se prestará, y la cantidad de
+          unidades que necesita de cada uno
         </p>
       </div>
 
@@ -39,100 +35,99 @@ export const SeleccionarServicio = ({
           <label className="mb-3 flex flex-row items-center justify-between text-sm font-medium text-gray-700">
             <span className="font-bold">Servicios Disponibles.</span>
             <span className="text-xs">
-              Servicios seleccionados: {selectedServices.length}
+              Unidades seleccionadas: {selectedServices.length}
             </span>
           </label>
           <div className="grid grid-cols-2 gap-4">
-            {(tarifasPeriodoActivoByIdTipoServicioData || []).map((tarifa) => (
-              <div
-                key={tarifa.idServicio.idServicio}
-                className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-                  selectedServices.includes(tarifa.idServicio)
-                    ? "border-blue-500 bg-blue-50 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                }`}
-                onClick={() => {
-                  // handleSelectedServices alterna el servicio dentro/fuera de selectedServices: hay que
-                  // leer si ya estaba seleccionado ANTES de alternarlo, para saber si esta seleccionando o
-                  // deseleccionando y reflejar lo mismo en configuracionServicioTarifa
-                  const yaEstabaSeleccionado = selectedServices.includes(
-                    tarifa.idServicio,
-                  );
+            {(tarifasPeriodoActivoByIdTipoServicioData || []).map((tarifa) => {
+              // Cantidad de unidades ya elegidas de este servicio (selectedServices trae una entrada por
+              // cada unidad seleccionada, no una por servicio distinto: ver handleIncrementarServicio)
+              const cantidad = selectedServices.filter(
+                (s) => s.idServicio === tarifa.idServicio.idServicio,
+              ).length;
 
-                  handleSelectedServices(tarifa.idServicio);
-                  setConfiguracionServicioTarifa(
-                    (prev: CreateOrdenServicioTarifaDto[]) => {
-                      if (yaEstabaSeleccionado) {
-                        // Se esta deseleccionando: eliminar su fila, si no queda con horaInicio/horaFin
-                        // vacios en el arreglo (se enviaria igual al backend en el paso siguiente)
-                        return prev.filter(
-                          (s) => s.idServicio !== tarifa.idServicio.idServicio,
-                        );
+              return (
+                <div
+                  key={tarifa.idServicio.idServicio}
+                  className={`rounded-lg border p-4 transition-all duration-200 ${
+                    cantidad > 0
+                      ? "border-blue-500 bg-blue-50 shadow-sm"
+                      : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                  }`}
+                >
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <h4 className="text-sm font-medium text-gray-900">
+                      {tarifa.idServicio.descripcion}
+                    </h4>
+                    {cantidad > 0 && (
+                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600">
+                        <Check className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="mb-3">
+                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                      {
+                        tipoServiciosQuery?.find(
+                          (cat) =>
+                            cat.idTipoServicio ===
+                            tarifa.idServicio.idTipoServicio.idTipoServicio,
+                        )?.descripcion
                       }
-
-                      return [
-                        ...prev,
-                        {
-                          idTarifa: tarifa.idTarifa,
-                          idServicio: tarifa.idServicio.idServicio,
-                          horaInicio: "",
-                          horaFin: "",
-                          precio: 0,
-                          // Dias de la semana en que se presta el servicio: todos empiezan seleccionados
-                          // (equivale a "todos los dias"), el usuario los ajusta en ConfigurarHorariosServicios
-                          lunes: true,
-                          martes: true,
-                          miercoles: true,
-                          jueves: true,
-                          viernes: true,
-                          sabado: true,
-                          domingo: true,
-                          incluyeFestivos: true,
-                        },
-                      ];
-                    },
-                  );
-                }}
-              >
-                <div className="mb-2 flex items-start justify-between gap-2">
-                  <h4 className="text-sm font-medium text-gray-900">
-                    {tarifa.idServicio.descripcion}
-                  </h4>
-                  {selectedServices.includes(tarifa.idServicio) && (
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600">
-                      <Check className="h-3 w-3 text-white" />
-                    </div>
-                  )}
-                </div>
-                <div className="mb-3">
-                  <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                    {
-                      tipoServiciosQuery?.find(
-                        (cat) =>
-                          cat.idTipoServicio ===
-                          tarifa.idServicio.idTipoServicio.idTipoServicio,
-                      )?.descripcion
-                    }
-                  </span>
-                </div>
-                <div className="flex items-end justify-between gap-2 border-t border-gray-100 pt-2">
-                  <span className="text-xs text-gray-500">
-                    Antes de IVA
-                    <br />
-                    <span className="text-sm font-medium text-gray-700">
-                      {priceFormat(tarifa.precioAntesIva)}
                     </span>
-                  </span>
-                  <span className="text-right text-xs text-gray-500">
-                    Total
-                    <br />
-                    <span className="text-base font-semibold text-blue-600">
-                      {priceFormat(tarifa.precioTotal)}
+                  </div>
+                  <div className="flex items-end justify-between gap-2 border-t border-gray-100 pt-2">
+                    <span className="text-xs text-gray-500">
+                      Antes de IVA
+                      <br />
+                      <span className="text-sm font-medium text-gray-700">
+                        {priceFormat(tarifa.precioAntesIva)}
+                      </span>
                     </span>
-                  </span>
+                    <span className="text-right text-xs text-gray-500">
+                      Total
+                      <br />
+                      <span className="text-base font-semibold text-blue-600">
+                        {priceFormat(tarifa.precioTotal)}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-center gap-3 border-t border-gray-100 pt-3">
+                    <button
+                      type="button"
+                      disabled={cantidad === 0}
+                      onClick={() => handleDecrementarServicio(tarifa)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors duration-200 hover:border-gray-400 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:bg-transparent"
+                      aria-label={`Quitar una unidad de ${tarifa.idServicio.descripcion}`}
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={cantidad}
+                      onChange={(e) =>
+                        handleSetCantidadServicio(
+                          tarifa,
+                          Number(e.target.value),
+                        )
+                      }
+                      className="w-14 rounded-md border border-gray-300 px-1 py-1 text-center text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      aria-label={`Cantidad de unidades de ${tarifa.idServicio.descripcion}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleIncrementarServicio(tarifa)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-500 text-blue-600 transition-colors duration-200 hover:bg-blue-100"
+                      aria-label={`Agregar una unidad de ${tarifa.idServicio.descripcion}`}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

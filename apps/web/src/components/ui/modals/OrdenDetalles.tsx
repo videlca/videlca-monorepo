@@ -9,13 +9,20 @@ import {
   User,
 } from "lucide-react";
 import { SimpleModal } from "../../common/SimpleModal";
-import type { OrdenServicio } from "../../../api/types/orden-servicio";
-import type { OrdenLiquidada } from "../../../api/types/liquidaciones";
+import type {
+  OrdenServicio,
+  OrdenServicioDetalle,
+} from "../../../api/types/orden-servicio";
+import type {
+  OrdenLiquidada,
+  LiquidacionOrdenDetalle,
+} from "../../../api/types/liquidaciones";
 import { useGetLiquidacionesByOrdenId } from "../../../api/queryFunctions/orden-servicio";
 import { useGetOrdenLiquidada } from "../../../api/queryFunctions/liquidaciones";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
+import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "../../common/stepsOrdenServicio/tipoServicioConstantes";
 
 const priceOrNA = (value: number | null | undefined) =>
   value === null || value === undefined ? "N/A" : priceFormat(value);
@@ -74,6 +81,279 @@ const diasActivos = (detalle: Partial<Record<DiaSemanaKey, boolean>>) =>
 const esSnapshotLiquidacion = (
   orden: DetalleOrdenOSnapshot,
 ): orden is OrdenLiquidada => "idLiquidacion" in orden;
+
+// Una fila de "detalles" de la orden real o del snapshot de una liquidacion: ambas formas traen
+// idTarifa.idServicio completo (ver findOneOrdenRelations en el backend), de ahi se lee el tipo de servicio
+type DetalleServicioOrden = OrdenServicioDetalle | LiquidacionOrdenDetalle;
+
+// Agrupa los indices de "detalles" en las tarjetas a renderizar: una tarjeta por unidad para el caso general.
+// Puede haber varios servicios distintos de tipo Monitoreo de Alarmas en la misma orden (cada uno con su propia
+// tarifa/precio y su propia cantidad de unidades, ver SeleccionarServicio), por eso se agrupan por idServicio
+// (mismo criterio que ConfigurarHorariosServicios/PreviewInformacionOrden en el wizard de creacion) y no todos
+// juntos: cada servicio de este tipo obtiene una unica tarjeta que resume todas sus unidades, ubicada en la
+// posicion de la primera de ellas para no alterar el orden del resto de servicios
+const agruparIndicesDetalles = (detalles: DetalleServicioOrden[]): number[][] => {
+  const idServicioMonitoreoPorIndice = detalles.map((detalle) => {
+    const servicio = detalle.idTarifa?.idServicio;
+    return servicio?.idTipoServicio?.nombre === TIPO_SERVICIO_MONITOREO_ALARMAS
+      ? servicio.idServicio
+      : null;
+  });
+
+  const indicesPorServicio = new Map<number, number[]>();
+  idServicioMonitoreoPorIndice.forEach((idServicio, index) => {
+    if (idServicio == null) return;
+    const grupo = indicesPorServicio.get(idServicio) ?? [];
+    grupo.push(index);
+    indicesPorServicio.set(idServicio, grupo);
+  });
+
+  const grupos: number[][] = [];
+  const serviciosYaAgregados = new Set<number>();
+  detalles.forEach((_, index) => {
+    const idServicio = idServicioMonitoreoPorIndice[index];
+    if (idServicio == null) {
+      grupos.push([index]);
+    } else if (!serviciosYaAgregados.has(idServicio)) {
+      grupos.push(indicesPorServicio.get(idServicio)!);
+      serviciosYaAgregados.add(idServicio);
+    }
+  });
+  return grupos;
+};
+
+// Suma un campo numerico opcional del desglose de precio a traves de todas las filas del grupo. Devuelve null
+// si ninguna fila tiene valor para ese campo, para distinguir "no vino" de "vino en cero". Los campos decimal
+// de la orden (costosDirectos, precio, etc.) llegan del backend como string (columnas "numeric" de TypeORM se
+// serializan asi), por eso se convierten con Number(...) antes de sumar: sumar strings con += concatena en vez
+// de sumar y termina en NaN al formatear (ver bug de "Ver" orden con "$ NaN" en varias unidades agrupadas)
+const sumarCampoDetalle = (
+  indices: number[],
+  detalles: DetalleServicioOrden[],
+  getter: (detalle: DetalleServicioOrden) => number | null | undefined,
+): number | null => {
+  let total = 0;
+  let algunValor = false;
+  indices.forEach((index) => {
+    const valor = getter(detalles[index]);
+    if (valor == null) return;
+    const numero = Number(valor);
+    if (Number.isNaN(numero)) return;
+    total += numero;
+    algunValor = true;
+  });
+  return algunValor ? total : null;
+};
+
+// Tarjeta de un servicio de la orden: representa una sola unidad para el caso general, o todas las unidades de
+// un mismo servicio de tipo Monitoreo de Alarmas a la vez (ver agruparIndicesDetalles). El horario/dias
+// mostrados se toman de la primera fila del grupo (todas comparten el mismo horario, ver
+// ConfigurarHorariosServicios en el wizard de creacion) y el precio/costos se suman entre todas las filas
+const renderTarjetaDetalle = (
+  indices: number[],
+  detalles: DetalleServicioOrden[],
+) => {
+  const indicePrincipal = indices[0];
+  const detalle = detalles[indicePrincipal];
+  // idTarifa siempre viene con su idServicio cargado (ver findOneOrdenRelations en el backend)
+  const servicio = detalle.idTarifa?.idServicio;
+
+  const precioTotalGrupo = sumarCampoDetalle(indices, detalles, (d) => d.precio);
+  const costosDirectos = sumarCampoDetalle(
+    indices,
+    detalles,
+    (d) => d.costosDirectos,
+  );
+  const seguroVida = sumarCampoDetalle(indices, detalles, (d) => d.seguroVida);
+  const aui = sumarCampoDetalle(indices, detalles, (d) => d.aui);
+  const precioAntesIva = sumarCampoDetalle(
+    indices,
+    detalles,
+    (d) => d.precioAntesIva,
+  );
+  const iva = sumarCampoDetalle(indices, detalles, (d) => d.iva);
+
+  return (
+    <div
+      key={indices.join("-")}
+      className="rounded-lg border border-gray-300 bg-white p-4"
+    >
+      <h4 className="mb-3 text-base font-semibold text-gray-900">
+        {servicio?.codigo
+          ? `${servicio.codigo} — ${servicio.descripcion}`
+          : `Detalle ${indicePrincipal + 1}`}
+        {indices.length > 1 && (
+          <span className="ml-2 text-sm font-normal text-gray-500">
+            ({indices.length} unidades)
+          </span>
+        )}
+        {diasActivos(detalle) && (
+          <span className="ml-2 text-sm font-normal text-gray-500">
+            {diasActivos(detalle)}
+          </span>
+        )}
+      </h4>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div>
+          <p className="text-sm font-medium text-gray-600">Horario</p>
+          <p className="text-base text-gray-900">
+            {timeFormat(detalle.horaInicio)} - {timeFormat(detalle.horaFin)}
+          </p>
+        </div>
+        {/* fecha/cantidadHoras solo traen valor en ordenes "a la medida": cada fila es un dia
+            especifico del rango (en "catalogo" son null, no se muestran) */}
+        {detalle.fecha && (
+          <div>
+            <p className="text-sm font-medium text-gray-600">Fecha</p>
+            <p className="text-base text-gray-900">
+              {safeParseDate(detalle.fecha.slice(0, 10)).toLocaleDateString()}
+            </p>
+          </div>
+        )}
+        {detalle.cantidadHoras != null && (
+          <div>
+            <p className="text-sm font-medium text-gray-600">
+              Cantidad de Horas
+            </p>
+            <p className="text-base text-gray-900">{detalle.cantidadHoras}</p>
+          </div>
+        )}
+        <div>
+          <p className="text-sm font-medium text-gray-600">Precio</p>
+          <p className="text-base font-semibold text-green-700">
+            {priceOrNA(precioTotalGrupo)}
+          </p>
+        </div>
+
+        {/* Información del Servicio */}
+        {servicio && (
+          <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
+            <h5 className="mb-2 text-sm font-semibold text-gray-900">
+              Servicio
+            </h5>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <p className="text-xs font-medium text-gray-600">Código</p>
+                <p className="text-sm text-gray-900">{servicio.codigo}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-600">
+                  Descripción
+                </p>
+                <p className="text-sm text-gray-900">
+                  {servicio.descripcion}
+                </p>
+              </div>
+              {/* Cada campo solo se muestra si realmente trae valor: no tiene sentido pintar
+                  una etiqueta vacia cuando la relacion no vino cargada (ver findOrdenLiquidada
+                  en el backend) o simplemente no aplica para este servicio */}
+              {servicio.idTipoServicio?.nombre && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Tipo de Servicio
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoServicio.nombre}
+                  </p>
+                </div>
+              )}
+              {servicio.idTipoDuracion?.descripcion && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Duración
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoDuracion.descripcion}
+                  </p>
+                </div>
+              )}
+              {servicio.idTipoHorarioDescripcion?.nombre && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Horario
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoHorarioDescripcion.nombre}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-medium text-gray-600">
+                  Horas Fijas
+                </p>
+                <p className="text-sm text-gray-900">{servicio.horasFijas}</p>
+              </div>
+              {servicio.idTipoTarifa?.nombre && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Tipo Tarifa
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoTarifa.nombre}
+                  </p>
+                </div>
+              )}
+              {servicio.idTipoTarifa?.cantidadTiempo != null && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Cantidad Tiempo
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoTarifa.cantidadTiempo}{" "}
+                    {servicio.idTipoTarifa.idTipoUnidadTiempo?.descripcion}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
+          <h5 className="mb-2 text-sm font-semibold text-gray-900">
+            Desglose de Costos
+          </h5>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div>
+              <p className="text-xs font-medium text-gray-600">
+                Costos Directos
+              </p>
+              <p className="text-sm text-gray-900">{priceOrNA(costosDirectos)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">
+                Seguro de Vida
+              </p>
+              <p className="text-sm text-gray-900">{priceOrNA(seguroVida)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">AUI</p>
+              <p className="text-sm text-gray-900">{priceOrNA(aui)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">IVA</p>
+              <p className="text-sm text-gray-900">{priceOrNA(iva)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">
+                Precio Antes IVA
+              </p>
+              <p className="text-sm text-gray-900">
+                {priceOrNA(precioAntesIva)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">
+                Precio Total
+              </p>
+              <p className="text-sm font-semibold text-green-700">
+                {priceOrNA(precioTotalGrupo)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const OrdenDetalles = ({
   isOpenDetails,
@@ -413,7 +693,9 @@ export const OrdenDetalles = ({
           </div>
         </div>
 
-        {/* Tarifas */}
+        {/* Tarifas: una tarjeta por unidad, salvo que la orden tenga varias unidades del mismo servicio de
+            tipo Monitoreo de Alarmas, en cuyo caso se resumen en una unica tarjeta con el precio/costos
+            sumados entre esas unidades (ver agruparIndicesDetalles) */}
         <div className="rounded-lg border border-gray-200 p-4">
           <div className="mb-3 flex items-center space-x-2">
             <CircleDollarSign className="h-5 w-5 text-yellow-600" />
@@ -422,218 +704,10 @@ export const OrdenDetalles = ({
             </h3>
           </div>
           <div className="space-y-4">
-            {selectedOrderDetail.detalles?.map((detalle, index) => {
-              // idTarifa siempre viene con su idServicio cargado (ver findOneOrdenRelations en el backend)
-              const servicio = detalle.idTarifa?.idServicio;
-
-              return (
-                <div
-                  key={detalle.idOrdenServicioDetalle ?? index}
-                  className="rounded-lg border border-gray-300 bg-white p-4"
-                >
-                  <h4 className="mb-3 text-base font-semibold text-gray-900">
-                    {servicio?.codigo
-                      ? `${servicio.codigo} — ${servicio.descripcion}`
-                      : `Detalle ${index + 1}`}
-                    {diasActivos(detalle) && (
-                      <span className="ml-2 text-sm font-normal text-gray-500">
-                        {diasActivos(detalle)}
-                      </span>
-                    )}
-                  </h4>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Horario
-                      </p>
-                      <p className="text-base text-gray-900">
-                        {timeFormat(detalle.horaInicio)} -{" "}
-                        {timeFormat(detalle.horaFin)}
-                      </p>
-                    </div>
-                    {/* fecha/cantidadHoras solo traen valor en ordenes "a la medida": cada fila es un dia
-                        especifico del rango (en "catalogo" son null, no se muestran) */}
-                    {detalle.fecha && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          Fecha
-                        </p>
-                        <p className="text-base text-gray-900">
-                          {safeParseDate(
-                            detalle.fecha.slice(0, 10),
-                          ).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                    {detalle.cantidadHoras != null && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">
-                          Cantidad de Horas
-                        </p>
-                        <p className="text-base text-gray-900">
-                          {detalle.cantidadHoras}
-                        </p>
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">
-                        Precio
-                      </p>
-                      <p className="text-base font-semibold text-green-700">
-                        {priceOrNA(detalle.precio)}
-                      </p>
-                    </div>
-
-                    {/* Información del Servicio */}
-                    {servicio && (
-                      <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
-                        <h5 className="mb-2 text-sm font-semibold text-gray-900">
-                          Servicio
-                        </h5>
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                          <div>
-                            <p className="text-xs font-medium text-gray-600">
-                              Código
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              {servicio.codigo}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-600">
-                              Descripción
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              {servicio.descripcion}
-                            </p>
-                          </div>
-                          {/* Cada campo solo se muestra si realmente trae valor: no tiene sentido pintar
-                              una etiqueta vacia cuando la relacion no vino cargada (ver findOrdenLiquidada
-                              en el backend) o simplemente no aplica para este servicio */}
-                          {servicio.idTipoServicio?.nombre && (
-                            <div>
-                              <p className="text-xs font-medium text-gray-600">
-                                Tipo de Servicio
-                              </p>
-                              <p className="text-sm text-gray-900">
-                                {servicio.idTipoServicio.nombre}
-                              </p>
-                            </div>
-                          )}
-                          {servicio.idTipoDuracion?.descripcion && (
-                            <div>
-                              <p className="text-xs font-medium text-gray-600">
-                                Duración
-                              </p>
-                              <p className="text-sm text-gray-900">
-                                {servicio.idTipoDuracion.descripcion}
-                              </p>
-                            </div>
-                          )}
-                          {servicio.idTipoHorarioDescripcion?.nombre && (
-                            <div>
-                              <p className="text-xs font-medium text-gray-600">
-                                Horario
-                              </p>
-                              <p className="text-sm text-gray-900">
-                                {servicio.idTipoHorarioDescripcion.nombre}
-                              </p>
-                            </div>
-                          )}
-                          <div>
-                            <p className="text-xs font-medium text-gray-600">
-                              Horas Fijas
-                            </p>
-                            <p className="text-sm text-gray-900">
-                              {servicio.horasFijas}
-                            </p>
-                          </div>
-                          {servicio.idTipoTarifa?.nombre && (
-                            <div>
-                              <p className="text-xs font-medium text-gray-600">
-                                Tipo Tarifa
-                              </p>
-                              <p className="text-sm text-gray-900">
-                                {servicio.idTipoTarifa.nombre}
-                              </p>
-                            </div>
-                          )}
-                          {servicio.idTipoTarifa?.cantidadTiempo != null && (
-                            <div>
-                              <p className="text-xs font-medium text-gray-600">
-                                Cantidad Tiempo
-                              </p>
-                              <p className="text-sm text-gray-900">
-                                {servicio.idTipoTarifa.cantidadTiempo}{" "}
-                                {
-                                  servicio.idTipoTarifa.idTipoUnidadTiempo
-                                    ?.descripcion
-                                }
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
-                      <h5 className="mb-2 text-sm font-semibold text-gray-900">
-                        Desglose de Costos
-                      </h5>
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                        <div>
-                          <p className="text-xs font-medium text-gray-600">
-                            Costos Directos
-                          </p>
-                          <p className="text-sm text-gray-900">
-                            {priceOrNA(detalle.costosDirectos)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-600">
-                            Seguro de Vida
-                          </p>
-                          <p className="text-sm text-gray-900">
-                            {priceOrNA(detalle.seguroVida)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-600">
-                            AUI
-                          </p>
-                          <p className="text-sm text-gray-900">
-                            {priceOrNA(detalle.aui)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-600">
-                            IVA
-                          </p>
-                          <p className="text-sm text-gray-900">
-                            {priceOrNA(detalle.iva)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-600">
-                            Precio Antes IVA
-                          </p>
-                          <p className="text-sm text-gray-900">
-                            {priceOrNA(detalle.precioAntesIva)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-600">
-                            Precio Total
-                          </p>
-                          <p className="text-sm font-semibold text-green-700">
-                            {priceOrNA(detalle.precio)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {agruparIndicesDetalles(selectedOrderDetail.detalles ?? []).map(
+              (indices) =>
+                renderTarjetaDetalle(indices, selectedOrderDetail.detalles ?? []),
+            )}
 
             {(!selectedOrderDetail.detalles ||
               selectedOrderDetail.detalles.length === 0) && (

@@ -19,12 +19,27 @@ export interface CreateOrdenServicioDto {
   servicios: CreateOrdenServicioDetalleDto[];
 }
 
+// Forma exacta que espera el backend en el arreglo "servicios" al actualizar la orden (solo aplica orden
+// origen "catalogo"): el catalogo de servicios de la orden no cambia al editar, solo se reenvia el horario ya
+// existente de cada uno para que el backend recalcule el precio con las nuevas fechas. idTarifa debe ser
+// exactamente el mismo conjunto que ya tiene la orden, o el backend rechaza la actualizacion
+export interface UpdateOrdenServicioDetalleDto {
+  idTarifa: number;
+  horaInicio: string;
+  horaFin: string;
+}
+
 export interface UpdateOrdenServicioDto {
   fechaInicio: string;
   fechaFin: string | null;
-  precioTotal: number;
   fechaActualizacion: string;
-  // servicios: UpdateOrdenServicioTarifaDto[];
+  // Obligatorio (para el backend) solo cuando fechaFin no es null y la orden es de origen "catalogo": el
+  // horario ya existente de cada servicio, para recalcular el precio con las nuevas fechas
+  servicios?: UpdateOrdenServicioDetalleDto[];
+  // Obligatorio (para el backend) solo cuando fechaFin no es null y la orden es de origen "a_medida": unico
+  // horario ya existente de toda la orden, para recalcular el precio dia por dia con las nuevas fechas
+  horaInicio?: string;
+  horaFin?: string;
 }
 
 // Dias de la semana en que se presta un servicio de catalogo (ver PatronDiasSemana en el backend). Solo aplica

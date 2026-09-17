@@ -47,6 +47,7 @@ import { OrderStateLabel } from "../../../components/common/OrderStateLabel";
 import type { Puesto } from "../../../types";
 import { toast } from "sonner";
 import type { Servicio } from "../../../api/types/servicio";
+import type { Tarifa } from "../../../api/types/periodo";
 import { SeleccionarIdentificadorOrden } from "../../../components/common/stepsOrdenServicio/SeleccionarIdentificadorOrden";
 import { ConfigurarFechaOrdenServicio } from "../../../components/common/stepsOrdenServicio/ConfigurarFechaOrdenServicio";
 import { SeleccionarOrigenServicio } from "../../../components/common/stepsOrdenServicio/SeleccionarOrigenServicio";
@@ -456,10 +457,13 @@ function RouteComponent() {
           // Se guarda tal cual el desglose que devolvio el backend (conserva el idServicio interno de cada
           // fila, usado en los pasos ya recorridos y en la vista previa), es lo que se reenvia al crear la orden.
           // El backend no devuelve de vuelta los dias de la semana seleccionados (no forman parte del desglose
-          // de precio), por eso tambien se conservan desde el estado anterior para no perderlos
+          // de precio), por eso tambien se conservan desde el estado anterior para no perderlos. Se empareja
+          // por POSICION (precioData.servicios[i] con prev[i]), no por idTarifa: al permitir varias unidades
+          // del mismo servicio puede haber varias filas con el mismo idTarifa, y el backend responde en el
+          // mismo orden y con el mismo largo en que se envio el arreglo "servicios" en la peticion
           setConfiguracionServicioTarifa((prev) =>
-            precioData.servicios.map((detalle) => {
-              const original = prev.find((s) => s.idTarifa === detalle.idTarifa);
+            precioData.servicios.map((detalle, index) => {
+              const original = prev[index];
               return {
                 ...detalle,
                 idServicio: original?.idServicio,
@@ -754,12 +758,37 @@ function RouteComponent() {
 
   const handleUpdateOrder = async () => {
     const data = watchEdit();
+
+    // El backend ya no acepta precioTotal al actualizar (lo recalcula el mismo a partir del desglose, ver
+    // updateOrdenServicio en el backend): enviarlo revienta la validacion (forbidNonWhitelisted -> 400
+    // "property precioTotal should not exist"), igual que ya se maneja en handleSaveOrder para la creacion.
+    // Si la nueva fecha fin no es null, el backend necesita el horario de cada servicio para recalcular el
+    // precio con las nuevas fechas: "servicios" para catalogo (debe traer el mismo idTarifa que ya tiene la
+    // orden) y horaInicio/horaFin de nivel superior para a la medida (un unico horario para toda la orden).
+    // El horario no se vuelve a editar aca, se reenvia tal cual ya esta guardado en cada fila
     const ordenesDeServicioMutation: UpdateOrdenServicioDto = {
       fechaInicio: data.fechaInicio,
       fechaFin: isIndefinite ? null : data.fechaFin,
-      precioTotal: data.precioTotal,
       fechaActualizacion: new Date().toISOString(),
-      // servicios: cleanedServicios,
+      servicios: configuracionServicioTarifaEdit.map((servicio) => ({
+        idTarifa: servicio.idTarifa,
+        horaInicio: servicio.horaInicio,
+        horaFin: servicio.horaFin,
+      })),
+      // A la medida: cada fila de configuracionServicioTarifaEdit es UN DIA del rango, no el horario completo
+      // de la orden (ver calcularPrecioAMedida en el backend) — solo el primer dia trae el horaInicio real de
+      // la orden (los demas quedan en "00:00") y solo el ultimo dia trae el horaFin real (los demas quedan en
+      // "24:00"/fin de dia). Por eso se ordena por fecha y se toma horaInicio del primero y horaFin del
+      // ultimo, en vez de asumir que la fila en la posicion 0 ya trae el horario completo
+      ...(() => {
+        const filasOrdenadas = [...configuracionServicioTarifaEdit].sort(
+          (a, b) => new Date(a.fecha || 0).getTime() - new Date(b.fecha || 0).getTime(),
+        );
+        return {
+          horaInicio: filasOrdenadas[0]?.horaInicio,
+          horaFin: filasOrdenadas[filasOrdenadas.length - 1]?.horaFin,
+        };
+      })(),
     };
 
     actualizarOrdenServicio(
@@ -794,7 +823,9 @@ function RouteComponent() {
 
     // El backend expone el desglose de la orden como "detalles" (ya no "tarifas"), y cada fila ya no trae
     // cantidadPersonal/personal (ver OrdenServicioDetalle en el backend) — se dejan en blanco solo para
-    // cumplir con UpdateOrdenServicioTarifaDto, no se usan ni se envian en la actualizacion
+    // cumplir con UpdateOrdenServicioTarifaDto, no se usan ni se envian en la actualizacion. "fecha" solo
+    // trae valor en ordenes "a la medida" (cada fila es un dia del rango) y se usa en handleUpdateOrder para
+    // reconstruir el horaInicio/horaFin real de la orden (ver ese comentario para el porque)
     setConfiguracionServicioTarifaEdit(
       ordenServicioById?.data?.detalles?.map((detalle) => ({
         idTarifa: detalle.idTarifa?.idTarifa || 0,
@@ -804,6 +835,7 @@ function RouteComponent() {
         precio: detalle.precio || 0,
         personal: [],
         idServicio: detalle.idTarifa?.idServicio?.idServicio,
+        fecha: detalle.fecha,
       })) || [],
     );
 
@@ -869,11 +901,106 @@ function RouteComponent() {
   //   });
   // };
 
-  const handleSelectedServices = (servicio: Servicio) => {
-    if (!selectedServices.includes(servicio)) {
-      setSelectedServices((prev) => [...prev, servicio]);
-    } else {
-      setSelectedServices((prev) => prev.filter((s) => s !== servicio));
+  // Agrega una unidad mas del servicio de esta tarifa: selectedServices y configuracionServicioTarifa se
+  // mantienen siempre del mismo largo y en el mismo orden (una entrada por cada unidad seleccionada, no una
+  // por servicio distinto), asi la fila en configuracionServicioTarifa[i] siempre corresponde al servicio en
+  // selectedServices[i] (mismo criterio que ya usa PreviewInformacionOrden para emparejar por posicion)
+  const handleIncrementarServicio = (tarifa: Tarifa) => {
+    setSelectedServices((prev) => [...prev, tarifa.idServicio]);
+    setConfiguracionServicioTarifa((prev) => [
+      ...prev,
+      {
+        idTarifa: tarifa.idTarifa,
+        idServicio: tarifa.idServicio.idServicio,
+        horaInicio: "",
+        horaFin: "",
+        precio: 0,
+        // Dias de la semana en que se presta el servicio: todos empiezan seleccionados
+        // (equivale a "todos los dias"), el usuario los ajusta en ConfigurarHorariosServicios
+        lunes: true,
+        martes: true,
+        miercoles: true,
+        jueves: true,
+        viernes: true,
+        sabado: true,
+        domingo: true,
+        incluyeFestivos: true,
+      },
+    ]);
+  };
+
+  // Quita la ultima unidad agregada de este servicio (LIFO), tanto de selectedServices como de
+  // configuracionServicioTarifa, para conservar el emparejamiento por posicion entre ambos arreglos
+  const handleDecrementarServicio = (tarifa: Tarifa) => {
+    let ultimoIndice = -1;
+    for (let i = selectedServices.length - 1; i >= 0; i--) {
+      if (selectedServices[i].idServicio === tarifa.idServicio.idServicio) {
+        ultimoIndice = i;
+        break;
+      }
+    }
+    if (ultimoIndice === -1) return;
+
+    setSelectedServices((prev) => prev.filter((_, i) => i !== ultimoIndice));
+    setConfiguracionServicioTarifa((prev) =>
+      prev.filter((_, i) => i !== ultimoIndice),
+    );
+  };
+
+  // Ajusta la cantidad de unidades de este servicio al valor que el usuario escribio directamente
+  // en el input, agregando o quitando unidades hasta alcanzarlo (misma logica de emparejamiento por
+  // posicion entre selectedServices y configuracionServicioTarifa que handleIncrementar/DecrementarServicio)
+  const handleSetCantidadServicio = (tarifa: Tarifa, cantidad: number) => {
+    const cantidadObjetivo = Number.isFinite(cantidad)
+      ? Math.max(0, Math.floor(cantidad))
+      : 0;
+    const cantidadActual = selectedServices.filter(
+      (s) => s.idServicio === tarifa.idServicio.idServicio,
+    ).length;
+    const diferencia = cantidadObjetivo - cantidadActual;
+
+    if (diferencia > 0) {
+      setSelectedServices((prev) => [
+        ...prev,
+        ...Array(diferencia).fill(tarifa.idServicio),
+      ]);
+      setConfiguracionServicioTarifa((prev) => [
+        ...prev,
+        ...Array.from({ length: diferencia }, () => ({
+          idTarifa: tarifa.idTarifa,
+          idServicio: tarifa.idServicio.idServicio,
+          horaInicio: "",
+          horaFin: "",
+          precio: 0,
+          lunes: true,
+          martes: true,
+          miercoles: true,
+          jueves: true,
+          viernes: true,
+          sabado: true,
+          domingo: true,
+          incluyeFestivos: true,
+        })),
+      ]);
+    } else if (diferencia < 0) {
+      let restantesPorQuitar = -diferencia;
+      const indicesAQuitar = new Set<number>();
+      for (
+        let i = selectedServices.length - 1;
+        i >= 0 && restantesPorQuitar > 0;
+        i--
+      ) {
+        if (selectedServices[i].idServicio === tarifa.idServicio.idServicio) {
+          indicesAQuitar.add(i);
+          restantesPorQuitar--;
+        }
+      }
+      setSelectedServices((prev) =>
+        prev.filter((_, i) => !indicesAQuitar.has(i)),
+      );
+      setConfiguracionServicioTarifa((prev) =>
+        prev.filter((_, i) => !indicesAQuitar.has(i)),
+      );
     }
   };
 
@@ -1094,8 +1221,9 @@ function RouteComponent() {
               tarifasPeriodoActivoByIdTipoServicioData?.data?.data || []
             }
             tipoServiciosQuery={tipoServiciosQuery?.data?.data || []}
-            handleSelectedServices={handleSelectedServices}
-            setConfiguracionServicioTarifa={setConfiguracionServicioTarifa}
+            handleIncrementarServicio={handleIncrementarServicio}
+            handleDecrementarServicio={handleDecrementarServicio}
+            handleSetCantidadServicio={handleSetCantidadServicio}
           />
         );
 
