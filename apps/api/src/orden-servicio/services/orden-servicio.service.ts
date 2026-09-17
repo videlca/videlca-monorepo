@@ -1646,12 +1646,31 @@ export class OrdenServicioService {
           throw new BadRequestException('Debe enviar el horario (horaInicio, horaFin) de cada servicio de la orden para poder recalcular el precio');
         }
 
-        // EL CATALOGO DE SERVICIOS DE LA ORDEN NO CAMBIA, SOLO SE REENVIA SU HORARIO: VALIDAR QUE SEAN EXACTAMENTE LOS MISMOS idTarifa YA EXISTENTES
-        const idsTarifaExistentes = new Set(ordenServicio.detalles.map(detalle => detalle.idTarifa.idTarifa));
-        const idsTarifaEnviados = new Set(itemsDto.map(item => item.idTarifa));
+        // EL CATALOGO DE SERVICIOS DE LA ORDEN NO CAMBIA, SOLO SE REENVIA SU HORARIO: VALIDAR QUE SEAN EXACTAMENTE
+        // LOS MISMOS idTarifa YA EXISTENTES, CON LA MISMA CANTIDAD DE UNIDADES DE CADA UNO (LA ORDEN PUEDE TENER
+        // VARIAS FILAS CON EL MISMO idTarifa SI SE SELECCIONARON VARIAS UNIDADES DEL MISMO SERVICIO AL CREARLA, ASI
+        // QUE NO BASTA CON COMPARAR EL CONJUNTO DE IDs DISTINTOS, HAY QUE COMPARAR LA CANTIDAD POR CADA UNO)
+        const detallesExistentesPorTarifa = new Map<number, OrdenServicioDetalle[]>();
+        for (const detalle of ordenServicio.detalles) {
+          const idTarifa = detalle.idTarifa.idTarifa;
+          const grupo = detallesExistentesPorTarifa.get(idTarifa) ?? [];
+          grupo.push(detalle);
+          detallesExistentesPorTarifa.set(idTarifa, grupo);
+        }
 
-        if (idsTarifaExistentes.size !== idsTarifaEnviados.size || [...idsTarifaExistentes].some(idTarifa => !idsTarifaEnviados.has(idTarifa))) {
-          throw new BadRequestException('Debe enviar el horario de exactamente los mismos servicios (idTarifa) que ya tiene la orden, no se pueden agregar ni quitar servicios al actualizar');
+        const cantidadEnviadaPorTarifa = new Map<number, number>();
+        for (const item of itemsDto) {
+          cantidadEnviadaPorTarifa.set(item.idTarifa, (cantidadEnviadaPorTarifa.get(item.idTarifa) ?? 0) + 1);
+        }
+
+        const mismaCantidadPorServicio =
+          detallesExistentesPorTarifa.size === cantidadEnviadaPorTarifa.size &&
+          [...detallesExistentesPorTarifa.entries()].every(
+            ([idTarifa, detalles]) => cantidadEnviadaPorTarifa.get(idTarifa) === detalles.length,
+          );
+
+        if (!mismaCantidadPorServicio) {
+          throw new BadRequestException('Debe enviar el horario de exactamente los mismos servicios (idTarifa), con la misma cantidad de unidades de cada uno, que ya tiene la orden; no se pueden agregar ni quitar servicios al actualizar');
         }
 
         // VALIDAR EL HORARIO DE CADA SERVICIO (misma validacion que al crear la orden)
@@ -1666,10 +1685,23 @@ export class OrdenServicioService {
 
         const detallesCalculados = await this.calcularPrecioCatalogo(itemsDto, fechaInicioOrden, fechaFinOrden);
 
-        // ACTUALIZAR CADA FILA EXISTENTE, SIN BORRAR/RECREAR (para no perder su identidad/referencias)
-        for (const detalleCalculado of detallesCalculados) {
+        // ACTUALIZAR CADA FILA EXISTENTE, SIN BORRAR/RECREAR (para no perder su identidad/referencias). Se
+        // empareja por POSICION dentro de cada grupo de idTarifa (no con un simple .find por idTarifa): con
+        // varias unidades del mismo servicio, un .find se quedaria siempre con la primera fila existente y
+        // dejaria las demas unidades sin repreciar (quedarian con su precio anterior, o en null si la orden
+        // paso por un estado indefinido). detallesCalculados preserva el mismo orden que itemsDto (ver
+        // calcularPrecioCatalogo), por eso se recorren en paralelo por indice
+        const indiceConsumidoPorTarifa = new Map<number, number>();
 
-          const detalleExistente = ordenServicio.detalles.find(detalle => detalle.idTarifa.idTarifa === detalleCalculado.idTarifa);
+        for (let i = 0; i < itemsDto.length; i++) {
+
+          const detalleCalculado = detallesCalculados[i];
+          const idTarifa = itemsDto[i].idTarifa;
+
+          const grupoExistente = detallesExistentesPorTarifa.get(idTarifa) ?? [];
+          const indice = indiceConsumidoPorTarifa.get(idTarifa) ?? 0;
+          const detalleExistente = grupoExistente[indice];
+          indiceConsumidoPorTarifa.set(idTarifa, indice + 1);
 
           detalleExistente.horaInicio = detalleCalculado.horaInicio;
           detalleExistente.horaFin = detalleCalculado.horaFin;
