@@ -72,6 +72,7 @@ export class ClientesController {
   }
 
   @Get('filter')
+  @ValidateJwtAuth()
   findFiltered(@Query() filterClienteDto: FilterClienteDto) {
     return this.clientesService.findFiltered(
       filterClienteDto
