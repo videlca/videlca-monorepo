@@ -356,7 +356,9 @@ export class ReporteOrdenServicioService {
 
   private buildCliente(ordenServicio: OrdenServicio): Content {
 
-    const cliente = ordenServicio.idLocacion.idCliente;
+    // VIGILANCIA Y ESCOLTA: el cliente es el de la locacion asignada. MONITOREO DE ALARMAS: el cliente esta asignado
+    // directamente a la orden (no tiene locacion)
+    const cliente = ordenServicio.idLocacion ? ordenServicio.idLocacion.idCliente : ordenServicio.idCliente;
 
     return this.card(PALETTE.navy, ['50%', '50%'], 'Cliente', [
       [
@@ -418,8 +420,11 @@ export class ReporteOrdenServicioService {
 
   private buildFacturacion(ordenServicio: OrdenServicio): Content {
 
-    const locacion = ordenServicio.idLocacion;
-    const responsable = locacion.idClienteFacturacion ?? locacion.idCliente;
+    // VIGILANCIA Y ESCOLTA: el responsable de facturacion es el de la locacion (o el cliente de la locacion si no tiene
+    // uno especifico). MONITOREO DE ALARMAS: no existe un responsable de facturacion aparte, es el mismo cliente de la orden
+    const responsable = ordenServicio.idLocacion
+      ? (ordenServicio.idLocacion.idClienteFacturacion ?? ordenServicio.idLocacion.idCliente)
+      : ordenServicio.idCliente;
 
     return this.card(PALETTE.navy, ['50%', '50%'], 'Responsable de facturación', [
       [
@@ -720,7 +725,8 @@ export class ReporteOrdenServicioService {
         ...this.buildHeader(ordenServicio),
         this.buildResumenFechas(ordenServicio),
         this.buildCliente(ordenServicio),
-        this.buildPuesto(ordenServicio),
+        // "Puesto" solo aplica a ordenes de vigilancia y escolta (con locacion); monitoreo de alarmas ya muestra el cliente arriba
+        ...(ordenServicio.idLocacion ? [this.buildPuesto(ordenServicio)] : []),
         this.buildFacturacion(ordenServicio),
         this.buildServicios(ordenServicio),
         ...this.buildDesglosePrecios(ordenServicio),

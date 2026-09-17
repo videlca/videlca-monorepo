@@ -2,7 +2,7 @@ import { Column, OneToOne, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGene
 import { OrdenServicioId } from "./orden-servicio-id.entity";
 import { User } from "../../users/entities/user.entity";
 import { EstadoOrdenServicio } from "../../common/entities";
-import { Locacion } from "../../clientes/entities";
+import { Locacion, Cliente } from "../../clientes/entities";
 import { OrdenServicioDetalle } from "./orden-servicio-detalle.entity";
 import { ObservacionOrdenServicio } from "./observaciones-orden.entity";
 import { Liquidacione } from "src/liquidaciones/entities/liquidacione.entity";
@@ -54,15 +54,30 @@ export class OrdenServicio {
     idEstadoOrdenServicio: EstadoOrdenServicio;
     
     // Locacion de la orden de servicio -> relacion
+    // Solo aplica cuando el tipo de servicio de la orden es "Vigilancia y escolta". Es null si es "Monitoreo de alarmas" (ver idCliente)
     @ManyToOne(
         () => Locacion,
         (locacion) => locacion.ordenesServicio,
         {
+            nullable: true,
             eager: true
         }
     )
     @JoinColumn({name: 'idLocacion'})
-    idLocacion: Locacion;
+    idLocacion: Locacion | null;
+
+    // Cliente al que se le asigna directamente la orden de servicio -> relacion
+    // Solo aplica cuando el tipo de servicio de la orden es "Monitoreo de alarmas". Es null si es "Vigilancia y escolta" (ver idLocacion)
+    @ManyToOne(
+        () => Cliente,
+        (cliente) => cliente.ordenesServicio,
+        {
+            nullable: true,
+            eager: true
+        }
+    )
+    @JoinColumn({name: 'idCliente'})
+    idCliente: Cliente | null;
 
     @Column({
         type: 'enum',

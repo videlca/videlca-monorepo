@@ -14,7 +14,7 @@ import { EstadoOrdenServicio as EstadoOrdenEntity } from "../../common/entities"
 import { SendMailOptions } from '../../common/services/email/email.service';
 
 import { EstadoOrdenServicioService, EmailService, CorreoDefaultService, FestivosService } from '../../common/services';
-import { LocacionService } from '../../clientes/services';
+import { LocacionService, ClientesService } from '../../clientes/services';
 import { TarifasService, TarifaHoraService, TarifaHoraDescripcionService } from '../../tarifas/services';
 import { TipoHorarioService } from '../../servicios/services';
 import { ReporteOrdenServicioService } from '../../reportes/services';
@@ -28,6 +28,7 @@ import { TipoHoraDescripcionInterface } from '../../tarifas/interfaces/tipo-hora
 import { OrigenServicioEnum } from '../interfaces/origen-servicio.interface';
 
 import { Tarifa } from '../../tarifas/entities';
+import { Locacion, Cliente } from '../../clientes/entities';
 
 import {
   OrdenServicio,
@@ -93,6 +94,7 @@ export class OrdenServicioService {
     private readonly ordenServicioDetalleRepository: Repository<OrdenServicioDetalle>,
     private readonly estadoOrdenService: EstadoOrdenServicioService,
     private readonly locacionService: LocacionService,
+    private readonly clientesService: ClientesService,
     private readonly tarifasService: TarifasService,
     private readonly tarifaHoraService: TarifaHoraService,
     private readonly tarifaHoraDescripcionService: TarifaHoraDescripcionService,
@@ -128,9 +130,6 @@ export class OrdenServicioService {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
-
-    // OBTENER LOCACION
-    const locacion = await this.locacionService.findOne(createOrdenServicioDto.idLocacion);
 
     // VERIFICAR QUE NO EXISTA EL NUMERO DE ORDEN
     const existeNumeroOrden = await this.ordenServicioIdRepository.findOneBy({
@@ -191,6 +190,39 @@ export class OrdenServicioService {
 
     }
 
+    // DETERMINAR EL TIPO DE SERVICIO DE LA ORDEN A PARTIR DE LOS SERVICIOS SELECCIONADOS (todos deben ser del mismo tipo):
+    // "Vigilancia y escolta" se asigna a una locacion (idLocacion), "Monitoreo de alarmas" se asigna directamente a un cliente (idCliente)
+    const tiposServicioOrden = new Set(
+      [...tarifasPorItem.values()].map(tarifa => tarifa.idServicio.idTipoServicio.nombre)
+    );
+
+    if (tiposServicioOrden.size > 1) {
+      throw new BadRequestException('Todos los servicios de la orden deben ser del mismo tipo de servicio');
+    }
+
+    const esOrdenMonitoreo = tiposServicioOrden.has(TipoServicioInterface.MONITOREO_ALARMAS);
+
+    let locacion: Locacion | null = null;
+    let cliente: Cliente | null = null;
+
+    if (esOrdenMonitoreo) {
+
+      if (!createOrdenServicioDto.idCliente) {
+        throw new BadRequestException('Debe seleccionar un cliente para una orden de servicio de tipo "Monitoreo de alarmas"');
+      }
+
+      cliente = await this.clientesService.findOne(createOrdenServicioDto.idCliente);
+
+    } else {
+
+      if (!createOrdenServicioDto.idLocacion) {
+        throw new BadRequestException('Debe seleccionar una locacion para una orden de servicio de tipo "Vigilancia y escolta"');
+      }
+
+      locacion = await this.locacionService.findOne(createOrdenServicioDto.idLocacion);
+
+    }
+
     // SI LA ORDEN ES INDEFINIDA (SIN FECHA FIN), NINGUN SERVICIO PUEDE SER DE TIPO TARIFA "POR SERVICIO" (recogida de
     // dinero): ese tipo de tarifa se cobra por cada dia exacto, por lo que la orden debe tener si o si fecha de fin
     if (createOrdenServicioDto.fechaFin == null) {
@@ -244,6 +276,7 @@ export class OrdenServicioService {
         idUsuarioCreacion: user,
         idEstadoOrdenServicio: estadoOrdenServicio,
         idLocacion: locacion,
+        idCliente: cliente,
         origenServicio: createOrdenServicioDto.origenServicio,
         fechaInicio: fechaInicioOrden,
         fechaInicioOrden: fechaInicioOrden,
@@ -305,13 +338,13 @@ export class OrdenServicioService {
 
       }
 
-      // envio de correos que se tengan registrados en la locacion
-      const nombreResponsable = `${locacion.primerNombreResponsable} ${locacion.primerApellidoResponsable}`;
-
-      const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
-        createOrdenServicioDto.idLocacion,
-        estadoOrdenServicio.idEstadoOrdenServicio
-      )
+      // envio de correos que se tengan registrados en la locacion (solo aplica si la orden tiene locacion, es decir, vigilancia y escolta)
+      const emailsLocacion = locacion
+        ? await this.locacionService.getEmailsByLocacionAndEstado(
+          locacion.idLocacion,
+          estadoOrdenServicio.idEstadoOrdenServicio
+        )
+        : [];
 
       const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoOrdenServicio.nombre);
 
@@ -321,8 +354,6 @@ export class OrdenServicioService {
 
       await this.notificationEmail(
         savedOrdenServicio.idOrdenServicio,
-        nombreResponsable,
-        locacion.nombre,
         emails
       );
 
@@ -345,29 +376,47 @@ export class OrdenServicioService {
 
   }
 
+  // CONSTRUYE LA FRASE QUE IDENTIFICA A QUIEN VA DIRIGIDA LA ORDEN EN LOS CORREOS DE NOTIFICACION: EL PUESTO (LOCACION)
+  // SI ES VIGILANCIA Y ESCOLTA, O EL CLIENTE DIRECTAMENTE SI ES MONITOREO DE ALARMAS (idLocacion es null en ese caso)
+  private construirFraseEntidadOrden(ordenServicio: OrdenServicio): string {
+
+    if (ordenServicio.idLocacion) {
+
+      const nombreResponsable = `${ordenServicio.idLocacion.primerNombreResponsable} ${ordenServicio.idLocacion.primerApellidoResponsable}`.trim();
+
+      return nombreResponsable
+        ? `el puesto <b>${ordenServicio.idLocacion.nombre}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>`
+        : `el puesto <b>${ordenServicio.idLocacion.nombre}</b>`;
+
+    }
+
+    return `el cliente <b>${ordenServicio.idCliente?.nombre ?? ''}</b>`;
+
+  }
+
   // ENVIAR CORREO PARA INFORMAR CREACION DE ORDEN DE SERVICIO
   private async notificationEmail(
     idOrdenServicio: number,
-    nombreResponsable: string,
-    locacion: string,
     emails: string[]
   ) {
 
     const ordenServicio = await this.findOneOrdenRelations(idOrdenServicio);
 
+    const descripcionEntidad = this.construirFraseEntidadOrden(ordenServicio);
+
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
         <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
-          
+
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
             <h2 style="margin: 0; font-size: 22px; font-weight: 700;">CREACION ORDEN DE SERVICIO ${ordenServicio.ordenServicioId.descripcionId}</h2>
           </div>
-          
+
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día, se ha creado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Buen día, se ha creado una orden de servicio para ${descripcionEntidad}. <br><br>
               Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
@@ -495,13 +544,13 @@ export class OrdenServicioService {
       [OrdenServicioFilterColumn.CLIENTE]: 'cliente.nombre',
       [OrdenServicioFilterColumn.ESTADO]: 'estadoOrdenServicio.nombre',
     };
-  
+
     const dbColumn = columnMap[column];
-  
+
     if (!dbColumn) {
       throw new BadRequestException('Columna de filtro no permitida');
     }
-  
+
     const qb = this.ordenServicioRepository
       .createQueryBuilder('orden')
       .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
@@ -509,13 +558,19 @@ export class OrdenServicioService {
       .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('orden.idCliente', 'clienteDirecto')
       .leftJoinAndSelect('orden.detalles', 'detalles')
       .leftJoinAndSelect('detalles.idTarifa', 'tarifa')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .where(`${dbColumn} LIKE :query`, {
-        query: `%${query}%`,
-      })
       .orderBy('orden.fechaInicio', 'DESC');
+
+    // EL FILTRO POR CLIENTE DEBE BUSCAR TANTO EN EL CLIENTE DE LA LOCACION (ordenes de vigilancia y escolta) COMO EN EL
+    // CLIENTE ASIGNADO DIRECTAMENTE A LA ORDEN (ordenes de monitoreo de alarmas)
+    if (column === OrdenServicioFilterColumn.CLIENTE) {
+      qb.where('(cliente.nombre LIKE :query OR clienteDirecto.nombre LIKE :query)', { query: `%${query}%` });
+    } else {
+      qb.where(`${dbColumn} LIKE :query`, { query: `%${query}%` });
+    }
   
     if (filterOrdenServicioDto.pagination === PaginationOption.TRUE) {
       qb.take(limit).skip(offset);
@@ -582,6 +637,9 @@ export class OrdenServicioService {
             idTipoCliente: true
           },
           idCiudad: true,
+        },
+        idCliente: {
+          idTipoCliente: true
         },
       },
     });
@@ -1774,13 +1832,13 @@ export class OrdenServicioService {
 
       if (cambioEstadoOrden) {
 
-        // envio de correos que se tengan registrados en la locacion
-        const nombreResponsable = `${ordenServicio.idLocacion.primerNombreResponsable} ${ordenServicio.idLocacion.primerApellidoResponsable}`;
-
-        const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
-          ordenServicio.idLocacion.idLocacion,
-          estadoOrdenServicio.idEstadoOrdenServicio
-        )
+        // envio de correos que se tengan registrados en la locacion (solo aplica si la orden tiene locacion, es decir, vigilancia y escolta)
+        const emailsLocacion = ordenServicio.idLocacion
+          ? await this.locacionService.getEmailsByLocacionAndEstado(
+            ordenServicio.idLocacion.idLocacion,
+            estadoOrdenServicio.idEstadoOrdenServicio
+          )
+          : [];
 
         const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoOrdenServicio.nombre);
 
@@ -1788,8 +1846,6 @@ export class OrdenServicioService {
 
         await this.notificationUpdateEmail(
           savedOrdenServicio.idOrdenServicio,
-          nombreResponsable,
-          ordenServicio.idLocacion.nombre,
           emails
         );
 
@@ -1816,26 +1872,26 @@ export class OrdenServicioService {
   // ENVIAR CORREO PARA INFORMAR ACTUALIZACION DE ORDEN DE SERVICIO
   private async notificationUpdateEmail(
     idOrdenServicio: number,
-    nombreResponsable: string,
-    locacion: string,
     emails: string[]
   ) {
 
     const ordenServicio = await this.findOneOrdenRelations(idOrdenServicio);
 
+    const descripcionEntidad = this.construirFraseEntidadOrden(ordenServicio);
+
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
         <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
-          
+
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
             <h2 style="margin: 0; font-size: 22px; font-weight: 700;">MODIFICACION ORDEN DE SERVICIO ${ordenServicio.ordenServicioId.descripcionId}</h2>
           </div>
-          
+
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día, se ha modificado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Buen día, se ha modificado una orden de servicio para ${descripcionEntidad}. <br><br>
               Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
@@ -1932,15 +1988,11 @@ export class OrdenServicioService {
       }
 
       // envio de correos que se tengan registrados en la locacion
-      const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
-
       const emails = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.ELIMINACION_ORDEN_SERVICIO);
 
       if (emails && emails.length > 0) {
         await this.notificationDeleteEmail(
           ordenServicioData,
-          nombreResponsable,
-          ordenServicio.idLocacion?.nombre || '',
           emails
         );
       }
@@ -1970,24 +2022,24 @@ export class OrdenServicioService {
   // ENVIAR CORREO PARA INFORMAR ELIMINACION DE ORDEN DE SERVICIO
   private async notificationDeleteEmail(
     ordenServicioData: OrdenServicio,
-    nombreResponsable: string,
-    locacion: string,
     emails: string[]
   ) {
+
+    const descripcionEntidad = this.construirFraseEntidadOrden(ordenServicioData);
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
         <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
-          
+
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
             <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ELIMINACION ORDEN DE SERVICIO ${ordenServicioData.ordenServicioId.descripcionId}</h2>
           </div>
-          
+
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día, se ha eliminado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Buen día, se ha eliminado una orden de servicio para ${descripcionEntidad}. <br><br>
               Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio eliminada.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
@@ -2073,13 +2125,13 @@ export class OrdenServicioService {
 
       await queryRunner.manager.save(OrdenServicio, ordenServicio);
 
-      // envio de correos que se tengan registrados en la locacion
-      const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
-
-      const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
-        ordenServicio.idLocacion.idLocacion,
-        estadoCancelada.idEstadoOrdenServicio
-      )
+      // envio de correos que se tengan registrados en la locacion (solo aplica si la orden tiene locacion, es decir, vigilancia y escolta)
+      const emailsLocacion = ordenServicio.idLocacion
+        ? await this.locacionService.getEmailsByLocacionAndEstado(
+          ordenServicio.idLocacion.idLocacion,
+          estadoCancelada.idEstadoOrdenServicio
+        )
+        : [];
 
       const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoCancelada.nombre);
 
@@ -2088,8 +2140,6 @@ export class OrdenServicioService {
       if (emails && emails.length > 0) {
         await this.notificationCanceladaEmail(
           ordenServicio,
-          nombreResponsable,
-          ordenServicio.idLocacion?.nombre || '',
           emails
         );
       }
@@ -2119,24 +2169,24 @@ export class OrdenServicioService {
   // ENVIAR CORREO PARA INFORMAR CANCELACION DE ORDEN DE SERVICIO
   private async notificationCanceladaEmail(
     ordenServicioData: OrdenServicio,
-    nombreResponsable: string,
-    locacion: string,
     emails: string[]
   ) {
+
+    const descripcionEntidad = this.construirFraseEntidadOrden(ordenServicioData);
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
         <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
-          
+
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
             <h2 style="margin: 0; font-size: 22px; font-weight: 700;">CANCELACION ORDEN DE SERVICIO ${ordenServicioData.ordenServicioId.descripcionId}</h2>
           </div>
-          
+
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día, se ha cancelado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Buen día, se ha cancelado una orden de servicio para ${descripcionEntidad}. <br><br>
               Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio cancelada.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
@@ -2249,8 +2299,6 @@ export class OrdenServicioService {
       // =========================================================
 
       // envio de correos que se tengan registrados en la locacion
-      const nombreResponsable = `${ordenServicio.idLocacion?.primerNombreResponsable || ''} ${ordenServicio.idLocacion?.primerApellidoResponsable || ''}`.trim();
-
       const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoAnulada.nombre);
 
       const emails = [...emailsApp];
@@ -2258,8 +2306,6 @@ export class OrdenServicioService {
       if (emails && emails.length > 0) {
         await this.notificationAnuladaEmail(
           ordenServicio,
-          nombreResponsable,
-          ordenServicio.idLocacion?.nombre || '',
           emails
         );
       }
@@ -2289,24 +2335,24 @@ export class OrdenServicioService {
   // ENVIAR CORREO PARA INFORMAR ANULACION DE ORDEN DE SERVICIO
   private async notificationAnuladaEmail(
     ordenServicioData: OrdenServicio,
-    nombreResponsable: string,
-    locacion: string,
     emails: string[]
   ) {
+
+    const descripcionEntidad = this.construirFraseEntidadOrden(ordenServicioData);
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
         <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
-          
+
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
             <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ANULACION ORDEN DE SERVICIO ${ordenServicioData.ordenServicioId.descripcionId}</h2>
           </div>
-          
+
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día, se ha anulado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Buen día, se ha anulado una orden de servicio para ${descripcionEntidad}. <br><br>
               Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio anulada.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
@@ -2470,10 +2516,16 @@ export class OrdenServicioService {
       .leftJoinAndSelect('o.idEstadoOrdenServicio', 'estado')
       .leftJoinAndSelect('o.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('o.idCliente', 'clienteDirecto')
       .leftJoinAndSelect('o.detalles', 'detalles')
       .leftJoinAndSelect('detalles.idTarifa', 'tarifa')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .where('o.fechaInicio BETWEEN :from AND :to', { from, to })
+      // UNA ORDEN CUENTA PARA EL RANGO SI ESTUVO VIGENTE EN ALGUN MOMENTO DENTRO DE EL (no solo si inicio dentro del
+      // rango): debe haber iniciado antes de que termine el rango, y o bien seguir indefinida (sin fecha fin) o haber
+      // terminado dentro o despues de que el rango inicio. Asi, una orden indefinida creada en agosto sigue contando
+      // en septiembre (y meses siguientes) mientras siga activa, y una orden que termino el 1 de septiembre cuenta en
+      // septiembre (que es el mes en que se factura/liquida ese dia), aunque haya iniciado en agosto
+      .where('o.fechaInicio <= :to AND (o.fechaFin IS NULL OR o.fechaFin >= :from)', { from, to })
       .getMany();
 
     // === 2. CÁLCULOS DE REPORTES ===
@@ -2493,7 +2545,9 @@ export class OrdenServicioService {
       return acc;
     }, {});
 
-    // Ordenes por mes + distribución por estado
+    // Ordenes por mes + distribución por estado: una orden cuenta en TODOS los meses del rango consultado en los que
+    // estuvo vigente (no solo en el mes de su fechaInicio), ya que la liquidacion/facturacion se hace mes a mes: una
+    // orden indefinida sigue contando cada mes mientras siga activa, y una orden que termina a mitad de un mes cuenta ese mes
     const mesesMap = {};
     const mesesLabels = [
       'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -2501,13 +2555,30 @@ export class OrdenServicioService {
     ];
 
     for (const o of ordenes) {
-      const fecha = new Date(o.fechaInicio);
-      const mes = mesesLabels[fecha.getMonth()];
-
-      if (!mesesMap[mes]) mesesMap[mes] = {};
 
       const estado = o.idEstadoOrdenServicio?.nombre;
-      mesesMap[mes][estado] = (mesesMap[mes][estado] || 0) + 1;
+
+      const fechaInicioOrden = new Date(o.fechaInicio);
+      const fechaFinOrden = o.fechaFin ? new Date(o.fechaFin) : null;
+
+      // VIGENCIA DE LA ORDEN RECORTADA AL RANGO CONSULTADO (from/to)
+      const inicioVigencia = fechaInicioOrden > from ? fechaInicioOrden : from;
+      const finVigencia = fechaFinOrden && fechaFinOrden < to ? fechaFinOrden : to;
+
+      const mesIter = new Date(inicioVigencia.getFullYear(), inicioVigencia.getMonth(), 1);
+      const mesFinVigencia = new Date(finVigencia.getFullYear(), finVigencia.getMonth(), 1);
+
+      while (mesIter <= mesFinVigencia) {
+
+        const mes = mesesLabels[mesIter.getMonth()];
+
+        if (!mesesMap[mes]) mesesMap[mes] = {};
+
+        mesesMap[mes][estado] = (mesesMap[mes][estado] || 0) + 1;
+
+        mesIter.setMonth(mesIter.getMonth() + 1);
+
+      }
     }
 
     // TOP 10 SERVICIOS MÁS UTILIZADOS
@@ -2532,7 +2603,7 @@ export class OrdenServicioService {
     const clientesCount: Record<string, number> = {};
 
     for (const o of ordenes) {
-      const cliente = o.idLocacion?.idCliente;
+      const cliente = o.idLocacion?.idCliente ?? o.idCliente;
       if (!cliente) continue;
 
       clientesCount[cliente.nombre] = (clientesCount[cliente.nombre] || 0) + 1;
@@ -2777,25 +2848,21 @@ export class OrdenServicioService {
               nuevoEstado.nombre
             );
 
-          const emailsLocacion = await this.locacionService.getEmailsByLocacionAndEstado(
-            orden.idLocacion.idLocacion,
-            nuevoEstado.idEstadoOrdenServicio
-          )
+          const emailsLocacion = orden.idLocacion
+            ? await this.locacionService.getEmailsByLocacionAndEstado(
+              orden.idLocacion.idLocacion,
+              nuevoEstado.idEstadoOrdenServicio
+            )
+            : [];
 
           const emails = [...emailsApp, ...emailsLocacion];
 
           if (emails.length > 0) {
 
-            const nombreResponsable =
-              `${orden.idLocacion?.primerNombreResponsable || ''} ${orden.idLocacion?.primerApellidoResponsable || ''}`
-                .trim();
-
             try {
 
               await this.notificationCambioEstadoEmail(
                 orden,
-                nombreResponsable,
-                orden.idLocacion?.nombre || '',
                 emails,
                 nuevoEstado.nombre
               );
@@ -2820,28 +2887,28 @@ export class OrdenServicioService {
 
   }
 
-  // ENVIAR CORREO PARA INFORMAR ANULACION DE ORDEN DE SERVICIO
+  // ENVIAR CORREO PARA INFORMAR CAMBIO DE ESTADO DE ORDEN DE SERVICIO
   private async notificationCambioEstadoEmail(
     ordenServicioData: OrdenServicio,
-    nombreResponsable: string,
-    locacion: string,
     emails: string[],
     nuevoEstado: string
   ) {
 
+    const descripcionEntidad = this.construirFraseEntidadOrden(ordenServicioData);
+
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
         <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
-          
+
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
             <h2 style="margin: 0; font-size: 22px; font-weight: 700;">ORDEN DE SERVICIO ${ordenServicioData.ordenServicioId.descripcionId} CAMBIO DE ESTADO</h2>
           </div>
-          
+
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día, se ha cambiado de estado una orden de servicio para el puesto <b>${locacion}</b> el cual tiene como responsable a <b>${nombreResponsable}</b>. <br><br>
+              Buen día, se ha cambiado de estado una orden de servicio para ${descripcionEntidad}. <br><br>
               Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">

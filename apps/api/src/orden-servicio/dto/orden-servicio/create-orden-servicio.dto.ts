@@ -154,11 +154,21 @@ export class CreateOrdenServicioDto {
     @MaxLength(100, { message: 'El campo numero orden de servicio no puede exceder los 100 caracteres' })
     numeroOrdenServicio: string;
 
-    @ApiProperty({ description: 'Id de locacion', example: 1, required:true})
+    // SOLO SE ENVIA SI EL TIPO DE SERVICIO DE LA ORDEN ES "Vigilancia y escolta". Si es "Monitoreo de alarmas" se envia idCliente en su lugar
+    @ApiProperty({ description: 'Id de locacion. Requerido si el tipo de servicio de la orden es "Vigilancia y escolta"', example: 1, required: false})
+    @IsOptional()
     @IsNumber({}, {message: 'El valor del campo locacion debe ser un número'})
     @IsPositive({message: 'El valor del campo locacion debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo locacion debe ser minimo 1'})
-    idLocacion: number;
+    idLocacion?: number;
+
+    // SOLO SE ENVIA SI EL TIPO DE SERVICIO DE LA ORDEN ES "Monitoreo de alarmas". Si es "Vigilancia y escolta" se envia idLocacion en su lugar
+    @ApiProperty({ description: 'Id de cliente. Requerido si el tipo de servicio de la orden es "Monitoreo de alarmas"', example: 1, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo cliente debe ser un número'})
+    @IsPositive({message: 'El valor del campo cliente debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo cliente debe ser minimo 1'})
+    idCliente?: number;
 
     @ApiProperty({ description: 'Fecha de inicio de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})
     @Transform(({ value }) => new Date(value))

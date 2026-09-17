@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMan
 import { TipoIdentificacion, TipoCliente } from "../../common/entities";
 import { SubSegmentacion, Locacion } from ".";
 import { NumeroPedido } from "../../liquidaciones/entities";
+import { OrdenServicio } from "../../orden-servicio/entities/orden-servicio.entity";
 
 @Entity({name: 'cliente'})
 export class Cliente {
@@ -83,10 +84,17 @@ export class Cliente {
     @OneToMany(
         () => NumeroPedido,
         (numeroPedido) => numeroPedido.idCliente,
-        { 
-            cascade: true, 
+        {
+            cascade: true,
         }
     )
     numerosPedido: NumeroPedido[];
+
+    // ordenes de servicio asignadas directamente a este cliente (servicios de tipo "Monitoreo de alarmas") -> relacion
+    @OneToMany(
+        () => OrdenServicio,
+        (ordenServicio) => ordenServicio.idCliente
+    )
+    ordenesServicio: OrdenServicio[];
 
 }

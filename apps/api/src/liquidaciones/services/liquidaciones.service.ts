@@ -113,6 +113,8 @@ export class LiquidacionesService {
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('cliente.idTipoCliente', 'tipoCliente')
       .leftJoinAndSelect('locacion.idCiudad', 'ciudad')
+      .leftJoinAndSelect('os.idCliente', 'clienteDirecto')
+      .leftJoinAndSelect('clienteDirecto.idTipoCliente', 'clienteDirectoTipoCliente')
       .leftJoinAndSelect('os.detalles', 'detalle')
       .leftJoinAndSelect('detalle.idTarifa', 'detalleTarifa')
       .leftJoinAndSelect('detalleTarifa.idServicio', 'detalleServicio')
@@ -505,6 +507,7 @@ export class LiquidacionesService {
       )
       .leftJoinAndSelect('os.idLocacion', 'l')
       .leftJoinAndSelect('l.idCliente', 'c')
+      .leftJoinAndSelect('os.idCliente', 'oc')
       .leftJoinAndSelect('t.idServicio', 's')
       .leftJoinAndSelect('s.idTipoTarifa', 'tt')
       .leftJoinAndSelect('os.idEstadoOrdenServicio', 'eos')
@@ -551,6 +554,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('ordenServicio.idCliente', 'clienteDirecto')
       // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
       // (mismo criterio que buscarGrupoLiquidaciones/findGruposPorCampoEstado, todos alimentan OrdenServicioCard)
@@ -729,6 +733,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('ordenServicio.idCliente', 'clienteDirecto')
       // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
       // (mismo criterio que buscarGrupoLiquidaciones, ambos alimentan OrdenServicioCard en el front)
@@ -778,6 +783,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('ordenServicio.idCliente', 'clienteDirecto')
       // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
       .leftJoin('liquidaciones.liquidacionServiciosOrdenServicio', 'lsos')
@@ -828,6 +834,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
+      .leftJoinAndSelect('orden.idCliente', 'clienteDirecto')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
       .orderBy('cliente.nombre', 'ASC')
       .addOrderBy('orden.idOrdenServicio', 'ASC')
@@ -843,12 +850,16 @@ export class LiquidacionesService {
     
     for (const liq of liquidaciones) {
 
-      const cliente = liq.ordenServicio.idLocacion.idClienteFacturacion ? liq.ordenServicio.idLocacion.idClienteFacturacion : liq.ordenServicio.idLocacion.idCliente;
+      // VIGILANCIA Y ESCOLTA: cliente responsable de facturacion de la locacion (o el cliente de la locacion si no tiene uno especifico).
+      // MONITOREO DE ALARMAS: el cliente asignado directamente a la orden (no tiene locacion)
+      const cliente = liq.ordenServicio.idLocacion
+        ? (liq.ordenServicio.idLocacion.idClienteFacturacion ?? liq.ordenServicio.idLocacion.idCliente)
+        : liq.ordenServicio.idCliente;
 
       const clienteId = cliente.idCliente;
       const clienteNombre = cliente.nombre;
       const clienteNit = cliente.numeroIdentificacion;
-    
+
       if (!agrupado[clienteId]) {
 
         agrupado[clienteId] = {
@@ -955,6 +966,8 @@ export class LiquidacionesService {
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
       .leftJoinAndSelect('cliente.idSubSegmentacion', 'subsegmentacion') // 🆕 nuevo join
+      .leftJoinAndSelect('orden.idCliente', 'clienteDirecto')
+      .leftJoinAndSelect('clienteDirecto.idSubSegmentacion', 'clienteDirectoSubsegmentacion')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
       .orderBy('cliente.nombre', 'ASC')
       .addOrderBy('orden.idOrdenServicio', 'ASC')
@@ -970,12 +983,16 @@ export class LiquidacionesService {
     
     for (const liq of liquidaciones) {
 
-      const cliente = liq.ordenServicio.idLocacion.idClienteFacturacion ? liq.ordenServicio.idLocacion.idClienteFacturacion : liq.ordenServicio.idLocacion.idCliente;
+      // VIGILANCIA Y ESCOLTA: cliente responsable de facturacion de la locacion (o el cliente de la locacion si no tiene uno especifico).
+      // MONITOREO DE ALARMAS: el cliente asignado directamente a la orden (no tiene locacion)
+      const cliente = liq.ordenServicio.idLocacion
+        ? (liq.ordenServicio.idLocacion.idClienteFacturacion ?? liq.ordenServicio.idLocacion.idCliente)
+        : liq.ordenServicio.idCliente;
 
       const clienteId = cliente.idCliente;
       const clienteNombre = cliente.nombre;
       const clienteNit = cliente.numeroIdentificacion;
-    
+
       if (!agrupado[clienteId]) {
 
         agrupado[clienteId] = {
@@ -997,11 +1014,17 @@ export class LiquidacionesService {
 
         const servicio = liquidacionServicioOrdenServicio.idTarifa.idServicio;
 
+        // VIGILANCIA Y ESCOLTA: sector/ciudad/puesto vienen de la locacion. MONITOREO DE ALARMAS: no hay locacion,
+        // el sector se toma del cliente directo de la orden, y no hay ciudad/puesto (se deja el nombre del cliente como puesto)
+        const sector = liq.ordenServicio.idLocacion
+          ? liq.ordenServicio.idLocacion.idCliente.idSubSegmentacion?.descripcion
+          : liq.ordenServicio.idCliente.idSubSegmentacion?.descripcion;
+
         agrupado[clienteId].servicios.push({
           ordenServicio: liq.ordenServicio.ordenServicioId.descripcionId,
-          sector: liq.ordenServicio.idLocacion.idCliente.idSubSegmentacion.descripcion,
-          ciudad: liq.ordenServicio.idLocacion.idCiudad.descripcion,
-          puesto: liq.ordenServicio.idLocacion.nombre,
+          sector: sector ?? '',
+          ciudad: liq.ordenServicio.idLocacion?.idCiudad.descripcion ?? '',
+          puesto: liq.ordenServicio.idLocacion?.nombre ?? liq.ordenServicio.idCliente?.nombre ?? '',
           descripcionServicio: servicio.descripcion,
           tipoServicio: servicio.armado ? "Armado" : "Monitoreo",
           codigoServicioSiigo: servicio.codigo,
