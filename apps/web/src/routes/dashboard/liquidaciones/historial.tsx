@@ -17,6 +17,7 @@ import {
   Search,
 } from "lucide-react";
 import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard";
+import { priceFormat } from "../../../utils/PriceFormat";
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/ObservacionesGrupoOrdenes";
 import type { GruposLiquidaciones } from "../../../api/types/liquidaciones";
@@ -109,6 +110,25 @@ function RouteComponent() {
     setGroupIdSelected(groupId);
   };
 
+  // Totales facturados de TODOS los grupos encontrados para el mes filtrado (independiente de cuales grupos
+  // esten ocultos via hiddenGroups, que es solo un toggle visual). "Antes de IVA" no se guarda a nivel de
+  // grupo, solo por liquidacion (valorLiquidacionAntesIva), por eso se suma primero por grupo y luego entre
+  // todos los grupos; "Liquidación Total" ya viene calculado por grupo (group.total, CON iva)
+  const totalAntesIvaGeneral = liquidacionesData.reduce(
+    (acc, group) =>
+      acc +
+      (group.liquidaciones ?? []).reduce(
+        (accGrupo, liquidacion) => accGrupo + Number(liquidacion.valorLiquidacionAntesIva ?? 0),
+        0,
+      ),
+    0,
+  );
+
+  const totalLiquidacionGeneral = liquidacionesData.reduce(
+    (acc, group) => acc + Number(group.total ?? 0),
+    0,
+  );
+
   return (
     <Section>
       <div className="flex flex-col gap-8">
@@ -178,6 +198,22 @@ function RouteComponent() {
               </h2>
             </div>
           </div>
+
+          <div className="mb-6 flex flex-wrap items-center justify-end gap-6 rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
+            <span className="text-sm text-gray-600">
+              Total antes de IVA:{" "}
+              <span className="font-medium text-gray-700">
+                {priceFormat(totalAntesIvaGeneral)}
+              </span>
+            </span>
+            <span className="text-sm text-gray-600">
+              Liquidación Total:{" "}
+              <span className="text-base font-semibold text-green-600">
+                {priceFormat(totalLiquidacionGeneral)}
+              </span>
+            </span>
+          </div>
+
           <div className="space-y-4">
             {liquidacionesData.map((group) => (
               <div
