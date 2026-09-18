@@ -1,7 +1,8 @@
 export interface CrearGrupoMensualDto {
   anio: number;
   mes: number;
-  ordenIds: number[];
+  ordenIds?: number[];
+  adicionalIds?: number[];
 }
 
 export interface CreateGrupoLiquidacionDto {

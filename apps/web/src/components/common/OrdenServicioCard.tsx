@@ -57,33 +57,56 @@ export const OrdenServicioCard = ({
                 });
               }}
             >
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900">
-                  {liquidacion.ordenServicio.ordenServicioId.descripcionId}
-                </h3>
-                <span
-                  className={`rounded-full border px-2 py-1 text-xs font-medium ${getStatusColor(liquidacion.ordenServicio.idEstadoOrdenServicio?.nombre || "")}`}
-                >
-                  {liquidacion.ordenServicio.idEstadoOrdenServicio?.nombre}
-                </span>
-              </div>
-
-              <div className="space-y-1 text-xs text-gray-600">
-                <div>
-                  <span className="font-medium text-gray-900">
-                    {liquidacion.ordenServicio.idLocacion?.idCliente.nombre ||
-                      liquidacion.ordenServicio.idCliente?.nombre}
-                  </span>
-                </div>
-                {/* Monitoreo de alarmas no tiene puesto/locacion asociado (va directo a un cliente, ver
-                    idCliente arriba), no hay nada que mostrar en esta linea */}
-                {liquidacion.ordenServicio.idLocacion && (
-                  <div className="text-gray-500">
-                    {liquidacion.ordenServicio.idLocacion.nombre} -{" "}
-                    {liquidacion.ordenServicio.idLocacion.direccion}
+              {liquidacion.ordenServicio ? (
+                <>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {liquidacion.ordenServicio.ordenServicioId.descripcionId}
+                    </h3>
+                    <span
+                      className={`rounded-full border px-2 py-1 text-xs font-medium ${getStatusColor(liquidacion.ordenServicio.idEstadoOrdenServicio?.nombre || "")}`}
+                    >
+                      {liquidacion.ordenServicio.idEstadoOrdenServicio?.nombre}
+                    </span>
                   </div>
-                )}
-              </div>
+
+                  <div className="space-y-1 text-xs text-gray-600">
+                    <div>
+                      <span className="font-medium text-gray-900">
+                        {liquidacion.ordenServicio.idLocacion?.idCliente.nombre ||
+                          liquidacion.ordenServicio.idCliente?.nombre}
+                      </span>
+                    </div>
+                    {/* Monitoreo de alarmas no tiene puesto/locacion asociado (va directo a un cliente, ver
+                        idCliente arriba), no hay nada que mostrar en esta linea */}
+                    {liquidacion.ordenServicio.idLocacion && (
+                      <div className="text-gray-500">
+                        {liquidacion.ordenServicio.idLocacion.nombre} -{" "}
+                        {liquidacion.ordenServicio.idLocacion.direccion}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {liquidacion.adicional?.nombre ?? `Adicional #${liquidacion.idAdicional}`}
+                    </h3>
+                    <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                      Adicional
+                    </span>
+                  </div>
+
+                  <div className="space-y-1 text-xs text-gray-600">
+                    <div>
+                      <span className="font-medium text-gray-900">
+                        {liquidacion.adicional?.idCliente?.nombre}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Valores de esta orden puntual (ya vienen en el objeto, no requiere otra consulta) */}
               <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">

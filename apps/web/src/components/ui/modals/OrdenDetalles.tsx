@@ -17,9 +17,11 @@ import type {
 import type {
   OrdenLiquidada,
   LiquidacionOrdenDetalle,
+  AdicionalLiquidado,
 } from "../../../api/types/liquidaciones";
 import { useGetLiquidacionesByOrdenId } from "../../../api/queryFunctions/orden-servicio";
 import { useGetOrdenLiquidada } from "../../../api/queryFunctions/liquidaciones";
+import { AdicionalLiquidadoDetalle } from "./AdicionalLiquidadoDetalle";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
@@ -79,9 +81,15 @@ const diasActivos = (detalle: Partial<Record<DiaSemanaKey, boolean>>) =>
     .map((dia) => DIAS_SEMANA_LABELS[dia])
     .join(", ");
 
+// Distingue el snapshot de un adicional liquidado (tipo:'adicional') del snapshot de una orden liquidada,
+// ya que ambos comparten el campo idLiquidacion — ver esSnapshotLiquidacion mas abajo
+const esAdicionalLiquidado = (
+  orden: DetalleOrdenOSnapshot | AdicionalLiquidado,
+): orden is AdicionalLiquidado => "tipo" in orden && orden.tipo === "adicional";
+
 const esSnapshotLiquidacion = (
-  orden: DetalleOrdenOSnapshot,
-): orden is OrdenLiquidada => "idLiquidacion" in orden;
+  orden: DetalleOrdenOSnapshot | AdicionalLiquidado,
+): orden is OrdenLiquidada => "idLiquidacion" in orden && !esAdicionalLiquidado(orden);
 
 // Una fila de "detalles" de la orden real o del snapshot de una liquidacion: ambas formas traen
 // idTarifa.idServicio completo (ver findOneOrdenRelations en el backend), de ahi se lee el tipo de servicio
@@ -364,19 +372,27 @@ export const OrdenDetalles = ({
 }: {
   isOpenDetails: boolean;
   setIsOpenDetails: (isOpen: boolean) => void;
-  selectedOrderDetail: DetalleOrdenOSnapshot;
+  selectedOrderDetail: DetalleOrdenOSnapshot | AdicionalLiquidado;
   setSelectedOrderDetail?: (selectedOrderDetail: OrdenServicio | null) => void;
 }) => {
   // Historial de liquidaciones de esta orden (una por mes ya liquidado). Solo aplica cuando se esta viendo la
-  // orden real, no tiene sentido mostrar "liquidaciones de esta liquidacion" dentro del snapshot de una liquidacion
-  const esSnapshot = esSnapshotLiquidacion(selectedOrderDetail);
+  // orden real, no tiene sentido mostrar "liquidaciones de esta liquidacion" dentro de ningun snapshot
+  // (ni de orden ni de adicional)
+  const esSnapshot =
+    esSnapshotLiquidacion(selectedOrderDetail) || esAdicionalLiquidado(selectedOrderDetail);
 
   const [paginaLiquidaciones, setPaginaLiquidaciones] = useState(1);
   const LIMITE_LIQUIDACIONES = 5;
 
+  // El hook debe llamarse siempre (reglas de hooks), aunque para un snapshot de adicional no aplique — por eso
+  // esta deshabilitado via esSnapshot (y ademas el propio hook se autodeshabilita con ordenId 0 via !!ordenId)
+  const idOrdenServicioParaHistorial = esAdicionalLiquidado(selectedOrderDetail)
+    ? 0
+    : selectedOrderDetail.idOrdenServicio;
+
   const { data: liquidacionesOrden, isLoading: isLoadingLiquidacionesOrden } =
     useGetLiquidacionesByOrdenId(
-      selectedOrderDetail.idOrdenServicio,
+      idOrdenServicioParaHistorial,
       paginaLiquidaciones,
       LIMITE_LIQUIDACIONES,
       isOpenDetails && !esSnapshot,
@@ -390,6 +406,28 @@ export const OrdenDetalles = ({
 
   const [isOpenLiquidacionDetalle, setIsOpenLiquidacionDetalle] =
     useState(false);
+
+  // A partir de aca selectedOrderDetail ya no puede ser un adicional liquidado (ver el return de abajo), por
+  // lo que el resto del componente puede seguir asumiendo la forma OrdenServicio/OrdenLiquidada de siempre
+  if (esAdicionalLiquidado(selectedOrderDetail)) {
+    return (
+      <SimpleModal
+        isOpen={isOpenDetails}
+        onClose={() => {
+          setIsOpenDetails(false);
+          if (setSelectedOrderDetail) {
+            setSelectedOrderDetail(null);
+          }
+        }}
+        title={`Adicional liquidado — ${formatAniomes(selectedOrderDetail.aniomes_liquidacion)}`}
+        size="3xl"
+      >
+        <div className="space-y-6 p-6">
+          <AdicionalLiquidadoDetalle detalle={selectedOrderDetail} />
+        </div>
+      </SimpleModal>
+    );
+  }
 
   // Vigilancia y escolta: el cliente se lee de la locacion (idLocacion.idCliente). Monitoreo de alarmas: la
   // orden no tiene locacion, el cliente viene asignado directo en idCliente (ver esOrdenMonitoreo en el

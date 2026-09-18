@@ -1,4 +1,4 @@
-import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, enviarCorreoArchivoLiquidacion, generarArchivoExcelLiquidacion, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial, getOrdenLiquidada } from "../../functions/liquidaciones"
+import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, enviarCorreoArchivoLiquidacion, generarArchivoExcelLiquidacion, getAdicionalesPorMes, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial, getOrdenLiquidada } from "../../functions/liquidaciones"
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
@@ -6,7 +6,8 @@ import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { OrdenServicio } from "../../types/orden-servicio";
-import type { GruposLiquidaciones, OrdenLiquidada } from "../../types";
+import type { Adicional } from "../../types/adicionales";
+import type { GruposLiquidaciones, GrupoLiquidacionCreado, OrdenOAdicionalLiquidado } from "../../types";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 import type { EnviarCorreoDto } from "../../dtos/common";
 
@@ -14,6 +15,14 @@ export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: bo
   return useQuery({
     queryKey: ["liquidaciones-por-mes", anio, mes],
     queryFn: () => getLiquidacionesPorMes(anio, mes),
+    enabled: !!anio && !!mes && enabled,
+  });
+};
+
+export const useGetAdicionalesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<Adicional[]>, Error> => {
+  return useQuery({
+    queryKey: ["adicionales-por-mes", anio, mes],
+    queryFn: () => getAdicionalesPorMes(anio, mes),
     enabled: !!anio && !!mes && enabled,
   });
 };
@@ -26,13 +35,14 @@ export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, en
   });
 };
 
-export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<OrdenServicio>, Error, CrearGrupoMensualDto> => {
+export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<GrupoLiquidacionCreado>, Error, CrearGrupoMensualDto> => {
   return useMutation({
     mutationFn: (data: CrearGrupoMensualDto) => crearLiquidacionMensual(data),
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
         toast.success("Liquidación mensual creada correctamente");
         queryClient.invalidateQueries({ queryKey: ["liquidaciones-por-mes"] });
+        queryClient.invalidateQueries({ queryKey: ["adicionales-por-mes"] });
       } else {
         showErrorToast(data.message, "Error al crear la liquidación mensual");
       }
@@ -43,10 +53,10 @@ export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<Orde
   });
 };
 
-// Detalle de una orden liquidada (findOne de la orden, con los precios reales de esa liquidacion especifica).
-// Se modela como mutation (igual que useGetOrdenServicioById) porque se dispara al hacer clic sobre una
-// liquidacion puntual, no como parte de la carga inicial de una pantalla
-export const useGetOrdenLiquidada = (): UseMutationResult<ApiResponse<OrdenLiquidada>, Error, number> => {
+// Detalle de una liquidacion (orden o adicional, discriminado por `tipo`), con los precios reales de esa
+// liquidacion especifica. Se modela como mutation (igual que useGetOrdenServicioById) porque se dispara al
+// hacer clic sobre una liquidacion puntual, no como parte de la carga inicial de una pantalla
+export const useGetOrdenLiquidada = (): UseMutationResult<ApiResponse<OrdenOAdicionalLiquidado>, Error, number> => {
   return useMutation({
     mutationFn: (idLiquidacion: number) => getOrdenLiquidada(idLiquidacion),
     onError: (error) => {

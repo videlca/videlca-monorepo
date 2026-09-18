@@ -1,8 +1,9 @@
 import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
 import type { OrdenServicio } from "../../types/orden-servicio";
+import type { Adicional } from "../../types/adicionales";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
-import type { GruposLiquidaciones, OrdenLiquidada } from "../../types/liquidaciones";
+import type { GruposLiquidaciones, GrupoLiquidacionCreado, OrdenOAdicionalLiquidado } from "../../types/liquidaciones";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 import type { EnviarCorreoDto } from "../../dtos";
 
@@ -10,18 +11,23 @@ export const getLiquidacionesPorMes = async (anio: number, mes: number): Promise
   return await apiGet<OrdenServicio[]>(`/liquidaciones/ordenes-por-mes?anio=${anio}&mes=${mes}`);
 };
 
-// Detalle de una orden "como el findOne normal", pero con los precios reales de una liquidacion (mes) especifica
-// en vez del total de toda la orden. Ver OrdenLiquidada para la forma exacta de la respuesta
-export const getOrdenLiquidada = async (idLiquidacion: number): Promise<ApiResponse<OrdenLiquidada>> => {
-  return await apiGet<OrdenLiquidada>(`/liquidaciones/${idLiquidacion}/orden`);
+export const getAdicionalesPorMes = async (anio: number, mes: number): Promise<ApiResponse<Adicional[]>> => {
+  return await apiGet<Adicional[]>(`/liquidaciones/adicionales-por-mes?anio=${anio}&mes=${mes}`);
+};
+
+// Detalle de una liquidacion "como el findOne normal" de lo que se liquido (orden o adicional), pero con los
+// precios reales de esa liquidacion (mes) especifica en vez del total actual. Discriminado por `tipo` — ver
+// OrdenOAdicionalLiquidado para la forma exacta de cada rama de la respuesta
+export const getOrdenLiquidada = async (idLiquidacion: number): Promise<ApiResponse<OrdenOAdicionalLiquidado>> => {
+  return await apiGet<OrdenOAdicionalLiquidado>(`/liquidaciones/${idLiquidacion}/orden`);
 };
 
 export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number): Promise<ApiResponse<GruposLiquidaciones[]>> => {
   return await apiGet<GruposLiquidaciones[]>(`/liquidaciones/historial-liquidaciones-aprobadas?anio=${anio}&mes=${mes}`);
 };
 
-export const crearLiquidacionMensual = async (data: CrearGrupoMensualDto): Promise<ApiResponse<OrdenServicio>> => {
-  return await apiPost<OrdenServicio>(`/liquidaciones/generar-mes`, data);
+export const crearLiquidacionMensual = async (data: CrearGrupoMensualDto): Promise<ApiResponse<GrupoLiquidacionCreado>> => {
+  return await apiPost<GrupoLiquidacionCreado>(`/liquidaciones/generar-mes`, data);
 };
 
 // Grupos de liquidaciones
