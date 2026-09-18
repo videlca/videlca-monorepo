@@ -111,10 +111,17 @@ export class LiquidacionesService {
       .leftJoinAndSelect('os.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.correos', 'correos')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
+      .leftJoinAndSelect('cliente.idSubSegmentacion', 'subsegmentacion')
+      // SubSegmentacion.segmentacion es "eager: true" en la entidad (ver sub-segmentacion.entity.ts), pero
+      // igual que con Servicio arriba eso no aplica con createQueryBuilder: hay que unirla a mano. La columna
+      // de BD se llama "idSegmentacion" pero la propiedad de la entidad es "segmentacion", no "idSegmentacion"
+      .leftJoinAndSelect('subsegmentacion.segmentacion', 'segmentacion')
       .leftJoinAndSelect('cliente.idTipoCliente', 'tipoCliente')
       .leftJoinAndSelect('locacion.idCiudad', 'ciudad')
       .leftJoinAndSelect('os.idCliente', 'clienteDirecto')
       .leftJoinAndSelect('clienteDirecto.idTipoCliente', 'clienteDirectoTipoCliente')
+      .leftJoinAndSelect('clienteDirecto.idSubSegmentacion', 'clienteDirectoSubsegmentacion')
+      .leftJoinAndSelect('clienteDirectoSubsegmentacion.segmentacion', 'clienteDirectoSegmentacion')
       .leftJoinAndSelect('os.detalles', 'detalle')
       .leftJoinAndSelect('detalle.idTarifa', 'detalleTarifa')
       .leftJoinAndSelect('detalleTarifa.idServicio', 'detalleServicio')
