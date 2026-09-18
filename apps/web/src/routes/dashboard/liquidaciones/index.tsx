@@ -244,16 +244,21 @@ function RouteComponent() {
                   <div className="col-span-2 md:col-span-1 lg:col-span-1">
                     <span className="font-medium text-gray-500">Cliente:</span>
                     <p className="text-gray-900">
-                      {order.idLocacion?.idCliente?.nombre}
+                      {order.idLocacion?.idCliente?.nombre ||
+                        order.idCliente?.nombre}
                     </p>
                   </div>
 
-                  <div className="col-span-2 md:col-span-1 lg:col-span-1">
-                    <span className="font-medium text-gray-500">Puesto:</span>
-                    <p className="whitespace-nowrap text-gray-900">
-                      {`${order.idLocacion?.nombre} - ${order.idLocacion?.direccion}`}
-                    </p>
-                  </div>
+                  {/* Monitoreo de alarmas no tiene puesto/locacion asociado (va directo a un cliente, ver
+                      "Cliente" arriba), no hay nada que mostrar aca */}
+                  {order.idLocacion && (
+                    <div className="col-span-2 md:col-span-1 lg:col-span-1">
+                      <span className="font-medium text-gray-500">Puesto:</span>
+                      <p className="whitespace-nowrap text-gray-900">
+                        {`${order.idLocacion.nombre} - ${order.idLocacion.direccion}`}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2 space-y-2 text-sm md:grid-cols-3">
                   <div className="col-span-2 md:col-span-1 lg:col-span-1">

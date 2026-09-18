@@ -48,7 +48,7 @@ export const ObservacionesOrdenServicio = ({
         setIsOpenObservaciones(false);
         setSelectedOrderDetail(null);
       }}
-      title={`Observaciones: ${selectedOrderDetail?.ordenServicioId?.descripcionId || ""} - ${selectedOrderDetail?.idLocacion?.idCliente?.nombre || ""}`}
+      title={`Observaciones: ${selectedOrderDetail?.ordenServicioId?.descripcionId || ""} - ${selectedOrderDetail?.idLocacion?.idCliente?.nombre || selectedOrderDetail?.idCliente?.nombre || ""}`}
       size="xl"
     >
       {/* Comments List */}

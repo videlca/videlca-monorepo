@@ -9,7 +9,9 @@ export enum OrigenServicioEnum {
 export interface CreateOrdenServicioDto {
   origenServicio: OrigenServicioEnum;
   numeroOrdenServicio: string;
-  idLocacion: number;
+  // Vigilancia y escolta envia idLocacion, Monitoreo de alarmas envia idCliente (nunca ambos)
+  idLocacion?: number;
+  idCliente?: number;
   fechaInicio: string;
   fechaFin: string | null;
   // Solo se usa en el front para mostrar el total en el paso de vista previa (PreviewInformacionOrden):

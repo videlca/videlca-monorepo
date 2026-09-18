@@ -44,7 +44,7 @@ import { timeFormat } from "../../../utils/TimeFormat";
 import { dateFormat } from "../../../utils/DateFormat";
 
 import { OrderStateLabel } from "../../../components/common/OrderStateLabel";
-import type { Puesto } from "../../../types";
+import type { Cliente, Puesto } from "../../../types";
 import { toast } from "sonner";
 import type { Servicio } from "../../../api/types/servicio";
 import type { Tarifa } from "../../../api/types/periodo";
@@ -57,6 +57,7 @@ import { ConfigurarHorarioAMedida } from "../../../components/common/stepsOrdenS
 import { AsignacionPersonalServicio } from "../../../components/common/stepsOrdenServicio/AsignacionPersonalServicio";
 import { PreviewInformacionOrden } from "../../../components/common/stepsOrdenServicio/PreviewInformacionOrden";
 import { SeleccionarPuestoCliente } from "../../../components/common/stepsOrdenServicio/SeleccionarPuestoCliente";
+import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "../../../components/common/stepsOrdenServicio/tipoServicioConstantes";
 import { ObservacionesOrdenServicio } from "../../../components/ui/modals/ObservacionesOrdenServicio";
 import { useGetObservacionesOrdenServicio } from "../../../api/queryFunctions/orden-servicio/observaciones";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
@@ -102,6 +103,7 @@ function RouteComponent() {
   }>({ prefijo: "", codigo: 0, codigoTipoServicio: 0 });
 
   const [selectedPuesto, setSelectedPuesto] = useState<Puesto | null>(null);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [selectedServices, setSelectedServices] = useState<Servicio[]>([]);
 
   const [mensajeRespuesta, setMensajeRespuesta] = useState<string>("");
@@ -249,11 +251,21 @@ function RouteComponent() {
   const [selectedOrderDetail, setSelectedOrderDetail] =
     useState<OrdenServicio | null>(null);
 
+  // Tipo de servicio seleccionado en el paso 1 (usado en el paso 2 para saber si se debe buscar cliente o
+  // locacion, y en el paso 4 para saber si se debe preguntar el origen de la orden o fijarlo automaticamente,
+  // ver SeleccionarPuestoCliente y SeleccionarOrigenServicio)
+  const tipoServicioSeleccionado = tipoServiciosQuery?.data?.data?.find(
+    (tipo) => tipo.idTipoServicio === identificador.codigoTipoServicio,
+  );
+  const esOrdenMonitoreo =
+    tipoServicioSeleccionado?.nombre === TIPO_SERVICIO_MONITOREO_ALARMAS;
+
   const handleCloseModal = () => {
     setIsOpenAdd(false);
     setIsEditing(false);
     setCurrentStep(1);
     setSelectedPuesto(null);
+    setSelectedCliente(null);
     setConfiguracionServicioTarifa([]);
     setSelectedServices([]);
     setIsIndefinite(false);
@@ -734,10 +746,14 @@ function RouteComponent() {
       precio: servicio.precio,
     }));
 
+    // Vigilancia y escolta envia idLocacion, Monitoreo de alarmas envia idCliente (nunca ambos): el backend
+    // rechaza idLocacion en 0 aunque el campo sea opcional (@IsPositive), por eso no se envia cuando no aplica
     const ordenesDeServicioMutation: CreateOrdenServicioDto = {
       origenServicio: origenServicio || OrigenServicioEnum.CATALOGO,
       numeroOrdenServicio: data.numeroOrdenServicio,
-      idLocacion: data.idLocacion || 0,
+      ...(esOrdenMonitoreo
+        ? { idCliente: data.idCliente || 0 }
+        : { idLocacion: data.idLocacion || 0 }),
       fechaInicio: data.fechaInicio,
       fechaFin: isIndefinite ? null : data.fechaFin,
       fechaCreacion: new Date().toISOString(),
@@ -1017,9 +1033,13 @@ function RouteComponent() {
     {
       header: "cliente",
       accessorKey: "idLocacion.idCliente.nombre",
+      // Vigilancia y escolta: cliente del puesto. Monitoreo de alarmas: cliente asignado directo a la orden
+      // (idLocacion es null en ese caso, ver esOrdenMonitoreo)
       cell: ({ row }) => (
         <span className="font-medium whitespace-nowrap text-black capitalize">
-          {row.original.idLocacion?.idCliente.nombre || "No especificado"}
+          {row.original.idLocacion?.idCliente.nombre ||
+            row.original.idCliente?.nombre ||
+            "No especificado"}
         </span>
       ),
     },
@@ -1028,7 +1048,8 @@ function RouteComponent() {
       header: "Puesto",
       cell: ({ row }) => (
         <span className="flex flex-col gap-1 font-medium whitespace-nowrap text-black capitalize">
-          {row.original.idLocacion?.nombre || "No especificado"}
+          {row.original.idLocacion?.nombre ||
+            (row.original.idCliente ? "N/A (Monitoreo de alarmas)" : "No especificado")}
           <span className="text-sm text-gray-500">
             {row.original.idLocacion?.direccion}
           </span>
@@ -1161,12 +1182,6 @@ function RouteComponent() {
     },
   ];
 
-  // Tipo de servicio seleccionado en el paso 1 (usado en el paso 4 para saber si se debe preguntar el origen
-  // de la orden o fijarlo automaticamente, ver SeleccionarOrigenServicio)
-  const tipoServicioSeleccionado = tipoServiciosQuery?.data?.data?.find(
-    (tipo) => tipo.idTipoServicio === identificador.codigoTipoServicio,
-  );
-
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -1181,9 +1196,12 @@ function RouteComponent() {
       case 2:
         return (
           <SeleccionarPuestoCliente
-            idLocacion={watchCreate("idLocacion")}
+            idLocacion={watchCreate("idLocacion") || 0}
+            idCliente={watchCreate("idCliente") || 0}
             setValue={setValueCreate}
             setSelectedPuesto={setSelectedPuesto}
+            setSelectedCliente={setSelectedCliente}
+            esOrdenMonitoreo={esOrdenMonitoreo}
           />
         );
 
@@ -1251,6 +1269,7 @@ function RouteComponent() {
         return origenServicio === OrigenServicioEnum.A_MEDIDA ? (
           <PreviewInformacionOrden
             selectedPuesto={selectedPuesto}
+            selectedCliente={selectedCliente}
             formOrdenServicio={watchCreate()}
             configuracionServicioTarifa={configuracionServicioTarifa}
             selectedServices={selectedServices}
@@ -1271,6 +1290,7 @@ function RouteComponent() {
         return (
           <PreviewInformacionOrden
             selectedPuesto={selectedPuesto}
+            selectedCliente={selectedCliente}
             formOrdenServicio={watchCreate()}
             configuracionServicioTarifa={configuracionServicioTarifa}
             selectedServices={selectedServices}
@@ -1324,6 +1344,7 @@ function RouteComponent() {
           <PreviewInformacionOrden
             isEditing={isEditing}
             selectedPuesto={selectedOrderDetail?.idLocacion || null}
+            selectedCliente={selectedOrderDetail?.idCliente || null}
             formOrdenServicio={watchEdit()}
             configuracionServicioTarifa={configuracionServicioTarifaEdit}
             selectedServices={selectedServices}
@@ -1460,7 +1481,10 @@ function RouteComponent() {
                   (currentStep === 1 &&
                     (identificador.codigoTipoServicio === 0 ||
                       identificador.codigo === 0)) ||
-                  (currentStep === 2 && !watchCreate("idLocacion")) ||
+                  (currentStep === 2 &&
+                    (esOrdenMonitoreo
+                      ? !watchCreate("idCliente")
+                      : !watchCreate("idLocacion"))) ||
                   (currentStep === 3 && !watchCreate("fechaInicio")) ||
                   (currentStep === 4 && !origenServicio) ||
                   (currentStep === 5 &&

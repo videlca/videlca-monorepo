@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Building2,
   Calendar,
   CheckCircle2,
   CircleDollarSign,
@@ -390,6 +391,11 @@ export const OrdenDetalles = ({
   const [isOpenLiquidacionDetalle, setIsOpenLiquidacionDetalle] =
     useState(false);
 
+  // Vigilancia y escolta: el cliente se lee de la locacion (idLocacion.idCliente). Monitoreo de alarmas: la
+  // orden no tiene locacion, el cliente viene asignado directo en idCliente (ver esOrdenMonitoreo en el
+  // wizard de creacion)
+  const cliente = selectedOrderDetail.idLocacion?.idCliente ?? selectedOrderDetail.idCliente;
+
   return (
     <>
     <SimpleModal
@@ -416,108 +422,108 @@ export const OrdenDetalles = ({
             toda la orden.
           </div>
         )}
-        {/* Puesto */}
+        {/* Puesto: solo aplica a ordenes de "Vigilancia y escolta" (idLocacion). Las de "Monitoreo de
+            alarmas" van directo a un cliente, sin puesto/locacion asociado */}
+        {selectedOrderDetail.idLocacion && (
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="mb-3 flex items-center space-x-2">
+              <MapPin className="h-5 w-5 text-orange-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Puesto</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Nombre</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.nombre || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Dirección</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.direccion || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Responsable</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.primerNombreResponsable}{" "}
+                  {selectedOrderDetail.idLocacion?.primerApellidoResponsable}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Teléfono</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.telefono || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Coordenadas</p>
+                <p className="text-base text-gray-900">
+                  Lat: {selectedOrderDetail.idLocacion?.latitud}, Long:{" "}
+                  {selectedOrderDetail.idLocacion?.longitud}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Ciudad</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.idCiudad?.descripcion},{" "}
+                  {
+                    selectedOrderDetail.idLocacion?.idCiudad?.departamento
+                      ?.descripcion
+                  }
+                  ,{" "}
+                  {
+                    selectedOrderDetail.idLocacion?.idCiudad?.departamento?.pais
+                      ?.descripcion
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cliente: para "Vigilancia y escolta" es el cliente del puesto, para "Monitoreo de alarmas" es el
+            cliente asignado directo a la orden (ver "cliente" mas arriba) */}
         <div className="rounded-lg border border-gray-200 p-4">
           <div className="mb-3 flex items-center space-x-2">
-            <MapPin className="h-5 w-5 text-orange-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Puesto</h3>
+            <Building2 className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Información del Cliente
+            </h3>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <p className="text-sm font-medium text-gray-600">Nombre</p>
               <p className="text-base text-gray-900">
-                {selectedOrderDetail.idLocacion?.nombre || "N/A"}
+                {cliente?.nombre || "N/A"}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Dirección</p>
+              <p className="text-sm font-medium text-gray-600">
+                Identificación
+              </p>
               <p className="text-base text-gray-900">
-                {selectedOrderDetail.idLocacion?.direccion || "N/A"}
+                {cliente?.idTipoIdentificacion?.descripcion}
+                {": "}
+                {cliente?.numeroIdentificacion}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Responsable</p>
+              <p className="text-sm font-medium text-gray-600">
+                Tipo de Cliente
+              </p>
               <p className="text-base text-gray-900">
-                {selectedOrderDetail.idLocacion?.primerNombreResponsable}{" "}
-                {selectedOrderDetail.idLocacion?.primerApellidoResponsable}
+                {cliente?.idTipoCliente?.descripcion || "N/A"}
               </p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Teléfono</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idLocacion?.telefono || "N/A"}
+              <p className="text-sm font-medium text-gray-600">
+                Segmentación
               </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Coordenadas</p>
               <p className="text-base text-gray-900">
-                Lat: {selectedOrderDetail.idLocacion?.latitud}, Long:{" "}
-                {selectedOrderDetail.idLocacion?.longitud}
+                {cliente?.idSubSegmentacion?.segmentacion?.descripcion ||
+                  "N/A"}
               </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Ciudad</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idLocacion?.idCiudad?.descripcion},{" "}
-                {
-                  selectedOrderDetail.idLocacion?.idCiudad?.departamento
-                    ?.descripcion
-                }
-                ,{" "}
-                {
-                  selectedOrderDetail.idLocacion?.idCiudad?.departamento?.pais
-                    ?.descripcion
-                }
-              </p>
-            </div>
-          </div>
-
-          {/* Cliente */}
-          <div className="mt-4 border-t border-gray-300 pt-4">
-            <h4 className="mb-3 text-base font-semibold text-gray-900">
-              Información del Cliente
-            </h4>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Nombre</p>
-                <p className="text-base text-gray-900">
-                  {selectedOrderDetail.idLocacion?.idCliente?.nombre || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Identificación
-                </p>
-                <p className="text-base text-gray-900">
-                  {
-                    selectedOrderDetail.idLocacion?.idCliente
-                      ?.idTipoIdentificacion?.descripcion
-                  }
-                  :{" "}
-                  {
-                    selectedOrderDetail.idLocacion?.idCliente
-                      ?.numeroIdentificacion
-                  }
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Tipo de Cliente
-                </p>
-                <p className="text-base text-gray-900">
-                  {selectedOrderDetail.idLocacion?.idCliente?.idTipoCliente
-                    ?.descripcion || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Segmentación
-                </p>
-                <p className="text-base text-gray-900">
-                  {selectedOrderDetail.idLocacion?.idCliente?.idSubSegmentacion
-                    ?.segmentacion?.descripcion || "N/A"}
-                </p>
-              </div>
             </div>
           </div>
         </div>

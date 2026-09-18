@@ -1,4 +1,4 @@
-import type { EstadoOrden, Puesto, Usuario } from "../../types";
+import type { Cliente, EstadoOrden, Puesto, Usuario } from "../../types";
 import type { GruposLiquidaciones } from "./liquidaciones";
 import type { Tarifa } from "./periodo";
 import type { PersonalAsignado } from "./programacion-personal";
@@ -8,7 +8,9 @@ export interface OrdenServicio {
   ordenServicioId: OrdenServicioId;
   idUsuarioCreacion: Usuario;
   idEstadoOrdenServicio: EstadoOrden;
-  idLocacion: Puesto;
+  // Vigilancia y escolta trae idLocacion (idCliente null), Monitoreo de alarmas trae idCliente (idLocacion null)
+  idLocacion: Puesto | null;
+  idCliente: Cliente | null;
   fechaInicio: string;
   fechaFin: string;
   fechaInicioOrden: string;

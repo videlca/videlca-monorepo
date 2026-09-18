@@ -11,7 +11,7 @@ import {
 import { useState } from "react";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
-import type { Puesto } from "../../../types";
+import type { Cliente, Puesto } from "../../../types";
 import type {
   CreateOrdenServicioDto,
   UpdateOrdenServicioDto,
@@ -255,6 +255,7 @@ const renderServicioCard = (
 export const PreviewInformacionOrden = ({
   isEditing = false,
   selectedPuesto,
+  selectedCliente = null,
   formOrdenServicio,
   configuracionServicioTarifa,
   selectedServices,
@@ -264,6 +265,8 @@ export const PreviewInformacionOrden = ({
 }: {
   isEditing?: boolean;
   selectedPuesto: Puesto | null;
+  // Solo tiene valor para ordenes de tipo "Monitoreo de alarmas" (van directo a un cliente, sin puesto/locacion)
+  selectedCliente?: Cliente | null;
   formOrdenServicio: CreateOrdenServicioDto | UpdateOrdenServicioDto;
   configuracionServicioTarifa:
     | CreateOrdenServicioTarifaDto[]
@@ -285,61 +288,96 @@ export const PreviewInformacionOrden = ({
       </div>
 
       <div className="space-y-6">
-        {/* Información del Cliente y Ubicación */}
+        {/* Información del Cliente (Monitoreo de alarmas) o Cliente y Ubicación (Vigilancia y escolta): una
+            orden de Monitoreo va directa a un cliente, sin puesto/locacion asociado, por lo que no hay
+            informacion de ubicacion que mostrar (ver SeleccionarPuestoCliente) */}
         <div className="rounded-lg border border-gray-200 p-4">
           <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
             <Building2 className="h-6 w-6 text-blue-600" />
-            Cliente y Ubicación
+            {selectedCliente ? "Cliente" : "Cliente y Ubicación"}
           </h4>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Cliente:</span>{" "}
-                <span className="text-gray-600">
-                  {selectedPuesto?.idCliente.nombre}
-                </span>
-              </p>
-              {selectedPuesto?.idClienteFacturacion && (
+          {selectedCliente ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
                 <p className="text-sm">
-                  <span className="font-medium text-gray-700">Cliente Facturación:</span>{" "}
+                  <span className="font-medium text-gray-700">Cliente:</span>{" "}
+                  <span className="text-gray-600">{selectedCliente.nombre}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Identificación:</span>{" "}
                   <span className="text-gray-600">
-                    {selectedPuesto.idClienteFacturacion.nombre}
+                    {selectedCliente.numeroIdentificacion}
                   </span>
                 </p>
-              )}
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Ubicación:</span>{" "}
-                <span className="text-gray-600">{selectedPuesto?.nombre}</span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Dirección:</span>{" "}
-                <span className="text-gray-600">
-                  {selectedPuesto?.direccion}
-                </span>
-              </p>
+              </div>
+              <div>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Tipo de Cliente:</span>{" "}
+                  <span className="text-gray-600">
+                    {selectedCliente.idTipoCliente?.descripcion}
+                  </span>
+                </p>
+                {selectedCliente.idSubSegmentacion && (
+                  <p className="text-sm">
+                    <span className="font-medium text-gray-700">Subsegmentación:</span>{" "}
+                    <span className="text-gray-600">
+                      {selectedCliente.idSubSegmentacion.descripcion}
+                    </span>
+                  </p>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Ciudad:</span>{" "}
-                <span className="text-gray-600">
-                  {selectedPuesto?.idCiudad.descripcion}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Responsable:</span>{" "}
-                <span className="text-gray-600">
-                  {selectedPuesto?.primerNombreResponsable}{" "}
-                  {selectedPuesto?.primerApellidoResponsable}
-                </span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">Teléfono:</span>{" "}
-                <span className="text-gray-600">
-                  {selectedPuesto?.telefono}
-                </span>
-              </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Cliente:</span>{" "}
+                  <span className="text-gray-600">
+                    {selectedPuesto?.idCliente.nombre}
+                  </span>
+                </p>
+                {selectedPuesto?.idClienteFacturacion && (
+                  <p className="text-sm">
+                    <span className="font-medium text-gray-700">Cliente Facturación:</span>{" "}
+                    <span className="text-gray-600">
+                      {selectedPuesto.idClienteFacturacion.nombre}
+                    </span>
+                  </p>
+                )}
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Ubicación:</span>{" "}
+                  <span className="text-gray-600">{selectedPuesto?.nombre}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Dirección:</span>{" "}
+                  <span className="text-gray-600">
+                    {selectedPuesto?.direccion}
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Ciudad:</span>{" "}
+                  <span className="text-gray-600">
+                    {selectedPuesto?.idCiudad.descripcion}
+                  </span>
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Responsable:</span>{" "}
+                  <span className="text-gray-600">
+                    {selectedPuesto?.primerNombreResponsable}{" "}
+                    {selectedPuesto?.primerApellidoResponsable}
+                  </span>
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">Teléfono:</span>{" "}
+                  <span className="text-gray-600">
+                    {selectedPuesto?.telefono}
+                  </span>
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Fechas de la orden: son las mismas para todos los servicios, se muestran una sola vez.

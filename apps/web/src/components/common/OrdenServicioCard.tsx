@@ -71,13 +71,18 @@ export const OrdenServicioCard = ({
               <div className="space-y-1 text-xs text-gray-600">
                 <div>
                   <span className="font-medium text-gray-900">
-                    {liquidacion.ordenServicio.idLocacion?.idCliente.nombre}
+                    {liquidacion.ordenServicio.idLocacion?.idCliente.nombre ||
+                      liquidacion.ordenServicio.idCliente?.nombre}
                   </span>
                 </div>
-                <div className="text-gray-500">
-                  {liquidacion.ordenServicio.idLocacion?.nombre} -{" "}
-                  {liquidacion.ordenServicio.idLocacion?.direccion}
-                </div>
+                {/* Monitoreo de alarmas no tiene puesto/locacion asociado (va directo a un cliente, ver
+                    idCliente arriba), no hay nada que mostrar en esta linea */}
+                {liquidacion.ordenServicio.idLocacion && (
+                  <div className="text-gray-500">
+                    {liquidacion.ordenServicio.idLocacion.nombre} -{" "}
+                    {liquidacion.ordenServicio.idLocacion.direccion}
+                  </div>
+                )}
               </div>
 
               {/* Valores de esta orden puntual (ya vienen en el objeto, no requiere otra consulta) */}
