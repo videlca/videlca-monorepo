@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, BeforeIn
 import { TipoIdentificacion } from "../../common/entities";
 import { Role } from "../../permissions/entities";
 import { OrdenServicio, ObservacionOrdenServicio } from "../../orden-servicio/entities";
+import { Adicional } from "../../adicionales/entities/adicional.entity";
 
 @Entity({name: 'usuario'})
 export class User {
@@ -101,6 +102,12 @@ export class User {
         {cascade: true}
     )
     observacionesOrdenServicio: ObservacionOrdenServicio[];
+
+    @OneToMany(
+        () => Adicional,
+        (adicional) => adicional.idUsuarioCreacion
+    )
+    adicionales: Adicional[];
 
     @BeforeInsert()
     checkFieldsBeforeInsert(){

@@ -20,6 +20,7 @@ import { PeriodosModule } from './periodos/periodos.module';
 import { OrdenServicioModule } from './orden-servicio/orden-servicio.module';
 import { LiquidacionesModule } from './liquidaciones/liquidaciones.module';
 import { ReportesModule } from './reportes/reportes.module';
+import { AdicionalesModule } from './adicionales/adicionales.module';
 
 @Module({
   imports: [
@@ -64,11 +65,13 @@ import { ReportesModule } from './reportes/reportes.module';
     
     CommonModule, 
     
-    LiquidacionesModule, 
-    
+    LiquidacionesModule,
+
     ReportesModule,
-    
-    SeedModule, 
+
+    AdicionalesModule,
+
+    SeedModule,
     
   ],
   controllers: [],

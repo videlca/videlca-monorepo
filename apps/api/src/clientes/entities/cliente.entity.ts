@@ -3,6 +3,7 @@ import { TipoIdentificacion, TipoCliente } from "../../common/entities";
 import { SubSegmentacion, Locacion } from ".";
 import { NumeroPedido } from "../../liquidaciones/entities";
 import { OrdenServicio } from "../../orden-servicio/entities/orden-servicio.entity";
+import { Adicional } from "../../adicionales/entities/adicional.entity";
 
 @Entity({name: 'cliente'})
 export class Cliente {
@@ -96,5 +97,12 @@ export class Cliente {
         (ordenServicio) => ordenServicio.idCliente
     )
     ordenesServicio: OrdenServicio[];
+
+    // adicionales cobrados a este cliente -> relacion
+    @OneToMany(
+        () => Adicional,
+        (adicional) => adicional.idCliente
+    )
+    adicionales: Adicional[];
 
 }
