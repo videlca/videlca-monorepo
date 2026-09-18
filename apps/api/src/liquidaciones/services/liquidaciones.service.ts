@@ -703,6 +703,8 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('ordenServicio.idCliente', 'clienteDirecto')
+      .leftJoinAndSelect('liquidaciones.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
       // (mismo criterio que buscarGrupoLiquidaciones/findGruposPorCampoEstado, todos alimentan OrdenServicioCard)
@@ -715,10 +717,12 @@ export class LiquidacionesService {
       liquidaciones: grupo.liquidaciones.map(({ liquidacionServiciosOrdenServicio, ...liquidacion }) => ({
         ...liquidacion,
         valorLiquidacionAntesIva: round2(
-          (liquidacionServiciosOrdenServicio ?? []).reduce(
-            (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
-            0,
-          ),
+          liquidacion.idAdicional != null
+            ? Number(liquidacion.precioAntesIva ?? 0)
+            : (liquidacionServiciosOrdenServicio ?? []).reduce(
+                (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
+                0,
+              ),
         ),
       })),
     }));
@@ -882,6 +886,8 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('ordenServicio.idCliente', 'clienteDirecto')
+      .leftJoinAndSelect('liquidaciones.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
       // (mismo criterio que buscarGrupoLiquidaciones, ambos alimentan OrdenServicioCard en el front)
@@ -911,10 +917,12 @@ export class LiquidacionesService {
         liquidaciones: grupo.liquidaciones.map(({ liquidacionServiciosOrdenServicio, ...liquidacion }) => ({
           ...liquidacion,
           valorLiquidacionAntesIva: round2(
-            (liquidacionServiciosOrdenServicio ?? []).reduce(
-              (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
-              0,
-            ),
+            liquidacion.idAdicional != null
+              ? Number(liquidacion.precioAntesIva ?? 0)
+              : (liquidacionServiciosOrdenServicio ?? []).reduce(
+                  (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
+                  0,
+                ),
           ),
         })),
       }));
@@ -932,6 +940,8 @@ export class LiquidacionesService {
       .leftJoinAndSelect('ordenServicio.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('ordenServicio.idCliente', 'clienteDirecto')
+      .leftJoinAndSelect('liquidaciones.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
       .leftJoin('liquidaciones.liquidacionServiciosOrdenServicio', 'lsos')
@@ -943,10 +953,12 @@ export class LiquidacionesService {
       liquidaciones: grupo.liquidaciones.map(({ liquidacionServiciosOrdenServicio, ...liquidacion }) => ({
         ...liquidacion,
         valorLiquidacionAntesIva: round2(
-          (liquidacionServiciosOrdenServicio ?? []).reduce(
-            (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
-            0,
-          ),
+          liquidacion.idAdicional != null
+            ? Number(liquidacion.precioAntesIva ?? 0)
+            : (liquidacionServiciosOrdenServicio ?? []).reduce(
+                (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
+                0,
+              ),
         ),
       })),
     }));
