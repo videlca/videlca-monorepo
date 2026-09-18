@@ -895,7 +895,11 @@ export class LiquidacionesService {
       .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva'])
 
       if (campo === 'consolidacion_orden') {
-        query.where(`grupo.consolidacion_orden = :valor`, { valor: valor === 'true' });
+        // Prerrequisito: el grupo debe estar aprobado (estado=true) antes de poder consolidarse. Sin este
+        // filtro, un grupo recien creado (estado=false, consolidacion_orden=false por defecto) ya cumplia
+        // consolidacion_orden=false y aparecia aca sin haber pasado por la aprobacion
+        query.where('grupo.estado = :aprobado', { aprobado: true })
+             .andWhere('grupo.consolidacion_orden = :valor', { valor: valor === 'true' });
       }
 
 
