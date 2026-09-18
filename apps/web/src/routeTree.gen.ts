@@ -48,6 +48,7 @@ import { Route as DashboardServiciosConfigurarHorariosRouteImport } from './rout
 import { Route as DashboardPermisosRolesPermisosRouteImport } from './routes/dashboard/permisos/roles-permisos'
 import { Route as DashboardPermisosRolesRouteImport } from './routes/dashboard/permisos/roles'
 import { Route as DashboardOrdenesServicioIdentificadoresOrdenServicioRouteImport } from './routes/dashboard/ordenes-servicio/identificadores-orden-servicio'
+import { Route as DashboardOrdenesServicioAdicionalesRouteImport } from './routes/dashboard/ordenes-servicio/adicionales'
 import { Route as DashboardLiquidacionesHistorialRouteImport } from './routes/dashboard/liquidaciones/historial'
 import { Route as DashboardExportacionesBaseFacturacionConsolidacionRouteImport } from './routes/dashboard/exportaciones-base-facturacion/consolidacion'
 import { Route as DashboardExportacionesBaseFacturacionArchivosInterfaseRouteImport } from './routes/dashboard/exportaciones-base-facturacion/archivos-interfase'
@@ -275,6 +276,12 @@ const DashboardOrdenesServicioIdentificadoresOrdenServicioRoute =
     path: '/identificadores-orden-servicio',
     getParentRoute: () => DashboardOrdenesServicioRoute,
   } as any)
+const DashboardOrdenesServicioAdicionalesRoute =
+  DashboardOrdenesServicioAdicionalesRouteImport.update({
+    id: '/adicionales',
+    path: '/adicionales',
+    getParentRoute: () => DashboardOrdenesServicioRoute,
+  } as any)
 const DashboardLiquidacionesHistorialRoute =
   DashboardLiquidacionesHistorialRouteImport.update({
     id: '/historial',
@@ -413,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/exportaciones-base-facturacion/archivos-interfase': typeof DashboardExportacionesBaseFacturacionArchivosInterfaseRoute
   '/dashboard/exportaciones-base-facturacion/consolidacion': typeof DashboardExportacionesBaseFacturacionConsolidacionRoute
   '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
+  '/dashboard/ordenes-servicio/adicionales': typeof DashboardOrdenesServicioAdicionalesRoute
   '/dashboard/ordenes-servicio/identificadores-orden-servicio': typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
   '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
@@ -461,6 +469,7 @@ export interface FileRoutesByTo {
   '/dashboard/exportaciones-base-facturacion/archivos-interfase': typeof DashboardExportacionesBaseFacturacionArchivosInterfaseRoute
   '/dashboard/exportaciones-base-facturacion/consolidacion': typeof DashboardExportacionesBaseFacturacionConsolidacionRoute
   '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
+  '/dashboard/ordenes-servicio/adicionales': typeof DashboardOrdenesServicioAdicionalesRoute
   '/dashboard/ordenes-servicio/identificadores-orden-servicio': typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
   '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
@@ -520,6 +529,7 @@ export interface FileRoutesById {
   '/dashboard/exportaciones-base-facturacion/archivos-interfase': typeof DashboardExportacionesBaseFacturacionArchivosInterfaseRoute
   '/dashboard/exportaciones-base-facturacion/consolidacion': typeof DashboardExportacionesBaseFacturacionConsolidacionRoute
   '/dashboard/liquidaciones/historial': typeof DashboardLiquidacionesHistorialRoute
+  '/dashboard/ordenes-servicio/adicionales': typeof DashboardOrdenesServicioAdicionalesRoute
   '/dashboard/ordenes-servicio/identificadores-orden-servicio': typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
   '/dashboard/permisos/roles': typeof DashboardPermisosRolesRoute
   '/dashboard/permisos/roles-permisos': typeof DashboardPermisosRolesPermisosRoute
@@ -580,6 +590,7 @@ export interface FileRouteTypes {
     | '/dashboard/exportaciones-base-facturacion/archivos-interfase'
     | '/dashboard/exportaciones-base-facturacion/consolidacion'
     | '/dashboard/liquidaciones/historial'
+    | '/dashboard/ordenes-servicio/adicionales'
     | '/dashboard/ordenes-servicio/identificadores-orden-servicio'
     | '/dashboard/permisos/roles'
     | '/dashboard/permisos/roles-permisos'
@@ -628,6 +639,7 @@ export interface FileRouteTypes {
     | '/dashboard/exportaciones-base-facturacion/archivos-interfase'
     | '/dashboard/exportaciones-base-facturacion/consolidacion'
     | '/dashboard/liquidaciones/historial'
+    | '/dashboard/ordenes-servicio/adicionales'
     | '/dashboard/ordenes-servicio/identificadores-orden-servicio'
     | '/dashboard/permisos/roles'
     | '/dashboard/permisos/roles-permisos'
@@ -686,6 +698,7 @@ export interface FileRouteTypes {
     | '/dashboard/exportaciones-base-facturacion/archivos-interfase'
     | '/dashboard/exportaciones-base-facturacion/consolidacion'
     | '/dashboard/liquidaciones/historial'
+    | '/dashboard/ordenes-servicio/adicionales'
     | '/dashboard/ordenes-servicio/identificadores-orden-servicio'
     | '/dashboard/permisos/roles'
     | '/dashboard/permisos/roles-permisos'
@@ -994,6 +1007,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRouteImport
       parentRoute: typeof DashboardOrdenesServicioRoute
     }
+    '/dashboard/ordenes-servicio/adicionales': {
+      id: '/dashboard/ordenes-servicio/adicionales'
+      path: '/adicionales'
+      fullPath: '/dashboard/ordenes-servicio/adicionales'
+      preLoaderRoute: typeof DashboardOrdenesServicioAdicionalesRouteImport
+      parentRoute: typeof DashboardOrdenesServicioRoute
+    }
     '/dashboard/liquidaciones/historial': {
       id: '/dashboard/liquidaciones/historial'
       path: '/historial'
@@ -1220,12 +1240,15 @@ const DashboardLiquidacionesRouteWithChildren =
   )
 
 interface DashboardOrdenesServicioRouteChildren {
+  DashboardOrdenesServicioAdicionalesRoute: typeof DashboardOrdenesServicioAdicionalesRoute
   DashboardOrdenesServicioIdentificadoresOrdenServicioRoute: typeof DashboardOrdenesServicioIdentificadoresOrdenServicioRoute
   DashboardOrdenesServicioIndexRoute: typeof DashboardOrdenesServicioIndexRoute
 }
 
 const DashboardOrdenesServicioRouteChildren: DashboardOrdenesServicioRouteChildren =
   {
+    DashboardOrdenesServicioAdicionalesRoute:
+      DashboardOrdenesServicioAdicionalesRoute,
     DashboardOrdenesServicioIdentificadoresOrdenServicioRoute:
       DashboardOrdenesServicioIdentificadoresOrdenServicioRoute,
     DashboardOrdenesServicioIndexRoute: DashboardOrdenesServicioIndexRoute,

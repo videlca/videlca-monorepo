@@ -1,5 +1,6 @@
 import type { LinkProps } from "@tanstack/react-router";
 import {
+  BadgeDollarSignIcon,
   CalendarIcon,
   ChartColumn,
   ClockIcon,
@@ -175,6 +176,12 @@ export const linksSideBar: LinksSideBar = {
       label: "Identificadores de Orden de Servicio",
       description: "identificadores",
       icon: <LucideSlidersVertical className="h-6 w-6" />,
+    },
+    {
+      to: "/dashboard/ordenes-servicio/adicionales",
+      label: "Adicionales",
+      description: "adicionales",
+      icon: <BadgeDollarSignIcon className="h-6 w-6" />,
     },
   ],
   servicios: [
