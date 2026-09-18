@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { OrdenServicioModule } from '../orden-servicio/orden-servicio.module';
 import { ReportesModule } from '../reportes/reportes.module';
 import { ClientesModule } from '../clientes/clientes.module';
+import { AdicionalesModule } from '../adicionales/adicionales.module';
 
 import { 
   Liquidacione,
@@ -42,8 +43,9 @@ import {
     CommonModule,
     ReportesModule,
     ClientesModule,
+    AdicionalesModule,
     AuthModule,
-    
+
   ],
   controllers: [
     LiquidacionesController, 

@@ -51,6 +51,14 @@ export class LiquidacionesController {
     return this.service.findByCreacionMes(anio, mes);
   }
 
+  @Get('adicionales-por-mes')
+  async findAdicionalesByMes(
+    @Query('anio', ParseIntPipe) anio: number,
+    @Query('mes', ParseIntPipe) mes: number,
+  ) {
+    return this.service.findAdicionalesByCreacionMes(anio, mes);
+  }
+
   @Get('historial-liquidaciones-aprobadas')
   async findByMesLiquidacionesAprobadas(
     @Query('anio', ParseIntPipe) anio: number,

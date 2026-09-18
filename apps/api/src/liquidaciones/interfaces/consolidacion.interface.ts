@@ -1,5 +1,8 @@
 export type ServicioAgrupado = {
   armado: boolean;
+  // true si esta linea es de un Adicional (no de un servicio del catalogo): no tiene tipo armado/monitoreo real
+  // (armado siempre queda en false) ni codigo Siigo, se debe excluir de exports que requieran un codigo Siigo valido
+  esAdicional: boolean;
   servicioAplicacion: string;
   codigoServicioSiigo: string;
   valorLiquidarAplicacion: number;

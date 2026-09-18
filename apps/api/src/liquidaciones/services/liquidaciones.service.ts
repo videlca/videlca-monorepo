@@ -18,6 +18,7 @@ import { OrdenServicioService } from '../../orden-servicio/services';
 import { ClientesService } from '../../clientes/services';
 
 import { OrdenServicio } from '../../orden-servicio/entities';
+import { Adicional } from '../../adicionales/entities';
 import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion, NumeroPedido } from '../entities';
 
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
@@ -35,8 +36,10 @@ export class LiquidacionesService {
     private readonly grupoLiquidacionrepo: Repository<GrupoLiquidacion>,
     @InjectRepository(OrdenServicio) 
     private readonly ordenRepo: Repository<OrdenServicio>,
-    @InjectRepository(NumeroPedido) 
+    @InjectRepository(NumeroPedido)
     private readonly numeroPedidoRepository: Repository<NumeroPedido>,
+    @InjectRepository(Adicional)
+    private readonly adicionalRepo: Repository<Adicional>,
     private ordenServicioService: OrdenServicioService,
     private readonly clienteService: ClientesService,
     private readonly reporteConsolidacionService: ReporteConsolidacionService, // Servicio para generar reportes de consolidacion
@@ -56,15 +59,19 @@ export class LiquidacionesService {
     const qb = this.liquidacionRepo
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.ordenServicio', 'os')
+      .leftJoinAndSelect('l.adicional', 'adicional')
       .select([
         'l.idLiquidacion',
         'l.valor_liquidacion',
         'l.fechaCreacion',
         'l.idOrdenServicio',
+        'l.idAdicional',
         'os.idOrdenServicio',
         'os.fechaInicio',
         'os.fechaFin',
         'os.precioTotal',
+        'adicional.idAdicional',
+        'adicional.nombre',
 
       ])
       .orderBy('l.idLiquidacion', 'DESC')
@@ -129,11 +136,41 @@ export class LiquidacionesService {
       .leftJoinAndSelect('detalleServicio.idTipoDuracion', 'detalleServicioTipoDuracion')
       .leftJoinAndSelect('detalleServicio.idTipoTarifa', 'detalleServicioTipoTarifa')
       .leftJoinAndSelect('detalleServicio.idTipoHorarioDescripcion', 'detalleServicioTipoHorario')
+      .leftJoinAndSelect('l.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
+      .leftJoinAndSelect('adicionalCliente.idTipoCliente', 'adicionalClienteTipoCliente')
+      .leftJoinAndSelect('adicionalCliente.idSubSegmentacion', 'adicionalClienteSubsegmentacion')
+      .leftJoinAndSelect('adicionalClienteSubsegmentacion.segmentacion', 'adicionalClienteSegmentacion')
+      .leftJoinAndSelect('adicional.idUsuarioCreacion', 'adicionalUsuario')
       .where('l.idLiquidacion = :id', { id: idLiquidacion })
       .getOne();
 
     if (!liquidacion)
       throw new NotFoundException(`Liquidacion con id "${idLiquidacion}" no se ha encontrado`);
+
+    // ESTA LIQUIDACION ES DE UN ADICIONAL (no de una orden de servicio): no hay fechas/detalles/desglose por dia que
+    // calcular como con una orden, se devuelve directo el snapshot guardado en la liquidacion
+    if (liquidacion.idAdicional != null) {
+
+      return {
+        tipo: 'adicional',
+        idLiquidacion: liquidacion.idLiquidacion,
+        aniomes_liquidacion: liquidacion.aniomes_liquidacion,
+        idAdicional: liquidacion.adicional.idAdicional,
+        nombre: liquidacion.adicional.nombre,
+        idCliente: liquidacion.adicional.idCliente,
+        idUsuarioCreacion: liquidacion.adicional.idUsuarioCreacion,
+        mesInicio: liquidacion.adicional.mesInicio,
+        mesFin: liquidacion.adicional.mesFin,
+        costosDirectos: liquidacion.costosDirectos,
+        seguroVida: liquidacion.seguroVida,
+        aui: liquidacion.aui,
+        precioAntesIva: liquidacion.precioAntesIva,
+        iva: liquidacion.iva,
+        precioTotal: liquidacion.valor_liquidacion,
+      };
+
+    }
 
     const anio = Number(liquidacion.aniomes_liquidacion.slice(0, 4));
     const mes = Number(liquidacion.aniomes_liquidacion.slice(4));
@@ -205,6 +242,7 @@ export class LiquidacionesService {
     const { detalles: _detallesOrden, liquidaciones: _liquidacionesOrden, ...ordenServicioBase } = liquidacion.ordenServicio as any;
 
     return {
+      tipo: 'orden',
       ...ordenServicioBase,
       fechaInicio: desde,
       fechaFin: hasta,
@@ -239,9 +277,9 @@ export class LiquidacionesService {
   // Genera grupo y liquidaciones
   async generarGrupoMensual(crearGrupoMensualDto: CrearGrupoMensualDto) {
 
-    const { anio, mes, ordenIds } = crearGrupoMensualDto;
+    const { anio, mes, ordenIds = [], adicionalIds = [] } = crearGrupoMensualDto;
 
-    if (!anio || !mes || mes < 1 || mes > 12 || !ordenIds?.length) {
+    if (!anio || !mes || mes < 1 || mes > 12 || (!ordenIds.length && !adicionalIds.length)) {
       throw new BadRequestException('Parámetros inválidos');
     }
 
@@ -273,15 +311,28 @@ export class LiquidacionesService {
       for (const ordenId of ordenIds) {
 
         const liquidacionMensualOrden = await this.crearLiquidacionMensualOrden(
-          queryRunner, 
+          queryRunner,
           grupoLiquidacion.idGrupoLiquidacion,
-          ordenId, 
-          anio, 
+          ordenId,
+          anio,
           mes
         );
 
       }
-      
+
+      // 2.1) crear liquidaciones del grupo de adicionales
+      for (const adicionalId of adicionalIds) {
+
+        await this.crearLiquidacionMensualAdicional(
+          queryRunner,
+          grupoLiquidacion.idGrupoLiquidacion,
+          adicionalId,
+          anio,
+          mes
+        );
+
+      }
+
       // 3) sumar totales de las liquidaciones de las ordenes
       const liquidaciones = await queryRunner.manager.find(Liquidacione, {
         where: { idGrupoLiquidacion: grupoLiquidacion.idGrupoLiquidacion }
@@ -483,6 +534,60 @@ export class LiquidacionesService {
 
   }
 
+  // CREA LA LIQUIDACION MENSUAL DE UN ADICIONAL PARA EL MES/ANIO INDICADO.
+  //
+  // A DIFERENCIA DE LAS ORDENES, EL ADICIONAL NO SE RECALCULA: SE TOMA TAL CUAL SU VALOR ACTUAL (costosDirectos,
+  // seguroVida, aui, precioAntesIva, iva, precioTotal) Y SE COPIA ("snapshot") A LA LIQUIDACION, PARA QUE UNA EDICION
+  // POSTERIOR DEL PRECIO DEL ADICIONAL NO ALTERE LIQUIDACIONES YA GENERADAS. SE COBRA EL MES COMPLETO, SIN PRORRATEAR
+  private async crearLiquidacionMensualAdicional(
+    queryRunner: QueryRunner,
+    idGrupoLiquidacion: number,
+    adicionalId: number,
+    anio: number,
+    mes: number
+  ) {
+
+    const adicional = await this.adicionalRepo.findOneBy({ idAdicional: adicionalId });
+
+    if (!adicional) throw new BadRequestException('Adicional no encontrado');
+
+    if (!adicional.estado) throw new BadRequestException(`El adicional "${adicional.nombre}" esta cancelado`);
+
+    const mesConsultado = new Date(anio, mes - 1, 1);
+    const mesInicioAdicional = this.normalizarMes(adicional.mesInicio);
+    const mesFinAdicional = adicional.mesFin ? this.normalizarMes(adicional.mesFin) : null;
+
+    if (mesConsultado < mesInicioAdicional || (mesFinAdicional && mesConsultado > mesFinAdicional)) {
+      throw new BadRequestException(`El adicional "${adicional.nombre}" no esta vigente en el mes solicitado`);
+    }
+
+    const liquidacionAdicional = queryRunner.manager.create(Liquidacione, {
+      valor_liquidacion: Number(adicional.precioTotal),
+      adicional: adicional,
+      idGrupoLiquidacion: idGrupoLiquidacion,
+      costosDirectos: Number(adicional.costosDirectos),
+      seguroVida: Number(adicional.seguroVida),
+      aui: Number(adicional.aui),
+      precioAntesIva: Number(adicional.precioAntesIva),
+      iva: Number(adicional.iva),
+      // Formato fijo "YYYYMM" (mes con cero a la izquierda), igual que crearLiquidacionMensualOrden
+      aniomes_liquidacion: `${anio}${String(mes).padStart(2, '0')}`
+    });
+
+    await queryRunner.manager.save(Liquidacione, liquidacionAdicional);
+
+  }
+
+  // NORMALIZA UNA FECHA AL DIA 1 DE SU MES (mismo criterio que AdicionalesService, se necesita aca para comparar la
+  // vigencia del adicional contra el mes que se esta liquidando)
+  private normalizarMes(fecha: Date): Date {
+
+    const f = new Date(fecha);
+
+    return new Date(f.getFullYear(), f.getMonth(), 1);
+
+  }
+
   async findByCreacionMes(anio: number, mes1a12: number) {
 
     if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
@@ -529,6 +634,42 @@ export class LiquidacionesService {
       .andWhere('liq.idLiquidacion IS NULL')
       .orderBy('os.idOrdenServicio', 'ASC')
       .addOrderBy('detalles.idOrdenServicioDetalle', 'ASC')
+      .distinct(true);
+
+    return qb.getMany();
+  }
+
+  // EQUIVALENTE A findByCreacionMes PERO PARA ADICIONALES: trae los adicionales activos y vigentes en el mes/anio
+  // solicitado (mesInicio <= mes consultado <= mesFin, o mesFin null = indefinido) que aun no tengan una liquidacion
+  // generada para ese mes
+  async findAdicionalesByCreacionMes(anio: number, mes1a12: number) {
+
+    if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
+      throw new BadRequestException('Parámetros inválidos (anio, mes)');
+    }
+
+    const today = new Date();
+    if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
+      throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+
+    const mesConsultado = new Date(anio, mes1a12 - 1, 1);
+
+    const qb = this.adicionalRepo
+      .createQueryBuilder('a')
+      .where('a.estado = :estado', { estado: true })
+      .andWhere('a.mesInicio <= :mesConsultado AND (a.mesFin IS NULL OR a.mesFin >= :mesConsultado)', { mesConsultado })
+      .leftJoinAndSelect('a.idCliente', 'cliente')
+      .leftJoinAndSelect('a.idUsuarioCreacion', 'usuario')
+
+      .leftJoin('liquidaciones', 'liq', `
+      liq.idAdicional = a.idAdicional AND
+      liq.aniomes_liquidacion = :aniomes
+    `, {
+        // Debe coincidir con el formato "YYYYMM" con el que se guarda en crearLiquidacionMensualAdicional
+        aniomes: `${anio}${String(mes1a12).padStart(2, '0')}`,
+      })
+      .andWhere('liq.idLiquidacion IS NULL')
+      .orderBy('a.idAdicional', 'ASC')
       .distinct(true);
 
     return qb.getMany();
@@ -842,6 +983,8 @@ export class LiquidacionesService {
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
       .leftJoinAndSelect('orden.idCliente', 'clienteDirecto')
+      .leftJoinAndSelect('liq.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
       .orderBy('cliente.nombre', 'ASC')
       .addOrderBy('orden.idOrdenServicio', 'ASC')
@@ -849,19 +992,24 @@ export class LiquidacionesService {
       .getMany();
 
     console.log(`Liquidaciones encontradas para el grupo ${grupoId}: ${liquidaciones.length}`);
-    
+
     // 🔹 Agrupar por cliente y servicio
     const agrupado: Record<number, ClienteAgrupado> = {};
 
     // return liquidaciones;
-    
+
     for (const liq of liquidaciones) {
 
-      // VIGILANCIA Y ESCOLTA: cliente responsable de facturacion de la locacion (o el cliente de la locacion si no tiene uno especifico).
-      // MONITOREO DE ALARMAS: el cliente asignado directamente a la orden (no tiene locacion)
-      const cliente = liq.ordenServicio.idLocacion
-        ? (liq.ordenServicio.idLocacion.idClienteFacturacion ?? liq.ordenServicio.idLocacion.idCliente)
-        : liq.ordenServicio.idCliente;
+      const esAdicional = liq.idAdicional != null;
+
+      // ORDEN DE VIGILANCIA Y ESCOLTA: cliente responsable de facturacion de la locacion (o el cliente de la locacion si
+      // no tiene uno especifico). ORDEN DE MONITOREO DE ALARMAS: el cliente asignado directamente a la orden (no tiene
+      // locacion). ADICIONAL: el cliente al que se le asigno el adicional
+      const cliente = esAdicional
+        ? liq.adicional.idCliente
+        : (liq.ordenServicio.idLocacion
+          ? (liq.ordenServicio.idLocacion.idClienteFacturacion ?? liq.ordenServicio.idLocacion.idCliente)
+          : liq.ordenServicio.idCliente);
 
       const clienteId = cliente.idCliente;
       const clienteNombre = cliente.nombre;
@@ -884,18 +1032,19 @@ export class LiquidacionesService {
         };
 
       }
-    
-      for (const liquidacionServicioOrdenServicio of liq.liquidacionServiciosOrdenServicio) {
 
-        const servicio = liquidacionServicioOrdenServicio.idTarifa.idServicio;
-        const idServicio = servicio.idServicio;
+      if (esAdicional) {
 
-        if (!agrupado[clienteId].servicios[idServicio]) {
+        // CLAVE NEGATIVA PARA NO COLISIONAR CON idServicio DEL CATALOGO (siempre positivo)
+        const idAdicionalKey = -liq.adicional.idAdicional;
 
-          agrupado[clienteId].servicios[idServicio] = {
-            armado: servicio.armado,
-            servicioAplicacion: servicio.descripcion,
-            codigoServicioSiigo: servicio.codigo,
+        if (!agrupado[clienteId].servicios[idAdicionalKey]) {
+
+          agrupado[clienteId].servicios[idAdicionalKey] = {
+            armado: false,
+            esAdicional: true,
+            servicioAplicacion: liq.adicional.nombre,
+            codigoServicioSiigo: '',
             valorLiquidarAplicacion: 0,
             seguroVida: 0,
             aui: 0,
@@ -907,14 +1056,53 @@ export class LiquidacionesService {
 
         }
 
-        agrupado[clienteId].servicios[idServicio].cantidadOrdenes += 1;
+        const costosDirectos = Number(liq.costosDirectos ?? 0);
+        const seguroVida = Number(liq.seguroVida ?? 0);
+        const aui = Number(liq.aui ?? 0);
 
-        agrupado[clienteId].servicios[idServicio].valorLiquidarAplicacion += Number(liquidacionServicioOrdenServicio.costosDirectos);
-        agrupado[clienteId].servicios[idServicio].seguroVida += Number(liquidacionServicioOrdenServicio.seguroVida);
-        agrupado[clienteId].servicios[idServicio].aui += Number(liquidacionServicioOrdenServicio.aui);
-        agrupado[clienteId].servicios[idServicio].tarifaAntesIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui));
-        agrupado[clienteId].servicios[idServicio].auiIVa += (Number(liquidacionServicioOrdenServicio.aui) * 0.19);
-        agrupado[clienteId].servicios[idServicio].tarifaConIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui) + (Number(liquidacionServicioOrdenServicio.aui) * 0.19));
+        agrupado[clienteId].servicios[idAdicionalKey].cantidadOrdenes += 1;
+        agrupado[clienteId].servicios[idAdicionalKey].valorLiquidarAplicacion += costosDirectos;
+        agrupado[clienteId].servicios[idAdicionalKey].seguroVida += seguroVida;
+        agrupado[clienteId].servicios[idAdicionalKey].aui += aui;
+        agrupado[clienteId].servicios[idAdicionalKey].tarifaAntesIva += (costosDirectos + seguroVida + aui);
+        agrupado[clienteId].servicios[idAdicionalKey].auiIVa += (aui * 0.19);
+        agrupado[clienteId].servicios[idAdicionalKey].tarifaConIva += (costosDirectos + seguroVida + aui + (aui * 0.19));
+
+      } else {
+
+        for (const liquidacionServicioOrdenServicio of liq.liquidacionServiciosOrdenServicio) {
+
+          const servicio = liquidacionServicioOrdenServicio.idTarifa.idServicio;
+          const idServicio = servicio.idServicio;
+
+          if (!agrupado[clienteId].servicios[idServicio]) {
+
+            agrupado[clienteId].servicios[idServicio] = {
+              armado: servicio.armado,
+              esAdicional: false,
+              servicioAplicacion: servicio.descripcion,
+              codigoServicioSiigo: servicio.codigo,
+              valorLiquidarAplicacion: 0,
+              seguroVida: 0,
+              aui: 0,
+              tarifaAntesIva: 0,
+              auiIVa: 0,
+              tarifaConIva: 0,
+              cantidadOrdenes: 0
+            };
+
+          }
+
+          agrupado[clienteId].servicios[idServicio].cantidadOrdenes += 1;
+
+          agrupado[clienteId].servicios[idServicio].valorLiquidarAplicacion += Number(liquidacionServicioOrdenServicio.costosDirectos);
+          agrupado[clienteId].servicios[idServicio].seguroVida += Number(liquidacionServicioOrdenServicio.seguroVida);
+          agrupado[clienteId].servicios[idServicio].aui += Number(liquidacionServicioOrdenServicio.aui);
+          agrupado[clienteId].servicios[idServicio].tarifaAntesIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui));
+          agrupado[clienteId].servicios[idServicio].auiIVa += (Number(liquidacionServicioOrdenServicio.aui) * 0.19);
+          agrupado[clienteId].servicios[idServicio].tarifaConIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui) + (Number(liquidacionServicioOrdenServicio.aui) * 0.19));
+
+        }
 
       }
 
@@ -975,6 +1163,9 @@ export class LiquidacionesService {
       .leftJoinAndSelect('cliente.idSubSegmentacion', 'subsegmentacion') // 🆕 nuevo join
       .leftJoinAndSelect('orden.idCliente', 'clienteDirecto')
       .leftJoinAndSelect('clienteDirecto.idSubSegmentacion', 'clienteDirectoSubsegmentacion')
+      .leftJoinAndSelect('liq.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
+      .leftJoinAndSelect('adicionalCliente.idSubSegmentacion', 'adicionalClienteSubsegmentacion')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
       .orderBy('cliente.nombre', 'ASC')
       .addOrderBy('orden.idOrdenServicio', 'ASC')
@@ -982,19 +1173,24 @@ export class LiquidacionesService {
       .getMany();
 
     console.log(`Liquidaciones encontradas para el grupo ${grupoId}: ${liquidaciones.length}`);
-    
+
     // 🔹 Agrupar por cliente y servicio
     const agrupado: Record<number, LiquidacionClienteAgrupado> = {};
 
     // return liquidaciones;
-    
+
     for (const liq of liquidaciones) {
 
-      // VIGILANCIA Y ESCOLTA: cliente responsable de facturacion de la locacion (o el cliente de la locacion si no tiene uno especifico).
-      // MONITOREO DE ALARMAS: el cliente asignado directamente a la orden (no tiene locacion)
-      const cliente = liq.ordenServicio.idLocacion
-        ? (liq.ordenServicio.idLocacion.idClienteFacturacion ?? liq.ordenServicio.idLocacion.idCliente)
-        : liq.ordenServicio.idCliente;
+      const esAdicional = liq.idAdicional != null;
+
+      // ORDEN DE VIGILANCIA Y ESCOLTA: cliente responsable de facturacion de la locacion (o el cliente de la locacion si
+      // no tiene uno especifico). ORDEN DE MONITOREO DE ALARMAS: el cliente asignado directamente a la orden (no tiene
+      // locacion). ADICIONAL: el cliente al que se le asigno el adicional
+      const cliente = esAdicional
+        ? liq.adicional.idCliente
+        : (liq.ordenServicio.idLocacion
+          ? (liq.ordenServicio.idLocacion.idClienteFacturacion ?? liq.ordenServicio.idLocacion.idCliente)
+          : liq.ordenServicio.idCliente);
 
       const clienteId = cliente.idCliente;
       const clienteNombre = cliente.nombre;
@@ -1014,6 +1210,50 @@ export class LiquidacionesService {
           totalTarifaConIva: 0,
           servicios: [],
         };
+
+      }
+
+      if (esAdicional) {
+
+        // UN ADICIONAL NO TIENE ORDEN/CIUDAD/PUESTO/CODIGO SIIGO/TIPO DE SERVICIO/HORARIO (esos campos quedan vacios),
+        // solo su nombre (como descripcion) y el sector del cliente al que se le cobra
+        const costosDirectos = Number(liq.costosDirectos ?? 0);
+        const seguroVida = Number(liq.seguroVida ?? 0);
+        const aui = Number(liq.aui ?? 0);
+
+        agrupado[clienteId].servicios.push({
+          ordenServicio: '',
+          sector: liq.adicional.idCliente.idSubSegmentacion?.descripcion ?? '',
+          ciudad: '',
+          puesto: '',
+          descripcionServicio: liq.adicional.nombre,
+          tipoServicio: '',
+          codigoServicioSiigo: '',
+          horarioServicio: '',
+
+          horasTotalesServicio: 0,
+          tarifaCostosDirectos: 0,
+          valorHora: 0,
+          cantidadHorasPrestadas: 0,
+          valorLiquidadoVidelca: 0,
+
+          cantidadOrdenesFacturar: 1,
+          valorLiquidarAplicacion: costosDirectos,
+          seguroVida,
+          aui,
+          tarifaAntesIva: (costosDirectos + seguroVida + aui),
+          auiIVa: (aui * 0.19),
+          tarifaConIva: (costosDirectos + seguroVida + aui + (aui * 0.19)),
+        });
+
+        agrupado[clienteId].totalLiquidarAplicacion += costosDirectos;
+        agrupado[clienteId].totalSeguroVida += seguroVida;
+        agrupado[clienteId].totalAui += aui;
+        agrupado[clienteId].totalTarifaAntesIva += (costosDirectos + seguroVida + aui);
+        agrupado[clienteId].totalIvaAui += (aui * 0.19);
+        agrupado[clienteId].totalTarifaConIva += (costosDirectos + seguroVida + aui + (aui * 0.19));
+
+        continue;
 
       }
 
@@ -1044,19 +1284,19 @@ export class LiquidacionesService {
           valorLiquidadoVidelca: 0,
 
           cantidadOrdenesFacturar: 1,
-          valorLiquidarAplicacion: Number(liquidacionServicioOrdenServicio.costosDirectos),        
-          seguroVida: Number(liquidacionServicioOrdenServicio.seguroVida),        
-          aui: Number(liquidacionServicioOrdenServicio.aui),                
-          tarifaAntesIva: (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui)),                
-          auiIVa: (Number(liquidacionServicioOrdenServicio.aui) * 0.19),                
+          valorLiquidarAplicacion: Number(liquidacionServicioOrdenServicio.costosDirectos),
+          seguroVida: Number(liquidacionServicioOrdenServicio.seguroVida),
+          aui: Number(liquidacionServicioOrdenServicio.aui),
+          tarifaAntesIva: (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui)),
+          auiIVa: (Number(liquidacionServicioOrdenServicio.aui) * 0.19),
           tarifaConIva: (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui) + (Number(liquidacionServicioOrdenServicio.aui) * 0.19)),
         });
 
-        agrupado[clienteId].totalLiquidarAplicacion += Number(liquidacionServicioOrdenServicio.costosDirectos);        
-        agrupado[clienteId].totalSeguroVida += Number(liquidacionServicioOrdenServicio.seguroVida);        
-        agrupado[clienteId].totalAui += Number(liquidacionServicioOrdenServicio.aui);                
-        agrupado[clienteId].totalTarifaAntesIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui));                
-        agrupado[clienteId].totalIvaAui += (Number(liquidacionServicioOrdenServicio.aui) * 0.19);                
+        agrupado[clienteId].totalLiquidarAplicacion += Number(liquidacionServicioOrdenServicio.costosDirectos);
+        agrupado[clienteId].totalSeguroVida += Number(liquidacionServicioOrdenServicio.seguroVida);
+        agrupado[clienteId].totalAui += Number(liquidacionServicioOrdenServicio.aui);
+        agrupado[clienteId].totalTarifaAntesIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui));
+        agrupado[clienteId].totalIvaAui += (Number(liquidacionServicioOrdenServicio.aui) * 0.19);
         agrupado[clienteId].totalTarifaConIva += (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui) + (Number(liquidacionServicioOrdenServicio.aui) * 0.19));
 
       }

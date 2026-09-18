@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, OneToMany } from 'typeorm';
 import { OrdenServicio } from '../../orden-servicio/entities/orden-servicio.entity';
+import { Adicional } from '../../adicionales/entities/adicional.entity';
 import { GrupoLiquidacion } from './grupo_liquidaciones.entity';
 import { LiquidacionServicioOrdenServicio } from './liquidacion_servicio_orden_servicio.entity';
 
@@ -18,17 +19,48 @@ export class Liquidacione {
   })
   valor_liquidacion: number;
 
-  // relación con orden_servicio
-  @Column({ name: 'idOrdenServicio', type: 'int' })
-  idOrdenServicio: number;
+  // relación con orden_servicio -> SOLO APLICA SI ESTA LIQUIDACION ES DE UNA ORDEN DE SERVICIO (no de un adicional, ver idAdicional)
+  @Column({ name: 'idOrdenServicio', type: 'int', nullable: true })
+  idOrdenServicio: number | null;
 
   @ManyToOne(
     () => OrdenServicio,
     (ordenServicio) => ordenServicio.liquidaciones,
-    { onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+    { nullable: true, onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
   )
   @JoinColumn({ name: 'idOrdenServicio' })
-  ordenServicio: OrdenServicio;
+  ordenServicio: OrdenServicio | null;
+
+  // relación con adicional -> SOLO APLICA SI ESTA LIQUIDACION ES DE UN ADICIONAL (no de una orden de servicio, ver idOrdenServicio)
+  @Column({ name: 'idAdicional', type: 'int', nullable: true })
+  idAdicional: number | null;
+
+  @ManyToOne(
+    () => Adicional,
+    (adicional) => adicional.liquidaciones,
+    { nullable: true, onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+  )
+  @JoinColumn({ name: 'idAdicional' })
+  adicional: Adicional | null;
+
+  // DESGLOSE DEL VALOR LIQUIDADO CUANDO ES DE UN ADICIONAL (snapshot tomado del Adicional al momento de liquidar, para
+  // que una edicion posterior del precio del adicional no altere liquidaciones ya generadas). Cuando la liquidacion es
+  // de una orden de servicio, este desglose vive en liquidacionServiciosOrdenServicio (una fila por cada servicio), asi
+  // que estos campos quedan en null
+  @Column({ name: 'costosDirectos', type: 'decimal', precision: 20, scale: 2, nullable: true })
+  costosDirectos: number | null;
+
+  @Column({ name: 'seguroVida', type: 'decimal', precision: 20, scale: 2, nullable: true })
+  seguroVida: number | null;
+
+  @Column({ name: 'aui', type: 'decimal', precision: 20, scale: 2, nullable: true })
+  aui: number | null;
+
+  @Column({ name: 'precioAntesIva', type: 'decimal', precision: 20, scale: 2, nullable: true })
+  precioAntesIva: number | null;
+
+  @Column({ name: 'iva', type: 'decimal', precision: 20, scale: 2, nullable: true })
+  iva: number | null;
 
   // relación con grupo_liquidaciones
   @Column({ 

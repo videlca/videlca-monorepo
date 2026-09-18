@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CrearGrupoMensualDto {
@@ -12,7 +12,15 @@ export class CrearGrupoMensualDto {
   @IsString()
   descripcion?: string;
 
-  @IsArray() @ArrayNotEmpty()
+  // Al menos uno de ordenIds/adicionalIds debe traer datos (validado en el servicio, ya que aca ambos son opcionales
+  // por separado para poder generar un grupo con solo ordenes, solo adicionales, o una mezcla de ambos)
+  @IsOptional()
+  @IsArray()
   @Type(() => Number) @IsInt({ each: true })
-  ordenIds: number[];
+  ordenIds?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @Type(() => Number) @IsInt({ each: true })
+  adicionalIds?: number[];
 }

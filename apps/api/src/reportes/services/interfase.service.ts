@@ -238,8 +238,9 @@ export class ReporteInterfaseService {
 
         let numeroPedido = 0;
 
-        // 🔹 Filas de servicios
-        for (const servicio of Object.values(servicios)) {
+        // 🔹 Filas de servicios (los adicionales se excluyen: no tienen un codigo de producto Siigo real que
+        // mapear a las columnas de codigo contable que exige este formato de interfase)
+        for (const servicio of Object.values(servicios).filter(s => !s.esAdicional)) {
 
           numeroPedido += 1;
 

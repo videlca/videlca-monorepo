@@ -1,6 +1,7 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Cliente } from "../../clientes/entities";
 import { User } from "../../users/entities/user.entity";
+import { Liquidacione } from "../../liquidaciones/entities/liquidacione.entity";
 
 @Entity({ name: 'adicional' })
 export class Adicional {
@@ -134,5 +135,11 @@ export class Adicional {
         precision: 0,
     })
     fechaCreacion: Date;
+
+    @OneToMany(
+        () => Liquidacione,
+        (liquidacion) => liquidacion.adicional
+    )
+    liquidaciones: Liquidacione[];
 
 }
