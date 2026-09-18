@@ -57,4 +57,31 @@ export class CreateAdicionalDto {
     @Min(0, { message: 'El valor del campo aui debe ser mayor o igual a 0' })
     aui?: number;
 
+    // Los siguientes 4 campos se calculan automaticamente (ver AdicionalesService.calcularTotales) si no se envian.
+    // Se exponen como opcionales para permitir control manual, decimal a decimal, sobre el desglose de precio
+    // (por ejemplo, para hacer coincidir el valor exacto de una factura externa en vez del redondeo hacia arriba)
+    @ApiProperty({ description: 'Costos directos + seguro de vida. Se calcula automáticamente si no se envía', example: 100000, required: false })
+    @IsOptional()
+    @IsNumber({}, { message: 'El valor del campo costos directos + seguro de vida debe ser un número' })
+    @Min(0, { message: 'El valor del campo costos directos + seguro de vida debe ser mayor o igual a 0' })
+    costosDirectosSeguroVida?: number;
+
+    @ApiProperty({ description: 'Precio antes de IVA. Se calcula automáticamente si no se envía', example: 100000, required: false })
+    @IsOptional()
+    @IsNumber({}, { message: 'El valor del campo precio antes de IVA debe ser un número' })
+    @Min(0, { message: 'El valor del campo precio antes de IVA debe ser mayor o igual a 0' })
+    precioAntesIva?: number;
+
+    @ApiProperty({ description: 'IVA. Se calcula automáticamente si no se envía', example: 1900, required: false })
+    @IsOptional()
+    @IsNumber({}, { message: 'El valor del campo IVA debe ser un número' })
+    @Min(0, { message: 'El valor del campo IVA debe ser mayor o igual a 0' })
+    iva?: number;
+
+    @ApiProperty({ description: 'Precio total con IVA, valor que se cobra cada mes. Se calcula automáticamente si no se envía', example: 101900, required: false })
+    @IsOptional()
+    @IsNumber({}, { message: 'El valor del campo precio total debe ser un número' })
+    @Min(0, { message: 'El valor del campo precio total debe ser mayor o igual a 0' })
+    precioTotal?: number;
+
 }

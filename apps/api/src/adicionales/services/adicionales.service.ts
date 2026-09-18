@@ -52,6 +52,10 @@ export class AdicionalesService {
       costosDirectos,
       seguroVida,
       ...totales,
+      costosDirectosSeguroVida: createAdicionalDto.costosDirectosSeguroVida ?? totales.costosDirectosSeguroVida,
+      precioAntesIva: createAdicionalDto.precioAntesIva ?? totales.precioAntesIva,
+      iva: createAdicionalDto.iva ?? totales.iva,
+      precioTotal: createAdicionalDto.precioTotal ?? totales.precioTotal,
     });
 
     try {
@@ -156,6 +160,10 @@ export class AdicionalesService {
       seguroVida,
       estado: updateAdicionalDto.estado ?? adicional.estado,
       ...totales,
+      costosDirectosSeguroVida: updateAdicionalDto.costosDirectosSeguroVida ?? totales.costosDirectosSeguroVida,
+      precioAntesIva: updateAdicionalDto.precioAntesIva ?? totales.precioAntesIva,
+      iva: updateAdicionalDto.iva ?? totales.iva,
+      precioTotal: updateAdicionalDto.precioTotal ?? totales.precioTotal,
     });
 
     try {
