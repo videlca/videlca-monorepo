@@ -326,7 +326,7 @@ function RouteComponent() {
                       </div>
                     </button>
                     <div className="flex items-center gap-4">
-                      <div className="text-right text-xs whitespace-nowrap">
+                      {/* <div className="text-right text-xs whitespace-nowrap">
                         <p className="text-gray-500">
                           Antes de IVA:{" "}
                           <span className="font-medium text-gray-700">
@@ -339,7 +339,7 @@ function RouteComponent() {
                             {priceFormat(grupo.total)}
                           </span>
                         </p>
-                      </div>
+                      </div> */}
                       <ButtonAction
                         onClick={() => handleLiquidarCliente(grupo)}
                         disabled={isCreatingLiquidacionMensualPending}
@@ -375,9 +375,9 @@ function RouteComponent() {
                             <span>
                               {orden.fechaInicio || ""} → {orden.fechaFin || "Indefinida"}
                             </span>
-                            <span className="font-medium text-green-600">
+                            {/* <span className="font-medium text-green-600">
                               {priceFormat(Number(orden.precioTotal))}
-                            </span>
+                            </span> */}
                           </div>
                         </div>
                       ))}
@@ -401,11 +401,11 @@ function RouteComponent() {
                               ? formatMesAdicional(adicional.mesFin)
                               : "Indefinido"}
                           </p>
-                          <div className="mt-1 flex justify-end text-gray-500">
+                          {/* <div className="mt-1 flex justify-end text-gray-500">
                             <span className="font-medium text-green-600">
                               {priceFormat(Number(adicional.precioTotal))}
                             </span>
-                          </div>
+                          </div> */}
                         </div>
                       ))}
                     </div>
