@@ -4,7 +4,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import {
   AlertCircleIcon,
-  CheckIcon,
+  ChevronDownIcon,
   FileTextIcon,
   PlusIcon,
   Search,
@@ -21,6 +21,8 @@ import { priceFormat } from "../../../utils/PriceFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
 import { toast } from "sonner";
 import { getStatusColor } from "../../../utils/StatusColor";
+import type { OrdenServicio } from "../../../api/types/orden-servicio";
+import type { Adicional } from "../../../api/types/adicionales";
 
 export const Route = createFileRoute("/dashboard/liquidaciones/")({
   component: RouteComponent,
@@ -52,12 +54,75 @@ const currentMonth = (new Date().getMonth() + 1).toString();
 const formatMesAdicional = (fecha: string) =>
   format(safeParseDate(fecha), "MMMM yyyy", { locale: es });
 
+interface ClienteGrupo {
+  clienteKey: string;
+  clienteNombre: string;
+  ordenes: OrdenServicio[];
+  adicionales: Adicional[];
+  total: number;
+  totalAntesIva: number;
+}
+
+const ordenAntesIva = (orden: OrdenServicio) =>
+  orden.detalles?.reduce(
+    (acc, detalle) => acc + (Number(detalle.precioAntesIva) || 0),
+    0,
+  ) || 0;
+
+const agruparPorCliente = (
+  ordenes: OrdenServicio[],
+  adicionales: Adicional[],
+): ClienteGrupo[] => {
+  const grupos = new Map<string, ClienteGrupo>();
+
+  const obtenerGrupo = (
+    clienteId: number | undefined,
+    clienteNombre: string | undefined,
+  ) => {
+    const key =
+      clienteId != null ? String(clienteId) : (clienteNombre ?? "sin-cliente");
+    if (!grupos.has(key)) {
+      grupos.set(key, {
+        clienteKey: key,
+        clienteNombre: clienteNombre || "Sin cliente",
+        ordenes: [],
+        adicionales: [],
+        total: 0,
+        totalAntesIva: 0,
+      });
+    }
+    return grupos.get(key)!;
+  };
+
+  ordenes.forEach((orden) => {
+    const cliente = orden.idLocacion?.idCliente || orden.idCliente;
+    const grupo = obtenerGrupo(cliente?.idCliente, cliente?.nombre);
+    grupo.ordenes.push(orden);
+    grupo.total += Number(orden.precioTotal) || 0;
+    grupo.totalAntesIva += ordenAntesIva(orden);
+  });
+
+  adicionales.forEach((adicional) => {
+    const cliente = adicional.idCliente;
+    const grupo = obtenerGrupo(cliente?.idCliente, cliente?.nombre);
+    grupo.adicionales.push(adicional);
+    grupo.total += Number(adicional.precioTotal) || 0;
+    grupo.totalAntesIva += Number(adicional.precioAntesIva) || 0;
+  });
+
+  return Array.from(grupos.values()).sort((a, b) =>
+    a.clienteNombre.localeCompare(b.clienteNombre),
+  );
+};
+
 function RouteComponent() {
   const [searchMonth, setSearchMonth] = useState<string>(currentMonth);
   const [searchYear, setSearchYear] = useState<string>(currentYear);
   const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
-  const [selectedAdicionales, setSelectedAdicionales] = useState<number[]>([]);
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
+  const [liquidandoClienteKey, setLiquidandoClienteKey] = useState<string | null>(
+    null,
+  );
 
   // Queries y mutaciones
   const {
@@ -97,24 +162,37 @@ function RouteComponent() {
     isPending: isCreatingLiquidacionMensualPending,
   } = useCrearLiquidacionMensual();
 
-  const handleCreateLiquidacionMensual = async () => {
-    if (selectedOrders.length === 0 && selectedAdicionales.length === 0) {
-      toast.error("No se han seleccionado órdenes de servicio ni adicionales");
+  const clientesGrupos = agruparPorCliente(liquidacionesData, adicionalesData);
+
+  const toggleExpandCliente = (clienteKey: string) => {
+    setExpandedClients((prev) => {
+      const next = new Set(prev);
+      if (next.has(clienteKey)) {
+        next.delete(clienteKey);
+      } else {
+        next.add(clienteKey);
+      }
+      return next;
+    });
+  };
+
+  const handleLiquidarCliente = async (grupo: ClienteGrupo) => {
+    if (grupo.ordenes.length === 0 && grupo.adicionales.length === 0) {
+      toast.error("Este cliente no tiene órdenes ni adicionales por liquidar");
       return;
     }
 
+    setLiquidandoClienteKey(grupo.clienteKey);
     await crearLiquidacionMensual(
       {
         anio: Number(searchYear),
         mes: Number(searchMonth),
-        ordenIds: selectedOrders,
-        adicionalIds: selectedAdicionales,
+        ordenIds: grupo.ordenes.map((orden) => orden.idOrdenServicio || 0),
+        adicionalIds: grupo.adicionales.map((adicional) => adicional.idAdicional),
       },
       {
-        onSuccess: () => {
-          setSelectedOrders([]);
-          setSelectedAdicionales([]);
-          setIsSearching(false);
+        onSettled: () => {
+          setLiquidandoClienteKey(null);
         },
       },
     );
@@ -140,8 +218,7 @@ function RouteComponent() {
                 onChange={(e) => {
                   setSearchYear(e.target.value);
                   setIsSearching(false);
-                  setSelectedOrders([]);
-                  setSelectedAdicionales([]);
+                  setExpandedClients(new Set());
                 }}
                 options={yearsOptions as { id: number; descripcion: string }[]}
               />
@@ -155,8 +232,7 @@ function RouteComponent() {
                 onChange={(e) => {
                   setSearchMonth(e.target.value);
                   setIsSearching(false);
-                  setSelectedOrders([]);
-                  setSelectedAdicionales([]);
+                  setExpandedClients(new Set());
                 }}
                 options={monthsOptions}
               />
@@ -166,8 +242,7 @@ function RouteComponent() {
                 setIsSearching(true);
                 refetchLiquidaciones();
                 refetchAdicionales();
-                setSelectedOrders([]);
-                setSelectedAdicionales([]);
+                setExpandedClients(new Set());
               }}
               disabled={isLoadingLiquidaciones || isLoadingAdicionales}
               Icon={Search}
@@ -202,209 +277,142 @@ function RouteComponent() {
         )}
 
       {isSearching && !isLoadingLiquidaciones && !isLoadingAdicionales && hayResultados ? (
-        <div className="space-y-8">
-          {liquidacionesData.length > 0 && (
-            <div className="space-y-4 rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
-              <div className="mb-8 flex justify-between">
-                <div className="mb-2 flex-col items-start justify-between gap-2">
-                  <h2 className="text-xl font-semibold">
-                    Órdenes de Servicio ({liquidacionesData.length} encontradas)
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    {selectedOrders?.length > 0
-                      ? `${selectedOrders?.length > 1 ? "órdenes seleccionadas" : "órden seleccionada"}`
-                      : "No hay órdenes seleccionadas"}
-                  </p>
-                </div>
-                <div className="mb-2 flex items-center justify-end gap-2">
-                  <ButtonAction
-                    onClick={() => {
-                      setSelectedOrders(
-                        liquidacionesData.map(
-                          (order) => order.idOrdenServicio || 0,
-                        ) || [],
-                      );
-                    }}
-                    disabled={
-                      selectedOrders?.length === liquidacionesData.length
-                    }
-                    Icon={CheckIcon}
-                    label="Seleccionar Todos"
-                  />
-                </div>
-              </div>
+        <div className="space-y-6 rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
+          <div className="mb-2">
+            <h2 className="text-xl font-semibold">
+              Clientes ({clientesGrupos.length} {clientesGrupos.length === 1 ? "encontrado" : "encontrados"})
+            </h2>
+            <p className="text-sm text-gray-500">
+              {liquidacionesData.length}{" "}
+              {liquidacionesData.length === 1 ? "orden de servicio" : "órdenes de servicio"} y{" "}
+              {adicionalesData.length}{" "}
+              {adicionalesData.length === 1 ? "adicional" : "adicionales"} por liquidar
+            </p>
+          </div>
 
-              <div className="mb-2 grid grid-cols-1 gap-2">
-                {liquidacionesData.map((order, index) => (
-                  <div
-                    key={index}
-                    onClick={() => {
-                      if (selectedOrders.includes(order.idOrdenServicio || 0)) {
-                        setSelectedOrders(
-                          selectedOrders.filter(
-                            (id) => id !== order.idOrdenServicio || 0,
-                          ),
-                        );
-                      } else {
-                        setSelectedOrders([
-                          ...selectedOrders,
-                          order.idOrdenServicio || 0,
-                        ]);
-                      }
-                    }}
-                    className={`cursor-pointer rounded-lg border px-4 py-2 transition-all hover:shadow-md ${selectedOrders.includes(order.idOrdenServicio || 0)
-                        ? "border-blue-400 bg-blue-100/40 shadow-sm"
-                        : "border-gray-300 bg-white hover:border-gray-500"
-                      }`}
-                  >
-                    <div className="mb-3 flex items-start justify-between">
-                      <h3 className="font-semibold text-gray-900">
-                        {order.ordenServicioId?.descripcionId}
-                      </h3>
-                      <span
-                        className={`rounded-full border px-2 py-1 text-xs capitalize ${getStatusColor(order.idEstadoOrdenServicio?.nombre || "")}`}
-                      >
-                        {order.idEstadoOrdenServicio?.nombre}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 space-y-2">
-                      <div className="col-span-2 md:col-span-1 lg:col-span-1">
-                        <span className="font-medium text-gray-500">Cliente:</span>
-                        <p className="text-gray-900">
-                          {order.idLocacion?.idCliente?.nombre ||
-                            order.idCliente?.nombre}
+          <div className="space-y-8">
+            {clientesGrupos.map((grupo) => {
+              const isExpanded = expandedClients.has(grupo.clienteKey);
+              const isLiquidandoEsteCliente =
+                isCreatingLiquidacionMensualPending &&
+                liquidandoClienteKey === grupo.clienteKey;
+
+              return (
+                <div
+                  key={grupo.clienteKey}
+                  className="rounded-lg border border-gray-300 bg-white"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4 p-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpandCliente(grupo.clienteKey)}
+                      className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+                    >
+                      <ChevronDownIcon
+                        className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
+                      />
+                      <div className="min-w-0">
+                        <h3 className="truncate font-semibold text-gray-900 text-lg">
+                          {grupo.clienteNombre}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {grupo.ordenes.length}{" "}
+                          {grupo.ordenes.length === 1 ? "orden" : "órdenes"} ·{" "}
+                          {grupo.adicionales.length}{" "}
+                          {grupo.adicionales.length === 1 ? "adicional" : "adicionales"}
                         </p>
                       </div>
+                    </button>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right text-xs whitespace-nowrap">
+                        <p className="text-gray-500">
+                          Antes de IVA:{" "}
+                          <span className="font-medium text-gray-700">
+                            {priceFormat(grupo.totalAntesIva)}
+                          </span>
+                        </p>
+                        <p className="text-gray-500">
+                          Total:{" "}
+                          <span className="text-sm font-semibold text-green-600">
+                            {priceFormat(grupo.total)}
+                          </span>
+                        </p>
+                      </div>
+                      <ButtonAction
+                        onClick={() => handleLiquidarCliente(grupo)}
+                        disabled={isCreatingLiquidacionMensualPending}
+                        Icon={PlusIcon}
+                        label={isLiquidandoEsteCliente ? "Liquidando..." : "Liquidar Cliente"}
+                      />
+                    </div>
+                  </div>
 
-                      {/* Monitoreo de alarmas no tiene puesto/locacion asociado (va directo a un cliente, ver
-                          "Cliente" arriba), no hay nada que mostrar aca */}
-                      {order.idLocacion && (
-                        <div className="col-span-2 md:col-span-1 lg:col-span-1">
-                          <span className="font-medium text-gray-500">Puesto:</span>
-                          <p className="whitespace-nowrap text-gray-900">
-                            {`${order.idLocacion.nombre} - ${order.idLocacion.direccion}`}
-                          </p>
+                  {isExpanded && (
+                    <div className="grid grid-cols-1 gap-2 border-t border-gray-200 p-3 md:grid-cols-2 xl:grid-cols-3">
+                      {grupo.ordenes.map((orden) => (
+                        <div
+                          key={orden.idOrdenServicio}
+                          className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-medium text-gray-900">
+                              {orden.ordenServicioId?.descripcionId}
+                            </span>
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap capitalize ${getStatusColor(orden.idEstadoOrdenServicio?.nombre || "")}`}
+                            >
+                              {orden.idEstadoOrdenServicio?.nombre}
+                            </span>
+                          </div>
+                          {orden.idLocacion && (
+                            <p className="mt-1 truncate text-gray-600">
+                              {orden.idLocacion.nombre} - {orden.idLocacion.direccion}
+                            </p>
+                          )}
+                          <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-gray-500">
+                            <span>
+                              {orden.fechaInicio || ""} → {orden.fechaFin || "Indefinida"}
+                            </span>
+                            <span className="font-medium text-green-600">
+                              {priceFormat(Number(orden.precioTotal))}
+                            </span>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 space-y-2 text-sm md:grid-cols-3">
-                      <div className="col-span-2 md:col-span-1 lg:col-span-1">
-                        <span className="font-medium text-gray-500">
-                          Precio Total:
-                        </span>
-                        <p className="text-green-600">
-                          {priceFormat(Number(order.precioTotal))}
-                        </p>
-                      </div>
+                      ))}
 
-                      <div className="col-span-2 md:col-span-1 lg:col-span-1">
-                        <span className="font-medium text-gray-500">Inicio:</span>
-                        <p className="text-gray-900">{order?.fechaInicio || ""}</p>
-                      </div>
-                      <div className="col-span-2 md:col-span-1 lg:col-span-1">
-                        <span className="font-medium text-gray-500">Fin:</span>
-                        <p className="text-gray-900">
-                          {order?.fechaFin || "Indefinida"}
-                        </p>
-                      </div>
+                      {grupo.adicionales.map((adicional) => (
+                        <div
+                          key={adicional.idAdicional}
+                          className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-medium text-gray-900">
+                              {adicional.nombre}
+                            </span>
+                            <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-gray-600">
+                              Adicional
+                            </span>
+                          </div>
+                          <p className="mt-1 text-gray-600 capitalize">
+                            {formatMesAdicional(adicional.mesInicio)} -{" "}
+                            {adicional.mesFin
+                              ? formatMesAdicional(adicional.mesFin)
+                              : "Indefinido"}
+                          </p>
+                          <div className="mt-1 flex justify-end text-gray-500">
+                            <span className="font-medium text-green-600">
+                              {priceFormat(Number(adicional.precioTotal))}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {adicionalesData.length > 0 && (
-            <div className="space-y-4 rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
-              <div className="mb-8 flex justify-between">
-                <div className="mb-2 flex-col items-start justify-between gap-2">
-                  <h2 className="text-xl font-semibold">
-                    Adicionales ({adicionalesData.length} encontrados)
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    {selectedAdicionales?.length > 0
-                      ? `${selectedAdicionales?.length > 1 ? "adicionales seleccionados" : "adicional seleccionado"}`
-                      : "No hay adicionales seleccionados"}
-                  </p>
+                  )}
                 </div>
-                <div className="mb-2 flex items-center justify-end gap-2">
-                  <ButtonAction
-                    onClick={() => {
-                      setSelectedAdicionales(
-                        adicionalesData.map((adicional) => adicional.idAdicional) || [],
-                      );
-                    }}
-                    disabled={selectedAdicionales?.length === adicionalesData.length}
-                    Icon={CheckIcon}
-                    label="Seleccionar Todos"
-                  />
-                </div>
-              </div>
-
-              <div className="mb-2 grid grid-cols-1 gap-2">
-                {adicionalesData.map((adicional) => (
-                  <div
-                    key={adicional.idAdicional}
-                    onClick={() => {
-                      if (selectedAdicionales.includes(adicional.idAdicional)) {
-                        setSelectedAdicionales(
-                          selectedAdicionales.filter((id) => id !== adicional.idAdicional),
-                        );
-                      } else {
-                        setSelectedAdicionales([
-                          ...selectedAdicionales,
-                          adicional.idAdicional,
-                        ]);
-                      }
-                    }}
-                    className={`cursor-pointer rounded-lg border px-4 py-2 transition-all hover:shadow-md ${selectedAdicionales.includes(adicional.idAdicional)
-                        ? "border-blue-400 bg-blue-100/40 shadow-sm"
-                        : "border-gray-300 bg-white hover:border-gray-500"
-                      }`}
-                  >
-                    <div className="mb-3 flex items-start justify-between">
-                      <h3 className="font-semibold text-gray-900">{adicional.nombre}</h3>
-                      <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-                        Adicional
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 space-y-2">
-                      <div className="col-span-2 md:col-span-1 lg:col-span-1">
-                        <span className="font-medium text-gray-500">Cliente:</span>
-                        <p className="text-gray-900">{adicional.idCliente?.nombre}</p>
-                      </div>
-                      <div className="col-span-2 md:col-span-1 lg:col-span-1">
-                        <span className="font-medium text-gray-500">Vigencia:</span>
-                        <p className="text-gray-900 capitalize">
-                          {formatMesAdicional(adicional.mesInicio)} -{" "}
-                          {adicional.mesFin ? formatMesAdicional(adicional.mesFin) : "Indefinido"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 space-y-2 text-sm md:grid-cols-3">
-                      <div className="col-span-2 md:col-span-1 lg:col-span-1">
-                        <span className="font-medium text-gray-500">Precio Total:</span>
-                        <p className="text-green-600">{priceFormat(Number(adicional.precioTotal))}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end">
-            <ButtonAction
-              onClick={() => {
-                handleCreateLiquidacionMensual();
-              }}
-              disabled={
-                (selectedOrders.length === 0 && selectedAdicionales.length === 0) ||
-                isCreatingLiquidacionMensualPending
-              }
-              Icon={PlusIcon}
-              label="Crear Liquidación"
-            />
+              );
+            })}
           </div>
         </div>
       ) : null}
