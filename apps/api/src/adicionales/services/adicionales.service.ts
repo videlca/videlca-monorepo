@@ -216,12 +216,17 @@ export class AdicionalesService {
 
   }
 
-  // NORMALIZA UNA FECHA AL DIA 1 DE SU MES (los adicionales se cobran por mes completo, no por dia)
+  // NORMALIZA UNA FECHA AL DIA 1 DE SU MES (los adicionales se cobran por mes completo, no por dia).
+  // SE EXTRAE EL AÑO/MES DEL STRING ISO (UTC), NO DE LOS GETTERS LOCALES (getFullYear/getMonth): si se usaran los
+  // getters locales, una fecha como "2026-09-01" (medianoche UTC) se leeria como 31 de agosto a las 7pm en un
+  // servidor en UTC-5 (Colombia), y el adicional quedaria guardado un mes atras del que realmente se selecciono
   private normalizarMes(fecha: Date): Date {
 
-    const f = new Date(fecha);
+    const fechaSplit = new Date(fecha).toISOString().split('T')[0];
 
-    return new Date(f.getFullYear(), f.getMonth(), 1);
+    const [año, mes] = fechaSplit.split('-').map(Number);
+
+    return new Date(año, mes - 1, 1);
 
   }
 

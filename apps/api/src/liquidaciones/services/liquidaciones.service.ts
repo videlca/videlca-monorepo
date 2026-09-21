@@ -579,12 +579,16 @@ export class LiquidacionesService {
   }
 
   // NORMALIZA UNA FECHA AL DIA 1 DE SU MES (mismo criterio que AdicionalesService, se necesita aca para comparar la
-  // vigencia del adicional contra el mes que se esta liquidando)
+  // vigencia del adicional contra el mes que se esta liquidando). SE EXTRAE EL AÑO/MES DEL STRING ISO (UTC), NO DE
+  // LOS GETTERS LOCALES: con getters locales, en un servidor en UTC-5 (Colombia) una fecha guardada como el dia 1 de
+  // un mes se lee como el ultimo dia del mes anterior, y el adicional deja de coincidir con el mes que se esta liquidando
   private normalizarMes(fecha: Date): Date {
 
-    const f = new Date(fecha);
+    const fechaSplit = new Date(fecha).toISOString().split('T')[0];
 
-    return new Date(f.getFullYear(), f.getMonth(), 1);
+    const [año, mes] = fechaSplit.split('-').map(Number);
+
+    return new Date(año, mes - 1, 1);
 
   }
 
