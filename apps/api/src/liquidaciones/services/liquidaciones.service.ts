@@ -688,17 +688,16 @@ export class LiquidacionesService {
     // if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
     //   throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    // Rango del mes objetivo: [inicioMes, finMes)
-    const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
-    const finMes = new Date(Date.UTC(anio, mes1a12, 1, 0, 0, 0)); // inicio del mes siguiente
-
     const grupos = await this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
       .where(`grupo.estado = :estado`, { estado: true })
-      .andWhere('grupo.fechaCreacion < :fin AND (grupo.fechaCreacion >= :ini)', {
-        ini: inicioMes,
-        fin: finMes,
-      })
+      // EL MES/AÑO QUE SE LIQUIDA NO ES EL MES/AÑO EN QUE SE GENERO EL GRUPO (fechaCreacion): agosto se suele liquidar
+      // ya entrado septiembre, asi que filtrar por fechaCreacion mostraria las liquidaciones de agosto en el historial
+      // de septiembre. El mes/año real que se liquido esta codificado en "descripcion", con formato fijo
+      // "liquidacion_{mes}_{anio}_{idGrupoLiquidacion}" (mes SIN cero a la izquierda, ver generarGrupoMensual), asi
+      // que se extraen esos 2 segmentos con SUBSTRING_INDEX para comparar contra el mes/año solicitados
+      .andWhere('SUBSTRING_INDEX(SUBSTRING_INDEX(grupo.descripcion, \'_\', 2), \'_\', -1) = :mes', { mes: mes1a12 })
+      .andWhere('SUBSTRING_INDEX(SUBSTRING_INDEX(grupo.descripcion, \'_\', 3), \'_\', -1) = :anio', { anio })
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
       .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
       .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
