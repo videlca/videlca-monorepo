@@ -8,6 +8,10 @@ export class CrearGrupoMensualDto {
   @Type(() => Number) @IsInt() @Min(1) @Max(12)
   mes: number; // 1-12
 
+  // Cliente al que pertenece este grupo de liquidacion (un grupo es siempre de un solo cliente)
+  @Type(() => Number) @IsInt() @Min(1)
+  idCliente: number;
+
   @IsOptional()
   @IsString()
   descripcion?: string;

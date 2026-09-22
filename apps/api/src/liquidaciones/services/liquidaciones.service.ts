@@ -277,11 +277,14 @@ export class LiquidacionesService {
   // Genera grupo y liquidaciones
   async generarGrupoMensual(crearGrupoMensualDto: CrearGrupoMensualDto) {
 
-    const { anio, mes, ordenIds = [], adicionalIds = [] } = crearGrupoMensualDto;
+    const { anio, mes, idCliente, ordenIds = [], adicionalIds = [] } = crearGrupoMensualDto;
 
-    if (!anio || !mes || mes < 1 || mes > 12 || (!ordenIds.length && !adicionalIds.length)) {
+    if (!anio || !mes || mes < 1 || mes > 12 || !idCliente || (!ordenIds.length && !adicionalIds.length)) {
       throw new BadRequestException('Parámetros inválidos');
     }
+
+    // VALIDA QUE EL CLIENTE EXISTA (el grupo de liquidacion siempre pertenece a un cliente)
+    const cliente = await this.clienteService.findOne(idCliente);
 
     const today = new Date();
 
@@ -302,7 +305,8 @@ export class LiquidacionesService {
       // 1) Crear grupo
       const grupoLiquidacion = queryRunner.manager.create(GrupoLiquidacion, {
         estado: false,
-        total: 0
+        total: 0,
+        idCliente: cliente,
       });
 
       await queryRunner.manager.save(GrupoLiquidacion, grupoLiquidacion);
@@ -699,6 +703,9 @@ export class LiquidacionesService {
       .andWhere('SUBSTRING_INDEX(SUBSTRING_INDEX(grupo.descripcion, \'_\', 2), \'_\', -1) = :mes', { mes: mes1a12 })
       .andWhere('SUBSTRING_INDEX(SUBSTRING_INDEX(grupo.descripcion, \'_\', 3), \'_\', -1) = :anio', { anio })
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
+      // CLIENTE AL QUE PERTENECE EL GRUPO: solo se necesitan id/nombre para mostrarlo en el listado
+      .leftJoin('grupo.idCliente', 'grupoCliente')
+      .addSelect(['grupoCliente.idCliente', 'grupoCliente.nombre'])
       .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
       .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
       .leftJoinAndSelect('ordenServicio.ordenServicioId', 'ordenServicioId')
@@ -882,6 +889,9 @@ export class LiquidacionesService {
     const query = this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
+      // CLIENTE AL QUE PERTENECE EL GRUPO: solo se necesitan id/nombre para mostrarlo en el listado
+      .leftJoin('grupo.idCliente', 'grupoCliente')
+      .addSelect(['grupoCliente.idCliente', 'grupoCliente.nombre'])
       .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
       .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
       .leftJoinAndSelect('ordenServicio.ordenServicioId', 'ordenServicioId')
@@ -940,6 +950,9 @@ export class LiquidacionesService {
       .createQueryBuilder('grupo')
       .where(`grupo.estado = :estado`, { estado: false })
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
+      // CLIENTE AL QUE PERTENECE EL GRUPO: solo se necesitan id/nombre para mostrarlo en el listado
+      .leftJoin('grupo.idCliente', 'grupoCliente')
+      .addSelect(['grupoCliente.idCliente', 'grupoCliente.nombre'])
       .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
       .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
       .leftJoinAndSelect('ordenServicio.ordenServicioId', 'ordenServicioId')
