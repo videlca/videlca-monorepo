@@ -719,6 +719,20 @@ export class OrdenServicioService {
 
     const duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
 
+    // SERVICIOS DE TURNO DE 12 HORAS: se puede contratar una duracion parcial del turno (minimo 1, maximo 12 horas),
+    // se cobra proporcional a las horas elegidas (ver calcularPrecioCatalogo)
+    if (servicio.horasFijas === 12) {
+
+      if (duracionServicio < 1 || duracionServicio > 12) {
+
+        throw new BadRequestException('La duracion del servicio debe ser minimo 1 hora y maximo 12 horas');
+
+      }
+
+      return;
+
+    }
+
     if (duracionServicio !== servicio.horasFijas) {
 
       throw new BadRequestException(`La duracion del servicio debe ser de ${servicio.horasFijas} horas`);
@@ -907,6 +921,16 @@ export class OrdenServicioService {
       const patron = this.construirPatronDias(item);
       const todosLosDias = this.esPatronTodosLosDias(patron);
 
+      // SERVICIOS DE TURNO DE 12 HORAS (turno o mensual): se puede contratar una duracion parcial del turno (minimo 1,
+      // maximo 12 horas, ver validacionHorarios), y se cobra proporcional a las horas elegidas sobre las 12 horas del
+      // turno completo. El seguro de vida NO se prorratea por hora, se sigue cobrando como dia completo sin importar
+      // cuantas horas se elijan (1, 2, 3... hasta 12)
+      const duracionSeleccionada = servicio.horasFijas === 12
+        ? await this.calcularDuracionServicio(item.horaInicio, item.horaFin)
+        : null;
+
+      const factorHoras = duracionSeleccionada != null ? duracionSeleccionada / 12 : 1;
+
       let desglose: ReturnType<OrdenServicioService['calcularTotalesTarifa']>;
       let mensaje: string;
 
@@ -945,33 +969,37 @@ export class OrdenServicioService {
 
       }
 
-      // POR TURNO: costos directos * dias, seguro de vida (mensual, de tarifa_hora) / 30 * dias, aui flat 10%
+      // POR TURNO: costos directos * dias (proporcional a las horas elegidas si el turno es de 12h y no se pidieron
+      // las 12), seguro de vida (mensual, de tarifa_hora) / 30 * dias SIN prorratear por hora, aui flat 10%
       else if (tipoTarifaNombre === TipoTarifaInterface.TURNO) {
 
         const diasAplicables = await this.contarDiasSegunPatron(fechaInicioOrden, fechaFinOrden, patron);
 
-        const costosDirectos = Number(tarifa.costosDirectos) * diasAplicables;
+        const costosDirectos = Number(tarifa.costosDirectos) * factorHoras * diasAplicables;
 
         const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(tarifa.idPeriodo.idPeriodo);
         const seguroVida = Math.ceil(seguroVidaMensual / 30) * diasAplicables;
 
         desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, 0.10);
-        mensaje = `Por turno, ${diasAplicables} dia(s) segun el patron de dias seleccionado`;
+        mensaje = factorHoras < 1
+          ? `Por turno, ${diasAplicables} dia(s), turno parcial de ${duracionSeleccionada} de 12 horas (proporcional)`
+          : `Por turno, ${diasAplicables} dia(s) segun el patron de dias seleccionado`;
 
       }
 
-      // MENSUAL: si es un mes exacto (y aplican todos los dias) se cobra la tarifa completa, sino se prorratea por dias.
+      // MENSUAL: si es un mes exacto, aplican todos los dias Y se pidieron las 12 horas completas del turno, se cobra
+      // la tarifa completa; sino se prorratea por dias (y por horas, si el turno es de 12h y no se pidieron las 12).
       // AUI 10% armado / 8% sin armado
       else if (tipoTarifaNombre === TipoTarifaInterface.MES) {
 
-        if (todosLosDias && this.esMesExacto(fechaInicioOrden, fechaFinOrden)) {
+        if (factorHoras === 1 && todosLosDias && this.esMesExacto(fechaInicioOrden, fechaFinOrden)) {
 
           desglose = this.tomarTotalesDeTarifa(tarifa);
           mensaje = 'Es un mes exacto, se cobra la tarifa mensual completa';
 
         } else {
 
-          const costosDirectos = await this.prorratearValorMensual(Number(tarifa.costosDirectos), fechaInicioOrden, fechaFinOrden, patron);
+          const costosDirectos = (await this.prorratearValorMensual(Number(tarifa.costosDirectos), fechaInicioOrden, fechaFinOrden, patron)) * factorHoras;
 
           const seguroVidaMensual = await this.obtenerSeguroVidaMensualPeriodo(tarifa.idPeriodo.idPeriodo);
           const seguroVida = await this.prorratearValorMensual(seguroVidaMensual, fechaInicioOrden, fechaFinOrden, patron);
@@ -979,8 +1007,11 @@ export class OrdenServicioService {
           const porcentajeAui = servicio.armado ? 0.10 : 0.08;
           const diasAplicables = await this.contarDiasSegunPatron(fechaInicioOrden, fechaFinOrden, patron);
 
+          mensaje = factorHoras < 1
+            ? `${diasAplicables} dia(s), turno parcial de ${duracionSeleccionada} de 12 horas (proporcional), AUI ${servicio.armado ? '10% armado' : '8% sin armado'}`
+            : `${diasAplicables} dia(s) segun el patron de dias seleccionado, proporcional a la tarifa mensual (AUI ${servicio.armado ? '10% armado' : '8% sin armado'})`;
+
           desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, porcentajeAui);
-          mensaje = `${diasAplicables} dia(s) segun el patron de dias seleccionado, proporcional a la tarifa mensual (AUI ${servicio.armado ? '10% armado' : '8% sin armado'})`;
 
         }
 
