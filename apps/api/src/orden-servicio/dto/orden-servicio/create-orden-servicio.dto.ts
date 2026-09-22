@@ -154,16 +154,18 @@ export class CreateOrdenServicioDto {
     @MaxLength(100, { message: 'El campo numero orden de servicio no puede exceder los 100 caracteres' })
     numeroOrdenServicio: string;
 
-    // SOLO SE ENVIA SI EL TIPO DE SERVICIO DE LA ORDEN ES "Vigilancia y escolta". Si es "Monitoreo de alarmas" se envia idCliente en su lugar
-    @ApiProperty({ description: 'Id de locacion. Requerido si el tipo de servicio de la orden es "Vigilancia y escolta"', example: 1, required: false})
+    // "Monitoreo de alarmas" SIEMPRE va con idCliente (nunca tiene locacion). "Vigilancia y escolta" acepta idLocacion
+    // O idCliente (nunca ambos): si se sabe el puesto se envia idLocacion, si se le va a asignar directo al cliente
+    // (sin puesto especifico) se envia idCliente
+    @ApiProperty({ description: 'Id de locacion. Solo aplica si el tipo de servicio de la orden es "Vigilancia y escolta" (ahi es opcional entre esto o idCliente)', example: 1, required: false})
     @IsOptional()
     @IsNumber({}, {message: 'El valor del campo locacion debe ser un número'})
     @IsPositive({message: 'El valor del campo locacion debe ser un numero positivo'})
     @Min(1, {message: 'El valor del campo locacion debe ser minimo 1'})
     idLocacion?: number;
 
-    // SOLO SE ENVIA SI EL TIPO DE SERVICIO DE LA ORDEN ES "Monitoreo de alarmas". Si es "Vigilancia y escolta" se envia idLocacion en su lugar
-    @ApiProperty({ description: 'Id de cliente. Requerido si el tipo de servicio de la orden es "Monitoreo de alarmas"', example: 1, required: false})
+    // Requerido siempre si el tipo de servicio es "Monitoreo de alarmas". Opcional (alternativa a idLocacion) si es "Vigilancia y escolta"
+    @ApiProperty({ description: 'Id de cliente. Requerido si el tipo de servicio de la orden es "Monitoreo de alarmas"; opcional (alternativa a idLocacion) si es "Vigilancia y escolta"', example: 1, required: false})
     @IsOptional()
     @IsNumber({}, {message: 'El valor del campo cliente debe ser un número'})
     @IsPositive({message: 'El valor del campo cliente debe ser un numero positivo'})

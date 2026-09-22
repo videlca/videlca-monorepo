@@ -191,7 +191,9 @@ export class OrdenServicioService {
     }
 
     // DETERMINAR EL TIPO DE SERVICIO DE LA ORDEN A PARTIR DE LOS SERVICIOS SELECCIONADOS (todos deben ser del mismo tipo):
-    // "Vigilancia y escolta" se asigna a una locacion (idLocacion), "Monitoreo de alarmas" se asigna directamente a un cliente (idCliente)
+    // "Monitoreo de alarmas" siempre se asigna directamente a un cliente (idCliente), nunca tiene locacion.
+    // "Vigilancia y escolta" se puede asignar a una locacion (idLocacion) O directamente a un cliente (idCliente) -
+    // exactamente uno de los dos, nunca ambos ni ninguno
     const tiposServicioOrden = new Set(
       [...tarifasPorItem.values()].map(tarifa => tarifa.idServicio.idTipoServicio.nombre)
     );
@@ -201,6 +203,10 @@ export class OrdenServicioService {
     }
 
     const esOrdenMonitoreo = tiposServicioOrden.has(TipoServicioInterface.MONITOREO_ALARMAS);
+
+    if (createOrdenServicioDto.idLocacion && createOrdenServicioDto.idCliente) {
+      throw new BadRequestException('Debe seleccionar solo una locacion o un cliente para la orden, no ambos');
+    }
 
     let locacion: Locacion | null = null;
     let cliente: Cliente | null = null;
@@ -213,13 +219,17 @@ export class OrdenServicioService {
 
       cliente = await this.clientesService.findOne(createOrdenServicioDto.idCliente);
 
-    } else {
-
-      if (!createOrdenServicioDto.idLocacion) {
-        throw new BadRequestException('Debe seleccionar una locacion para una orden de servicio de tipo "Vigilancia y escolta"');
-      }
+    } else if (createOrdenServicioDto.idLocacion) {
 
       locacion = await this.locacionService.findOne(createOrdenServicioDto.idLocacion);
+
+    } else if (createOrdenServicioDto.idCliente) {
+
+      cliente = await this.clientesService.findOne(createOrdenServicioDto.idCliente);
+
+    } else {
+
+      throw new BadRequestException('Debe seleccionar una locacion o un cliente para una orden de servicio de tipo "Vigilancia y escolta"');
 
     }
 
