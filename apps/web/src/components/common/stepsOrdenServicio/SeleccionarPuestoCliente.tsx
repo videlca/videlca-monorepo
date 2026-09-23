@@ -18,6 +18,10 @@ import { ButtonAction } from "../ButtonAction";
 import { useNavigate } from "@tanstack/react-router";
 import { LocacionFilterColumn, ClienteFilterColumn } from "../../../api/dtos/clientes";
 import type { UseFormSetValue } from "react-hook-form";
+import {
+  TIPO_SERVICIO_MONITOREO_ALARMAS,
+  TIPO_SERVICIO_VIGILANCIA_Y_ESCOLTA,
+} from "./tipoServicioConstantes";
 
 const CLIENTE_COLUMN_LABELS: Record<ClienteFilterColumn, string> = {
   [ClienteFilterColumn.NUMERO_IDENTIFICACION]: "Número de identificación",
@@ -32,15 +36,19 @@ export const SeleccionarPuestoCliente = ({
   setValue,
   setSelectedPuesto,
   setSelectedCliente,
-  esOrdenMonitoreo,
+  tipoServicioNombre,
 }: {
   idLocacion: number;
   idCliente: number;
   setValue: UseFormSetValue<any>;
   setSelectedPuesto: (puesto: Puesto) => void;
   setSelectedCliente: (cliente: Cliente) => void;
-  esOrdenMonitoreo: boolean;
+  tipoServicioNombre?: string;
 }) => {
+  const esOrdenMonitoreo = tipoServicioNombre === TIPO_SERVICIO_MONITOREO_ALARMAS;
+  const esVigilanciaYEscolta =
+    tipoServicioNombre === TIPO_SERVICIO_VIGILANCIA_Y_ESCOLTA;
+
   const [isOpenCreatePuesto, setIsOpenCreatePuesto] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [debouncedSearchText, setDebouncedSearchText] = useState("");
@@ -49,19 +57,43 @@ export const SeleccionarPuestoCliente = ({
   >(LocacionFilterColumn.NOMBRE);
   const [filteredPuestos, setFilteredPuestos] = useState<Puesto[]>();
   const [filteredClientes, setFilteredClientes] = useState<Cliente[]>();
+  // Solo relevante para "Vigilancia y escolta": el usuario elige si la orden se asigna a un puesto o directo
+  // a un cliente (ver commit backend 8cd811e). "Monitoreo de alarmas" siempre busca por cliente, sin importar
+  // este estado (ver buscarPorCliente)
+  const [modoBusqueda, setModoBusqueda] = useState<"puesto" | "cliente">(
+    "puesto",
+  );
 
-  // Al cambiar de tipo de servicio se reinicia la busqueda: las columnas de filtro son distintas para
-  // Locacion (puesto) y Cliente, no tiene sentido conservar una seleccion que ya no aplica
+  const buscarPorCliente =
+    esOrdenMonitoreo || (esVigilanciaYEscolta && modoBusqueda === "cliente");
+
+  // Si el tipo de servicio deja de ser "Vigilancia y escolta" (el usuario volvio al paso 1 y cambio de tipo),
+  // se reinicia el modo para que la proxima vez que vuelva a ser vigilancia y escolta arranque en "puesto"
+  useEffect(() => {
+    if (!esVigilanciaYEscolta) {
+      setModoBusqueda("puesto");
+    }
+  }, [esVigilanciaYEscolta]);
+
+  // Al cambiar el modo de busqueda (puesto vs cliente) se reinicia la busqueda: las columnas de filtro son
+  // distintas para Locacion (puesto) y Cliente, no tiene sentido conservar una seleccion que ya no aplica.
+  // Tambien se limpia el campo contrario al que aplica ahora, para no enviar accidentalmente ambos ids al crear
+  // la orden (el backend rechaza idLocacion + idCliente juntos)
   useEffect(() => {
     setSearchText("");
     setDebouncedSearchText("");
     setFilteredPuestos(undefined);
     setFilteredClientes(undefined);
     setSearchColumn(
-      esOrdenMonitoreo ? ClienteFilterColumn.NOMBRE : LocacionFilterColumn.NOMBRE,
+      buscarPorCliente ? ClienteFilterColumn.NOMBRE : LocacionFilterColumn.NOMBRE,
     );
+    if (buscarPorCliente) {
+      setValue("idLocacion", 0);
+    } else {
+      setValue("idCliente", 0);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [esOrdenMonitoreo]);
+  }, [buscarPorCliente]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,7 +113,7 @@ export const SeleccionarPuestoCliente = ({
       return;
     }
 
-    if (esOrdenMonitoreo) {
+    if (buscarPorCliente) {
       filterClientes(
         {
           column: searchColumn as ClienteFilterColumn,
@@ -109,21 +141,52 @@ export const SeleccionarPuestoCliente = ({
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchText, searchColumn, esOrdenMonitoreo]);
+  }, [debouncedSearchText, searchColumn, buscarPorCliente]);
 
   const navigate = useNavigate();
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center">
         <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          {esOrdenMonitoreo ? "Seleccionar Cliente" : "Seleccionar Puesto"}
+          {buscarPorCliente ? "Seleccionar Cliente" : "Seleccionar Puesto"}
         </h3>
         <p className="text-sm text-gray-600">
           {esOrdenMonitoreo
             ? "Busque y seleccione el cliente al que se le prestará el servicio de monitoreo de alarmas"
-            : "Busque y seleccione el cliente y el puesto donde se prestada el servicio"}
+            : buscarPorCliente
+              ? "Busque y seleccione el cliente al que se le prestará el servicio"
+              : "Busque y seleccione el cliente y el puesto donde se prestada el servicio"}
         </p>
       </div>
+
+      {esVigilanciaYEscolta && (
+        <div className="flex justify-center">
+          <div className="inline-flex rounded-lg bg-gray-100 p-1">
+            <button
+              type="button"
+              onClick={() => setModoBusqueda("puesto")}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                modoBusqueda === "puesto"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Buscar por Puesto
+            </button>
+            <button
+              type="button"
+              onClick={() => setModoBusqueda("cliente")}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                modoBusqueda === "cliente"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Buscar por Cliente
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Buscador */}
       <div className="flex flex-row justify-between gap-2">
@@ -135,7 +198,7 @@ export const SeleccionarPuestoCliente = ({
               setSearchColumn(
                 e.target.value as LocacionFilterColumn | ClienteFilterColumn,
               );
-              if (esOrdenMonitoreo) {
+              if (buscarPorCliente) {
                 setValue("idCliente", 0);
               } else {
                 setValue("idLocacion", 0);
@@ -146,7 +209,7 @@ export const SeleccionarPuestoCliente = ({
             <option value="" disabled>
               Seleccionar columna
             </option>
-            {esOrdenMonitoreo
+            {buscarPorCliente
               ? Object.values(ClienteFilterColumn).map((column) => (
                   <option key={column} value={column}>
                     {CLIENTE_COLUMN_LABELS[column]}
@@ -173,7 +236,7 @@ export const SeleccionarPuestoCliente = ({
           <input
             type="text"
             placeholder={
-              esOrdenMonitoreo
+              buscarPorCliente
                 ? "Buscar por nombre, identificación, tipo o subsegmentación del cliente..."
                 : "Buscar por nombre del cliente, puesto o dirección..."
             }
@@ -181,7 +244,7 @@ export const SeleccionarPuestoCliente = ({
             value={searchText}
             onChange={(e) => {
               setSearchText(e.target.value);
-              if (esOrdenMonitoreo) {
+              if (buscarPorCliente) {
                 setValue("idCliente", 0);
               } else {
                 setValue("idLocacion", 0);
@@ -193,11 +256,11 @@ export const SeleccionarPuestoCliente = ({
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-700">
-          {esOrdenMonitoreo
+          {buscarPorCliente
             ? `Clientes encontrados (${filteredClientes?.length || 0})`
             : `Puestos encontrados (${filteredPuestos?.length || 0})`}
         </p>
-        {!esOrdenMonitoreo && (
+        {/* {!buscarPorCliente && (
           <div className="justify-end">
             <button
               className="flex cursor-pointer items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
@@ -207,11 +270,11 @@ export const SeleccionarPuestoCliente = ({
               Crear Puesto
             </button>
           </div>
-        )}
+        )} */}
       </div>
 
       <div className="max-h-80 min-h-40 space-y-3 overflow-y-auto">
-        {esOrdenMonitoreo ? (
+        {buscarPorCliente ? (
           <>
             {filteredClientes?.map((cliente) => (
               <div

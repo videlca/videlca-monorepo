@@ -5,6 +5,9 @@ import type { Cliente, Usuario } from "../../types";
 
 export interface GruposLiquidaciones {
   idGrupoLiquidacion: number;
+  // Cliente al que pertenece el grupo. Null en grupos historicos creados antes de esta relacion (algunos de
+  // esos mezclaban varios clientes en un mismo grupo); todo grupo nuevo siempre lo trae (ver CrearGrupoMensualDto)
+  idCliente: Pick<Cliente, "idCliente" | "nombre"> | null;
   estado: boolean;
   total: number;
   descripcion: string;

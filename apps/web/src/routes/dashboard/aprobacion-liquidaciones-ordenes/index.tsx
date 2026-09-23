@@ -112,6 +112,8 @@ function RouteComponent() {
                   <div className="flex items-center justify-between">
                     <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:gap-0">
                       <div className="text-sm text-gray-600">
+                        <span className="font-medium">Cliente:</span>{" "}
+                        {group.idCliente?.nombre || "N/A"} <br />
                         <span className="font-medium">Descripción:</span>{" "}
                         {group.descripcion} <br />
                         <span className="font-medium">Órdenes:</span>{" "}

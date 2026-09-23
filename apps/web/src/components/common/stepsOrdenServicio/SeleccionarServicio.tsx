@@ -3,6 +3,17 @@ import { priceFormat } from "../../../utils/PriceFormat";
 import type { Servicio, TipoServicio } from "../../../api/types/servicio";
 import type { Tarifa } from "../../../api/types/periodo";
 
+// Distingue visualmente los servicios por turno de los mensuales, sin llamar demasiado la atención
+const getServiceStyle = (descripcion: string) => {
+  if (descripcion.startsWith("Turno")) {
+    return { text: "text-[#F4A100]", border: "border-[#F4A100]" };
+  }
+  if (descripcion.startsWith("Mes")) {
+    return { text: "text-[#386641]", border: "border-[#A7C957]" };
+  }
+  return { text: "text-gray-900", border: "border-gray-200" };
+};
+
 export const SeleccionarServicio = ({
   selectedServices,
   tarifasPeriodoActivoByIdTipoServicioData,
@@ -34,7 +45,7 @@ export const SeleccionarServicio = ({
         <div>
           <label className="mb-3 flex flex-row items-center justify-between text-sm font-medium text-gray-700">
             <span className="font-bold">Servicios Disponibles.</span>
-            <span className="text-xs">
+            <span className="text-sm">
               Unidades seleccionadas: {selectedServices.length}
             </span>
           </label>
@@ -45,6 +56,9 @@ export const SeleccionarServicio = ({
               const cantidad = selectedServices.filter(
                 (s) => s.idServicio === tarifa.idServicio.idServicio,
               ).length;
+              const serviceStyle = getServiceStyle(
+                tarifa.idServicio.descripcion,
+              );
 
               return (
                 <div
@@ -52,11 +66,11 @@ export const SeleccionarServicio = ({
                   className={`rounded-lg border p-4 transition-all duration-200 ${
                     cantidad > 0
                       ? "border-blue-500 bg-blue-50 shadow-sm"
-                      : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                      : `${serviceStyle.border} hover:shadow-sm`
                   }`}
                 >
                   <div className="mb-2 flex items-start justify-between gap-2">
-                    <h4 className="text-sm font-medium text-gray-900">
+                    <h4 className={`text-lg font-medium ${serviceStyle.text}`}>
                       {tarifa.idServicio.descripcion}
                     </h4>
                     {cantidad > 0 && (
@@ -65,8 +79,8 @@ export const SeleccionarServicio = ({
                       </div>
                     )}
                   </div>
-                  <div className="mb-3">
-                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                  {/* <div className="mb-3">
+                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800">
                       {
                         tipoServiciosQuery?.find(
                           (cat) =>
@@ -75,16 +89,16 @@ export const SeleccionarServicio = ({
                         )?.descripcion
                       }
                     </span>
-                  </div>
+                  </div> */}
                   <div className="flex items-end justify-between gap-2 border-t border-gray-100 pt-2">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-sm text-gray-500">
                       Antes de IVA
                       <br />
                       <span className="text-sm font-medium text-gray-700">
                         {priceFormat(tarifa.precioAntesIva)}
                       </span>
                     </span>
-                    <span className="text-right text-xs text-gray-500">
+                    <span className="text-right text-sm text-gray-500">
                       Total
                       <br />
                       <span className="text-base font-semibold text-blue-600">

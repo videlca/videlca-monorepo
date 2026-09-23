@@ -56,6 +56,9 @@ const formatMesAdicional = (fecha: string) =>
 
 interface ClienteGrupo {
   clienteKey: string;
+  // Null cuando ninguna orden/adicional del grupo trae un cliente identificable ("Sin cliente"): el backend
+  // ahora exige idCliente para crear el grupo mensual (CrearGrupoMensualDto), por eso este grupo no se puede liquidar
+  idCliente: number | null;
   clienteNombre: string;
   ordenes: OrdenServicio[];
   adicionales: Adicional[];
@@ -84,6 +87,7 @@ const agruparPorCliente = (
     if (!grupos.has(key)) {
       grupos.set(key, {
         clienteKey: key,
+        idCliente: clienteId ?? null,
         clienteNombre: clienteNombre || "Sin cliente",
         ordenes: [],
         adicionales: [],
@@ -182,11 +186,19 @@ function RouteComponent() {
       return;
     }
 
+    if (!grupo.idCliente) {
+      toast.error(
+        "No se pudo determinar el cliente de este grupo, no se puede liquidar",
+      );
+      return;
+    }
+
     setLiquidandoClienteKey(grupo.clienteKey);
     await crearLiquidacionMensual(
       {
         anio: Number(searchYear),
         mes: Number(searchMonth),
+        idCliente: grupo.idCliente,
         ordenIds: grupo.ordenes.map((orden) => orden.idOrdenServicio || 0),
         adicionalIds: grupo.adicionales.map((adicional) => adicional.idAdicional),
       },
@@ -342,7 +354,7 @@ function RouteComponent() {
                       </div> */}
                       <ButtonAction
                         onClick={() => handleLiquidarCliente(grupo)}
-                        disabled={isCreatingLiquidacionMensualPending}
+                        disabled={isCreatingLiquidacionMensualPending || !grupo.idCliente}
                         Icon={PlusIcon}
                         label={isLiquidandoEsteCliente ? "Liquidando..." : "Liquidar Cliente"}
                       />

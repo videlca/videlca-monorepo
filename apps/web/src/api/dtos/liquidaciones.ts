@@ -1,6 +1,8 @@
 export interface CrearGrupoMensualDto {
   anio: number;
   mes: number;
+  // Cliente al que pertenece este grupo de liquidacion (un grupo es siempre de un solo cliente)
+  idCliente: number;
   ordenIds?: number[];
   adicionalIds?: number[];
 }

@@ -746,13 +746,14 @@ function RouteComponent() {
       precio: servicio.precio,
     }));
 
-    // Vigilancia y escolta envia idLocacion, Monitoreo de alarmas envia idCliente (nunca ambos): el backend
+    // Monitoreo de alarmas siempre envia idCliente. Vigilancia y escolta envia idLocacion O idCliente, segun
+    // el modo que el usuario haya elegido en el paso 2 (ver SeleccionarPuestoCliente): nunca ambos, el backend
     // rechaza idLocacion en 0 aunque el campo sea opcional (@IsPositive), por eso no se envia cuando no aplica
     const ordenesDeServicioMutation: CreateOrdenServicioDto = {
       origenServicio: origenServicio || OrigenServicioEnum.CATALOGO,
       numeroOrdenServicio: data.numeroOrdenServicio,
-      ...(esOrdenMonitoreo
-        ? { idCliente: data.idCliente || 0 }
+      ...(data.idCliente
+        ? { idCliente: data.idCliente }
         : { idLocacion: data.idLocacion || 0 }),
       fechaInicio: data.fechaInicio,
       fechaFin: isIndefinite ? null : data.fechaFin,
@@ -1049,7 +1050,7 @@ function RouteComponent() {
       cell: ({ row }) => (
         <span className="flex flex-col gap-1 font-medium whitespace-nowrap text-black capitalize">
           {row.original.idLocacion?.nombre ||
-            (row.original.idCliente ? "N/A (Monitoreo de alarmas)" : "No especificado")}
+            (row.original.idCliente ? "N/A" : "No especificado")}
           <span className="text-sm text-gray-500">
             {row.original.idLocacion?.direccion}
           </span>
@@ -1201,7 +1202,7 @@ function RouteComponent() {
             setValue={setValueCreate}
             setSelectedPuesto={setSelectedPuesto}
             setSelectedCliente={setSelectedCliente}
-            esOrdenMonitoreo={esOrdenMonitoreo}
+            tipoServicioNombre={tipoServicioSeleccionado?.nombre}
           />
         );
 
@@ -1482,9 +1483,8 @@ function RouteComponent() {
                     (identificador.codigoTipoServicio === 0 ||
                       identificador.codigo === 0)) ||
                   (currentStep === 2 &&
-                    (esOrdenMonitoreo
-                      ? !watchCreate("idCliente")
-                      : !watchCreate("idLocacion"))) ||
+                    !watchCreate("idCliente") &&
+                    !watchCreate("idLocacion")) ||
                   (currentStep === 3 && !watchCreate("fechaInicio")) ||
                   (currentStep === 4 && !origenServicio) ||
                   (currentStep === 5 &&
