@@ -61,7 +61,7 @@ export const AdicionalLiquidadoDetalle = ({
           <CircleDollarSign className="h-6 w-6 text-green-600" />
           Precio Calculado
         </h4>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
           <p>
             <span className="block font-medium text-green-800">Costos Directos</span>
             <span className="text-green-700">
@@ -84,12 +84,6 @@ export const AdicionalLiquidadoDetalle = ({
             <span className="block font-medium text-green-800">Precio antes de IVA</span>
             <span className="text-green-700">
               {detalle.precioAntesIva != null ? priceFormat(Number(detalle.precioAntesIva)) : "-"}
-            </span>
-          </p>
-          <p>
-            <span className="block font-medium text-green-800">IVA</span>
-            <span className="text-green-700">
-              {detalle.iva != null ? priceFormat(Number(detalle.iva)) : "-"}
             </span>
           </p>
         </div>

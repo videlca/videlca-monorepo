@@ -39,7 +39,10 @@ import type { CreateAdicionalDto, UpdateAdicionalDto } from "../../../api/dtos";
 import type { Cliente } from "../../../types";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
-import { calcularTotalesAdicional } from "../../../utils/calcularTotalesAdicional";
+import {
+  calcularAuiAdicional,
+  calcularTotalesAdicional,
+} from "../../../utils/calcularTotalesAdicional";
 
 export const Route = createFileRoute("/dashboard/ordenes-servicio/adicionales")({
   component: RouteComponent,
@@ -213,7 +216,8 @@ function RouteComponent() {
         aui,
         costosDirectosSeguroVida: Number(values.costosDirectosSeguroVida) || 0,
         precioAntesIva: Number(values.precioAntesIva) || 0,
-        iva: Number(values.iva) || 0,
+        // Los adicionales no llevan IVA: siempre se envia en 0
+        iva: 0,
         precioTotal: Number(values.precioTotal) || 0,
       },
       {
@@ -244,7 +248,6 @@ function RouteComponent() {
     const aui = Number(adicional.aui);
     const costosDirectosSeguroVida = Number(adicional.costosDirectosSeguroVida);
     const precioAntesIva = Number(adicional.precioAntesIva);
-    const iva = Number(adicional.iva);
     const precioTotal = Number(adicional.precioTotal);
 
     // Clasifica cada campo calculado como "manual" si su valor guardado no coincide con lo que la
@@ -252,10 +255,14 @@ function RouteComponent() {
     // de saber si en su momento se dejo en automatico o se edito a mano, ya que no se persiste ese flag
     const auto = calcularTotalesAdicional(costosDirectos, seguroVida, aui);
     const manuales = new Set<CampoCalculadoAdicional>();
+    if (aui !== calcularAuiAdicional(costosDirectos, seguroVida)) manuales.add("aui");
     if (costosDirectosSeguroVida !== auto.costosDirectosSeguroVida) manuales.add("costosDirectosSeguroVida");
     if (precioAntesIva !== auto.precioAntesIva) manuales.add("precioAntesIva");
-    if (iva !== auto.iva) manuales.add("iva");
-    if (precioTotal !== auto.precioTotal) manuales.add("precioTotal");
+    // Los adicionales creados antes de quitar el IVA guardaron precioTotal = precioAntesIva + IVA (1.9%):
+    // ese valor tambien se trata como automatico, para que al guardar se recalcule ya sin IVA
+    const precioTotalConIvaLegacy = precioAntesIva + Math.ceil(precioAntesIva * 0.019);
+    if (precioTotal !== auto.precioTotal && precioTotal !== precioTotalConIvaLegacy)
+      manuales.add("precioTotal");
     setCamposManualesEdit(manuales);
 
     resetEdit({
@@ -267,7 +274,7 @@ function RouteComponent() {
       aui,
       costosDirectosSeguroVida,
       precioAntesIva,
-      iva,
+      iva: 0,
       precioTotal,
     });
 
@@ -302,7 +309,8 @@ function RouteComponent() {
           aui,
           costosDirectosSeguroVida: Number(data.costosDirectosSeguroVida) || 0,
           precioAntesIva: Number(data.precioAntesIva) || 0,
-          iva: Number(data.iva) || 0,
+          // Los adicionales no llevan IVA: siempre se envia en 0
+          iva: 0,
           precioTotal: Number(data.precioTotal) || 0,
         },
       },
@@ -501,7 +509,6 @@ function RouteComponent() {
                 aui={watchCreate("aui") ?? 0}
                 costosDirectosSeguroVida={watchCreate("costosDirectosSeguroVida") ?? 0}
                 precioAntesIva={watchCreate("precioAntesIva") ?? 0}
-                iva={watchCreate("iva") ?? 0}
                 precioTotal={watchCreate("precioTotal") ?? 0}
                 camposManuales={camposManualesCreate}
                 onToggleManual={toggleManualCreate}
@@ -589,7 +596,6 @@ function RouteComponent() {
               aui={watchEdit("aui") ?? 0}
               costosDirectosSeguroVida={watchEdit("costosDirectosSeguroVida") ?? 0}
               precioAntesIva={watchEdit("precioAntesIva") ?? 0}
-              iva={watchEdit("iva") ?? 0}
               precioTotal={watchEdit("precioTotal") ?? 0}
               camposManuales={camposManualesEdit}
               onToggleManual={toggleManualEdit}
