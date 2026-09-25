@@ -111,18 +111,27 @@ function RouteComponent() {
                 <div className="border-b border-gray-200 bg-gray-50 p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:gap-0">
-                      <div className="text-sm text-gray-600">
-                        <span className="font-medium">Cliente:</span>{" "}
-                        {group.idCliente?.nombre || "N/A"} <br />
-                        <span className="font-medium">Descripción:</span>{" "}
-                        {group.descripcion} <br />
-                        <span className="font-medium">Órdenes:</span>{" "}
-                        {group.liquidaciones?.length || 0}
-                        <br />
-                        <span className="font-medium">Creado:</span>{" "}
-                        {new Date(group.fechaCreacion).toLocaleDateString(
-                          "es-ES",
-                        )}
+                      <div className="text-gray-600">
+                        <h3
+                          className={`mb-2 border-b border-gray-200 pb-2 text-xl font-semibold ${
+                            group.idCliente?.nombre
+                              ? "text-gray-900"
+                              : "text-gray-400 italic"
+                          }`}
+                        >
+                          {group.idCliente?.nombre || "Sin cliente"}
+                        </h3>
+                        <div className="text-sm">
+                          <span className="font-medium">Descripción:</span>{" "}
+                          {group.descripcion} <br />
+                          <span className="font-medium">Órdenes:</span>{" "}
+                          {group.liquidaciones?.length || 0}
+                          <br />
+                          <span className="font-medium">Creado:</span>{" "}
+                          {new Date(group.fechaCreacion).toLocaleDateString(
+                            "es-ES",
+                          )}
+                        </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-0 md:gap-4">
                         <ButtonOrdenes
