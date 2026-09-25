@@ -39,7 +39,8 @@ export class AdicionalesService {
 
     const costosDirectos = createAdicionalDto.costosDirectos ?? 0;
     const seguroVida = createAdicionalDto.seguroVida ?? 0;
-    const aui = createAdicionalDto.aui ?? 0;
+    // AUI por defecto = 10% de (costos directos + seguro de vida) (el usuario puede enviarlo ajustado manualmente)
+    const aui = createAdicionalDto.aui ?? Math.ceil((costosDirectos + seguroVida) * 0.10);
 
     const totales = this.calcularTotales(costosDirectos, seguroVida, aui);
 
@@ -54,7 +55,8 @@ export class AdicionalesService {
       ...totales,
       costosDirectosSeguroVida: createAdicionalDto.costosDirectosSeguroVida ?? totales.costosDirectosSeguroVida,
       precioAntesIva: createAdicionalDto.precioAntesIva ?? totales.precioAntesIva,
-      iva: createAdicionalDto.iva ?? totales.iva,
+      // Los adicionales no llevan IVA: siempre se guarda en 0, sin importar lo que se envie
+      iva: 0,
       precioTotal: createAdicionalDto.precioTotal ?? totales.precioTotal,
     });
 
@@ -162,7 +164,8 @@ export class AdicionalesService {
       ...totales,
       costosDirectosSeguroVida: updateAdicionalDto.costosDirectosSeguroVida ?? totales.costosDirectosSeguroVida,
       precioAntesIva: updateAdicionalDto.precioAntesIva ?? totales.precioAntesIva,
-      iva: updateAdicionalDto.iva ?? totales.iva,
+      // Los adicionales no llevan IVA: siempre se guarda en 0, sin importar lo que se envie
+      iva: 0,
       precioTotal: updateAdicionalDto.precioTotal ?? totales.precioTotal,
     });
 
@@ -238,7 +241,8 @@ export class AdicionalesService {
     const costosDirectosSeguroVida = Math.ceil(costosDirectos + seguroVida);
     const auiRedondeado = Math.ceil(aui);
     const precioAntesIva = costosDirectosSeguroVida + auiRedondeado;
-    const iva = Math.ceil(precioAntesIva * 0.019);
+    // Los adicionales no llevan IVA: se mantiene el campo en 0 para no alterar calculos posteriores
+    const iva = 0;
     const precioTotal = Math.ceil(precioAntesIva + iva);
 
     return {
