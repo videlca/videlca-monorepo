@@ -79,30 +79,12 @@ export const SeleccionarServicio = ({
                       </div>
                     )}
                   </div>
-                  {/* <div className="mb-3">
-                    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-800">
-                      {
-                        tipoServiciosQuery?.find(
-                          (cat) =>
-                            cat.idTipoServicio ===
-                            tarifa.idServicio.idTipoServicio.idTipoServicio,
-                        )?.descripcion
-                      }
-                    </span>
-                  </div> */}
-                  <div className="flex items-end justify-between gap-2 border-t border-gray-100 pt-2">
-                    <span className="text-sm text-gray-500">
+                  <div className="flex items-start justify-end gap-2 border-t border-gray-100 pt-2">
+                    <span className="text-right text-sm text-gray-500">
                       Antes de IVA
                       <br />
-                      <span className="text-sm font-medium text-gray-700">
-                        {priceFormat(tarifa.precioAntesIva)}
-                      </span>
-                    </span>
-                    <span className="text-right text-sm text-gray-500">
-                      Total
-                      <br />
                       <span className="text-base font-semibold text-blue-600">
-                        {priceFormat(tarifa.precioTotal)}
+                        {priceFormat(tarifa.precioAntesIva)}
                       </span>
                     </span>
                   </div>

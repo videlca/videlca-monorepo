@@ -4,10 +4,13 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import {
   AlertCircleIcon,
+  CheckIcon,
   ChevronDownIcon,
   FileTextIcon,
+  ListChecksIcon,
   PlusIcon,
   Search,
+  XIcon,
 } from "lucide-react";
 import { format, getYear, subYears } from "date-fns";
 import { es } from "date-fns/locale";
@@ -64,6 +67,14 @@ interface ClienteGrupo {
   adicionales: Adicional[];
   total: number;
   totalAntesIva: number;
+}
+
+// Seleccion manual de ordenes/adicionales para liquidar parcialmente. Solo puede existir una seleccion a la vez y
+// siempre pertenece a un unico cliente (un grupo de liquidacion es siempre de un solo cliente)
+interface SeleccionCliente {
+  clienteKey: string;
+  ordenIds: Set<number>;
+  adicionalIds: Set<number>;
 }
 
 const ordenAntesIva = (orden: OrdenServicio) =>
@@ -123,10 +134,13 @@ function RouteComponent() {
   const [searchMonth, setSearchMonth] = useState<string>(currentMonth);
   const [searchYear, setSearchYear] = useState<string>(currentYear);
   const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
-  const [liquidandoClienteKey, setLiquidandoClienteKey] = useState<string | null>(
-    null,
+  const [expandedClients, setExpandedClients] = useState<Set<string>>(
+    new Set(),
   );
+  const [liquidandoClienteKey, setLiquidandoClienteKey] = useState<
+    string | null
+  >(null);
+  const [seleccion, setSeleccion] = useState<SeleccionCliente | null>(null);
 
   // Queries y mutaciones
   const {
@@ -159,7 +173,9 @@ function RouteComponent() {
     isSearching,
   );
 
-  const adicionalesData = Array.isArray(adicionales?.data) ? adicionales.data : [];
+  const adicionalesData = Array.isArray(adicionales?.data)
+    ? adicionales.data
+    : [];
 
   const {
     mutateAsync: crearLiquidacionMensual,
@@ -200,7 +216,9 @@ function RouteComponent() {
         mes: Number(searchMonth),
         idCliente: grupo.idCliente,
         ordenIds: grupo.ordenes.map((orden) => orden.idOrdenServicio || 0),
-        adicionalIds: grupo.adicionales.map((adicional) => adicional.idAdicional),
+        adicionalIds: grupo.adicionales.map(
+          (adicional) => adicional.idAdicional,
+        ),
       },
       {
         onSettled: () => {
@@ -210,7 +228,67 @@ function RouteComponent() {
     );
   };
 
-  const hayResultados = liquidacionesData.length > 0 || adicionalesData.length > 0;
+  const iniciarSeleccion = (grupo: ClienteGrupo) => {
+    setSeleccion({
+      clienteKey: grupo.clienteKey,
+      ordenIds: new Set(),
+      adicionalIds: new Set(),
+    });
+    setExpandedClients((prev) => new Set(prev).add(grupo.clienteKey));
+  };
+
+  const toggleSeleccionItem = (
+    tipo: "ordenIds" | "adicionalIds",
+    id: number,
+  ) => {
+    setSeleccion((prev) => {
+      if (!prev) return prev;
+      const ids = new Set(prev[tipo]);
+      if (ids.has(id)) {
+        ids.delete(id);
+      } else {
+        ids.add(id);
+      }
+      return { ...prev, [tipo]: ids };
+    });
+  };
+
+  const handleLiquidarSeleccion = async (grupo: ClienteGrupo) => {
+    if (!seleccion || seleccion.clienteKey !== grupo.clienteKey) return;
+
+    if (seleccion.ordenIds.size === 0 && seleccion.adicionalIds.size === 0) {
+      toast.error("Selecciona al menos una orden o adicional para liquidar");
+      return;
+    }
+
+    if (!grupo.idCliente) {
+      toast.error(
+        "No se pudo determinar el cliente de este grupo, no se puede liquidar",
+      );
+      return;
+    }
+
+    setLiquidandoClienteKey(grupo.clienteKey);
+    try {
+      const response = await crearLiquidacionMensual({
+        anio: Number(searchYear),
+        mes: Number(searchMonth),
+        idCliente: grupo.idCliente,
+        ordenIds: Array.from(seleccion.ordenIds),
+        adicionalIds: Array.from(seleccion.adicionalIds),
+      });
+      if (response.status === 200 || response.status === 201) {
+        setSeleccion(null);
+      }
+    } catch {
+      // El error ya se notifica en el onError de useCrearLiquidacionMensual
+    } finally {
+      setLiquidandoClienteKey(null);
+    }
+  };
+
+  const hayResultados =
+    liquidacionesData.length > 0 || adicionalesData.length > 0;
 
   return (
     <Section>
@@ -218,7 +296,8 @@ function RouteComponent() {
         <div className="rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-xl font-semibold">Filtros de Búsqueda</h2>
           <p className="mb-4 text-sm text-gray-500">
-            Selecciona el mes y año para filtrar las órdenes de servicio y adicionales.
+            Selecciona el mes y año para filtrar las órdenes de servicio y
+            adicionales.
           </p>
           <div className="flex flex-wrap items-end gap-4">
             <div className="min-w-48 flex-1">
@@ -231,6 +310,7 @@ function RouteComponent() {
                   setSearchYear(e.target.value);
                   setIsSearching(false);
                   setExpandedClients(new Set());
+                  setSeleccion(null);
                 }}
                 options={yearsOptions as { id: number; descripcion: string }[]}
               />
@@ -245,6 +325,7 @@ function RouteComponent() {
                   setSearchMonth(e.target.value);
                   setIsSearching(false);
                   setExpandedClients(new Set());
+                  setSeleccion(null);
                 }}
                 options={monthsOptions}
               />
@@ -255,6 +336,7 @@ function RouteComponent() {
                 refetchLiquidaciones();
                 refetchAdicionales();
                 setExpandedClients(new Set());
+                setSeleccion(null);
               }}
               disabled={isLoadingLiquidaciones || isLoadingAdicionales}
               Icon={Search}
@@ -288,17 +370,24 @@ function RouteComponent() {
           </div>
         )}
 
-      {isSearching && !isLoadingLiquidaciones && !isLoadingAdicionales && hayResultados ? (
+      {isSearching &&
+      !isLoadingLiquidaciones &&
+      !isLoadingAdicionales &&
+      hayResultados ? (
         <div className="space-y-6 rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
           <div className="mb-2">
             <h2 className="text-xl font-semibold">
-              Clientes ({clientesGrupos.length} {clientesGrupos.length === 1 ? "encontrado" : "encontrados"})
+              Clientes ({clientesGrupos.length}{" "}
+              {clientesGrupos.length === 1 ? "encontrado" : "encontrados"})
             </h2>
             <p className="text-sm text-gray-500">
               {liquidacionesData.length}{" "}
-              {liquidacionesData.length === 1 ? "orden de servicio" : "órdenes de servicio"} y{" "}
-              {adicionalesData.length}{" "}
-              {adicionalesData.length === 1 ? "adicional" : "adicionales"} por liquidar
+              {liquidacionesData.length === 1
+                ? "orden de servicio"
+                : "órdenes de servicio"}{" "}
+              y {adicionalesData.length}{" "}
+              {adicionalesData.length === 1 ? "adicional" : "adicionales"} por
+              liquidar
             </p>
           </div>
 
@@ -308,6 +397,37 @@ function RouteComponent() {
               const isLiquidandoEsteCliente =
                 isCreatingLiquidacionMensualPending &&
                 liquidandoClienteKey === grupo.clienteKey;
+              const isSeleccionando =
+                seleccion?.clienteKey === grupo.clienteKey;
+              const cantidadSeleccionada = isSeleccionando
+                ? seleccion.ordenIds.size + seleccion.adicionalIds.size
+                : 0;
+              const totalItems =
+                grupo.ordenes.length + grupo.adicionales.length;
+
+              const cardClassName = (seleccionado: boolean) =>
+                `rounded-md border px-3 py-2 text-sm ${
+                  isSeleccionando
+                    ? `cursor-pointer text-left transition-colors ${
+                        seleccionado
+                          ? "border-blue-400 bg-blue-50 ring-1 ring-blue-300"
+                          : "border-gray-200 bg-gray-50 hover:border-blue-300"
+                      }`
+                    : "border-gray-200 bg-gray-50"
+                }`;
+
+              const renderCheckbox = (seleccionado: boolean) =>
+                isSeleccionando && (
+                  <span
+                    className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
+                      seleccionado
+                        ? "border-blue-500 bg-blue-500 text-white"
+                        : "border-gray-400 bg-white"
+                    }`}
+                  >
+                    {seleccionado && <CheckIcon className="h-3 w-3" />}
+                  </span>
+                );
 
               return (
                 <div
@@ -326,14 +446,16 @@ function RouteComponent() {
                         }`}
                       />
                       <div className="min-w-0">
-                        <h3 className="truncate font-semibold text-gray-900 text-lg">
+                        <h3 className="truncate text-lg font-semibold text-gray-900">
                           {grupo.clienteNombre}
                         </h3>
                         <p className="text-xs text-gray-500">
                           {grupo.ordenes.length}{" "}
                           {grupo.ordenes.length === 1 ? "orden" : "órdenes"} ·{" "}
                           {grupo.adicionales.length}{" "}
-                          {grupo.adicionales.length === 1 ? "adicional" : "adicionales"}
+                          {grupo.adicionales.length === 1
+                            ? "adicional"
+                            : "adicionales"}
                         </p>
                       </div>
                     </button>
@@ -352,74 +474,164 @@ function RouteComponent() {
                           </span>
                         </p>
                       </div> */}
-                      <ButtonAction
-                        onClick={() => handleLiquidarCliente(grupo)}
-                        disabled={isCreatingLiquidacionMensualPending || !grupo.idCliente}
-                        Icon={PlusIcon}
-                        label={isLiquidandoEsteCliente ? "Liquidando..." : "Liquidar Cliente"}
-                      />
+                      {isSeleccionando ? (
+                        <>
+                          <ButtonAction
+                            type="button"
+                            color="red"
+                            onClick={() => setSeleccion(null)}
+                            disabled={isCreatingLiquidacionMensualPending}
+                            Icon={XIcon}
+                            label="Cancelar"
+                          />
+                          <ButtonAction
+                            type="button"
+                            color="green-light"
+                            onClick={() => handleLiquidarSeleccion(grupo)}
+                            disabled={
+                              isCreatingLiquidacionMensualPending ||
+                              cantidadSeleccionada === 0
+                            }
+                            Icon={PlusIcon}
+                            label={
+                              isLiquidandoEsteCliente
+                                ? "Liquidando..."
+                                : `Liquidar Selección (${cantidadSeleccionada})`
+                            }
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <ButtonAction
+                            type="button"
+                            color="yellow-light"
+                            onClick={() => iniciarSeleccion(grupo)}
+                            // Solo se permite una seleccion activa a la vez (siempre de un unico cliente)
+                            disabled={
+                              isCreatingLiquidacionMensualPending ||
+                              !grupo.idCliente ||
+                              seleccion !== null ||
+                              totalItems < 2
+                            }
+                            Icon={ListChecksIcon}
+                            label="Seleccionar"
+                          />
+                          <ButtonAction
+                            onClick={() => handleLiquidarCliente(grupo)}
+                            disabled={
+                              isCreatingLiquidacionMensualPending ||
+                              !grupo.idCliente ||
+                              seleccion !== null
+                            }
+                            Icon={PlusIcon}
+                            label={
+                              isLiquidandoEsteCliente
+                                ? "Liquidando..."
+                                : "Liquidar Cliente"
+                            }
+                          />
+                        </>
+                      )}
                     </div>
                   </div>
 
                   {isExpanded && (
                     <div className="grid grid-cols-1 gap-2 border-t border-gray-200 p-3 md:grid-cols-2 xl:grid-cols-3">
-                      {grupo.ordenes.map((orden) => (
-                        <div
-                          key={orden.idOrdenServicio}
-                          className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-medium text-gray-900">
-                              {orden.ordenServicioId?.descripcionId}
-                            </span>
-                            <span
-                              className={`rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap capitalize ${getStatusColor(orden.idEstadoOrdenServicio?.nombre || "")}`}
-                            >
-                              {orden.idEstadoOrdenServicio?.nombre}
-                            </span>
-                          </div>
-                          {orden.idLocacion && (
-                            <p className="mt-1 truncate text-gray-600">
-                              {orden.idLocacion.nombre} - {orden.idLocacion.direccion}
-                            </p>
-                          )}
-                          <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-gray-500">
-                            <span>
-                              {orden.fechaInicio || ""} → {orden.fechaFin || "Indefinida"}
-                            </span>
-                            {/* <span className="font-medium text-green-600">
+                      {grupo.ordenes.map((orden) => {
+                        const idOrden = orden.idOrdenServicio || 0;
+                        const seleccionado =
+                          isSeleccionando && seleccion.ordenIds.has(idOrden);
+
+                        return (
+                          <div
+                            key={orden.idOrdenServicio}
+                            className={cardClassName(seleccionado)}
+                            role={isSeleccionando ? "checkbox" : undefined}
+                            aria-checked={
+                              isSeleccionando ? seleccionado : undefined
+                            }
+                            onClick={
+                              isSeleccionando
+                                ? () => toggleSeleccionItem("ordenIds", idOrden)
+                                : undefined
+                            }
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="flex items-center gap-2 font-medium text-gray-900">
+                                {renderCheckbox(seleccionado)}
+                                {orden.ordenServicioId?.descripcionId}
+                              </span>
+                              <span
+                                className={`rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap capitalize ${getStatusColor(orden.idEstadoOrdenServicio?.nombre || "")}`}
+                              >
+                                {orden.idEstadoOrdenServicio?.nombre}
+                              </span>
+                            </div>
+                            {orden.idLocacion && (
+                              <p className="mt-1 truncate text-gray-600">
+                                {orden.idLocacion.nombre} -{" "}
+                                {orden.idLocacion.direccion}
+                              </p>
+                            )}
+                            <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-gray-500">
+                              <span>
+                                {orden.fechaInicio || ""} →{" "}
+                                {orden.fechaFin || "Indefinida"}
+                              </span>
+                              {/* <span className="font-medium text-green-600">
                               {priceFormat(Number(orden.precioTotal))}
                             </span> */}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
-                      {grupo.adicionales.map((adicional) => (
-                        <div
-                          key={adicional.idAdicional}
-                          className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <span className="font-medium text-gray-900">
-                              {adicional.nombre}
-                            </span>
-                            <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-gray-600">
-                              Adicional
-                            </span>
-                          </div>
-                          <p className="mt-1 text-gray-600 capitalize">
-                            {formatMesAdicional(adicional.mesInicio)} -{" "}
-                            {adicional.mesFin
-                              ? formatMesAdicional(adicional.mesFin)
-                              : "Indefinido"}
-                          </p>
-                          {/* <div className="mt-1 flex justify-end text-gray-500">
+                      {grupo.adicionales.map((adicional) => {
+                        const seleccionado =
+                          isSeleccionando &&
+                          seleccion.adicionalIds.has(adicional.idAdicional);
+
+                        return (
+                          <div
+                            key={adicional.idAdicional}
+                            className={cardClassName(seleccionado)}
+                            role={isSeleccionando ? "checkbox" : undefined}
+                            aria-checked={
+                              isSeleccionando ? seleccionado : undefined
+                            }
+                            onClick={
+                              isSeleccionando
+                                ? () =>
+                                    toggleSeleccionItem(
+                                      "adicionalIds",
+                                      adicional.idAdicional,
+                                    )
+                                : undefined
+                            }
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="flex items-center gap-2 font-medium text-gray-900">
+                                {renderCheckbox(seleccionado)}
+                                {adicional.nombre}
+                              </span>
+                              <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-gray-600">
+                                Adicional
+                              </span>
+                            </div>
+                            <p className="mt-1 text-gray-600 capitalize">
+                              {formatMesAdicional(adicional.mesInicio)} -{" "}
+                              {adicional.mesFin
+                                ? formatMesAdicional(adicional.mesFin)
+                                : "Indefinido"}
+                            </p>
+                            {/* <div className="mt-1 flex justify-end text-gray-500">
                             <span className="font-medium text-green-600">
                               {priceFormat(Number(adicional.precioTotal))}
                             </span>
                           </div> */}
-                        </div>
-                      ))}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
