@@ -496,7 +496,7 @@ export class OrdenServicioService {
         take: limit,
         skip: offset,
         order: {
-          fechaInicio: 'DESC'
+          idOrdenServicio: 'DESC'
         }
       });
 
@@ -517,7 +517,7 @@ export class OrdenServicioService {
 
     const ordenesServicio = await this.ordenServicioRepository.find({
       order: {
-        fechaInicio: 'DESC'
+        idOrdenServicio: 'DESC'
       }
     });
 
@@ -572,7 +572,7 @@ export class OrdenServicioService {
       .leftJoinAndSelect('orden.detalles', 'detalles')
       .leftJoinAndSelect('detalles.idTarifa', 'tarifa')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')
-      .orderBy('orden.fechaInicio', 'DESC');
+      .orderBy('orden.idOrdenServicio', 'DESC');
 
     // EL FILTRO POR CLIENTE DEBE BUSCAR TANTO EN EL CLIENTE DE LA LOCACION (ordenes de vigilancia y escolta) COMO EN EL
     // CLIENTE ASIGNADO DIRECTAMENTE A LA ORDEN (ordenes de monitoreo de alarmas)
