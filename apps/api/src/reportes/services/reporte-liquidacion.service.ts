@@ -127,7 +127,8 @@ export class ReporteLiquidacionService {
           '(+) Aui', // U
           'Tarifa antes de iva', // V
           '(+) Iva Aui', // X
-          'Tarifa con Iva' // Y
+          'Tarifa con Iva', // Y
+          'Mes Liquidado' // Z
         ];
   
         const headerRow = sheet.addRow(header);
@@ -167,7 +168,10 @@ export class ReporteLiquidacionService {
             servicio.aui, // U
             servicio.tarifaAntesIva, // V
             servicio.auiIVa, // X
-            servicio.tarifaConIva // Y
+            servicio.tarifaConIva, // Y
+            // Mes al que corresponde la liquidacion: un grupo puede traer meses anteriores pendientes, y una misma
+            // orden puede salir una vez por cada mes liquidado
+            servicio.mesLiquidado ?? '' // Z
           ]);
     
           // 🔹 Alinear columnas específicas
@@ -195,6 +199,7 @@ export class ReporteLiquidacionService {
           row.getCell(22).alignment = { horizontal: 'right' }; // V
           row.getCell(23).alignment = { horizontal: 'right' }; // X
           row.getCell(24).alignment = { horizontal: 'right' }; // Y
+          row.getCell(25).alignment = { horizontal: 'center' }; // Z
 
           row.eachCell((cell, colNumber) => {
 

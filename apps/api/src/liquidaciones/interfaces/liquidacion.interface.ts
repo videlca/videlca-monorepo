@@ -21,6 +21,10 @@ export type LiquidacionServicioAgrupado = {
     tarifaAntesIva: number;
     auiIVa: number;
     tarifaConIva: number;
+
+    // MES AL QUE CORRESPONDE ESTA LIQUIDACION ("MM/YYYY"). Un grupo puede incluir meses anteriores pendientes, asi que
+    // no siempre coincide con el mes del grupo (y una misma orden puede salir una vez por cada mes liquidado)
+    mesLiquidado?: string;
 };
 
 export type LiquidacionClienteAgrupado = {

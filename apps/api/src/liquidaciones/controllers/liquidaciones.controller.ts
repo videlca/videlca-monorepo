@@ -44,19 +44,23 @@ export class LiquidacionesController {
   }
 
   @Get('ordenes-por-mes')
+  @ApiQuery({ name: 'mesesAtras', required: false, example: 1, description: 'Cuantos meses anteriores al solicitado se buscan tambien con ordenes pendientes por liquidar (0 a 12, por defecto 1)' })
   async findByMes(
     @Query('anio', ParseIntPipe) anio: number,
     @Query('mes', ParseIntPipe) mes: number,
+    @Query('mesesAtras', new DefaultValuePipe(1), ParseIntPipe) mesesAtras: number,
   ) {
-    return this.service.findByCreacionMes(anio, mes);
+    return this.service.findByCreacionMes(anio, mes, mesesAtras);
   }
 
   @Get('adicionales-por-mes')
+  @ApiQuery({ name: 'mesesAtras', required: false, example: 1, description: 'Cuantos meses anteriores al solicitado se buscan tambien con adicionales pendientes por liquidar (0 a 12, por defecto 1)' })
   async findAdicionalesByMes(
     @Query('anio', ParseIntPipe) anio: number,
     @Query('mes', ParseIntPipe) mes: number,
+    @Query('mesesAtras', new DefaultValuePipe(1), ParseIntPipe) mesesAtras: number,
   ) {
-    return this.service.findAdicionalesByCreacionMes(anio, mes);
+    return this.service.findAdicionalesByCreacionMes(anio, mes, mesesAtras);
   }
 
   @Get('historial-liquidaciones-aprobadas')

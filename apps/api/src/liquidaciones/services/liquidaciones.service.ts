@@ -277,11 +277,42 @@ export class LiquidacionesService {
   // Genera grupo y liquidaciones
   async generarGrupoMensual(crearGrupoMensualDto: CrearGrupoMensualDto) {
 
-    const { anio, mes, idCliente, ordenIds = [], adicionalIds = [] } = crearGrupoMensualDto;
+    // CADA ITEM DE ordenes/adicionales TRAE SU PROPIO MES (el del grupo o uno anterior pendiente)
+    const { anio, mes, idCliente, ordenes: ordenesLiquidar = [], adicionales: adicionalesLiquidar = [] } = crearGrupoMensualDto;
 
-    if (!anio || !mes || mes < 1 || mes > 12 || !idCliente || (!ordenIds.length && !adicionalIds.length)) {
+    if (!anio || !mes || mes < 1 || mes > 12 || !idCliente || (!ordenesLiquidar.length && !adicionalesLiquidar.length)) {
       throw new BadRequestException('Parámetros inválidos');
     }
+
+    const aniomesGrupo = this.formatearAniomes(anio, mes);
+
+    // EL MES DE CADA ITEM NO PUEDE SER POSTERIOR AL MES DEL GRUPO, NI REPETIRSE (misma orden/adicional + mismo mes)
+    const validarItems = (items: { id: number; anio: number; mes: number }[], etiqueta: string) => {
+
+      const vistos = new Set<string>();
+
+      for (const item of items) {
+
+        const aniomesItem = this.formatearAniomes(item.anio, item.mes);
+
+        if (aniomesItem > aniomesGrupo) {
+          throw new BadRequestException(`${etiqueta} con id "${item.id}" no se puede liquidar para el mes ${this.formatearMesAnio(item.anio, item.mes)}, es posterior al mes del grupo (${this.formatearMesAnio(anio, mes)})`);
+        }
+
+        const clave = `${item.id}-${aniomesItem}`;
+
+        if (vistos.has(clave)) {
+          throw new BadRequestException(`${etiqueta} con id "${item.id}" viene repetida para el mes ${this.formatearMesAnio(item.anio, item.mes)}`);
+        }
+
+        vistos.add(clave);
+
+      }
+
+    };
+
+    validarItems(ordenesLiquidar.map(o => ({ id: o.idOrdenServicio, anio: o.anio, mes: o.mes })), 'La orden');
+    validarItems(adicionalesLiquidar.map(a => ({ id: a.idAdicional, anio: a.anio, mes: a.mes })), 'El adicional');
 
     // VALIDA QUE EL CLIENTE EXISTA (el grupo de liquidacion siempre pertenece a un cliente)
     const cliente = await this.clienteService.findOne(idCliente);
@@ -311,28 +342,28 @@ export class LiquidacionesService {
 
       await queryRunner.manager.save(GrupoLiquidacion, grupoLiquidacion);
       
-      // 2) crear liquidaciones del grupo de ordenes
-      for (const ordenId of ordenIds) {
+      // 2) crear liquidaciones del grupo de ordenes (cada una con su propio mes)
+      for (const orden of ordenesLiquidar) {
 
-        const liquidacionMensualOrden = await this.crearLiquidacionMensualOrden(
+        await this.crearLiquidacionMensualOrden(
           queryRunner,
           grupoLiquidacion.idGrupoLiquidacion,
-          ordenId,
-          anio,
-          mes
+          orden.idOrdenServicio,
+          orden.anio,
+          orden.mes
         );
 
       }
 
-      // 2.1) crear liquidaciones del grupo de adicionales
-      for (const adicionalId of adicionalIds) {
+      // 2.1) crear liquidaciones del grupo de adicionales (cada uno con su propio mes)
+      for (const adicional of adicionalesLiquidar) {
 
         await this.crearLiquidacionMensualAdicional(
           queryRunner,
           grupoLiquidacion.idGrupoLiquidacion,
-          adicionalId,
-          anio,
-          mes
+          adicional.idAdicional,
+          adicional.anio,
+          adicional.mes
         );
 
       }
@@ -363,14 +394,79 @@ export class LiquidacionesService {
       // Rollback en caso de error
       await queryRunner.rollbackTransaction();
 
+      // INDICE UNICO (orden/adicional + mes) DE liquidaciones: otro grupo liquido el mismo mes entre la validacion y
+      // el guardado (ej: dos usuarios generando al mismo tiempo)
+      if (error?.code === 'ER_DUP_ENTRY') {
+        throw new BadRequestException('Una o mas ordenes/adicionales ya fueron liquidados para ese mes en otro grupo, vuelva a consultar las ordenes pendientes');
+      }
+
       throw error;
-      
+
     }
 
     finally {
 
         // Liberar el QueryRunner
         await queryRunner.release();
+
+    }
+
+  }
+
+  // FORMATO FIJO "YYYYMM" CON EL QUE SE GUARDA aniomes_liquidacion (mes con cero a la izquierda). Al ser de ancho
+  // fijo, dos valores se pueden comparar como string para saber cual mes es anterior
+  private formatearAniomes(anio: number, mes: number): string {
+
+    return `${anio}${String(mes).padStart(2, '0')}`;
+
+  }
+
+  // FORMATO "MM/YYYY" PARA MENSAJES AL USUARIO
+  private formatearMesAnio(anio: number, mes: number): string {
+
+    return `${String(mes).padStart(2, '0')}/${anio}`;
+
+  }
+
+  // LISTA DE MESES [mes - mesesAtras, ..., mes] DEL MAS ANTIGUO AL MAS RECIENTE (cruza de año si hace falta)
+  private mesesHaciaAtras(anio: number, mes: number, mesesAtras: number) {
+
+    if (!Number.isInteger(mesesAtras) || mesesAtras < 0 || mesesAtras > 12) {
+      throw new BadRequestException('El parametro mesesAtras debe ser un numero entre 0 y 12');
+    }
+
+    const meses: { anio: number; mes: number }[] = [];
+
+    for (let i = mesesAtras; i >= 0; i--) {
+
+      const fecha = new Date(Date.UTC(anio, mes - 1 - i, 1));
+
+      meses.push({ anio: fecha.getUTCFullYear(), mes: fecha.getUTCMonth() + 1 });
+
+    }
+
+    return meses;
+
+  }
+
+  // SI LA ORDEN/ADICIONAL YA TIENE UNA LIQUIDACION PARA ESE MES (en cualquier grupo), NO SE PUEDE VOLVER A LIQUIDAR
+  private async validarNoLiquidadoEnMes(
+    queryRunner: QueryRunner,
+    filtro: { idOrdenServicio: number } | { idAdicional: number },
+    aniomes: string,
+    descripcionItem: string,
+  ) {
+
+    const liquidacionExistente = await queryRunner.manager.findOne(Liquidacione, {
+      where: { ...filtro, aniomes_liquidacion: aniomes },
+      relations: ['grupo'],
+    });
+
+    if (liquidacionExistente) {
+
+      const mesAnio = this.formatearMesAnio(Number(aniomes.slice(0, 4)), Number(aniomes.slice(4)));
+
+      throw new BadRequestException(`${descripcionItem} ya tiene una liquidacion para el mes ${mesAnio} (grupo ${liquidacionExistente.grupo?.descripcion ?? liquidacionExistente.idGrupoLiquidacion})`);
 
     }
 
@@ -396,6 +492,7 @@ export class LiquidacionesService {
 
     const ordenServicioLiquidar = await this.ordenRepo
       .createQueryBuilder('os')
+      .leftJoinAndSelect('os.ordenServicioId', 'osid')
       .leftJoinAndSelect('os.idEstadoOrdenServicio', 'estado')
       .leftJoinAndSelect('os.detalles', 'detalles')
       .leftJoinAndSelect('detalles.idTarifa', 'tarifa')
@@ -406,6 +503,15 @@ export class LiquidacionesService {
       .getOne()
 
     if (!ordenServicioLiquidar) throw new BadRequestException('Orden no encontrada');
+
+    const aniomes = this.formatearAniomes(anio, mes);
+
+    await this.validarNoLiquidadoEnMes(
+      queryRunner,
+      { idOrdenServicio: ordenId },
+      aniomes,
+      `La orden ${ordenServicioLiquidar.ordenServicioId?.descripcionId ?? `con id "${ordenId}"`}`,
+    );
 
     const esCatalogo = ordenServicioLiquidar.origenServicio === OrigenServicioEnum.CATALOGO;
 
@@ -452,7 +558,7 @@ export class LiquidacionesService {
       // Formato fijo "YYYYMM" (mes con cero a la izquierda): sin el padStart, meses 1-9 quedaban con 5
       // caracteres (ej "20269" para septiembre/2026) y rompian cualquier lectura que asuma ancho fijo
       // (ver formatAniomes en el front, mostraba "N/A")
-      aniomes_liquidacion: `${anio}${String(mes).padStart(2, '0')}`
+      aniomes_liquidacion: aniomes
     })
 
     await queryRunner.manager.save(Liquidacione, liquidacionOrden);
@@ -557,6 +663,10 @@ export class LiquidacionesService {
 
     if (!adicional.estado) throw new BadRequestException(`El adicional "${adicional.nombre}" esta cancelado`);
 
+    const aniomes = this.formatearAniomes(anio, mes);
+
+    await this.validarNoLiquidadoEnMes(queryRunner, { idAdicional: adicionalId }, aniomes, `El adicional "${adicional.nombre}"`);
+
     const mesConsultado = new Date(anio, mes - 1, 1);
     const mesInicioAdicional = this.normalizarMes(adicional.mesInicio);
     const mesFinAdicional = adicional.mesFin ? this.normalizarMes(adicional.mesFin) : null;
@@ -575,7 +685,7 @@ export class LiquidacionesService {
       precioAntesIva: Number(adicional.precioAntesIva),
       iva: Number(adicional.iva),
       // Formato fijo "YYYYMM" (mes con cero a la izquierda), igual que crearLiquidacionMensualOrden
-      aniomes_liquidacion: `${anio}${String(mes).padStart(2, '0')}`
+      aniomes_liquidacion: aniomes
     });
 
     await queryRunner.manager.save(Liquidacione, liquidacionAdicional);
@@ -596,7 +706,11 @@ export class LiquidacionesService {
 
   }
 
-  async findByCreacionMes(anio: number, mes1a12: number) {
+  // ORDENES PENDIENTES POR LIQUIDAR EN EL MES SOLICITADO Y EN LOS "mesesAtras" MESES ANTERIORES (ordenes de fin de mes
+  // que se liquidan el mes siguiente). Cada fila es una orden + el mes que falta liquidarle: una misma orden sale una
+  // vez por cada mes pendiente. Se agregan anioLiquidar/mesLiquidar/aniomesLiquidar/esMesAnterior a la orden, y se
+  // ordena del mes mas antiguo al mas reciente
+  async findByCreacionMes(anio: number, mes1a12: number, mesesAtras = 1) {
 
     if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
       throw new BadRequestException('Parámetros inválidos (anio, mes)');
@@ -605,6 +719,29 @@ export class LiquidacionesService {
     const today = new Date();
     // if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
     //   throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+
+    const resultado: (OrdenServicio & { anioLiquidar: number; mesLiquidar: number; aniomesLiquidar: string; esMesAnterior: boolean })[] = [];
+
+    for (const mesBuscar of this.mesesHaciaAtras(anio, mes1a12, mesesAtras)) {
+
+      const ordenes = await this.findOrdenesPendientesDelMes(mesBuscar.anio, mesBuscar.mes);
+
+      resultado.push(...ordenes.map(orden => ({
+        ...orden,
+        anioLiquidar: mesBuscar.anio,
+        mesLiquidar: mesBuscar.mes,
+        aniomesLiquidar: this.formatearAniomes(mesBuscar.anio, mesBuscar.mes),
+        esMesAnterior: mesBuscar.anio !== anio || mesBuscar.mes !== mes1a12,
+      })));
+
+    }
+
+    return resultado;
+
+  }
+
+  // ORDENES CON DIAS EN EL MES INDICADO, NO ANULADAS, QUE AUN NO TIENEN LIQUIDACION PARA ESE MES
+  private async findOrdenesPendientesDelMes(anio: number, mes1a12: number) {
 
     // Rango del mes objetivo: [inicioMes, finMes)
     const inicioMes = new Date(Date.UTC(anio, mes1a12 - 1, 1, 0, 0, 0));
@@ -637,7 +774,7 @@ export class LiquidacionesService {
       liq.aniomes_liquidacion = :aniomes
     `, {
         // Debe coincidir con el formato "YYYYMM" con el que se guarda en crearLiquidacionMensualOrden
-        aniomes: `${anio}${String(mes1a12).padStart(2, '0')}`,
+        aniomes: this.formatearAniomes(anio, mes1a12),
       })
       .andWhere('liq.idLiquidacion IS NULL')
       .orderBy('os.idOrdenServicio', 'ASC')
@@ -647,10 +784,10 @@ export class LiquidacionesService {
     return qb.getMany();
   }
 
-  // EQUIVALENTE A findByCreacionMes PERO PARA ADICIONALES: trae los adicionales activos y vigentes en el mes/anio
-  // solicitado (mesInicio <= mes consultado <= mesFin, o mesFin null = indefinido) que aun no tengan una liquidacion
-  // generada para ese mes
-  async findAdicionalesByCreacionMes(anio: number, mes1a12: number) {
+  // EQUIVALENTE A findByCreacionMes PERO PARA ADICIONALES: trae, para el mes solicitado y los "mesesAtras" meses
+  // anteriores, los adicionales activos y vigentes en cada mes que aun no tengan una liquidacion generada para ese mes.
+  // Un mismo adicional sale una vez por cada mes pendiente, con los mismos campos agregados que findByCreacionMes
+  async findAdicionalesByCreacionMes(anio: number, mes1a12: number, mesesAtras = 1) {
 
     if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
       throw new BadRequestException('Parámetros inválidos (anio, mes)');
@@ -659,6 +796,29 @@ export class LiquidacionesService {
     const today = new Date();
     if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
       throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
+
+    const resultado: (Adicional & { anioLiquidar: number; mesLiquidar: number; aniomesLiquidar: string; esMesAnterior: boolean })[] = [];
+
+    for (const mesBuscar of this.mesesHaciaAtras(anio, mes1a12, mesesAtras)) {
+
+      const adicionales = await this.findAdicionalesPendientesDelMes(mesBuscar.anio, mesBuscar.mes);
+
+      resultado.push(...adicionales.map(adicional => ({
+        ...adicional,
+        anioLiquidar: mesBuscar.anio,
+        mesLiquidar: mesBuscar.mes,
+        aniomesLiquidar: this.formatearAniomes(mesBuscar.anio, mesBuscar.mes),
+        esMesAnterior: mesBuscar.anio !== anio || mesBuscar.mes !== mes1a12,
+      })));
+
+    }
+
+    return resultado;
+
+  }
+
+  // ADICIONALES ACTIVOS Y VIGENTES EN EL MES INDICADO QUE AUN NO TIENEN LIQUIDACION PARA ESE MES
+  private async findAdicionalesPendientesDelMes(anio: number, mes1a12: number) {
 
     const mesConsultado = new Date(anio, mes1a12 - 1, 1);
 
@@ -674,7 +834,7 @@ export class LiquidacionesService {
       liq.aniomes_liquidacion = :aniomes
     `, {
         // Debe coincidir con el formato "YYYYMM" con el que se guarda en crearLiquidacionMensualAdicional
-        aniomes: `${anio}${String(mes1a12).padStart(2, '0')}`,
+        aniomes: this.formatearAniomes(anio, mes1a12),
       })
       .andWhere('liq.idLiquidacion IS NULL')
       .orderBy('a.idAdicional', 'ASC')
@@ -1234,6 +1394,8 @@ export class LiquidacionesService {
       const clienteNombre = cliente.nombre;
       const clienteNit = cliente.numeroIdentificacion;
 
+      const mesLiquidado = this.formatearMesAnio(Number(liq.aniomes_liquidacion.slice(0, 4)), Number(liq.aniomes_liquidacion.slice(4)));
+
       if (!agrupado[clienteId]) {
 
         agrupado[clienteId] = {
@@ -1282,6 +1444,7 @@ export class LiquidacionesService {
           tarifaAntesIva: (costosDirectos + seguroVida + aui),
           auiIVa: (aui * 0.19),
           tarifaConIva: (costosDirectos + seguroVida + aui + (aui * 0.19)),
+          mesLiquidado,
         });
 
         agrupado[clienteId].totalLiquidarAplicacion += costosDirectos;
@@ -1328,6 +1491,7 @@ export class LiquidacionesService {
           tarifaAntesIva: (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui)),
           auiIVa: (Number(liquidacionServicioOrdenServicio.aui) * 0.19),
           tarifaConIva: (Number(liquidacionServicioOrdenServicio.costosDirectos) + Number(liquidacionServicioOrdenServicio.seguroVida) + Number(liquidacionServicioOrdenServicio.aui) + (Number(liquidacionServicioOrdenServicio.aui) * 0.19)),
+          mesLiquidado,
         });
 
         agrupado[clienteId].totalLiquidarAplicacion += Number(liquidacionServicioOrdenServicio.costosDirectos);
