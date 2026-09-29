@@ -24,7 +24,7 @@ import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion, Numer
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
 import { ClienteAgrupado } from '../interfaces/consolidacion.interface';
-import { LiquidacionClienteAgrupado } from '../interfaces/liquidacion.interface';
+import { LiquidacionClienteAgrupado, TipoServicioComparacion } from '../interfaces/liquidacion.interface';
 
 @Injectable()
 export class LiquidacionesService {
@@ -843,10 +843,15 @@ export class LiquidacionesService {
     return qb.getMany();
   }
 
-  async findByMesLiquidacionesAprobadas(anio: number, mes1a12: number, idCliente?: number) {
+  // tiposServicio: filtro opcional "monitoreo" y/o "vigilancia" (vigilancia incluye adicionales); sin el, se devuelve
+  // todo (equivale a los dos). Una orden siempre es de un solo tipo de servicio (validado al crearla), asi que cada
+  // liquidacion entra o sale completa del filtro; los grupos que quedan sin liquidaciones con el filtro no se devuelven
+  async findByMesLiquidacionesAprobadas(anio: number, mes1a12: number, idCliente?: number, tiposServicio?: string[]) {
     if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
       throw new BadRequestException('Parámetros inválidos (anio, mes)');
     }
+
+    const filtro = this.resolverFiltroTiposServicio(tiposServicio ?? Object.values(TipoServicioComparacion));
 
     const today = new Date();
     // if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
@@ -879,7 +884,14 @@ export class LiquidacionesService {
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
       // (mismo criterio que buscarGrupoLiquidaciones/findGruposPorCampoEstado, todos alimentan OrdenServicioCard)
       .leftJoin('liquidaciones.liquidacionServiciosOrdenServicio', 'lsos')
-      .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva']);
+      .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva'])
+      // TIPO DE SERVICIO DE CADA LINEA, para el filtro por tipo de servicio
+      .leftJoin('lsos.idTarifa', 'lsosTarifa')
+      .addSelect('lsosTarifa.idTarifa')
+      .leftJoin('lsosTarifa.idServicio', 'lsosServicio')
+      .addSelect('lsosServicio.idServicio')
+      .leftJoin('lsosServicio.idTipoServicio', 'lsosTipoServicio')
+      .addSelect(['lsosTipoServicio.idTipoServicio', 'lsosTipoServicio.nombre']);
 
     // FILTRO OPCIONAL POR CLIENTE DEL GRUPO (grupo.idCliente); sin idCliente se devuelven todos los grupos del mes
     if (idCliente) {
@@ -888,20 +900,238 @@ export class LiquidacionesService {
 
     const grupos = await query.getMany();
 
-    return grupos.map((grupo) => ({
-      ...grupo,
-      liquidaciones: grupo.liquidaciones.map(({ liquidacionServiciosOrdenServicio, ...liquidacion }) => ({
-        ...liquidacion,
-        valorLiquidacionAntesIva: round2(
-          liquidacion.idAdicional != null
-            ? Number(liquidacion.precioAntesIva ?? 0)
-            : (liquidacionServiciosOrdenServicio ?? []).reduce(
-                (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
-                0,
+    return grupos
+      .map((grupo) => {
+
+        const liquidaciones = grupo.liquidaciones
+          .map(({ liquidacionServiciosOrdenServicio, ...liquidacion }) => {
+
+            // ADICIONAL, O EL TIPO DE SERVICIO DE LA ORDEN (el de cualquiera de sus lineas, todas son del mismo tipo)
+            const nombreTipoServicio = liquidacionServiciosOrdenServicio?.[0]?.idTarifa?.idServicio?.idTipoServicio?.nombre;
+
+            const tipoServicio = liquidacion.idAdicional != null
+              ? 'adicional'
+              : nombreTipoServicio === TipoServicioInterface.MONITOREO_ALARMAS
+                ? TipoServicioComparacion.MONITOREO
+                : TipoServicioComparacion.VIGILANCIA;
+
+            return {
+              ...liquidacion,
+              tipoServicio,
+              valorLiquidacionAntesIva: round2(
+                liquidacion.idAdicional != null
+                  ? Number(liquidacion.precioAntesIva ?? 0)
+                  : (liquidacionServiciosOrdenServicio ?? []).reduce(
+                      (acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0),
+                      0,
+                    ),
               ),
-        ),
-      })),
-    }));
+            };
+
+          })
+          .filter(liquidacion =>
+            liquidacion.tipoServicio === TipoServicioComparacion.MONITOREO
+              ? filtro.monitoreo
+              : filtro.vigilancia, // vigilancia y adicionales
+          );
+
+        return {
+          ...grupo,
+          liquidaciones,
+          // TOTALES DEL GRUPO CON EL FILTRO APLICADO ("total" sigue siendo el total completo de la factura)
+          totalAntesIvaFiltrado: round2(liquidaciones.reduce((acc, liquidacion) => acc + liquidacion.valorLiquidacionAntesIva, 0)),
+          totalFiltrado: round2(liquidaciones.reduce((acc, liquidacion) => acc + Number(liquidacion.valor_liquidacion ?? 0), 0)),
+        };
+
+      })
+      .filter(grupo => grupo.liquidaciones.length > 0);
+  }
+
+  // COMPARA LAS LIQUIDACIONES APROBADAS DE UN CLIENTE ENTRE DOS MESES (A y B). Cada grupo de liquidacion aprobado se
+  // interpreta como una factura; por cada mes se cuentan grupos, ordenes y adicionales, y se suman los totales (antes
+  // de iva, iva y con iva). La diferencia se calcula siempre como B - A (normalmente B es el mes mas reciente).
+  // tiposServicio (al menos uno) filtra que se tiene en cuenta: monitoreo y/o vigilancia (+ adicionales)
+  async compararLiquidacionesCliente(
+    idCliente: number,
+    anioA: number,
+    mesA: number,
+    anioB: number,
+    mesB: number,
+    tiposServicio: string[],
+  ) {
+
+    for (const [anio, mes] of [[anioA, mesA], [anioB, mesB]]) {
+      if (!anio || anio < 2000 || !mes || mes < 1 || mes > 12) {
+        throw new BadRequestException('Parámetros inválidos (anio, mes)');
+      }
+    }
+
+    const filtro = this.resolverFiltroTiposServicio(tiposServicio);
+
+    const cliente = await this.clienteService.findOne(idCliente);
+
+    const periodoA = await this.resumenLiquidacionesClienteMes(idCliente, anioA, mesA, filtro);
+    const periodoB = await this.resumenLiquidacionesClienteMes(idCliente, anioB, mesB, filtro);
+
+    // DIFERENCIA B - A DE UN VALOR, CON SU PORCENTAJE SOBRE A (null si A es 0, no hay base para calcularlo)
+    const diferencia = (valorA: number, valorB: number) => ({
+      valor: round2(valorB - valorA),
+      porcentaje: valorA === 0 ? null : round2(((valorB - valorA) / valorA) * 100),
+    });
+
+    return {
+      cliente: {
+        idCliente: cliente.idCliente,
+        nombre: cliente.nombre,
+        numeroIdentificacion: cliente.numeroIdentificacion,
+      },
+      tiposServicio: filtro.tipos,
+      periodoA,
+      periodoB,
+      diferencia: {
+        cantidadGrupos: diferencia(periodoA.cantidadGrupos, periodoB.cantidadGrupos),
+        cantidadOrdenes: diferencia(periodoA.cantidadOrdenes, periodoB.cantidadOrdenes),
+        cantidadLiquidacionesOrdenes: diferencia(periodoA.cantidadLiquidacionesOrdenes, periodoB.cantidadLiquidacionesOrdenes),
+        cantidadAdicionales: diferencia(periodoA.cantidadAdicionales, periodoB.cantidadAdicionales),
+        totalAntesIva: diferencia(periodoA.totalAntesIva, periodoB.totalAntesIva),
+        totalIva: diferencia(periodoA.totalIva, periodoB.totalIva),
+        totalConIva: diferencia(periodoA.totalConIva, periodoB.totalConIva),
+      },
+    };
+
+  }
+
+  // VALIDA EL FILTRO DE TIPOS DE SERVICIO ("monitoreo" y/o "vigilancia", al menos uno) Y LO DEVUELVE COMO BANDERAS.
+  // "vigilancia" incluye tambien los adicionales
+  private resolverFiltroTiposServicio(tiposServicio: string[]) {
+
+    const tiposValidos = Object.values(TipoServicioComparacion) as string[];
+    const tipos = [...new Set(tiposServicio.map(tipo => tipo.trim().toLowerCase()).filter(Boolean))];
+
+    if (!tipos.length || tipos.some(tipo => !tiposValidos.includes(tipo))) {
+      throw new BadRequestException(`Debe seleccionar al menos un tipo de servicio valido en tiposServicio (${tiposValidos.join(', ')})`);
+    }
+
+    return {
+      tipos: tiposValidos.filter(tipo => tipos.includes(tipo)),
+      monitoreo: tipos.includes(TipoServicioComparacion.MONITOREO),
+      vigilancia: tipos.includes(TipoServicioComparacion.VIGILANCIA),
+    };
+
+  }
+
+  // RESUMEN DE LOS GRUPOS DE LIQUIDACION APROBADOS DE UN CLIENTE EN UN MES. El mes es el MES DEL GRUPO (el que va en
+  // "descripcion", mismo criterio que findByMesLiquidacionesAprobadas), no el aniomes de cada liquidacion: un grupo de
+  // septiembre que incluye un mes anterior pendiente de agosto se factura en septiembre.
+  //
+  // FILTRO POR TIPO DE SERVICIO: la orden no guarda su tipo, asi que se clasifica cada linea liquidada (lsos) por el tipo
+  // del servicio de su tarifa, y solo se suman las lineas de los tipos seleccionados. Una orden cuenta si tiene al menos
+  // una linea del tipo seleccionado; los adicionales cuentan solo con "vigilancia"; un grupo cuenta si aporta algo con
+  // el filtro aplicado (sus totales son solo lo filtrado)
+  private async resumenLiquidacionesClienteMes(
+    idCliente: number,
+    anio: number,
+    mes1a12: number,
+    filtro: { monitoreo: boolean; vigilancia: boolean },
+  ) {
+
+    const grupos = await this.grupoLiquidacionrepo
+      .createQueryBuilder('grupo')
+      .where('grupo.estado = :estado', { estado: true })
+      .andWhere('grupo.idCliente = :idCliente', { idCliente })
+      .andWhere('SUBSTRING_INDEX(SUBSTRING_INDEX(grupo.descripcion, \'_\', 2), \'_\', -1) = :mes', { mes: mes1a12 })
+      .andWhere('SUBSTRING_INDEX(SUBSTRING_INDEX(grupo.descripcion, \'_\', 3), \'_\', -1) = :anio', { anio })
+      .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
+      // Los totales de una liquidacion de orden se toman de sus lineas de servicio (lsos), para poder filtrar por el
+      // tipo de servicio de cada linea; el de un adicional, del snapshot guardado en la propia liquidacion
+      .leftJoin('liquidaciones.liquidacionServiciosOrdenServicio', 'lsos')
+      .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva', 'lsos.precioTotal'])
+      .leftJoin('lsos.idTarifa', 'tarifa')
+      .addSelect('tarifa.idTarifa')
+      .leftJoin('tarifa.idServicio', 'servicio')
+      .addSelect('servicio.idServicio')
+      .leftJoin('servicio.idTipoServicio', 'tipoServicio')
+      .addSelect(['tipoServicio.idTipoServicio', 'tipoServicio.nombre'])
+      .orderBy('grupo.idGrupoLiquidacion', 'ASC')
+      .getMany();
+
+    const lineaIncluida = (nombreTipoServicio: string | undefined) =>
+      (filtro.monitoreo && nombreTipoServicio === TipoServicioInterface.MONITOREO_ALARMAS) ||
+      (filtro.vigilancia && nombreTipoServicio === TipoServicioInterface.VIGILANCIA_Y_ESCOLTA);
+
+    const ordenesMes = new Set<number>();
+    const adicionalesMes = new Set<number>();
+    let cantidadLiquidacionesOrdenes = 0;
+
+    const resumenGrupos = grupos.map(grupo => {
+
+      const ordenesGrupo = new Set<number>();
+      const adicionalesGrupo = new Set<number>();
+      let totalAntesIva = 0;
+      let totalConIva = 0;
+
+      for (const liquidacion of grupo.liquidaciones ?? []) {
+
+        if (liquidacion.idAdicional != null) {
+
+          if (!filtro.vigilancia) continue;
+
+          adicionalesGrupo.add(liquidacion.idAdicional);
+          adicionalesMes.add(liquidacion.idAdicional);
+          totalAntesIva += Number(liquidacion.precioAntesIva ?? 0);
+          totalConIva += Number(liquidacion.valor_liquidacion ?? 0);
+
+        } else if (liquidacion.idOrdenServicio != null) {
+
+          const lineas = (liquidacion.liquidacionServiciosOrdenServicio ?? [])
+            .filter(lsos => lineaIncluida(lsos.idTarifa?.idServicio?.idTipoServicio?.nombre));
+
+          if (!lineas.length) continue;
+
+          ordenesGrupo.add(liquidacion.idOrdenServicio);
+          ordenesMes.add(liquidacion.idOrdenServicio);
+          cantidadLiquidacionesOrdenes++;
+          totalAntesIva += lineas.reduce((acc, lsos) => acc + Number(lsos.precioAntesIva ?? 0), 0);
+          totalConIva += lineas.reduce((acc, lsos) => acc + Number(lsos.precioTotal ?? 0), 0);
+
+        }
+
+      }
+
+      return {
+        idGrupoLiquidacion: grupo.idGrupoLiquidacion,
+        descripcion: grupo.descripcion,
+        fechaCreacion: grupo.fechaCreacion,
+        cantidadOrdenes: ordenesGrupo.size,
+        cantidadAdicionales: adicionalesGrupo.size,
+        totalAntesIva: round2(totalAntesIva),
+        totalIva: round2(totalConIva - totalAntesIva),
+        totalConIva: round2(totalConIva),
+      };
+
+    })
+      // GRUPOS QUE NO APORTAN NADA CON EL FILTRO DE TIPO DE SERVICIO (ej: grupo solo de monitoreo filtrando vigilancia)
+      .filter(grupo => grupo.cantidadOrdenes > 0 || grupo.cantidadAdicionales > 0);
+
+    const totalAntesIva = round2(resumenGrupos.reduce((acc, grupo) => acc + grupo.totalAntesIva, 0));
+    const totalConIva = round2(resumenGrupos.reduce((acc, grupo) => acc + grupo.totalConIva, 0));
+
+    return {
+      anio,
+      mes: mes1a12,
+      aniomes: this.formatearAniomes(anio, mes1a12),
+      cantidadGrupos: resumenGrupos.length,
+      // ORDENES DISTINTAS (una orden liquidada por dos meses en el mismo mes de facturacion cuenta una vez)
+      cantidadOrdenes: ordenesMes.size,
+      // LIQUIDACIONES DE ORDENES (una orden liquidada por dos meses cuenta dos veces)
+      cantidadLiquidacionesOrdenes,
+      cantidadAdicionales: adicionalesMes.size,
+      totalAntesIva,
+      totalIva: round2(totalConIva - totalAntesIva),
+      totalConIva,
+      grupos: resumenGrupos,
+    };
+
   }
 
 

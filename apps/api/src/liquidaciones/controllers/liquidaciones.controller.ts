@@ -65,12 +65,33 @@ export class LiquidacionesController {
 
   @Get('historial-liquidaciones-aprobadas')
   @ApiQuery({ name: 'idCliente', required: false, example: 37, description: 'Filtra por el cliente del grupo de liquidación' })
+  @ApiQuery({ name: 'tiposServicio', required: false, example: 'monitoreo,vigilancia', description: 'Tipos de servicio separados por coma: "monitoreo" y/o "vigilancia" (vigilancia incluye los adicionales). Sin este parametro se devuelven los dos' })
   async findByMesLiquidacionesAprobadas(
     @Query('anio', ParseIntPipe) anio: number,
     @Query('mes', ParseIntPipe) mes: number,
     @Query('idCliente', new ParseIntPipe({ optional: true })) idCliente?: number,
+    @Query('tiposServicio') tiposServicio?: string,
   ) {
-    return this.service.findByMesLiquidacionesAprobadas(anio, mes, idCliente);
+    return this.service.findByMesLiquidacionesAprobadas(anio, mes, idCliente, tiposServicio?.split(','));
+  }
+
+  // COMPARA LAS LIQUIDACIONES APROBADAS DE UN CLIENTE ENTRE DOS MESES (diferencia = B - A)
+  @Get('comparar-cliente')
+  @ApiQuery({ name: 'idCliente', required: true, example: 37 })
+  @ApiQuery({ name: 'anioA', required: true, example: 2026 })
+  @ApiQuery({ name: 'mesA', required: true, example: 8 })
+  @ApiQuery({ name: 'anioB', required: true, example: 2026 })
+  @ApiQuery({ name: 'mesB', required: true, example: 9 })
+  @ApiQuery({ name: 'tiposServicio', required: true, example: 'monitoreo,vigilancia', description: 'Tipos de servicio a comparar separados por coma, al menos uno: "monitoreo" y/o "vigilancia" (vigilancia incluye los adicionales)' })
+  async compararLiquidacionesCliente(
+    @Query('idCliente', ParseIntPipe) idCliente: number,
+    @Query('anioA', ParseIntPipe) anioA: number,
+    @Query('mesA', ParseIntPipe) mesA: number,
+    @Query('anioB', ParseIntPipe) anioB: number,
+    @Query('mesB', ParseIntPipe) mesB: number,
+    @Query('tiposServicio') tiposServicio?: string,
+  ) {
+    return this.service.compararLiquidacionesCliente(idCliente, anioA, mesA, anioB, mesB, (tiposServicio ?? '').split(','));
   }
 
   @Get(':idGrupoLiquidacion/generar-excel-liquidacion')

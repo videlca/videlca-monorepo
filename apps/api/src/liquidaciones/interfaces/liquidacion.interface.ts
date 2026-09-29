@@ -27,6 +27,14 @@ export type LiquidacionServicioAgrupado = {
     mesLiquidado?: string;
 };
 
+// FILTRO DE TIPO DE SERVICIO PARA LA COMPARACION DE LIQUIDACIONES DE UN CLIENTE (ver compararLiquidacionesCliente).
+// MONITOREO: lineas de servicio de "Monitoreo de alarmas". VIGILANCIA: lineas de servicio de "Vigilancia y escolta"
+// mas los adicionales
+export enum TipoServicioComparacion {
+  MONITOREO = 'monitoreo',
+  VIGILANCIA = 'vigilancia',
+}
+
 export type LiquidacionClienteAgrupado = {
   id: number;
   cliente: string;
