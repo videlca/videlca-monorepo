@@ -60,11 +60,13 @@ export class LiquidacionesController {
   }
 
   @Get('historial-liquidaciones-aprobadas')
+  @ApiQuery({ name: 'idCliente', required: false, example: 37, description: 'Filtra por el cliente del grupo de liquidación' })
   async findByMesLiquidacionesAprobadas(
     @Query('anio', ParseIntPipe) anio: number,
     @Query('mes', ParseIntPipe) mes: number,
+    @Query('idCliente', new ParseIntPipe({ optional: true })) idCliente?: number,
   ) {
-    return this.service.findByMesLiquidacionesAprobadas(anio, mes);
+    return this.service.findByMesLiquidacionesAprobadas(anio, mes, idCliente);
   }
 
   @Get(':idGrupoLiquidacion/generar-excel-liquidacion')

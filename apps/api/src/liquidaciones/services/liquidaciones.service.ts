@@ -683,7 +683,7 @@ export class LiquidacionesService {
     return qb.getMany();
   }
 
-  async findByMesLiquidacionesAprobadas(anio: number, mes1a12: number) {
+  async findByMesLiquidacionesAprobadas(anio: number, mes1a12: number, idCliente?: number) {
     if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
       throw new BadRequestException('Parámetros inválidos (anio, mes)');
     }
@@ -692,7 +692,7 @@ export class LiquidacionesService {
     // if (today.getFullYear() < anio || (today.getFullYear() >= anio && today.getMonth() + 1 < mes1a12))
     //   throw new BadRequestException('No se puede liquidar una fecha mayor al actual');
 
-    const grupos = await this.grupoLiquidacionrepo
+    const query = this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
       .where(`grupo.estado = :estado`, { estado: true })
       // EL MES/AÑO QUE SE LIQUIDA NO ES EL MES/AÑO EN QUE SE GENERO EL GRUPO (fechaCreacion): agosto se suele liquidar
@@ -719,8 +719,14 @@ export class LiquidacionesService {
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
       // (mismo criterio que buscarGrupoLiquidaciones/findGruposPorCampoEstado, todos alimentan OrdenServicioCard)
       .leftJoin('liquidaciones.liquidacionServiciosOrdenServicio', 'lsos')
-      .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva'])
-      .getMany();
+      .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva']);
+
+    // FILTRO OPCIONAL POR CLIENTE DEL GRUPO (grupo.idCliente); sin idCliente se devuelven todos los grupos del mes
+    if (idCliente) {
+      query.andWhere('grupoCliente.idCliente = :idCliente', { idCliente });
+    }
+
+    const grupos = await query.getMany();
 
     return grupos.map((grupo) => ({
       ...grupo,
