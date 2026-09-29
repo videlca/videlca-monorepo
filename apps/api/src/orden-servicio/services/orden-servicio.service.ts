@@ -727,21 +727,24 @@ export class OrdenServicioService {
       return;
     }
 
-    const duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
-
-    // SERVICIOS DE TURNO DE 12 HORAS: se puede contratar una duracion parcial del turno (minimo 1, maximo 12 horas),
-    // se cobra proporcional a las horas elegidas (ver calcularPrecioCatalogo)
+    // SERVICIOS DE 12 HORAS (turno o mensual): la tarifa representa el valor de 12 horas, no una duracion obligatoria.
+    // Se puede contratar cualquier duracion entre 1 y 24 horas (ej: 4h, 14h), y se cobra proporcional a las horas
+    // elegidas sobre las 12 horas de la tarifa (ver calcularPrecioCatalogo)
     if (servicio.horasFijas === 12) {
 
-      if (duracionServicio < 1 || duracionServicio > 12) {
+      const duracionSeleccionada = await this.calcularDuracionHorasTarifa12(horaInicio, horaFin);
 
-        throw new BadRequestException('La duracion del servicio debe ser minimo 1 hora y maximo 12 horas');
+      if (duracionSeleccionada < 1 || duracionSeleccionada > 24) {
+
+        throw new BadRequestException('La duracion del servicio debe ser minimo 1 hora y maximo 24 horas');
 
       }
 
       return;
 
     }
+
+    const duracionServicio = await this.calcularDuracionServicio(horaInicio, horaFin);
 
     if (duracionServicio !== servicio.horasFijas) {
 
@@ -770,6 +773,16 @@ export class OrdenServicioService {
     const duracionMinutos = minutosFin - minutosInicio;
     return duracionMinutos / 60; // Convertir a horas
 
+
+  }
+
+  // DURACION ELEGIDA PARA UN SERVICIO CON TARIFA DE 12 HORAS. Igual que calcularDuracionServicio, pero si la hora de
+  // inicio y fin son iguales (ej: 06:00:00 a 06:00:00) se toma como un turno de 24 horas y no como 0 horas
+  private async calcularDuracionHorasTarifa12(horaInicio: string, horaFin: string) {
+
+    const duracion = await this.calcularDuracionServicio(horaInicio, horaFin);
+
+    return duracion === 0 ? 24 : duracion;
 
   }
 
@@ -931,12 +944,12 @@ export class OrdenServicioService {
       const patron = this.construirPatronDias(item);
       const todosLosDias = this.esPatronTodosLosDias(patron);
 
-      // SERVICIOS DE TURNO DE 12 HORAS (turno o mensual): se puede contratar una duracion parcial del turno (minimo 1,
-      // maximo 12 horas, ver validacionHorarios), y se cobra proporcional a las horas elegidas sobre las 12 horas del
-      // turno completo. El seguro de vida NO se prorratea por hora, se sigue cobrando como dia completo sin importar
-      // cuantas horas se elijan (1, 2, 3... hasta 12)
+      // SERVICIOS DE 12 HORAS (turno o mensual): se puede contratar cualquier duracion (minimo 1, maximo 24 horas, ver
+      // validacionHorarios), y se cobra proporcional a las horas elegidas sobre las 12 horas de la tarifa (ej: 4h =
+      // 4/12, 14h = 14/12). El seguro de vida NO se prorratea por hora, se sigue cobrando como dia completo sin
+      // importar cuantas horas se elijan
       const duracionSeleccionada = servicio.horasFijas === 12
-        ? await this.calcularDuracionServicio(item.horaInicio, item.horaFin)
+        ? await this.calcularDuracionHorasTarifa12(item.horaInicio, item.horaFin)
         : null;
 
       const factorHoras = duracionSeleccionada != null ? duracionSeleccionada / 12 : 1;
@@ -991,14 +1004,15 @@ export class OrdenServicioService {
         const seguroVida = Math.ceil(seguroVidaMensual / 30) * diasAplicables;
 
         desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, 0.10);
-        mensaje = factorHoras < 1
-          ? `Por turno, ${diasAplicables} dia(s), turno parcial de ${duracionSeleccionada} de 12 horas (proporcional)`
+        mensaje = factorHoras !== 1
+          ? `Por turno, ${diasAplicables} dia(s), ${duracionSeleccionada} horas sobre la tarifa de 12 horas (proporcional)`
           : `Por turno, ${diasAplicables} dia(s) segun el patron de dias seleccionado`;
 
       }
 
-      // MENSUAL: si es un mes exacto, aplican todos los dias Y se pidieron las 12 horas completas del turno, se cobra
-      // la tarifa completa; sino se prorratea por dias (y por horas, si el turno es de 12h y no se pidieron las 12).
+      // MENSUAL: si es un mes exacto, aplican todos los dias Y se pidieron exactamente las 12 horas de la tarifa, se
+      // cobra la tarifa completa; sino se prorratea por dias (y por horas, si la tarifa es de 12h y se pidieron mas o
+      // menos de 12).
       // AUI 10% armado / 8% sin armado
       else if (tipoTarifaNombre === TipoTarifaInterface.MES) {
 
@@ -1017,8 +1031,8 @@ export class OrdenServicioService {
           const porcentajeAui = servicio.armado ? 0.10 : 0.08;
           const diasAplicables = await this.contarDiasSegunPatron(fechaInicioOrden, fechaFinOrden, patron);
 
-          mensaje = factorHoras < 1
-            ? `${diasAplicables} dia(s), turno parcial de ${duracionSeleccionada} de 12 horas (proporcional), AUI ${servicio.armado ? '10% armado' : '8% sin armado'}`
+          mensaje = factorHoras !== 1
+            ? `${diasAplicables} dia(s), ${duracionSeleccionada} horas sobre la tarifa de 12 horas (proporcional), AUI ${servicio.armado ? '10% armado' : '8% sin armado'}`
             : `${diasAplicables} dia(s) segun el patron de dias seleccionado, proporcional a la tarifa mensual (AUI ${servicio.armado ? '10% armado' : '8% sin armado'})`;
 
           desglose = this.calcularTotalesTarifa(costosDirectos, seguroVida, porcentajeAui);
