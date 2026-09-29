@@ -1,9 +1,11 @@
-import { useState, useRef, useCallback } from "react";
+import { Fragment, useState, useRef, useCallback } from "react";
+import type { ReactNode } from "react";
 import type {
   ColumnDef,
   SortingState,
   ColumnFiltersState,
   VisibilityState,
+  ExpandedState,
 } from "@tanstack/react-table";
 import {
   flexRender,
@@ -65,6 +67,16 @@ interface TableProps<TData, TValues> {
   onPageChange?: (page: number) => void;
   /** Server-side pagination: callback when page size changes */
   onPageSizeChange?: (size: number) => void;
+  /**
+   * Contenido de la fila desplegable bajo cada fila. Si se define, las celdas pueden alternarla con
+   * row.toggleExpanded() / leer su estado con row.getIsExpanded()
+   */
+  renderExpandedRow?: (row: TData) => ReactNode;
+  /**
+   * Id estable por fila. Recomendado junto con renderExpandedRow en paginacion por servidor: por defecto el id es
+   * el indice, y al cambiar de pagina las filas nuevas heredarian el estado desplegado de las anteriores
+   */
+  getRowId?: (row: TData) => string;
 }
 
 const Table = <TData, TValues>({
@@ -89,11 +101,14 @@ const Table = <TData, TValues>({
   currentPage = 0,
   onPageChange,
   onPageSizeChange,
+  renderExpandedRow,
+  getRowId,
 }: TableProps<TData, TValues>) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [expanded, setExpanded] = useState<ExpandedState>({});
   const [selectedFilterColumn, setSelectedFilterColumn] = useState<string>("");
   const [filterValue, setFilterValue] = useState<string>("");
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -126,7 +141,11 @@ const Table = <TData, TValues>({
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
     onColumnVisibilityChange: setColumnVisibility,
+    onExpandedChange: setExpanded,
+    getRowCanExpand: () => !!renderExpandedRow,
+    getRowId,
     state: {
+      expanded,
       sorting,
       columnFilters,
       rowSelection,
@@ -345,10 +364,8 @@ const Table = <TData, TValues>({
           <tbody className="divide-y divide-gray-200 bg-white">
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="text-center transition-colors hover:bg-gray-50"
-                >
+                <Fragment key={row.id}>
+                <tr className="text-center transition-colors hover:bg-gray-50">
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
@@ -364,6 +381,17 @@ const Table = <TData, TValues>({
                     </td>
                   ))}
                 </tr>
+                {renderExpandedRow && row.getIsExpanded() && (
+                  <tr>
+                    <td
+                      colSpan={row.getVisibleCells().length}
+                      className="bg-gray-50 px-6 py-3"
+                    >
+                      {renderExpandedRow(row.original)}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))
             ) : (
               <tr>

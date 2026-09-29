@@ -22,8 +22,8 @@ export const getOrdenLiquidada = async (idLiquidacion: number): Promise<ApiRespo
   return await apiGet<OrdenOAdicionalLiquidado>(`/liquidaciones/${idLiquidacion}/orden`);
 };
 
-export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number): Promise<ApiResponse<GruposLiquidaciones[]>> => {
-  return await apiGet<GruposLiquidaciones[]>(`/liquidaciones/historial-liquidaciones-aprobadas?anio=${anio}&mes=${mes}`);
+export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number, idCliente?: number): Promise<ApiResponse<GruposLiquidaciones[]>> => {
+  return await apiGet<GruposLiquidaciones[]>(`/liquidaciones/historial-liquidaciones-aprobadas`, { anio, mes, ...(idCliente ? { idCliente } : {}) });
 };
 
 export const crearLiquidacionMensual = async (data: CrearGrupoMensualDto): Promise<ApiResponse<GrupoLiquidacionCreado>> => {

@@ -23,6 +23,7 @@ import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/Observa
 import type { GruposLiquidaciones } from "../../../api/types/liquidaciones";
 import ButtonOrdenes from "../../../components/common/ButtonOrdenes";
 import { useGetObservacionesGrupoOrdenServicio } from "../../../api/queryFunctions/orden-servicio/observaciones-grupo";
+import { useClientes } from "../../../api/queryFunctions/clientes";
 
 export const Route = createFileRoute("/dashboard/liquidaciones/historial")({
   component: RouteComponent,
@@ -51,10 +52,15 @@ const yearsOptions = Array.from({ length: 10 }, (_, i) => {
 const currentYear = getYear(new Date()).toString();
 const currentMonth = (new Date().getMonth() + 1).toString();
 
+// "0" = sin filtro de cliente (InputSelect no permite limpiar la seleccion, asi que se ofrece como opcion)
+const TODOS_LOS_CLIENTES = "0";
+
 function RouteComponent() {
   const [hiddenGroups, setHiddenGroups] = useState<Set<number>>(new Set());
   const [searchMonth, setSearchMonth] = useState<string>(currentMonth);
   const [searchYear, setSearchYear] = useState<string>(currentYear);
+  const [searchCliente, setSearchCliente] =
+    useState<string>(TODOS_LOS_CLIENTES);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isOpenEmail, setIsOpenEmail] = useState(false);
   const [groupIdSelected, setGroupIdSelected] = useState<number | null>(null);
@@ -67,6 +73,16 @@ function RouteComponent() {
       groupLiquidacionSelected?.idGrupoLiquidacion as number,
     );
   // Queries y mutaciones
+  // Todos los clientes (no solo activos): el historial puede incluir clientes que ya fueron desactivados
+  const { data: clientes } = useClientes();
+  const clientesOptions = [
+    { id: Number(TODOS_LOS_CLIENTES), descripcion: "Todos los clientes" },
+    ...(clientes?.data?.data?.map((cliente) => ({
+      id: cliente.idCliente,
+      descripcion: cliente.nombre,
+    })) ?? []),
+  ];
+
   const {
     data: liquidaciones,
     isLoading: isLoadingLiquidaciones,
@@ -75,6 +91,7 @@ function RouteComponent() {
     Number(searchYear),
     Number(searchMonth),
     isSearching,
+    Number(searchCliente) || undefined,
   );
 
   const liquidacionesData = Array.isArray(liquidaciones?.data)
@@ -137,7 +154,7 @@ function RouteComponent() {
           <h2 className="mb-4 text-xl font-semibold">Filtros de Búsqueda</h2>
           <p className="mb-4 text-sm text-gray-500">
             Para ver el historial de liquidaciones, selecciona el mes y año de
-            la liquidación.
+            la liquidación. Opcionalmente, filtra por cliente.
           </p>
           <div className="flex flex-wrap items-end gap-4">
             <div className="min-w-48 flex-1">
@@ -164,6 +181,19 @@ function RouteComponent() {
                   setIsSearching(false);
                 }}
                 options={monthsOptions}
+              />
+            </div>
+            <div className="min-w-48 flex-1">
+              <InputSelect
+                label="Cliente"
+                placeholder="Selecciona un cliente"
+                id="searchCliente"
+                value={searchCliente}
+                onChange={(e) => {
+                  setSearchCliente(e.target.value);
+                  setIsSearching(false);
+                }}
+                options={clientesOptions}
               />
             </div>
             <ButtonAction

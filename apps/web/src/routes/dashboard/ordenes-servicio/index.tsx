@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { Check, PlusIcon } from "lucide-react";
+import { Check, ChevronRightIcon, PlusIcon } from "lucide-react";
 import Table from "../../../components/common/Table";
+import { ServiciosOrdenResumen } from "../../../components/common/ServiciosOrdenResumen";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
@@ -1025,10 +1026,21 @@ function RouteComponent() {
     {
       accessorKey: "numeroOrdenServicio",
       header: "Id. Orden de Servicio",
+      // El chevron despliega/oculta el resumen de servicios de esta fila (ver renderExpandedRow en <Table>)
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap text-black">
+        <button
+          type="button"
+          onClick={row.getToggleExpandedHandler()}
+          title={row.getIsExpanded() ? "Ocultar servicios" : "Ver servicios"}
+          className="flex cursor-pointer items-center gap-1.5 font-medium whitespace-nowrap text-black"
+        >
+          <ChevronRightIcon
+            className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform ${
+              row.getIsExpanded() ? "rotate-90" : ""
+            }`}
+          />
           {row.original.ordenServicioId.descripcionId}
-        </span>
+        </button>
       ),
     },
     {
@@ -1375,6 +1387,8 @@ function RouteComponent() {
         <Table
           columns={columns}
           data={filteredOrdenesServicio ?? ordenesDeServicioQuery?.data?.data ?? []}
+          getRowId={(orden) => String(orden.idOrdenServicio)}
+          renderExpandedRow={(orden) => <ServiciosOrdenResumen orden={orden} />}
           serverPagination={!filteredOrdenesServicio}
           totalRows={filteredOrdenesServicio ? filteredOrdenesServicio.length : (ordenesDeServicioQuery?.data?.pagination?.total ?? 0)}
           currentPage={page}

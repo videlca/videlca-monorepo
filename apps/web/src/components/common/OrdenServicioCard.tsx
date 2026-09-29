@@ -112,14 +112,8 @@ export const OrdenServicioCard = ({
               <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">Antes de IVA</span>
-                  <span className="text-xs font-medium text-gray-700">
-                    {priceFormat(liquidacion.valorLiquidacionAntesIva)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Liquidado</span>
                   <span className="text-sm font-semibold text-green-600">
-                    {priceFormat(liquidacion.valor_liquidacion)}
+                    {priceFormat(liquidacion.valorLiquidacionAntesIva)}
                   </span>
                 </div>
               </div>
@@ -127,17 +121,17 @@ export const OrdenServicioCard = ({
           ))}
         </div>
         {showTotal && (
-          <div className="mt-4 flex justify-end gap-6">
-            <span className="text-sm text-gray-600">
-              Total antes de IVA:{" "}
+          <div className="mt-4 flex items-baseline justify-end gap-6">
+            <span className="text-xs text-gray-600">
+              Liquidación Total:{" "}
               <span className="font-medium text-gray-700">
-                {priceFormat(totalAntesIva)}
+                {priceFormat(grupoLiquidacion.total)}
               </span>
             </span>
             <span className="text-sm text-gray-600">
-              Liquidación Total:{" "}
-              <span className="font-medium text-green-600">
-                {priceFormat(grupoLiquidacion.total)}
+              Total antes de IVA:{" "}
+              <span className="text-base font-semibold text-green-600">
+                {priceFormat(totalAntesIva)}
               </span>
             </span>
           </div>

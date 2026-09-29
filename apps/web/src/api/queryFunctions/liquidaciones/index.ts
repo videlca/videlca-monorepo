@@ -27,10 +27,10 @@ export const useGetAdicionalesPorMes = (anio: number, mes: number, enabled: bool
   });
 };
 
-export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
+export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, enabled: boolean, idCliente?: number): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
   return useQuery({
-    queryKey: ["liquidaciones-por-mes-historial", anio, mes],
-    queryFn: () => getLiquidacionesPorMesHistorial(anio, mes),
+    queryKey: ["liquidaciones-por-mes-historial", anio, mes, idCliente],
+    queryFn: () => getLiquidacionesPorMesHistorial(anio, mes, idCliente),
     enabled: !!anio && !!mes && enabled,
   });
 };

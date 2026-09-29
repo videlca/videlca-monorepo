@@ -6,6 +6,7 @@ import {
   AlertCircleIcon,
   CheckIcon,
   ChevronDownIcon,
+  EyeIcon,
   FileTextIcon,
   ListChecksIcon,
   PlusIcon,
@@ -26,6 +27,7 @@ import { toast } from "sonner";
 import { getStatusColor } from "../../../utils/StatusColor";
 import type { OrdenServicio } from "../../../api/types/orden-servicio";
 import type { Adicional } from "../../../api/types/adicionales";
+import { ServiciosOrden } from "../../../components/ui/modals/ServiciosOrden";
 
 export const Route = createFileRoute("/dashboard/liquidaciones/")({
   component: RouteComponent,
@@ -141,6 +143,10 @@ function RouteComponent() {
     string | null
   >(null);
   const [seleccion, setSeleccion] = useState<SeleccionCliente | null>(null);
+  // Orden cuyos servicios se muestran en el modal "Mostrar servicios"
+  const [ordenServicios, setOrdenServicios] = useState<OrdenServicio | null>(
+    null,
+  );
 
   // Queries y mutaciones
   const {
@@ -581,6 +587,18 @@ function RouteComponent() {
                               {/* <span className="font-medium text-green-600">
                               {priceFormat(Number(orden.precioTotal))}
                             </span> */}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  // En modo seleccion la tarjeta completa alterna la orden, no debe hacerlo este boton
+                                  e.stopPropagation();
+                                  setOrdenServicios(orden);
+                                }}
+                                className="flex cursor-pointer items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                              >
+                                <EyeIcon className="h-3.5 w-3.5" />
+                                Mostrar servicios
+                              </button>
                             </div>
                           </div>
                         );
@@ -640,6 +658,11 @@ function RouteComponent() {
           </div>
         </div>
       ) : null}
+
+      <ServiciosOrden
+        orden={ordenServicios}
+        onClose={() => setOrdenServicios(null)}
+      />
     </Section>
   );
 }
