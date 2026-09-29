@@ -1292,7 +1292,18 @@ export class LiquidacionesService {
 
   }
 
-  async findGruposPorCampoEstado(campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo', valor: string) {
+  // anio/mes: filtro opcional por el MES DEL GRUPO (mismo criterio que el historial de liquidaciones aprobadas);
+  // se envian los dos o ninguno. Sin ellos se devuelven los grupos de todos los meses
+  async findGruposPorCampoEstado(
+    campo: 'consolidacion_orden' | 'generacion_interfase' | 'generacion_anexo',
+    valor: string,
+    anio?: number,
+    mes?: number,
+  ) {
+
+    if ((anio == null) !== (mes == null)) {
+      throw new BadRequestException('Para filtrar por mes se deben enviar anio y mes juntos');
+    }
 
     const query = this.grupoLiquidacionrepo
       .createQueryBuilder('grupo')
@@ -1333,6 +1344,15 @@ export class LiquidacionesService {
         query.where('grupo.consolidacion_orden = :cons', { cons: true })
              .andWhere('grupo.generacion_interfase = :interfase', { interfase: true })
              .andWhere('grupo.generacion_anexo = :valor', { valor: valor === 'true' });
+      }
+
+      // FILTRO POR MES DEL GRUPO: va despues de los filtros por campo porque esos usan where() (que reemplaza
+      // cualquier condicion anterior). El mes/año estan en "descripcion" ("liquidacion_{mes}_{anio}_{id}", mes sin
+      // cero a la izquierda), igual que en findByMesLiquidacionesAprobadas
+      if (anio != null && mes != null) {
+        query
+          .andWhere('SUBSTRING_INDEX(SUBSTRING_INDEX(grupo.descripcion, \'_\', 2), \'_\', -1) = :mes', { mes })
+          .andWhere('SUBSTRING_INDEX(SUBSTRING_INDEX(grupo.descripcion, \'_\', 3), \'_\', -1) = :anio', { anio });
       }
 
       const grupos = await query.getMany();

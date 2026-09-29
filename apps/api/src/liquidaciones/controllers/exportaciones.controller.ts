@@ -20,7 +20,7 @@ export class ExportacionController {
 
   @Get('buscar-por-campo')
   async buscarPorCampoEstado(@Query() filtro: FiltroGrupoLiquidacionDto) {
-    return this.liquidacionesService.findGruposPorCampoEstado(filtro.campo, filtro.valor);
+    return this.liquidacionesService.findGruposPorCampoEstado(filtro.campo, filtro.valor, filtro.anio, filtro.mes);
   }
 
   @Patch(':idGrupoLiquidacion/cambiar-estado')
