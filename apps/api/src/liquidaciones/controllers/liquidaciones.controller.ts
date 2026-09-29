@@ -128,6 +128,40 @@ export class LiquidacionesController {
 
   }
 
+  // PDF DEL GRUPO DE LIQUIDACION (la "factura" del cliente): mismo estilo que el PDF de la orden de servicio
+  @Get(':idGrupoLiquidacion/generar-pdf-liquidacion')
+  @ValidateJwtAuth()
+  async generarPdfGrupoLiquidacion(
+    @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
+    @Res() res: Response
+  ) {
+
+    const { pdfDoc, title } = await this.service.downloadGrupoLiquidacionPdf(idGrupoLiquidacion);
+
+    pdfDoc.info.Title = title;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${title}.pdf"`,
+    );
+
+    pdfDoc.pipe(res);
+    pdfDoc.end();
+
+  }
+
+  @Post(':idGrupoLiquidacion/enviar-pdf-liquidacion')
+  @ValidateJwtAuth()
+  enviarPdfGrupoLiquidacion(
+    @Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number,
+    @Body() enviarCorreoDto: EnviarCorreoDto
+  ) {
+
+    return this.service.sendGrupoLiquidacionPdf(idGrupoLiquidacion, enviarCorreoDto);
+
+  }
+
   // @Get('by-estado')
   // async listByEstado(
   //   @Query('estado') estado: boolean,

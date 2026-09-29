@@ -13,7 +13,7 @@ import { PrecioOrdenDto } from '../../orden-servicio/dto';
 import { OrigenServicioEnum } from '../../orden-servicio/interfaces/origen-servicio.interface';
 
 import { EmailService, CorreoDefaultService } from '../../common/services';
-import { ReporteConsolidacionService, ReporteInterfaseService, ReporteLiquidacionService, ReporteAnexoFacturacionService } from '../../reportes/services';
+import { ReporteConsolidacionService, ReporteInterfaseService, ReporteLiquidacionService, ReporteAnexoFacturacionService, ReporteGrupoLiquidacionService } from '../../reportes/services';
 import { OrdenServicioService } from '../../orden-servicio/services';
 import { ClientesService } from '../../clientes/services';
 
@@ -25,6 +25,7 @@ import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEs
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
 import { ClienteAgrupado } from '../interfaces/consolidacion.interface';
 import { LiquidacionClienteAgrupado, TipoServicioComparacion } from '../interfaces/liquidacion.interface';
+import { GrupoLiquidacionPdf, OrdenLiquidadaPdf, AdicionalLiquidadoPdf, ServicioLiquidadoPdf } from '../interfaces/grupo-liquidacion-pdf.interface';
 
 @Injectable()
 export class LiquidacionesService {
@@ -46,6 +47,7 @@ export class LiquidacionesService {
     private readonly reporteInterfaseService: ReporteInterfaseService, // Servicio para generar reportes de exportacion de interfase
     private readonly reporteLiquidacionService: ReporteLiquidacionService, // Servicio para generar reportes de liquidacion
     private readonly reporteAnexoFacturacionService: ReporteAnexoFacturacionService, // Servicio para generar reportes de anexos de facturacion
+    private readonly reporteGrupoLiquidacionService: ReporteGrupoLiquidacionService, // Servicio para generar el PDF de un grupo de liquidacion
     private readonly emailService: EmailService, // Servicio de email para envio de correos
     private readonly correoDefaultService: CorreoDefaultService, // Servicio para obtener el email por defecto
     private readonly dataSource: DataSource,
@@ -172,16 +174,7 @@ export class LiquidacionesService {
 
     }
 
-    const anio = Number(liquidacion.aniomes_liquidacion.slice(0, 4));
-    const mes = Number(liquidacion.aniomes_liquidacion.slice(4));
-
-    const mesIni = new Date(Date.UTC(anio, mes - 1, 1));
-    const mesFin = endOfMonth(mesIni);
-    const start = toUTCDateOnly(liquidacion.ordenServicio.fechaInicio);
-    const end = liquidacion.ordenServicio.fechaFin ? toUTCDateOnly(liquidacion.ordenServicio.fechaFin) : mesFin;
-
-    const desde = maxDate(start, mesIni);
-    const hasta = minDate(end, mesFin);
+    const { desde, hasta } = this.rangoLiquidadoEnMes(liquidacion.ordenServicio, liquidacion.aniomes_liquidacion);
 
     const esCatalogo = liquidacion.ordenServicio.origenServicio === OrigenServicioEnum.CATALOGO;
 
@@ -250,6 +243,25 @@ export class LiquidacionesService {
       detalles,
       idLiquidacion: liquidacion.idLiquidacion,
       aniomes_liquidacion: liquidacion.aniomes_liquidacion,
+    };
+
+  }
+
+  // TRAMO DE FECHAS DE UNA ORDEN QUE CAE DENTRO DEL MES LIQUIDADO ("YYYYMM"): el mismo desde/hasta que usa
+  // crearLiquidacionMensualOrden (la orden indefinida llega hasta fin de mes)
+  private rangoLiquidadoEnMes(ordenServicio: OrdenServicio, aniomes: string) {
+
+    const anio = Number(aniomes.slice(0, 4));
+    const mes = Number(aniomes.slice(4));
+
+    const mesIni = new Date(Date.UTC(anio, mes - 1, 1));
+    const mesFin = endOfMonth(mesIni);
+    const start = toUTCDateOnly(ordenServicio.fechaInicio);
+    const end = ordenServicio.fechaFin ? toUTCDateOnly(ordenServicio.fechaFin) : mesFin;
+
+    return {
+      desde: maxDate(start, mesIni),
+      hasta: minDate(end, mesFin),
     };
 
   }
@@ -1915,6 +1927,261 @@ export class LiquidacionesService {
 
   }
   
+  // ARMA LOS DATOS DEL PDF DE UN GRUPO DE LIQUIDACION (la "factura" del cliente del grupo). Los precios salen tal cual
+  // de lo ya liquidado (liquidacion_servicio_orden_servicio para ordenes, el snapshot de la liquidacion para
+  // adicionales), no se recalcula nada
+  private async obtenerDatosPdfGrupo(idGrupoLiquidacion: number): Promise<GrupoLiquidacionPdf> {
+
+    const grupo = await this.grupoLiquidacionrepo
+      .createQueryBuilder('grupo')
+      .leftJoinAndSelect('grupo.idCliente', 'grupoCliente')
+      .leftJoinAndSelect('grupo.liquidaciones', 'liq')
+      .leftJoinAndSelect('liq.ordenServicio', 'orden')
+      .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
+      .leftJoinAndSelect('orden.detalles', 'detalle')
+      .leftJoinAndSelect('detalle.idTarifa', 'detalleTarifa')
+      .leftJoinAndSelect('liq.liquidacionServiciosOrdenServicio', 'lsos')
+      .leftJoinAndSelect('lsos.idTarifa', 'lsosTarifa')
+      .leftJoinAndSelect('lsosTarifa.idServicio', 'lsosServicio')
+      .leftJoinAndSelect('lsosServicio.idTipoServicio', 'lsosTipoServicio')
+      .leftJoinAndSelect('lsosServicio.idTipoTarifa', 'lsosTipoTarifa')
+      .leftJoinAndSelect('liq.adicional', 'adicional')
+      .where('grupo.idGrupoLiquidacion = :idGrupoLiquidacion', { idGrupoLiquidacion })
+      .orderBy('liq.idLiquidacion', 'ASC')
+      .addOrderBy('detalle.idOrdenServicioDetalle', 'ASC')
+      .addOrderBy('lsos.idLiquidacionServicioOrdenServicio', 'ASC')
+      .getOne();
+
+    if (!grupo) throw new NotFoundException('Grupo de liquidación no encontrado');
+
+    if (!grupo.idCliente) {
+      throw new BadRequestException(`El grupo de liquidacion ${idGrupoLiquidacion} no tiene un cliente asignado, no se puede generar su PDF`);
+    }
+
+    // CLIENTE COMPLETO (con sus relaciones eager: tipo de identificacion, tipo de cliente, segmentacion)
+    const cliente = await this.clienteService.findOne(grupo.idCliente.idCliente);
+
+    // "liquidacion_{mes}_{anio}_{id}", ver generarGrupoMensual
+    const [, mesGrupo, anioGrupo] = grupo.descripcion.split('_');
+
+    const mesLiquidado = (aniomes: string) => this.formatearMesAnio(Number(aniomes.slice(0, 4)), Number(aniomes.slice(4)));
+
+    const precioDe = (valores: { costosDirectos: any; seguroVida: any; aui: any; precioAntesIva: any; iva: any }, precio: any) => ({
+      costosDirectos: round2(Number(valores.costosDirectos ?? 0)),
+      seguroVida: round2(Number(valores.seguroVida ?? 0)),
+      aui: round2(Number(valores.aui ?? 0)),
+      precioAntesIva: round2(Number(valores.precioAntesIva ?? 0)),
+      iva: round2(Number(valores.iva ?? 0)),
+      precio: round2(Number(precio ?? 0)),
+    });
+
+    const ordenes: OrdenLiquidadaPdf[] = [];
+    const adicionales: AdicionalLiquidadoPdf[] = [];
+
+    // ORDENES AGRUPADAS POR ORDEN Y, DENTRO DE CADA UNA, POR MES LIQUIDADO (una orden puede venir por varios meses)
+    const liquidacionesOrdenes = grupo.liquidaciones
+      .filter(liq => liq.ordenServicio)
+      .sort((a, b) => a.ordenServicio.idOrdenServicio - b.ordenServicio.idOrdenServicio || a.aniomes_liquidacion.localeCompare(b.aniomes_liquidacion));
+
+    for (const liq of liquidacionesOrdenes) {
+
+      const orden = liq.ordenServicio;
+      const lineas = liq.liquidacionServiciosOrdenServicio ?? [];
+      const { desde, hasta } = this.rangoLiquidadoEnMes(orden, liq.aniomes_liquidacion);
+
+      let servicios: ServicioLiquidadoPdf[];
+
+      if (orden.origenServicio === OrigenServicioEnum.CATALOGO) {
+
+        // CATALOGO: una linea liquidada por cada servicio de la orden. El horario no se guarda en la linea liquidada,
+        // se toma del detalle de la orden emparejando POR POSICION dentro de cada idTarifa (una orden puede tener
+        // varias unidades del mismo servicio, ambas listas vienen ordenadas por id = orden de creacion)
+        const detallesPorTarifa = new Map<number, typeof orden.detalles>();
+
+        for (const detalle of orden.detalles ?? []) {
+          const idTarifa = detalle.idTarifa?.idTarifa;
+          detallesPorTarifa.set(idTarifa, [...(detallesPorTarifa.get(idTarifa) ?? []), detalle]);
+        }
+
+        const posicionPorTarifa = new Map<number, number>();
+
+        servicios = lineas.map(lsos => {
+
+          const servicio = lsos.idTarifa.idServicio;
+          const idTarifa = lsos.idTarifa.idTarifa;
+          const posicion = posicionPorTarifa.get(idTarifa) ?? 0;
+          posicionPorTarifa.set(idTarifa, posicion + 1);
+
+          const detalle = detallesPorTarifa.get(idTarifa)?.[posicion];
+
+          return {
+            descripcion: servicio.descripcion,
+            codigo: servicio.codigo,
+            horario: detalle ? `${detalle.horaInicio} - ${detalle.horaFin}` : null,
+            tipoTarifa: servicio.idTipoTarifa?.nombre ?? null,
+            ...precioDe(lsos, lsos.precioTotal),
+          };
+
+        });
+
+      } else {
+
+        // A LA MEDIDA: una linea liquidada por cada dia del mes; se muestra como un solo servicio con la suma de sus dias
+        const suma = (campo: 'costosDirectos' | 'seguroVida' | 'aui' | 'precioAntesIva' | 'iva' | 'precioTotal') =>
+          lineas.reduce((acc, lsos) => acc + Number(lsos[campo] ?? 0), 0);
+
+        servicios = [{
+          descripcion: `Servicio a la medida (${lineas.length} día(s))`,
+          codigo: null,
+          horario: null,
+          tipoTarifa: null,
+          ...precioDe({
+            costosDirectos: suma('costosDirectos'),
+            seguroVida: suma('seguroVida'),
+            aui: suma('aui'),
+            precioAntesIva: suma('precioAntesIva'),
+            iva: suma('iva'),
+          }, suma('precioTotal')),
+        }];
+
+      }
+
+      ordenes.push({
+        codigo: orden.ordenServicioId?.descripcionId ?? `#${orden.idOrdenServicio}`,
+        tipoServicio: lineas[0]?.idTarifa?.idServicio?.idTipoServicio?.nombre ?? '-',
+        mesLiquidado: mesLiquidado(liq.aniomes_liquidacion),
+        desde,
+        hasta,
+        servicios,
+        total: round2(Number(liq.valor_liquidacion ?? 0)),
+      });
+
+    }
+
+    for (const liq of grupo.liquidaciones.filter(liq => liq.adicional)) {
+
+      adicionales.push({
+        nombre: liq.adicional.nombre,
+        mesLiquidado: mesLiquidado(liq.aniomes_liquidacion),
+        ...precioDe(liq, liq.valor_liquidacion),
+      });
+
+    }
+
+    // TOTALES DEL GRUPO: suma de todos los servicios de las ordenes y de los adicionales
+    const lineasPrecio = [...ordenes.flatMap(orden => orden.servicios), ...adicionales];
+    const sumaTotal = (campo: 'costosDirectos' | 'seguroVida' | 'aui' | 'precioAntesIva' | 'iva' | 'precio') =>
+      round2(lineasPrecio.reduce((acc, linea) => acc + linea[campo], 0));
+
+    return {
+      idGrupoLiquidacion: grupo.idGrupoLiquidacion,
+      descripcion: grupo.descripcion,
+      anio: Number(anioGrupo),
+      mes: Number(mesGrupo),
+      fechaCreacion: grupo.fechaCreacion,
+      aprobado: grupo.estado,
+      cliente,
+      ordenes,
+      adicionales,
+      totales: {
+        costosDirectos: sumaTotal('costosDirectos'),
+        seguroVida: sumaTotal('seguroVida'),
+        aui: sumaTotal('aui'),
+        precioAntesIva: sumaTotal('precioAntesIva'),
+        iva: sumaTotal('iva'),
+        precio: sumaTotal('precio'),
+      },
+    };
+
+  }
+
+  async downloadGrupoLiquidacionPdf(idGrupoLiquidacion: number) {
+
+    const datos = await this.obtenerDatosPdfGrupo(idGrupoLiquidacion);
+
+    return {
+      pdfDoc: this.reporteGrupoLiquidacionService.getReporteGrupoLiquidacion(datos),
+      title: `liquidacion_grupo_${idGrupoLiquidacion}_mes_${datos.mes}_anio_${datos.anio}`,
+    };
+
+  }
+
+  async sendGrupoLiquidacionPdf(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto) {
+
+    const datos = await this.obtenerDatosPdfGrupo(idGrupoLiquidacion);
+
+    const pdfBuffer = await this.reporteGrupoLiquidacionService.getBufferReporteGrupoLiquidacion(datos);
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): PDF de liquidacion ${datos.descripcion} - ${datos.cliente.nombre}`;
+
+    const html = `
+      <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.1); overflow: hidden;">
+
+          <!-- Encabezado -->
+          <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">LIQUIDACION ${datos.descripcion}</h2>
+          </div>
+
+          <!-- Cuerpo -->
+          <div style="padding: 25px; text-align: center;">
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+              Buen día, se envia PDF adjunto con la liquidacion <b>${datos.descripcion}</b> del cliente <b>${datos.cliente.nombre}</b>
+              correspondiente al mes <b>${this.formatearMesAnio(datos.anio, datos.mes)}</b>. <br><br>
+              Por favor, revise el <b>PDF adjunto</b> para más detalles.
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; color: #555;">
+              Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
+            </p>
+            <p style="margin-top: 20px; font-size: 15px;">Saludos,</p>
+            <p style="font-size: 15px; font-weight: 600; color: #0055a5;">El equipo de GEVID</p>
+          </div>
+
+          <!-- Imagen -->
+          <div style="text-align: center; padding: 15px;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFqE70N9MCDAIq8w8xYD-KSyRc2F2I3vc2vsjFLg6qjE2a-qkUgsh9v4ks9lIOfwXbAsk&usqp=CAU"
+                  alt="videlca"
+                  style="width: 180px; height: auto; border-radius: 8px; margin-top: 10px;">
+          </div>
+
+          <!-- Mensaje de aplicación -->
+          <div style="padding: 10px 20px; text-align: center; font-size: 13px; color: #666; font-style: italic;">
+            📩 Este correo fue enviado automáticamente por la aplicación <b>GEVID</b>, no responda este mensaje.
+          </div>
+
+          <!-- Pie de página -->
+          <div style="background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #888;">
+            © 2025 Videlca Ltda. - Seguridad Física y Electrónica
+          </div>
+
+        </div>
+      </div>
+      `;
+
+    const emails = enviarCorreoDto.correos.map(correo => correo.email);
+
+    // VALORES REQUERIDOS PARA ENVIAR UN EMAIL
+    const options: SendMailOptions = {
+      to: emails,
+      subject: subject,
+      htmlBody: html,
+      attachments: [
+        {
+          filename: `liquidacion_grupo_${idGrupoLiquidacion}_mes_${datos.mes}_anio_${datos.anio}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    }
+
+    const isEmailSend = await this.emailService.sendEmail(options);
+
+    if (!isEmailSend){
+      throw new InternalServerErrorException(`Error al enviar correo con el PDF del grupo de liquidacion ${idGrupoLiquidacion} a los emails ${emails}, revisar correos si estan bien escritos`);
+    }
+
+  }
+
   async downloadAnexoZip(idGrupoLiquidacion: number){
 
     const resultadoLiquidacion = await this.obtenerServiciosDeCliente(idGrupoLiquidacion);

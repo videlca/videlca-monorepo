@@ -9,7 +9,8 @@ import {
   ReporteAnexoFacturacionService,
   ReporteInterfaseService,
   ReporteLiquidacionService,
-  ReporteClientesPuestosService
+  ReporteClientesPuestosService,
+  ReporteGrupoLiquidacionService
 } from './services';
 
 
@@ -26,7 +27,8 @@ import {
     ReporteAnexoFacturacionService,
     ReporteInterfaseService,
     ReporteLiquidacionService,
-    ReporteClientesPuestosService
+    ReporteClientesPuestosService,
+    ReporteGrupoLiquidacionService
   ],
   exports: [
     ReporteOrdenServicioService,
@@ -35,7 +37,8 @@ import {
     ReporteAnexoFacturacionService,
     ReporteInterfaseService,
     ReporteLiquidacionService,
-    ReporteClientesPuestosService
+    ReporteClientesPuestosService,
+    ReporteGrupoLiquidacionService
   ],
 })
 export class ReportesModule {}
