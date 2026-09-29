@@ -244,7 +244,8 @@ export class ReporteInterfaseService {
 
           numeroPedido += 1;
 
-          const tipoServicio = servicio.armado ? 10 : 20;  
+          // CODIGO SIIGO DEL TIPO DE SERVICIO: 10 = vigilancia (armado), 20 = monitoreo de alarmas
+          const tipoServicio = servicio.esMonitoreo ? 20 : 10;
 
           const codigoProducto = servicio.codigoServicioSiigo.split("-");
 

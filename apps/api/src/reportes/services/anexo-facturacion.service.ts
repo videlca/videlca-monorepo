@@ -83,7 +83,7 @@ export class ReporteAnexoFacturacionService {
           cliente,
           Number(numeroId), // 2
           numeroCliente,
-          servicio.esAdicional ? "" : (servicio.armado ? "Armado" : "Monitoreo"),
+          servicio.esAdicional ? "" : (servicio.esMonitoreo ? "Monitoreo" : "Armado"),
           servicio.servicioAplicacion,
           servicio.codigoServicioSiigo,
           "",

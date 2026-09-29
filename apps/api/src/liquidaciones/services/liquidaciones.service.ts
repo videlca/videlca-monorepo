@@ -1481,7 +1481,7 @@ export class LiquidacionesService {
         if (!agrupado[clienteId].servicios[idAdicionalKey]) {
 
           agrupado[clienteId].servicios[idAdicionalKey] = {
-            armado: false,
+            esMonitoreo: false,
             esAdicional: true,
             servicioAplicacion: liq.adicional.nombre,
             codigoServicioSiigo: '',
@@ -1518,7 +1518,7 @@ export class LiquidacionesService {
           if (!agrupado[clienteId].servicios[idServicio]) {
 
             agrupado[clienteId].servicios[idServicio] = {
-              armado: servicio.armado,
+              esMonitoreo: servicio.idTipoServicio?.nombre === TipoServicioInterface.MONITOREO_ALARMAS,
               esAdicional: false,
               servicioAplicacion: servicio.descripcion,
               codigoServicioSiigo: servicio.codigo,
@@ -1716,7 +1716,8 @@ export class LiquidacionesService {
           ciudad: liq.ordenServicio.idLocacion?.idCiudad.descripcion ?? '',
           puesto: liq.ordenServicio.idLocacion?.nombre ?? liq.ordenServicio.idCliente?.nombre ?? '',
           descripcionServicio: servicio.descripcion,
-          tipoServicio: servicio.armado ? "Armado" : "Monitoreo",
+          // SEGUN EL TIPO DE SERVICIO (no el campo armado): monitoreo de alarmas -> "Monitoreo", vigilancia -> "Armado"
+          tipoServicio: servicio.idTipoServicio?.nombre === TipoServicioInterface.MONITOREO_ALARMAS ? "Monitoreo" : "Armado",
           codigoServicioSiigo: servicio.codigo,
           horarioServicio: servicio.idTipoHorarioDescripcion.nombre,
 

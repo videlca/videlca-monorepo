@@ -1,7 +1,9 @@
 export type ServicioAgrupado = {
-  armado: boolean;
+  // true si el tipo de servicio es "Monitoreo de alarmas"; false si es "Vigilancia y escolta" (en los reportes se
+  // muestra como "Armado"). Sale del tipo de servicio, NO del campo armado del servicio
+  esMonitoreo: boolean;
   // true si esta linea es de un Adicional (no de un servicio del catalogo): no tiene tipo armado/monitoreo real
-  // (armado siempre queda en false) ni codigo Siigo, se debe excluir de exports que requieran un codigo Siigo valido
+  // (esMonitoreo siempre queda en false) ni codigo Siigo, se debe excluir de exports que requieran un codigo Siigo valido
   esAdicional: boolean;
   servicioAplicacion: string;
   codigoServicioSiigo: string;
