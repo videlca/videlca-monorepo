@@ -247,6 +247,31 @@ export class OrdenServicioService {
 
     }
 
+    // COBRO PARCIAL MENSUAL (opcional): rango de dias de cada mes que se cobra al liquidar (ej: del 1 al 15). Solo
+    // aplica a ordenes indefinidas de catalogo, y el rango siempre queda dentro del mismo mes
+    const { diaInicioCobro, diaFinCobro } = createOrdenServicioDto;
+    const tieneCobroParcial = diaInicioCobro != null || diaFinCobro != null;
+
+    if (tieneCobroParcial) {
+
+      if (diaInicioCobro == null || diaFinCobro == null) {
+        throw new BadRequestException('Para el cobro parcial mensual se deben enviar el dia de inicio y el dia de fin de cobro');
+      }
+
+      if (diaInicioCobro > diaFinCobro) {
+        throw new BadRequestException('El dia de inicio de cobro no puede ser mayor al dia de fin de cobro (el rango de cobro debe quedar dentro del mismo mes)');
+      }
+
+      if (createOrdenServicioDto.fechaFin != null) {
+        throw new BadRequestException('El cobro parcial mensual solo aplica para ordenes indefinidas (sin fecha de fin)');
+      }
+
+      if (createOrdenServicioDto.origenServicio !== OrigenServicioEnum.CATALOGO) {
+        throw new BadRequestException('El cobro parcial mensual solo aplica para ordenes de origen catalogo');
+      }
+
+    }
+
     // OBTENER ID ESTADO ORDEN SERVICIO
     //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
     let estadoOrdenServicio: EstadoOrdenEntity;
@@ -292,6 +317,8 @@ export class OrdenServicioService {
         fechaInicioOrden: fechaInicioOrden,
         fechaFin: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
         fechaFinOrden: createOrdenServicioDto.fechaFin ? fechaFinOrden : null,
+        diaInicioCobro: tieneCobroParcial ? diaInicioCobro : null,
+        diaFinCobro: tieneCobroParcial ? diaFinCobro : null,
         precioTotal: null,
         fechaCreacion: fechaCreacionOrden,
         fechaActualizacion: fechaCreacionOrden

@@ -114,7 +114,24 @@ export class OrdenServicio {
         nullable: true
     })
     fechaFinOrden: Date | null; // Campo para saber si la fecha se modifico / FECHA DE CUANDO SE CREO LA ORDEN
-    
+
+    // COBRO PARCIAL MENSUAL (opcional, solo ordenes indefinidas de catalogo): rango de dias de cada mes que se cobra
+    // al liquidar (ej: 1 y 15 = del 1 al 15 de cada mes). Siempre dentro del mismo mes (diaInicioCobro <= diaFinCobro).
+    // null en ambos = se cobra el mes completo, como cualquier orden indefinida (ver rangoLiquidadoEnMes en liquidaciones)
+    @Column({
+        type: 'int',
+        name: 'diaInicioCobro',
+        nullable: true
+    })
+    diaInicioCobro: number | null;
+
+    @Column({
+        type: 'int',
+        name: 'diaFinCobro',
+        nullable: true
+    })
+    diaFinCobro: number | null;
+
     // PRECIO TOTAL CON IVA
     @Column({
         type: 'decimal',

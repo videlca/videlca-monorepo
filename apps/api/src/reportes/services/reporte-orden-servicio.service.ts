@@ -248,7 +248,7 @@ export class ReporteOrdenServicioService extends ReportePdfVidelcaBase {
 
   // ------------------ DESGLOSE DE PRECIO ------------------
 
-  private buildMensajeOrdenIndefinida(): Content {
+  private buildMensajeOrdenIndefinida(ordenServicio: OrdenServicio): Content {
 
     return {
       margin: [0, 0, 0, 14],
@@ -257,7 +257,9 @@ export class ReporteOrdenServicioService extends ReportePdfVidelcaBase {
         body: [
           [
             {
-              text: 'Esta orden de servicio es indefinida (sin fecha de fin). El precio se calculará mes a mes al momento de realizar la liquidación.',
+              text: ordenServicio.diaInicioCobro != null
+                ? `Esta orden de servicio es indefinida (sin fecha de fin) con cobro parcial mensual: se cobra del día ${ordenServicio.diaInicioCobro} al día ${ordenServicio.diaFinCobro} de cada mes. El precio se calculará mes a mes al momento de realizar la liquidación.`
+                : 'Esta orden de servicio es indefinida (sin fecha de fin). El precio se calculará mes a mes al momento de realizar la liquidación.',
               italics: true,
               color: PALETTE.textDark,
               margin: [4, 6, 4, 6],
@@ -342,7 +344,7 @@ export class ReporteOrdenServicioService extends ReportePdfVidelcaBase {
 
     if (!ordenServicio.fechaFin) {
 
-      contenido.push(this.buildMensajeOrdenIndefinida());
+      contenido.push(this.buildMensajeOrdenIndefinida(ordenServicio));
 
       return contenido;
 

@@ -247,8 +247,12 @@ export class LiquidacionesService {
 
   }
 
-  // TRAMO DE FECHAS DE UNA ORDEN QUE CAE DENTRO DEL MES LIQUIDADO ("YYYYMM"): el mismo desde/hasta que usa
-  // crearLiquidacionMensualOrden (la orden indefinida llega hasta fin de mes)
+  // TRAMO DE FECHAS DE UNA ORDEN QUE SE COBRA EN EL MES LIQUIDADO ("YYYYMM"). Lo usan crearLiquidacionMensualOrden
+  // (para calcular el precio), la busqueda de ordenes pendientes y el detalle/PDF de lo liquidado, asi todos coinciden.
+  // - La orden indefinida llega hasta fin de mes.
+  // - COBRO PARCIAL MENSUAL (diaInicioCobro/diaFinCobro): solo se cobran esos dias del mes (ej: del 1 al 15); si el
+  //   dia de fin no existe en el mes (ej: 31 en septiembre) se cobra hasta el ultimo dia del mes.
+  // Si en el mes no hay dias que cobrar, hasta < desde (ej: la orden inicia despues del dia de fin de cobro)
   private rangoLiquidadoEnMes(ordenServicio: OrdenServicio, aniomes: string) {
 
     const anio = Number(aniomes.slice(0, 4));
@@ -259,10 +263,18 @@ export class LiquidacionesService {
     const start = toUTCDateOnly(ordenServicio.fechaInicio);
     const end = ordenServicio.fechaFin ? toUTCDateOnly(ordenServicio.fechaFin) : mesFin;
 
-    return {
-      desde: maxDate(start, mesIni),
-      hasta: minDate(end, mesFin),
-    };
+    let desde = maxDate(start, mesIni);
+    let hasta = minDate(end, mesFin);
+
+    if (ordenServicio.diaInicioCobro != null && ordenServicio.diaFinCobro != null) {
+
+      desde = maxDate(desde, new Date(Date.UTC(anio, mes - 1, ordenServicio.diaInicioCobro)));
+      // Date.UTC(anio, mes, 0) = ultimo dia del mes; un dia de fin mayor (ej: 31 en febrero) se recorta a ese
+      hasta = minDate(hasta, new Date(Date.UTC(anio, mes - 1, Math.min(ordenServicio.diaFinCobro, new Date(Date.UTC(anio, mes, 0)).getUTCDate()))));
+
+    }
+
+    return { desde, hasta };
 
   }
 
@@ -527,25 +539,14 @@ export class LiquidacionesService {
 
     const esCatalogo = ordenServicioLiquidar.origenServicio === OrigenServicioEnum.CATALOGO;
 
-    const mesIni = new Date(Date.UTC(anio, mes - 1, 1));
-    const mesFin = endOfMonth(mesIni);
-    const start = toUTCDateOnly(ordenServicioLiquidar.fechaInicio);
-
-    let desde: Date;
-    let hasta: Date;
+    // TRAMO DEL MES A COBRAR (incluye el cobro parcial mensual diaInicioCobro/diaFinCobro si la orden lo tiene)
+    const { desde, hasta } = this.rangoLiquidadoEnMes(ordenServicioLiquidar, aniomes);
 
     if (ordenServicioLiquidar.fechaFin !== null) {
 
       const total = Number(ordenServicioLiquidar.precioTotal ?? 0);
 
-      const end = toUTCDateOnly(ordenServicioLiquidar.fechaFin);
-
-      desde = maxDate(start, mesIni);
-      hasta = minDate(end, mesFin);
-
       if (!isFinite(total) || total <= 0) throw new BadRequestException('PrecioTotal inválido');
-
-      if (hasta < desde) throw new BadRequestException('La orden no tiene días en el mes solicitado');
 
     } else {
 
@@ -554,10 +555,15 @@ export class LiquidacionesService {
         throw new BadRequestException('No se puede liquidar una orden a la medida indefinida (sin fecha de fin)');
       }
 
-      if (mesFin < start) throw new BadRequestException('La orden no tiene días en el mes solicitado');
+    }
 
-      desde = maxDate(start, mesIni);
-      hasta = mesFin;
+    if (hasta < desde) {
+
+      const textoCobroParcial = ordenServicioLiquidar.diaInicioCobro != null
+        ? ` (se cobra del dia ${ordenServicioLiquidar.diaInicioCobro} al ${ordenServicioLiquidar.diaFinCobro} de cada mes)`
+        : '';
+
+      throw new BadRequestException(`La orden ${ordenServicioLiquidar.ordenServicioId?.descripcionId ?? ''} no tiene días a cobrar en el mes ${this.formatearMesAnio(anio, mes)}${textoCobroParcial}`);
 
     }
 
@@ -793,7 +799,16 @@ export class LiquidacionesService {
       .addOrderBy('detalles.idOrdenServicioDetalle', 'ASC')
       .distinct(true);
 
-    return qb.getMany();
+    const ordenes = await qb.getMany();
+
+    // COBRO PARCIAL MENSUAL: una orden puede estar vigente en el mes pero no tener dias a cobrar en el (ej: cobra del
+    // 1 al 15 e inicio el 20), en ese caso no se lista para liquidar ese mes
+    const aniomes = this.formatearAniomes(anio, mes1a12);
+
+    return ordenes.filter(orden => {
+      const { desde, hasta } = this.rangoLiquidadoEnMes(orden, aniomes);
+      return hasta >= desde;
+    });
   }
 
   // EQUIVALENTE A findByCreacionMes PERO PARA ADICIONALES: trae, para el mes solicitado y los "mesesAtras" meses

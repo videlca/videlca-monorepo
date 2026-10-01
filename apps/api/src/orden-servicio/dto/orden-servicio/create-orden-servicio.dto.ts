@@ -8,6 +8,8 @@ import {
     IsNumber,
     IsPositive,
     Min,
+    Max,
+    IsInt,
     IsNotEmpty,
     MaxLength,
     IsDate,
@@ -182,6 +184,23 @@ export class CreateOrdenServicioDto {
     @Transform(({ value }) => value ? new Date(value) : null)
     @IsDate()
     fechaFin?: Date | null;
+
+    // COBRO PARCIAL MENSUAL (opcional): rango de dias de cada mes que se cobra al liquidar la orden. Solo para ordenes
+    // indefinidas (sin fechaFin) de origen "catalogo"; se envian los dos o ninguno, y diaInicioCobro <= diaFinCobro
+    // (el rango nunca cruza de un mes a otro). Validado en el servicio
+    @ApiProperty({ description: 'Dia del mes desde el que se cobra cada mes (1-31). Opcional, junto con diaFinCobro. Solo ordenes indefinidas de origen "catalogo"', example: 1, required: false})
+    @IsOptional()
+    @IsInt({ message: 'El campo dia inicio de cobro debe ser un número entero' })
+    @Min(1, { message: 'El campo dia inicio de cobro debe ser minimo 1' })
+    @Max(31, { message: 'El campo dia inicio de cobro debe ser maximo 31' })
+    diaInicioCobro?: number | null;
+
+    @ApiProperty({ description: 'Dia del mes hasta el que se cobra cada mes (1-31). Opcional, junto con diaInicioCobro. Debe ser mayor o igual a diaInicioCobro', example: 15, required: false})
+    @IsOptional()
+    @IsInt({ message: 'El campo dia fin de cobro debe ser un número entero' })
+    @Min(1, { message: 'El campo dia fin de cobro debe ser minimo 1' })
+    @Max(31, { message: 'El campo dia fin de cobro debe ser maximo 31' })
+    diaFinCobro?: number | null;
 
     @ApiProperty({ description: 'Fecha de creacion de la orden de servicio, se toma desde el front para tomar fecha del sistema', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})
     @Transform(({ value }) => new Date(value))
