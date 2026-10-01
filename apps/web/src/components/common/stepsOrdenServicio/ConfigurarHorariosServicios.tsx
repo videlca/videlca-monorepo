@@ -294,7 +294,14 @@ export const ConfigurarHorariosServicios = ({
         <div className="mt-4 space-y-1 rounded-lg border border-yellow-500 bg-yellow-50 px-4 py-2 text-left">
           <h4 className="text-base font-medium text-yellow-600">Nota:</h4>{" "}
           <p className="text-xs text-yellow-600">
-            {service.idTipoDuracion.descripcion.toLowerCase() === "fija" ? (
+            {service.idTipoDuracion.descripcion.toLowerCase() === "fija" &&
+            service.horasFijas === 12 ? (
+              <>
+                Tarifa de <b>12 horas</b>: puede elegir una duración de{" "}
+                <b>1 a 24 horas</b>, se cobra proporcional (horas / 12). Si la
+                hora de inicio es igual a la de fin se toma como 24 horas.
+              </>
+            ) : service.idTipoDuracion.descripcion.toLowerCase() === "fija" ? (
               <>
                 Horas recomendadas: <b>{service.horasFijas} Horas fijas</b>
               </>

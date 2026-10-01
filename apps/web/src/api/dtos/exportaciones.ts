@@ -3,6 +3,8 @@ export type TipoDocumento = 'consolidacion_orden' | 'generacion_interfase' | 'ge
 export interface FiltroGrupoLiquidacionDto {
   campo: TipoDocumento;
   valor: string;
+  anio?: number;
+  mes?: number;
 }
 
 export interface UpdateGrupoLiquidacionEstadoDto {

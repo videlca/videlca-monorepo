@@ -1,6 +1,6 @@
 import type { GruposLiquidaciones } from "../../types";
 import { apiGet, apiPost, axiosClient } from "../../config";
-import type { ApiResponse , PaginatedResponse } from "../../types/common";
+import type { ApiResponse } from "../../types/common";
 import type { FiltroGrupoLiquidacionDto } from "../../dtos/exportaciones";
 import type { EnviarCorreoDto } from "../../dtos/common";
 
@@ -13,7 +13,13 @@ export type Exportacion =
   "enviar-anexos-facturacion"
 
 export const getGruposLiquidacionesExportaciones = async (params: FiltroGrupoLiquidacionDto): Promise<ApiResponse<GruposLiquidaciones[]>> => {
-  return await apiGet<GruposLiquidaciones[]>(`/exportacion/buscar-por-campo?campo=${params.campo}&valor=${params.valor}`);
+  const { campo, valor, anio, mes } = params;
+  // anio y mes se envían los dos o ninguno
+  return await apiGet<GruposLiquidaciones[]>(`/exportacion/buscar-por-campo`, {
+    campo,
+    valor,
+    ...(anio && mes ? { anio, mes } : {}),
+  });
 };
 
 export const generarArchivoExcel = async (idGrupoLiquidacion: number, archivo: Exportacion): Promise<{ blob: Blob; filename: string }> => {

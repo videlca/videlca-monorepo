@@ -26,7 +26,11 @@ import { safeParseDate } from "../../../utils/DateUtils";
 import { toast } from "sonner";
 import { getStatusColor } from "../../../utils/StatusColor";
 import type { OrdenServicio } from "../../../api/types/orden-servicio";
-import type { Adicional } from "../../../api/types/adicionales";
+import type {
+  AdicionalPorMes,
+  LiquidarMesInfo,
+  OrdenPorMes,
+} from "../../../api/types/liquidaciones";
 import { ServiciosOrden } from "../../../components/ui/modals/ServiciosOrden";
 
 export const Route = createFileRoute("/dashboard/liquidaciones/")({
@@ -53,11 +57,39 @@ const yearsOptions = Array.from({ length: 10 }, (_, i) => {
   return { id: year, descripcion: year.toString() };
 });
 
+const mesesAtrasOptions = Array.from({ length: 13 }, (_, i) => ({
+  id: i,
+  descripcion: i === 0 ? "0 (solo el mes)" : i.toString(),
+}));
+
 const currentYear = getYear(new Date()).toString();
 const currentMonth = (new Date().getMonth() + 1).toString();
 
 const formatMesAdicional = (fecha: string) =>
   format(safeParseDate(fecha), "MMMM yyyy", { locale: es });
+
+const formatMesLiquidar = (fila: LiquidarMesInfo) =>
+  `${String(fila.mesLiquidar).padStart(2, "0")}/${fila.anioLiquidar}`;
+
+// Una orden/adicional sale una vez por mes pendiente: la clave unica es id + aniomesLiquidar
+const claveOrden = (orden: OrdenPorMes) =>
+  `${orden.idOrdenServicio}-${orden.aniomesLiquidar}`;
+const claveAdicional = (adicional: AdicionalPorMes) =>
+  `${adicional.idAdicional}-${adicional.aniomesLiquidar}`;
+
+const ordenesAPayload = (ordenes: OrdenPorMes[]) =>
+  ordenes.map((orden) => ({
+    idOrdenServicio: orden.idOrdenServicio || 0,
+    anio: orden.anioLiquidar,
+    mes: orden.mesLiquidar,
+  }));
+
+const adicionalesAPayload = (adicionales: AdicionalPorMes[]) =>
+  adicionales.map((adicional) => ({
+    idAdicional: adicional.idAdicional,
+    anio: adicional.anioLiquidar,
+    mes: adicional.mesLiquidar,
+  }));
 
 interface ClienteGrupo {
   clienteKey: string;
@@ -65,8 +97,8 @@ interface ClienteGrupo {
   // ahora exige idCliente para crear el grupo mensual (CrearGrupoMensualDto), por eso este grupo no se puede liquidar
   idCliente: number | null;
   clienteNombre: string;
-  ordenes: OrdenServicio[];
-  adicionales: Adicional[];
+  ordenes: OrdenPorMes[];
+  adicionales: AdicionalPorMes[];
   total: number;
   totalAntesIva: number;
 }
@@ -75,8 +107,8 @@ interface ClienteGrupo {
 // siempre pertenece a un unico cliente (un grupo de liquidacion es siempre de un solo cliente)
 interface SeleccionCliente {
   clienteKey: string;
-  ordenIds: Set<number>;
-  adicionalIds: Set<number>;
+  ordenKeys: Set<string>;
+  adicionalKeys: Set<string>;
 }
 
 const ordenAntesIva = (orden: OrdenServicio) =>
@@ -86,8 +118,8 @@ const ordenAntesIva = (orden: OrdenServicio) =>
   ) || 0;
 
 const agruparPorCliente = (
-  ordenes: OrdenServicio[],
-  adicionales: Adicional[],
+  ordenes: OrdenPorMes[],
+  adicionales: AdicionalPorMes[],
 ): ClienteGrupo[] => {
   const grupos = new Map<string, ClienteGrupo>();
 
@@ -135,6 +167,7 @@ const agruparPorCliente = (
 function RouteComponent() {
   const [searchMonth, setSearchMonth] = useState<string>(currentMonth);
   const [searchYear, setSearchYear] = useState<string>(currentYear);
+  const [searchMesesAtras, setSearchMesesAtras] = useState<string>("1");
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [expandedClients, setExpandedClients] = useState<Set<string>>(
     new Set(),
@@ -159,6 +192,7 @@ function RouteComponent() {
     Number(searchYear),
     Number(searchMonth),
     isSearching,
+    Number(searchMesesAtras),
   );
 
   const liquidacionesData = Array.isArray(liquidaciones?.data)
@@ -177,6 +211,7 @@ function RouteComponent() {
     Number(searchYear),
     Number(searchMonth),
     isSearching,
+    Number(searchMesesAtras),
   );
 
   const adicionalesData = Array.isArray(adicionales?.data)
@@ -221,10 +256,9 @@ function RouteComponent() {
         anio: Number(searchYear),
         mes: Number(searchMonth),
         idCliente: grupo.idCliente,
-        ordenIds: grupo.ordenes.map((orden) => orden.idOrdenServicio || 0),
-        adicionalIds: grupo.adicionales.map(
-          (adicional) => adicional.idAdicional,
-        ),
+        // anio/mes de la raiz es el mes buscado; cada item lleva su propio mes
+        ordenes: ordenesAPayload(grupo.ordenes),
+        adicionales: adicionalesAPayload(grupo.adicionales),
       },
       {
         onSettled: () => {
@@ -237,32 +271,42 @@ function RouteComponent() {
   const iniciarSeleccion = (grupo: ClienteGrupo) => {
     setSeleccion({
       clienteKey: grupo.clienteKey,
-      ordenIds: new Set(),
-      adicionalIds: new Set(),
+      ordenKeys: new Set(),
+      adicionalKeys: new Set(),
     });
     setExpandedClients((prev) => new Set(prev).add(grupo.clienteKey));
   };
 
   const toggleSeleccionItem = (
-    tipo: "ordenIds" | "adicionalIds",
-    id: number,
+    tipo: "ordenKeys" | "adicionalKeys",
+    clave: string,
   ) => {
     setSeleccion((prev) => {
       if (!prev) return prev;
-      const ids = new Set(prev[tipo]);
-      if (ids.has(id)) {
-        ids.delete(id);
+      const claves = new Set(prev[tipo]);
+      if (claves.has(clave)) {
+        claves.delete(clave);
       } else {
-        ids.add(id);
+        claves.add(clave);
       }
-      return { ...prev, [tipo]: ids };
+      return { ...prev, [tipo]: claves };
     });
   };
 
   const handleLiquidarSeleccion = async (grupo: ClienteGrupo) => {
     if (!seleccion || seleccion.clienteKey !== grupo.clienteKey) return;
 
-    if (seleccion.ordenIds.size === 0 && seleccion.adicionalIds.size === 0) {
+    const ordenesSeleccionadas = grupo.ordenes.filter((orden) =>
+      seleccion.ordenKeys.has(claveOrden(orden)),
+    );
+    const adicionalesSeleccionados = grupo.adicionales.filter((adicional) =>
+      seleccion.adicionalKeys.has(claveAdicional(adicional)),
+    );
+
+    if (
+      ordenesSeleccionadas.length === 0 &&
+      adicionalesSeleccionados.length === 0
+    ) {
       toast.error("Selecciona al menos una orden o adicional para liquidar");
       return;
     }
@@ -280,8 +324,8 @@ function RouteComponent() {
         anio: Number(searchYear),
         mes: Number(searchMonth),
         idCliente: grupo.idCliente,
-        ordenIds: Array.from(seleccion.ordenIds),
-        adicionalIds: Array.from(seleccion.adicionalIds),
+        ordenes: ordenesAPayload(ordenesSeleccionadas),
+        adicionales: adicionalesAPayload(adicionalesSeleccionados),
       });
       if (response.status === 200 || response.status === 201) {
         setSeleccion(null);
@@ -334,6 +378,21 @@ function RouteComponent() {
                   setSeleccion(null);
                 }}
                 options={monthsOptions}
+              />
+            </div>
+            <div className="min-w-48 flex-1">
+              <InputSelect
+                label="Meses atrás"
+                placeholder="Selecciona meses atrás"
+                id="searchMesesAtras"
+                value={searchMesesAtras}
+                onChange={(e) => {
+                  setSearchMesesAtras(e.target.value);
+                  setIsSearching(false);
+                  setExpandedClients(new Set());
+                  setSeleccion(null);
+                }}
+                options={mesesAtrasOptions}
               />
             </div>
             <ButtonAction
@@ -406,21 +465,35 @@ function RouteComponent() {
               const isSeleccionando =
                 seleccion?.clienteKey === grupo.clienteKey;
               const cantidadSeleccionada = isSeleccionando
-                ? seleccion.ordenIds.size + seleccion.adicionalIds.size
+                ? seleccion.ordenKeys.size + seleccion.adicionalKeys.size
                 : 0;
               const totalItems =
                 grupo.ordenes.length + grupo.adicionales.length;
 
-              const cardClassName = (seleccionado: boolean) =>
-                `rounded-md border px-3 py-2 text-sm ${
+              const cardClassName = (
+                seleccionado: boolean,
+                esMesAnterior: boolean,
+              ) => {
+                const base = esMesAnterior
+                  ? "border-amber-300 bg-amber-50"
+                  : "border-gray-200 bg-gray-50";
+                return `rounded-md border px-3 py-2 text-sm ${
                   isSeleccionando
                     ? `cursor-pointer text-left transition-colors ${
                         seleccionado
                           ? "border-blue-400 bg-blue-50 ring-1 ring-blue-300"
-                          : "border-gray-200 bg-gray-50 hover:border-blue-300"
+                          : `${base} hover:border-blue-300`
                       }`
-                    : "border-gray-200 bg-gray-50"
+                    : base
                 }`;
+              };
+
+              const renderBadgeMesAnterior = (fila: LiquidarMesInfo) =>
+                fila.esMesAnterior && (
+                  <span className="mt-1 inline-block rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-amber-800">
+                    Mes anterior · {formatMesLiquidar(fila)}
+                  </span>
+                );
 
               const renderCheckbox = (seleccionado: boolean) =>
                 isSeleccionando && (
@@ -544,21 +617,24 @@ function RouteComponent() {
                   {isExpanded && (
                     <div className="grid grid-cols-1 gap-2 border-t border-gray-200 p-3 md:grid-cols-2 xl:grid-cols-3">
                       {grupo.ordenes.map((orden) => {
-                        const idOrden = orden.idOrdenServicio || 0;
+                        const clave = claveOrden(orden);
                         const seleccionado =
-                          isSeleccionando && seleccion.ordenIds.has(idOrden);
+                          isSeleccionando && seleccion.ordenKeys.has(clave);
 
                         return (
                           <div
-                            key={orden.idOrdenServicio}
-                            className={cardClassName(seleccionado)}
+                            key={clave}
+                            className={cardClassName(
+                              seleccionado,
+                              orden.esMesAnterior,
+                            )}
                             role={isSeleccionando ? "checkbox" : undefined}
                             aria-checked={
                               isSeleccionando ? seleccionado : undefined
                             }
                             onClick={
                               isSeleccionando
-                                ? () => toggleSeleccionItem("ordenIds", idOrden)
+                                ? () => toggleSeleccionItem("ordenKeys", clave)
                                 : undefined
                             }
                           >
@@ -573,6 +649,7 @@ function RouteComponent() {
                                 {orden.idEstadoOrdenServicio?.nombre}
                               </span>
                             </div>
+                            {renderBadgeMesAnterior(orden)}
                             {orden.idLocacion && (
                               <p className="mt-1 truncate text-gray-600">
                                 {orden.idLocacion.nombre} -{" "}
@@ -605,14 +682,17 @@ function RouteComponent() {
                       })}
 
                       {grupo.adicionales.map((adicional) => {
+                        const clave = claveAdicional(adicional);
                         const seleccionado =
-                          isSeleccionando &&
-                          seleccion.adicionalIds.has(adicional.idAdicional);
+                          isSeleccionando && seleccion.adicionalKeys.has(clave);
 
                         return (
                           <div
-                            key={adicional.idAdicional}
-                            className={cardClassName(seleccionado)}
+                            key={clave}
+                            className={cardClassName(
+                              seleccionado,
+                              adicional.esMesAnterior,
+                            )}
                             role={isSeleccionando ? "checkbox" : undefined}
                             aria-checked={
                               isSeleccionando ? seleccionado : undefined
@@ -620,10 +700,7 @@ function RouteComponent() {
                             onClick={
                               isSeleccionando
                                 ? () =>
-                                    toggleSeleccionItem(
-                                      "adicionalIds",
-                                      adicional.idAdicional,
-                                    )
+                                    toggleSeleccionItem("adicionalKeys", clave)
                                 : undefined
                             }
                           >
@@ -636,6 +713,7 @@ function RouteComponent() {
                                 Adicional
                               </span>
                             </div>
+                            {renderBadgeMesAnterior(adicional)}
                             <p className="mt-1 text-gray-600 capitalize">
                               {formatMesAdicional(adicional.mesInicio)} -{" "}
                               {adicional.mesFin

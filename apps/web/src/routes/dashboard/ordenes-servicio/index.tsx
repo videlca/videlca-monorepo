@@ -132,7 +132,7 @@ function RouteComponent() {
     useState<OrdenServicio | null>(null);
 
   // Paginación server-side
-  const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(5);
+  const { page, setPage, pageSize, setPageSize, paginationParams } = useServerPagination(20);
 
   // Queries y mutaciones
   const { data: ordenesDeServicioQuery } = useGetOrdenesServicio(paginationParams);

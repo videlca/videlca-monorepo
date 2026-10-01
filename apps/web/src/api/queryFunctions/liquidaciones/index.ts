@@ -1,37 +1,43 @@
-import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, crearLiquidacionMensual, desintegrarGrupoLiquidacion, enviarCorreoArchivoLiquidacion, generarArchivoExcelLiquidacion, getAdicionalesPorMes, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial, getOrdenLiquidada } from "../../functions/liquidaciones"
+import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, compararLiquidacionesCliente, crearLiquidacionMensual, descargarPdfLiquidacion, desintegrarGrupoLiquidacion, enviarCorreoArchivoLiquidacion, enviarPdfLiquidacion, generarArchivoExcelLiquidacion, getAdicionalesPorMes, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial, getOrdenLiquidada } from "../../functions/liquidaciones"
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
-import type { CrearGrupoMensualDto } from "../../dtos/liquidaciones";
+import type { CompararLiquidacionesClienteDto, CrearGrupoMensualDto } from "../../dtos/liquidaciones";
 import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
 import { queryClient } from "../../../App";
-import type { OrdenServicio } from "../../types/orden-servicio";
-import type { Adicional } from "../../types/adicionales";
-import type { GruposLiquidaciones, GrupoLiquidacionCreado, OrdenOAdicionalLiquidado } from "../../types";
+import type { AdicionalPorMes, ComparacionCliente, GruposLiquidaciones, GrupoLiquidacionCreado, OrdenOAdicionalLiquidado, OrdenPorMes } from "../../types";
 import type { UpdateGrupoLiquidacionEstadoDto } from "../../dtos/exportaciones";
 import type { EnviarCorreoDto } from "../../dtos/common";
 
-export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<OrdenServicio[]>, Error> => {
+export const useGetLiquidacionesPorMes = (anio: number, mes: number, enabled: boolean, mesesAtras?: number): UseQueryResult<ApiResponse<OrdenPorMes[]>, Error> => {
   return useQuery({
-    queryKey: ["liquidaciones-por-mes", anio, mes],
-    queryFn: () => getLiquidacionesPorMes(anio, mes),
+    queryKey: ["liquidaciones-por-mes", anio, mes, mesesAtras],
+    queryFn: () => getLiquidacionesPorMes(anio, mes, mesesAtras),
     enabled: !!anio && !!mes && enabled,
   });
 };
 
-export const useGetAdicionalesPorMes = (anio: number, mes: number, enabled: boolean): UseQueryResult<ApiResponse<Adicional[]>, Error> => {
+export const useGetAdicionalesPorMes = (anio: number, mes: number, enabled: boolean, mesesAtras?: number): UseQueryResult<ApiResponse<AdicionalPorMes[]>, Error> => {
   return useQuery({
-    queryKey: ["adicionales-por-mes", anio, mes],
-    queryFn: () => getAdicionalesPorMes(anio, mes),
+    queryKey: ["adicionales-por-mes", anio, mes, mesesAtras],
+    queryFn: () => getAdicionalesPorMes(anio, mes, mesesAtras),
     enabled: !!anio && !!mes && enabled,
   });
 };
 
-export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, enabled: boolean, idCliente?: number): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
+export const useGetLiquidacionesPorMesHistorial = (anio: number, mes: number, enabled: boolean, idCliente?: number, tiposServicio?: string): UseQueryResult<ApiResponse<GruposLiquidaciones[]>, Error> => {
   return useQuery({
-    queryKey: ["liquidaciones-por-mes-historial", anio, mes, idCliente],
-    queryFn: () => getLiquidacionesPorMesHistorial(anio, mes, idCliente),
+    queryKey: ["liquidaciones-por-mes-historial", anio, mes, idCliente, tiposServicio],
+    queryFn: () => getLiquidacionesPorMesHistorial(anio, mes, idCliente, tiposServicio),
     enabled: !!anio && !!mes && enabled,
+  });
+};
+
+export const useCompararLiquidacionesCliente = (params: CompararLiquidacionesClienteDto, enabled: boolean): UseQueryResult<ApiResponse<ComparacionCliente>, Error> => {
+  return useQuery({
+    queryKey: ["comparar-liquidaciones-cliente", params.idCliente, params.anioA, params.mesA, params.anioB, params.mesB, params.tiposServicio],
+    queryFn: () => compararLiquidacionesCliente(params),
+    enabled: !!params.idCliente && !!params.tiposServicio && enabled,
   });
 };
 
@@ -43,8 +49,15 @@ export const useCrearLiquidacionMensual = (): UseMutationResult<ApiResponse<Grup
         toast.success("Liquidación mensual creada correctamente");
         queryClient.invalidateQueries({ queryKey: ["liquidaciones-por-mes"] });
         queryClient.invalidateQueries({ queryKey: ["adicionales-por-mes"] });
+        queryClient.invalidateQueries({ queryKey: ["liquidaciones-por-mes-historial"] });
       } else {
         showErrorToast(data.message, "Error al crear la liquidación mensual");
+        // Si algun item ya fue liquidado, la lista de pendientes quedo desactualizada
+        const mensaje = Array.isArray(data.message) ? data.message.join(" ") : String(data.message ?? "");
+        if (mensaje.includes("ya tiene una liquidacion") || mensaje.includes("ya fueron liquidados")) {
+          queryClient.invalidateQueries({ queryKey: ["liquidaciones-por-mes"] });
+          queryClient.invalidateQueries({ queryKey: ["adicionales-por-mes"] });
+        }
       }
     },
     onError: (error) => {
@@ -166,6 +179,44 @@ export const useEnviarCorreoArchivoLiquidacion = (): UseMutationResult<ApiRespon
     },
     onError: (error) => {
       showErrorToast(error.message, "Error al enviar el correo de liquidacion");
+    },
+  });
+};
+
+export const useDescargarPdfLiquidacion = (): UseMutationResult<{ blob: Blob; filename: string }, Error, number> => {
+  return useMutation({
+    mutationKey: ["descargar-pdf-liquidacion"],
+    mutationFn: (idGrupoLiquidacion) => descargarPdfLiquidacion(idGrupoLiquidacion),
+    onSuccess: ({ blob, filename }) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("PDF de liquidación descargado correctamente");
+    },
+    onError: (error) => {
+      showErrorToast(error.message, "Error al descargar el PDF de la liquidación");
+    },
+  });
+};
+
+export const useEnviarPdfLiquidacion = (): UseMutationResult<ApiResponse<any>, Error, { id: number, data: EnviarCorreoDto }> => {
+  return useMutation({
+    mutationKey: ["enviar-pdf-liquidacion"],
+    mutationFn: ({ id, data }) => enviarPdfLiquidacion(id, data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("PDF de liquidación enviado correctamente");
+      } else {
+        showErrorToast(data.message, "Error al enviar el PDF de la liquidación");
+      }
+    },
+    onError: (error) => {
+      showErrorToast(error.message, "Error al enviar el PDF de la liquidación");
     },
   });
 };

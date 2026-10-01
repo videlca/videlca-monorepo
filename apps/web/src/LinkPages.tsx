@@ -223,6 +223,12 @@ export const linksSideBar: LinksSideBar = {
       description: "historial",
       icon: <FileTextIcon className="h-6 w-6" />,
     },
+    {
+      to: "/dashboard/liquidaciones/comparar-cliente",
+      label: "Comparar cliente",
+      description: "comparar-cliente",
+      icon: <ChartColumn className="h-6 w-6" />,
+    },
   ],
   "aprobacion-liquidaciones-ordenes": [
     {

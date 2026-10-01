@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getYear, subYears } from "date-fns";
 import { useState } from "react";
 import {
+  useDescargarPdfLiquidacion,
   useEnviarCorreoArchivoLiquidacion,
+  useEnviarPdfLiquidacion,
   useGenerarReporteArchivoLiquidacion,
   useGetLiquidacionesPorMesHistorial,
 } from "../../../api/queryFunctions/liquidaciones";
@@ -11,19 +13,29 @@ import { InputSelect } from "../../../components/common/InputSelect";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import {
   EyeOff,
+  FileDown,
   FileTextIcon,
   Mail,
   MessageSquareTextIcon,
   Search,
+  Send,
 } from "lucide-react";
 import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/ObservacionesGrupoOrdenes";
-import type { GruposLiquidaciones } from "../../../api/types/liquidaciones";
+import type {
+  GruposLiquidaciones,
+  TipoServicioFiltro,
+} from "../../../api/types/liquidaciones";
 import ButtonOrdenes from "../../../components/common/ButtonOrdenes";
 import { useGetObservacionesGrupoOrdenServicio } from "../../../api/queryFunctions/orden-servicio/observaciones-grupo";
 import { useClientes } from "../../../api/queryFunctions/clientes";
+import { FiltroTiposServicio } from "../../../components/common/FiltroTiposServicio";
+import {
+  serializarTiposServicio,
+  TIPOS_SERVICIO_FILTRO,
+} from "../../../utils/tiposServicio";
 
 export const Route = createFileRoute("/dashboard/liquidaciones/historial")({
   component: RouteComponent,
@@ -61,8 +73,14 @@ function RouteComponent() {
   const [searchYear, setSearchYear] = useState<string>(currentYear);
   const [searchCliente, setSearchCliente] =
     useState<string>(TODOS_LOS_CLIENTES);
+  const [searchTipos, setSearchTipos] =
+    useState<TipoServicioFiltro[]>(TIPOS_SERVICIO_FILTRO);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isOpenEmail, setIsOpenEmail] = useState(false);
+  const [isOpenPdf, setIsOpenPdf] = useState(false);
+  const [groupIdPdfSelected, setGroupIdPdfSelected] = useState<number | null>(
+    null,
+  );
   const [groupIdSelected, setGroupIdSelected] = useState<number | null>(null);
   const [isOpenObservacionesModal, setIsOpenObservacionesModal] =
     useState(false);
@@ -92,13 +110,14 @@ function RouteComponent() {
     Number(searchMonth),
     isSearching,
     Number(searchCliente) || undefined,
+    serializarTiposServicio(searchTipos),
   );
 
-  const liquidacionesData = Array.isArray(liquidaciones?.data)
+  const liquidacionesData: GruposLiquidaciones[] = Array.isArray(
+    liquidaciones?.data,
+  )
     ? liquidaciones.data
-    : Array.isArray(liquidaciones?.data?.data)
-      ? liquidaciones.data.data
-      : [];
+    : [];
 
   // Archivos de liquidaciones
   const { mutate: generarReporteArchivoLiquidacion } =
@@ -107,6 +126,14 @@ function RouteComponent() {
     mutate: enviarCorreoArchivoLiquidacion,
     isPending: enviarCorreoArchivoLiquidacionPending,
   } = useEnviarCorreoArchivoLiquidacion();
+  const {
+    mutate: descargarPdfLiquidacion,
+    isPending: descargarPdfLiquidacionPending,
+  } = useDescargarPdfLiquidacion();
+  const {
+    mutate: enviarPdfLiquidacion,
+    isPending: enviarPdfLiquidacionPending,
+  } = useEnviarPdfLiquidacion();
 
   const toggleHideOrders = (groupId: number) => {
     const newHidden = new Set(hiddenGroups);
@@ -127,6 +154,16 @@ function RouteComponent() {
     setGroupIdSelected(groupId);
   };
 
+  const handleDescargarPdfLiquidacion = (groupId: number) => {
+    if (descargarPdfLiquidacionPending) return;
+    descargarPdfLiquidacion(groupId);
+  };
+
+  const handleEnviarPdfLiquidacion = (groupId: number) => {
+    setIsOpenPdf(true);
+    setGroupIdPdfSelected(groupId);
+  };
+
   // Totales facturados de TODOS los grupos encontrados para el mes filtrado (independiente de cuales grupos
   // esten ocultos via hiddenGroups, que es solo un toggle visual). "Antes de IVA" no se guarda a nivel de
   // grupo, solo por liquidacion (valorLiquidacionAntesIva), por eso se suma primero por grupo y luego entre
@@ -134,16 +171,19 @@ function RouteComponent() {
   const totalAntesIvaGeneral = liquidacionesData.reduce(
     (acc, group) =>
       acc +
-      (group.liquidaciones ?? []).reduce(
-        (accGrupo, liquidacion) =>
-          accGrupo + Number(liquidacion.valorLiquidacionAntesIva ?? 0),
-        0,
+      Number(
+        group.totalAntesIvaFiltrado ??
+          (group.liquidaciones ?? []).reduce(
+            (accGrupo, liquidacion) =>
+              accGrupo + Number(liquidacion.valorLiquidacionAntesIva ?? 0),
+            0,
+          ),
       ),
     0,
   );
 
   const totalLiquidacionGeneral = liquidacionesData.reduce(
-    (acc, group) => acc + Number(group.total ?? 0),
+    (acc, group) => acc + Number(group.totalFiltrado ?? group.total ?? 0),
     0,
   );
 
@@ -154,7 +194,7 @@ function RouteComponent() {
           <h2 className="mb-4 text-xl font-semibold">Filtros de Búsqueda</h2>
           <p className="mb-4 text-sm text-gray-500">
             Para ver el historial de liquidaciones, selecciona el mes y año de
-            la liquidación. Opcionalmente, filtra por cliente.
+            la liquidación. Opcionalmente, filtra por cliente y tipo de servicio.
           </p>
           <div className="flex flex-wrap items-end gap-4">
             <div className="min-w-48 flex-1">
@@ -196,6 +236,13 @@ function RouteComponent() {
                 options={clientesOptions}
               />
             </div>
+            <FiltroTiposServicio
+              value={searchTipos}
+              onChange={(tipos) => {
+                setSearchTipos(tipos);
+                setIsSearching(false);
+              }}
+            />
             <ButtonAction
               onClick={() => {
                 setIsSearching(true);
@@ -282,7 +329,7 @@ function RouteComponent() {
                             : ""}
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-0 md:gap-4">
+                      <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end md:gap-4">
                         <ButtonOrdenes
                           onClick={() =>
                             toggleHideOrders(group.idGrupoLiquidacion)
@@ -331,6 +378,26 @@ function RouteComponent() {
                           <Mail className="mr-1 h-4 w-4" />
                           Enviar correo
                         </ButtonOrdenes>
+                        <ButtonOrdenes
+                          onClick={() =>
+                            handleDescargarPdfLiquidacion(
+                              group.idGrupoLiquidacion,
+                            )
+                          }
+                          color="red"
+                        >
+                          <FileDown className="mr-1 h-4 w-4" />
+                          Descargar PDF
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
+                          onClick={() =>
+                            handleEnviarPdfLiquidacion(group.idGrupoLiquidacion)
+                          }
+                          color="purple"
+                        >
+                          <Send className="mr-1 h-4 w-4" />
+                          Enviar PDF
+                        </ButtonOrdenes>
                       </div>
                     </div>
                   </div>
@@ -370,6 +437,14 @@ function RouteComponent() {
         id={groupIdSelected as number}
         mutationEmail={enviarCorreoArchivoLiquidacion}
         envioCorreoPending={enviarCorreoArchivoLiquidacionPending}
+      />
+
+      <EnvioCorreos
+        isOpen={isOpenPdf}
+        setIsOpen={setIsOpenPdf}
+        id={groupIdPdfSelected as number}
+        mutationEmail={enviarPdfLiquidacion}
+        envioCorreoPending={enviarPdfLiquidacionPending}
       />
     </Section>
   );

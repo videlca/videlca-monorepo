@@ -78,6 +78,11 @@ export const AsignacionPersonalServicio = ({
       {/* TODO: Revisar asignación de personal y horarios */}
       {selectedServices.map((service) => {
         const { horaInicio, horaFin } = getHorasServicio(service.idServicio);
+        // Inicio igual a fin = 24 horas
+        const es24Horas =
+          !horaFin ||
+          horaFin === horaInicio ||
+          (horaFin === "00:00:00" && service.horasFijas === 24);
         return (
           <div
             key={service.idServicio}
@@ -104,12 +109,12 @@ export const AsignacionPersonalServicio = ({
                   </h4>{" "}
                   <p className="text-xs text-yellow-600">
                     Hora inicial: <b>{horaInicio}</b> {" - "}
-                    {horaFin === "00:00:00" && (
+                    {es24Horas && (
                       <>
                         Hora final: <b>{horaInicio}</b> (24 horas)
                       </>
                     )}
-                    {horaFin !== "00:00:00" && (
+                    {!es24Horas && (
                       <>
                         Hora final: <b>{horaFin}</b>
                       </>

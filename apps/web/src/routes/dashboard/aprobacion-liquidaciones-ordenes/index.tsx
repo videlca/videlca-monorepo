@@ -2,17 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   CheckIcon,
   EyeOff,
+  FileDown,
   FileTextIcon,
   Mail,
   MessageSquareTextIcon,
+  Send,
   TrashIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import {
   useAprobarGrupoLiquidacion,
+  useDescargarPdfLiquidacion,
   useDesintegrarGrupoLiquidacion,
   useEnviarCorreoArchivoLiquidacion,
+  useEnviarPdfLiquidacion,
   useGenerarReporteArchivoLiquidacion,
   useGetGruposLiquidaciones,
 } from "../../../api/queryFunctions/liquidaciones";
@@ -35,6 +39,10 @@ function RouteComponent() {
   const [isOpenDeleteModal, setIsOpenDeleteModal] = useState(false);
   const [groupIdSelected, setGroupIdSelected] = useState<number | null>(null);
   const [isOpenEmail, setIsOpenEmail] = useState(false);
+  const [isOpenPdf, setIsOpenPdf] = useState(false);
+  const [groupIdPdfSelected, setGroupIdPdfSelected] = useState<number | null>(
+    null,
+  );
   const [isOpenObservaciones, setIsOpenObservaciones] = useState(false);
   const [selectedGroupOrder, setSelectedGroupOrder] =
     useState<GruposLiquidaciones | null>(null);
@@ -55,6 +63,14 @@ function RouteComponent() {
     mutate: enviarCorreoArchivoLiquidacion,
     isPending: enviarCorreoArchivoLiquidacionPending,
   } = useEnviarCorreoArchivoLiquidacion();
+  const {
+    mutate: descargarPdfLiquidacion,
+    isPending: descargarPdfLiquidacionPending,
+  } = useDescargarPdfLiquidacion();
+  const {
+    mutate: enviarPdfLiquidacion,
+    isPending: enviarPdfLiquidacionPending,
+  } = useEnviarPdfLiquidacion();
 
   const toggleHideOrders = (groupId: number) => {
     const newHidden = new Set(hiddenGroups);
@@ -82,6 +98,16 @@ function RouteComponent() {
   const handleEnviarCorreoLiquidacion = (groupId: number) => {
     setIsOpenEmail(true);
     setGroupIdSelected(groupId);
+  };
+
+  const handleDescargarPdfLiquidacion = (groupId: number) => {
+    if (descargarPdfLiquidacionPending) return;
+    descargarPdfLiquidacion(groupId);
+  };
+
+  const handleEnviarPdfLiquidacion = (groupId: number) => {
+    setIsOpenPdf(true);
+    setGroupIdPdfSelected(groupId);
   };
   return (
     <Section>
@@ -133,7 +159,7 @@ function RouteComponent() {
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-0 md:gap-4">
+                      <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end md:gap-4">
                         <ButtonOrdenes
                           onClick={() =>
                             toggleHideOrders(group.idGrupoLiquidacion)
@@ -181,6 +207,26 @@ function RouteComponent() {
                         >
                           <Mail className="mr-1 h-4 w-4" />
                           Enviar correo
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
+                          onClick={() =>
+                            handleDescargarPdfLiquidacion(
+                              group.idGrupoLiquidacion,
+                            )
+                          }
+                          color="red"
+                        >
+                          <FileDown className="mr-1 h-4 w-4" />
+                          Descargar PDF
+                        </ButtonOrdenes>
+                        <ButtonOrdenes
+                          onClick={() =>
+                            handleEnviarPdfLiquidacion(group.idGrupoLiquidacion)
+                          }
+                          color="purple"
+                        >
+                          <Send className="mr-1 h-4 w-4" />
+                          Enviar PDF
                         </ButtonOrdenes>
                         <ButtonOrdenes
                           onClick={() =>
@@ -237,6 +283,14 @@ function RouteComponent() {
         id={groupIdSelected as number}
         mutationEmail={enviarCorreoArchivoLiquidacion}
         envioCorreoPending={enviarCorreoArchivoLiquidacionPending}
+      />
+
+      <EnvioCorreos
+        isOpen={isOpenPdf}
+        setIsOpen={setIsOpenPdf}
+        id={groupIdPdfSelected as number}
+        mutationEmail={enviarPdfLiquidacion}
+        envioCorreoPending={enviarPdfLiquidacionPending}
       />
 
       <ConfirmarDelete

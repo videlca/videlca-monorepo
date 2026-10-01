@@ -1,10 +1,46 @@
 import { useState } from "react";
-import type { GruposLiquidaciones } from "../../api/types/liquidaciones";
+import type {
+  GruposLiquidaciones,
+  Liquidaciones,
+} from "../../api/types/liquidaciones";
 import { priceFormat } from "../../utils/PriceFormat";
 import { getStatusColor } from "../../utils/StatusColor";
 import { OrdenDetalles } from "../ui/modals/OrdenDetalles";
 import { useGetOrdenLiquidada } from "../../api/queryFunctions/liquidaciones";
 import { toast } from "sonner";
+
+const estilosTipoServicio: Record<
+  NonNullable<Liquidaciones["tipoServicio"]>,
+  { label: string; className: string }
+> = {
+  monitoreo: {
+    label: "Monitoreo",
+    className: "border-sky-200 bg-sky-50 text-sky-700",
+  },
+  vigilancia: {
+    label: "Vigilancia",
+    className: "border-indigo-200 bg-indigo-50 text-indigo-700",
+  },
+  adicional: {
+    label: "Adicional",
+    className: "border-amber-200 bg-amber-50 text-amber-700",
+  },
+};
+
+const TipoServicioBadge = ({
+  tipo,
+}: {
+  tipo: NonNullable<Liquidaciones["tipoServicio"]>;
+}) => {
+  const { label, className } = estilosTipoServicio[tipo];
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-xs font-medium ${className}`}
+    >
+      {label}
+    </span>
+  );
+};
 
 export const OrdenServicioCard = ({
   grupoLiquidacion,
@@ -25,10 +61,14 @@ export const OrdenServicioCard = ({
 
   // grupoLiquidacion.total ya viene calculado desde el backend (CON iva); el "antes de iva" no se guarda a
   // nivel de grupo, solo por liquidacion (ver valorLiquidacionAntesIva), asi que se suma aca
-  const totalAntesIva = grupoLiquidacion.liquidaciones.reduce(
-    (acc, liquidacion) => acc + Number(liquidacion.valorLiquidacionAntesIva ?? 0),
-    0,
-  );
+  const totalAntesIva =
+    grupoLiquidacion.totalAntesIvaFiltrado ??
+    grupoLiquidacion.liquidaciones.reduce(
+      (acc, liquidacion) =>
+        acc + Number(liquidacion.valorLiquidacionAntesIva ?? 0),
+      0,
+    );
+  const totalGrupo = grupoLiquidacion.totalFiltrado ?? grupoLiquidacion.total;
 
   return (
     <>
@@ -71,6 +111,11 @@ export const OrdenServicioCard = ({
                   </div>
 
                   <div className="space-y-1 text-xs text-gray-600">
+                    {liquidacion.tipoServicio && (
+                      <div>
+                        <TipoServicioBadge tipo={liquidacion.tipoServicio} />
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium text-gray-900">
                         {liquidacion.ordenServicio.idLocacion?.idCliente.nombre ||
@@ -93,9 +138,13 @@ export const OrdenServicioCard = ({
                     <h3 className="text-sm font-semibold text-gray-900">
                       {liquidacion.adicional?.nombre ?? `Adicional #${liquidacion.idAdicional}`}
                     </h3>
-                    <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-                      Adicional
-                    </span>
+                    {liquidacion.tipoServicio ? (
+                      <TipoServicioBadge tipo={liquidacion.tipoServicio} />
+                    ) : (
+                      <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+                        Adicional
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-1 text-xs text-gray-600">
@@ -125,7 +174,7 @@ export const OrdenServicioCard = ({
             <span className="text-xs text-gray-600">
               Liquidación Total:{" "}
               <span className="font-medium text-gray-700">
-                {priceFormat(grupoLiquidacion.total)}
+                {priceFormat(totalGrupo)}
               </span>
             </span>
             <span className="text-sm text-gray-600">

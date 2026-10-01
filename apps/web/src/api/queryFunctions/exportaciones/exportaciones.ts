@@ -10,7 +10,7 @@ import { queryClient } from "../../../App";
 
 export const useGetGruposLiquidacionesExportaciones = (params: FiltroGrupoLiquidacionDto) => {
   return useQuery<ApiResponse<GruposLiquidaciones[]>>({
-    queryKey: ["grupos-liquidaciones-exportaciones", params.campo, params.valor],
+    queryKey: ["grupos-liquidaciones-exportaciones", params.campo, params.valor, params.anio, params.mes],
     queryFn: () => getGruposLiquidacionesExportaciones(params),
     enabled: !!params.valor,
   });

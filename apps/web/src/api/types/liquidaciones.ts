@@ -16,7 +16,23 @@ export interface GruposLiquidaciones {
   generacion_interfase: boolean;
   generacion_anexo: boolean;
   liquidaciones: Liquidaciones[];
+  // Solo con lo filtrado por tiposServicio; `total` sigue siendo el total completo de la factura
+  totalFiltrado?: number;
+  totalAntesIvaFiltrado?: number;
 }
+
+export type TipoServicioFiltro = "monitoreo" | "vigilancia";
+
+// Una misma orden/adicional sale una vez por mes pendiente: el id solo no es unico, usar id + aniomesLiquidar
+export interface LiquidarMesInfo {
+  anioLiquidar: number;
+  mesLiquidar: number;
+  aniomesLiquidar: string;
+  esMesAnterior: boolean;
+}
+
+export type OrdenPorMes = OrdenServicio & LiquidarMesInfo;
+export type AdicionalPorMes = Adicional & LiquidarMesInfo;
 
 // Respuesta real de POST /liquidaciones/generar-mes: el GrupoLiquidacion recien creado y guardado tal cual,
 // sin su relacion `liquidaciones` (no se vuelve a consultar con relaciones despues de guardar)
@@ -46,6 +62,7 @@ export interface Liquidaciones {
   estado: boolean;
   grupo: GruposLiquidaciones;
   aniomes_liquidacion: string;
+  tipoServicio?: "monitoreo" | "vigilancia" | "adicional";
 }
 
 // Pagina de liquidaciones de una orden especifica (GET /orden-servicio/:ordenId/liquidaciones). No usa el
@@ -121,3 +138,56 @@ export interface AdicionalLiquidado {
 
 // Union discriminada de la respuesta de GET /liquidaciones/:idLiquidacion/orden - siempre trae `tipo`
 export type OrdenOAdicionalLiquidado = OrdenLiquidada | AdicionalLiquidado;
+
+export interface GrupoComparacion {
+  idGrupoLiquidacion: number;
+  descripcion: string;
+  fechaCreacion: string;
+  cantidadOrdenes: number;
+  cantidadAdicionales: number;
+  totalAntesIva: number;
+  totalIva: number;
+  totalConIva: number;
+}
+
+export interface PeriodoComparacion {
+  anio: number;
+  mes: number;
+  aniomes: string;
+  cantidadGrupos: number;
+  cantidadOrdenes: number;
+  cantidadLiquidacionesOrdenes: number;
+  cantidadAdicionales: number;
+  totalAntesIva: number;
+  totalIva: number;
+  totalConIva: number;
+  grupos: GrupoComparacion[];
+}
+
+export interface DiferenciaMetrica {
+  valor: number;
+  // null cuando el valor de A es 0 (sin base para el porcentaje)
+  porcentaje: number | null;
+}
+
+export interface DiferenciaComparacion {
+  cantidadGrupos: DiferenciaMetrica;
+  cantidadOrdenes: DiferenciaMetrica;
+  cantidadLiquidacionesOrdenes: DiferenciaMetrica;
+  cantidadAdicionales: DiferenciaMetrica;
+  totalAntesIva: DiferenciaMetrica;
+  totalIva: DiferenciaMetrica;
+  totalConIva: DiferenciaMetrica;
+}
+
+export interface ComparacionCliente {
+  cliente: {
+    idCliente: number;
+    nombre: string;
+    numeroIdentificacion: string;
+  };
+  tiposServicio: TipoServicioFiltro[];
+  periodoA: PeriodoComparacion;
+  periodoB: PeriodoComparacion;
+  diferencia: DiferenciaComparacion;
+}

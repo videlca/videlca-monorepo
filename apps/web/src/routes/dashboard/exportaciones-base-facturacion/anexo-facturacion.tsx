@@ -5,6 +5,11 @@ import { useState } from "react";
 import type { TabsExportaciones } from "../../../types";
 import { OrdenesTab } from "../../../components/ui/dashboard/exportaciones/OrdenesTab";
 import {
+  FiltroMesExportacion,
+  getMesActualExportacion,
+  parseMesExportacion,
+} from "../../../components/ui/dashboard/exportaciones/FiltroMesExportacion";
+import {
   useEnviarCorreoExportacion,
   useGenerarReporteArchivo,
   useGetGruposLiquidacionesExportaciones,
@@ -18,6 +23,7 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const [activeTab, setActiveTab] = useState<TabsExportaciones>("Generar");
+  const [mesGrupo, setMesGrupo] = useState<string>(getMesActualExportacion);
 
   const tabs = [
     { id: "Generar" as TabsExportaciones, label: "Generar" },
@@ -32,6 +38,7 @@ function RouteComponent() {
   const { data: groups } = useGetGruposLiquidacionesExportaciones({
     campo: "generacion_anexo",
     valor: value,
+    ...parseMesExportacion(mesGrupo),
   });
 
   // TODO: Cambiar POR MUTACIONES CORRECTAS
@@ -57,6 +64,7 @@ function RouteComponent() {
         activeTab={activeTab}
         setActiveTab={(id) => setActiveTab(id as TabsExportaciones)}
       />
+      <FiltroMesExportacion value={mesGrupo} onChange={setMesGrupo} />
       {activeTab === "Generar" && (
         <OrdenesTab
           tipo="generacion_anexo"
