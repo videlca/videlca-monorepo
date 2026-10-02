@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
+import { textoCobroParcial, type CobroParcial } from "../../../utils/cobroParcial";
 import type { Cliente, Puesto } from "../../../types";
 import type {
   CreateOrdenServicioDto,
@@ -262,6 +263,7 @@ export const PreviewInformacionOrden = ({
   mensajeRespuesta,
   isIndefinite,
   precioOrdenDetalle = null,
+  cobroParcial,
 }: {
   isEditing?: boolean;
   selectedPuesto: Puesto | null;
@@ -275,6 +277,7 @@ export const PreviewInformacionOrden = ({
   mensajeRespuesta: string;
   isIndefinite: boolean;
   precioOrdenDetalle?: PrecioOrdenResponse | null;
+  cobroParcial?: CobroParcial;
 }) => {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -400,6 +403,17 @@ export const PreviewInformacionOrden = ({
                   : "No especificada"}
             </span>
           </span>
+          {isIndefinite &&
+            cobroParcial?.activo &&
+            cobroParcial.diaInicio != null &&
+            cobroParcial.diaFin != null && (
+              <span className="flex w-full items-center gap-2 text-sm">
+                <span className="font-medium text-gray-700">Cobro parcial:</span>{" "}
+                <span className="text-gray-600">
+                  {textoCobroParcial(cobroParcial.diaInicio, cobroParcial.diaFin)}
+                </span>
+              </span>
+            )}
         </div>
 
         {/* Servicios de la orden: una fila apilada por servicio (en vez de varias cajas sueltas por

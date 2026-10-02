@@ -15,6 +15,8 @@ export interface OrdenServicio {
   fechaFin: string;
   fechaInicioOrden: string;
   fechaFinOrden: string;
+  diaInicioCobro?: number | null;
+  diaFinCobro?: number | null;
   precioTotal: number;
   fechaCreacion: string;
   fechaActualizacion: string;

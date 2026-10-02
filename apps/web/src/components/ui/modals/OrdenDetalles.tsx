@@ -25,6 +25,7 @@ import { AdicionalLiquidadoDetalle } from "./AdicionalLiquidadoDetalle";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
+import { textoCobroParcial } from "../../../utils/cobroParcial";
 import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "../../common/stepsOrdenServicio/tipoServicioConstantes";
 
 const priceOrNA = (value: number | null | undefined) =>
@@ -717,6 +718,18 @@ export const OrdenDetalles = ({
                 {selectedOrderDetail.fechaFin}
               </p>
             </div>
+            {selectedOrderDetail.diaInicioCobro != null &&
+              selectedOrderDetail.diaFinCobro != null && (
+                <div className="md:col-span-2">
+                  <p className="text-sm font-medium text-gray-600">Cobro parcial</p>
+                  <p className="text-base text-gray-900">
+                    {textoCobroParcial(
+                      selectedOrderDetail.diaInicioCobro,
+                      selectedOrderDetail.diaFinCobro,
+                    )}
+                  </p>
+                </div>
+              )}
             {/* Fecha Ordenes son las que se actualizan */}
             <div>
               <p className="text-sm font-medium text-gray-600">

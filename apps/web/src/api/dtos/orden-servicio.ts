@@ -14,6 +14,9 @@ export interface CreateOrdenServicioDto {
   idCliente?: number;
   fechaInicio: string;
   fechaFin: string | null;
+  // Cobro parcial mensual: solo ordenes indefinidas de catalogo; se envian los dos o ninguno
+  diaInicioCobro?: number;
+  diaFinCobro?: number;
   // Solo se usa en el front para mostrar el total en el paso de vista previa (PreviewInformacionOrden):
   // el backend ya no lo recibe, por eso es opcional y no se incluye en el payload al crear la orden
   precioTotal?: number;

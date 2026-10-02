@@ -51,6 +51,7 @@ import type { Servicio } from "../../../api/types/servicio";
 import type { Tarifa } from "../../../api/types/periodo";
 import { SeleccionarIdentificadorOrden } from "../../../components/common/stepsOrdenServicio/SeleccionarIdentificadorOrden";
 import { ConfigurarFechaOrdenServicio } from "../../../components/common/stepsOrdenServicio/ConfigurarFechaOrdenServicio";
+import { COBRO_PARCIAL_INICIAL, type CobroParcial } from "../../../utils/cobroParcial";
 import { SeleccionarOrigenServicio } from "../../../components/common/stepsOrdenServicio/SeleccionarOrigenServicio";
 import { SeleccionarServicio } from "../../../components/common/stepsOrdenServicio/SeleccionarServicio";
 import { ConfigurarHorariosServicios } from "../../../components/common/stepsOrdenServicio/ConfigurarHorariosServicios";
@@ -114,6 +115,7 @@ function RouteComponent() {
     useState<PrecioOrdenResponse | null>(null);
 
   const [isIndefinite, setIsIndefinite] = useState(false);
+  const [cobroParcial, setCobroParcial] = useState<CobroParcial>(COBRO_PARCIAL_INICIAL);
 
   // Paso 4: origen de la orden de servicio (catalogo / a la medida). "a la medida" reemplaza los pasos de
   // seleccionar servicios + horarios por un unico horario para toda la orden (ver ConfigurarHorarioAMedida)
@@ -270,6 +272,7 @@ function RouteComponent() {
     setConfiguracionServicioTarifa([]);
     setSelectedServices([]);
     setIsIndefinite(false);
+    setCobroParcial(COBRO_PARCIAL_INICIAL);
     setPrecioOrdenDetalle(null);
     setMensajeRespuesta("");
     setOrigenServicio(null);
@@ -323,6 +326,17 @@ function RouteComponent() {
         return;
       }
 
+      if (cobroParcial.activo) {
+        if (cobroParcial.diaInicio == null || cobroParcial.diaFin == null) {
+          toast.error("Seleccione el día de inicio y el día de fin del cobro parcial");
+          return;
+        }
+        if (cobroParcial.diaInicio > cobroParcial.diaFin) {
+          toast.error("El día de inicio de cobro no puede ser mayor al día de fin (el rango debe quedar dentro del mismo mes)");
+          return;
+        }
+      }
+
       validateFechasOrdenServicio(
         {
           fechaInicio: dateFormat(new Date(watchCreate("fechaInicio"))),
@@ -352,6 +366,11 @@ function RouteComponent() {
       if (!origenServicio) {
         toast.error("Debe seleccionar el origen de la orden de servicio");
         return;
+      }
+
+      if (origenServicio === OrigenServicioEnum.A_MEDIDA && cobroParcial.activo) {
+        setCobroParcial(COBRO_PARCIAL_INICIAL);
+        toast.info("El cobro parcial mensual solo aplica para órdenes de catálogo, se desactivó");
       }
 
       // Al entrar/cambiar de origen se descarta cualquier seleccion de servicio u horario del otro camino
@@ -758,6 +777,13 @@ function RouteComponent() {
         : { idLocacion: data.idLocacion || 0 }),
       fechaInicio: data.fechaInicio,
       fechaFin: isIndefinite ? null : data.fechaFin,
+      ...(cobroParcial.activo &&
+      isIndefinite &&
+      origenServicio === OrigenServicioEnum.CATALOGO &&
+      cobroParcial.diaInicio != null &&
+      cobroParcial.diaFin != null
+        ? { diaInicioCobro: cobroParcial.diaInicio, diaFinCobro: cobroParcial.diaFin }
+        : {}),
       fechaCreacion: new Date().toISOString(),
       servicios,
     };
@@ -1225,6 +1251,8 @@ function RouteComponent() {
             setValue={setValueCreate}
             isIndefinite={isIndefinite}
             setIsIndefinite={setIsIndefinite}
+            cobroParcial={cobroParcial}
+            setCobroParcial={setCobroParcial}
           />
         );
 
@@ -1289,6 +1317,7 @@ function RouteComponent() {
             mensajeRespuesta={mensajeRespuesta}
             isIndefinite={isIndefinite}
             precioOrdenDetalle={precioOrdenDetalle}
+            cobroParcial={cobroParcial}
           />
         ) : (
           <ConfigurarHorariosServicios
@@ -1310,6 +1339,7 @@ function RouteComponent() {
             mensajeRespuesta={mensajeRespuesta}
             isIndefinite={isIndefinite}
             precioOrdenDetalle={precioOrdenDetalle}
+            cobroParcial={cobroParcial}
           />
         );
 
@@ -1500,6 +1530,9 @@ function RouteComponent() {
                     !watchCreate("idCliente") &&
                     !watchCreate("idLocacion")) ||
                   (currentStep === 3 && !watchCreate("fechaInicio")) ||
+                  (currentStep === 3 &&
+                    cobroParcial.activo &&
+                    (cobroParcial.diaInicio == null || cobroParcial.diaFin == null)) ||
                   (currentStep === 4 && !origenServicio) ||
                   (currentStep === 5 &&
                     origenServicio === OrigenServicioEnum.CATALOGO &&
