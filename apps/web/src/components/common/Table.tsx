@@ -15,14 +15,23 @@ import {
   getPaginationRowModel,
   getFilteredRowModel,
 } from "@tanstack/react-table";
-import {
-  ChevronDown,
-  ChevronUp,
-  ChevronsUpDown,
-  Search,
-  X,
-  Loader2,
-} from "lucide-react";
+import ClearIcon from "@mui/icons-material/Clear";
+import SearchIcon from "@mui/icons-material/Search";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import MuiTable from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TablePagination from "@mui/material/TablePagination";
+import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
 export interface ServerFilterColumn {
   label: string;
@@ -90,7 +99,7 @@ const Table = <TData, TValues>({
   pageSize = 5,
   showHeader = true,
   loading = false,
-  emptyMessage = "No data available",
+  emptyMessage = "No hay datos disponibles",
   pageSizeOptions = [2, 5, 10, 15, 20],
   filterColumns,
   onServerFilter,
@@ -127,7 +136,9 @@ const Table = <TData, TValues>({
     [onServerFilter],
   );
 
-  const serverPageCount = serverPagination ? Math.ceil(totalRows / pageSize) : undefined;
+  const serverPageCount = serverPagination
+    ? Math.ceil(totalRows / pageSize)
+    : undefined;
 
   const table = useReactTable({
     data,
@@ -135,7 +146,9 @@ const Table = <TData, TValues>({
     meta,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: serverPagination ? undefined : getPaginationRowModel(),
+    getPaginationRowModel: serverPagination
+      ? undefined
+      : getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -150,7 +163,9 @@ const Table = <TData, TValues>({
       columnFilters,
       rowSelection,
       columnVisibility,
-      ...(serverPagination ? { pagination: { pageIndex: currentPage, pageSize } } : {}),
+      ...(serverPagination
+        ? { pagination: { pageIndex: currentPage, pageSize } }
+        : {}),
     },
     initialState: {
       pagination: {
@@ -163,12 +178,6 @@ const Table = <TData, TValues>({
     enableColumnFilters: enableFiltering,
     enableMultiRowSelection: false,
   });
-
-  const getSortIcon = (isSorted: false | "asc" | "desc") => {
-    if (isSorted === "asc") return <ChevronUp className="h-4 w-4" />;
-    if (isSorted === "desc") return <ChevronDown className="h-4 w-4" />;
-    return <ChevronsUpDown className="h-4 w-4" />;
-  };
 
   const handleFilterChange = (value: string) => {
     setFilterValue(value);
@@ -245,253 +254,203 @@ const Table = <TData, TValues>({
 
   if (loading) {
     return (
-      <div className={`w-full ${className}`}>
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center justify-center p-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-            <span className="ml-2 text-gray-600">Loading...</span>
-          </div>
-        </div>
-      </div>
+      <Paper
+        variant="outlined"
+        className={`flex w-full items-center justify-center gap-2 p-8 ${className}`}
+      >
+        <CircularProgress size={24} />
+        <Typography color="text.secondary">Cargando...</Typography>
+      </Paper>
     );
   }
 
   const showFilterBar = enableFiltering && displayFilterColumns.length > 0;
+  const selectedFilterLabel =
+    displayFilterColumns.find((c) => c.value === selectedFilterColumn)?.label ??
+    selectedFilterColumn;
+  const { pageIndex, pageSize: clientPageSize } = table.getState().pagination;
 
   return (
-    <div className={`w-full ${className} relative`}>
+    <div className={`relative w-full ${className}`}>
       {showFilterBar && (
-        <div className="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-gray-400" />
-            <span className="text-sm font-medium text-gray-700">
-              Filtrar por:
-            </span>
-          </div>
-
-          <select
+        <Paper
+          variant="outlined"
+          className="mb-4 flex flex-wrap items-center gap-4 p-4"
+        >
+          <TextField
+            select
+            label="Filtrar por"
             value={selectedFilterColumn}
             onChange={(e) => handleColumnChange(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            fullWidth={false}
+            sx={{ minWidth: 200 }}
+            slotProps={{
+              inputLabel: { shrink: true },
+              select: { displayEmpty: true },
+            }}
           >
-            <option value="">Seleccionar columna</option>
+            <MenuItem value="">Seleccionar columna</MenuItem>
             {displayFilterColumns.map((col) => (
-              <option key={col.value} value={col.value}>
+              <MenuItem key={col.value} value={col.value}>
                 {col.label}
-              </option>
+              </MenuItem>
             ))}
-          </select>
+          </TextField>
 
-          <div className="relative max-w-md flex-1">
-            <input
-              type="text"
-              value={filterValue}
-              onChange={(e) => handleFilterChange(e.target.value)}
-              placeholder={
-                selectedFilterColumn
-                  ? `Filtrar ${displayFilterColumns.find((c) => c.value === selectedFilterColumn)?.label ?? selectedFilterColumn}...`
-                  : "Seleccionar una columna primero"
-              }
-              disabled={!selectedFilterColumn}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100"
-            />
-            {filterValue && (
-              <button
-                onClick={clearFilter}
-                className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+          <TextField
+            value={filterValue}
+            onChange={(e) => handleFilterChange(e.target.value)}
+            placeholder={
+              selectedFilterColumn
+                ? `Filtrar ${selectedFilterLabel}...`
+                : "Seleccionar una columna primero"
+            }
+            disabled={!selectedFilterColumn}
+            sx={{ flex: 1, maxWidth: 448 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: filterValue ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="Limpiar filtro"
+                      onClick={clearFilter}
+                      edge="end"
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : undefined,
+              },
+            }}
+          />
 
           {serverFilterLoading && (
-            <div className="flex items-center gap-2 text-sm text-blue-600">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Buscando...</span>
+            <div className="flex items-center gap-2">
+              <CircularProgress size={16} />
+              <Typography variant="body2" color="primary">
+                Buscando...
+              </Typography>
             </div>
           )}
 
           {filterValue && !serverFilterLoading && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Filtrando:</span>
-              <span className="font-medium">
-                {displayFilterColumns.find((c) => c.value === selectedFilterColumn)?.label ?? selectedFilterColumn}
-              </span>
-              <span>=</span>
-              <span className="font-medium">"{filterValue}"</span>
-            </div>
+            <Typography variant="body2" color="text.secondary">
+              Filtrando: <strong>{selectedFilterLabel}</strong> ={" "}
+              <strong>"{filterValue}"</strong>
+            </Typography>
           )}
-        </div>
+        </Paper>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-        <table className="relative w-full">
-          {showHeader && (
-            <thead className="bg-gray-50">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <th
-                      key={header.id}
-                      className={`px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase ${header.column.getCanSort() && enableSorting
-                        ? "cursor-pointer select-none hover:bg-gray-100"
-                        : ""
-                        }`}
-                      onClick={
-                        header.column.getCanSort() && enableSorting
-                          ? header.column.getToggleSortingHandler()
-                          : undefined
-                      }
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                        {header.column.getCanSort() && enableSorting && (
-                          <span className="text-gray-400">
-                            {getSortIcon(header.column.getIsSorted())}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-          )}
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
-                <Fragment key={row.id}>
-                <tr className="text-center transition-colors hover:bg-gray-50">
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className={`w-fit px-6 py-4 text-center text-sm break-words ${cell.column.id === "actions"
-                        ? "relative overflow-visible"
-                        : ""
-                        }`}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
-                </tr>
-                {renderExpandedRow && row.getIsExpanded() && (
-                  <tr>
-                    <td
-                      colSpan={row.getVisibleCells().length}
-                      className="bg-gray-50 px-6 py-3"
-                    >
-                      {renderExpandedRow(row.original)}
-                    </td>
-                  </tr>
-                )}
-                </Fragment>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-6 py-8 text-center text-sm text-gray-500"
-                >
-                  {emptyMessage}
-                </td>
-              </tr>
+      <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+        <TableContainer>
+          <MuiTable>
+            {showHeader && (
+              <TableHead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      const canSort =
+                        header.column.getCanSort() && enableSorting;
+                      const sorted = header.column.getIsSorted();
+                      const content = flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      );
+                      return (
+                        <TableCell
+                          key={header.id}
+                          align="center"
+                          sortDirection={sorted || false}
+                          sx={{ whiteSpace: "nowrap" }}
+                        >
+                          {canSort ? (
+                            <TableSortLabel
+                              active={!!sorted}
+                              direction={sorted || "asc"}
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              {content}
+                            </TableSortLabel>
+                          ) : (
+                            content
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHead>
             )}
-          </tbody>
-        </table>
-      </div>
-      {enablePagination && (
-        <div className="flex items-center justify-between rounded-b-lg border border-gray-200 bg-white px-6 py-3 shadow-sm">
-          <div className="flex items-center gap-2 text-sm text-gray-700">
-            <span>
-              Mostrando{" "}
-              {serverPagination
-                ? currentPage * pageSize + 1
-                : table.getState().pagination.pageIndex *
-                  table.getState().pagination.pageSize +
-                  1}{" "}
-              a{" "}
-              {serverPagination
-                ? Math.min((currentPage + 1) * pageSize, totalRows)
-                : Math.min(
-                    (table.getState().pagination.pageIndex + 1) *
-                    table.getState().pagination.pageSize,
-                    table.getFilteredRowModel().rows.length,
-                  )}{" "}
-              de{" "}
-              {serverPagination
+            <TableBody>
+              {table.getRowModel().rows.length > 0 ? (
+                table.getRowModel().rows.map((row) => (
+                  <Fragment key={row.id}>
+                    <TableRow hover>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} align="center">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                    {renderExpandedRow && row.getIsExpanded() && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={row.getVisibleCells().length}
+                          sx={{ bgcolor: "background.default" }}
+                        >
+                          {renderExpandedRow(row.original)}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </Fragment>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    align="center"
+                    sx={{ py: 4, color: "text.secondary" }}
+                  >
+                    {emptyMessage}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </MuiTable>
+        </TableContainer>
+        {enablePagination && (
+          <TablePagination
+            component="div"
+            count={
+              serverPagination
                 ? totalRows
-                : table.getFilteredRowModel().rows.length}{" "}
-              resultados
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={serverPagination ? pageSize : table.getState().pagination.pageSize}
-              onChange={(e) => {
-                const newSize = Number(e.target.value);
-                if (serverPagination && onPageSizeChange) {
-                  onPageSizeChange(newSize);
-                } else {
-                  table.setPageSize(newSize);
-                }
-              }}
-              className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value={0} disabled>
-                Seleccionar
-              </option>
-              {pageSizeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={() => {
-                if (serverPagination && onPageChange) {
-                  onPageChange(currentPage - 1);
-                } else {
-                  table.previousPage();
-                }
-              }}
-              disabled={serverPagination ? currentPage <= 0 : !table.getCanPreviousPage()}
-              className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Anterior
-            </button>
-            <span className="text-sm text-gray-700">
-              Página{" "}
-              {serverPagination
-                ? currentPage + 1
-                : table.getState().pagination.pageIndex + 1}{" "}
-              de{" "}
-              {serverPagination
-                ? (serverPageCount || 1)
-                : table.getPageCount()}
-            </span>
-            <button
-              onClick={() => {
-                if (serverPagination && onPageChange) {
-                  onPageChange(currentPage + 1);
-                } else {
-                  table.nextPage();
-                }
-              }}
-              disabled={serverPagination ? currentPage >= (serverPageCount || 1) - 1 : !table.getCanNextPage()}
-              className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
-      )}
+                : table.getFilteredRowModel().rows.length
+            }
+            page={serverPagination ? currentPage : pageIndex}
+            rowsPerPage={serverPagination ? pageSize : clientPageSize}
+            rowsPerPageOptions={pageSizeOptions}
+            onPageChange={(_, page) => {
+              if (serverPagination) onPageChange?.(page);
+              else table.setPageIndex(page);
+            }}
+            onRowsPerPageChange={(e) => {
+              const newSize = Number(e.target.value);
+              if (serverPagination) onPageSizeChange?.(newSize);
+              else table.setPageSize(newSize);
+            }}
+            sx={{ borderTop: 1, borderColor: "divider" }}
+          />
+        )}
+      </Paper>
     </div>
   );
 };

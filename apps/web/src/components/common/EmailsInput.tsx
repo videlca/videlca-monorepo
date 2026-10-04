@@ -1,4 +1,8 @@
-import { X } from "lucide-react";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { useState, type KeyboardEvent } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +13,9 @@ interface EmailsInputProps {
   placeholder?: string;
 }
 
+const validateEmail = (email: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 export const EmailsInput = ({
   emails,
   defaultEmails,
@@ -16,12 +23,8 @@ export const EmailsInput = ({
   placeholder = "Ingrese un correo y presione Enter",
 }: EmailsInputProps) => {
   const [inputValue, setInputValue] = useState("");
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" && inputValue.trim()) {
       e.preventDefault();
       addEmail();
@@ -50,77 +53,54 @@ export const EmailsInput = ({
     setInputValue("");
   };
 
-  const removeEmail = (emailToRemove: string) => {
-    setEmails(emails.filter((email) => email !== emailToRemove));
-  };
-
   return (
-    <div className="w-full space-y-3">
+    <div className="flex w-full flex-col gap-3">
       <div className="flex gap-2">
-        <input
+        <TextField
           type="email"
           value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value);
-          }}
+          onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
         />
-        <button
-          type="button"
-          onClick={() => addEmail(inputValue.trim())}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-        >
+        <Button variant="contained" onClick={() => addEmail(inputValue.trim())}>
           Agregar
-        </button>
+        </Button>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <p className="text-sm text-gray-500">
-          Seleccione alguno de los correos configurados en la sección de
-          configuración de correos predeterminados. Correos disponibles:
-        </p>
-      </div>
+      <Typography variant="body2" color="text.secondary">
+        Seleccione alguno de los correos configurados en la sección de
+        configuración de correos predeterminados. Correos disponibles:
+      </Typography>
       <div className="flex flex-wrap gap-2">
         {defaultEmails.map((email) => (
-          <div
+          <Chip
             key={email}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1.5 text-sm text-blue-700"
+            label={email}
+            color="primary"
+            variant="outlined"
             onClick={() => addEmail(email.trim())}
-          >
-            <span>{email}</span>
-          </div>
+          />
         ))}
       </div>
-      <hr className="my-4 border-b border-gray-200" />
+      <Divider sx={{ my: 1 }} />
 
-      {emails.length > 0 && (
+      {emails.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {emails.map((email) => (
-            <div
+            <Chip
               key={email}
-              className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1.5 text-sm text-blue-700"
-            >
-              <span>{email}</span>
-              <button
-                type="button"
-                onClick={() => removeEmail(email)}
-                className="rounded-full transition-colors hover:bg-blue-200 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                aria-label={`Eliminar ${email}`}
-              >
-                <X size={14} className="text-blue-700" />
-              </button>
-            </div>
+              label={email}
+              color="primary"
+              onDelete={() => setEmails(emails.filter((e) => e !== email))}
+            />
           ))}
         </div>
-      )}
-
-      {emails.length === 0 && (
-        <p className="text-sm text-gray-500">
+      ) : (
+        <Typography variant="body2" color="text.secondary">
           No hay correos agregados. Ingrese un correo y presione Enter o haga
           clic en Agregar.
-        </p>
+        </Typography>
       )}
     </div>
   );

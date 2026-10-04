@@ -1,6 +1,13 @@
-import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react";
+import Chip from "@mui/material/Chip";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { OrderStateLabel } from "../../common/OrderStateLabel";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import { SimpleModal } from "../../common/SimpleModal";
-import { getStatusColor } from "../../../utils/StatusColor";
 import type {
   OrdenServicio,
   OrdenServicioDetalle,
@@ -117,71 +124,82 @@ export const ServiciosOrden = ({ onClose, orden }: ServiciosOrdenProps) => {
       clickOutsideClose
     >
       {orden && (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-2 text-sm">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
               {orden.idLocacion && (
-                <p className="flex items-center gap-1 truncate text-gray-600">
-                  <MapPinIcon className="h-3.5 w-3.5 flex-shrink-0" />
+                <Typography variant="body2" color="text.secondary" noWrap className="flex items-center gap-1">
+                  <PlaceOutlinedIcon sx={{ fontSize: 16 }} />
                   {orden.idLocacion.nombre} - {orden.idLocacion.direccion}
-                </p>
+                </Typography>
               )}
-              <p className="mt-0.5 flex items-center gap-1 text-gray-500">
-                <CalendarIcon className="h-3.5 w-3.5 flex-shrink-0" />
+              <Typography variant="body2" color="text.secondary" className="flex items-center gap-1" sx={{ mt: 0.5 }}>
+                <CalendarMonthOutlinedIcon sx={{ fontSize: 16 }} />
                 {orden.fechaInicio || ""} → {orden.fechaFin || "Indefinida"}
-              </p>
+              </Typography>
             </div>
-            <span
-              className={`rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap capitalize ${getStatusColor(orden.idEstadoOrdenServicio?.nombre || "")}`}
-            >
-              {orden.idEstadoOrdenServicio?.nombre}
-            </span>
+            <OrderStateLabel state={orden.idEstadoOrdenServicio?.nombre || ""} />
           </div>
 
           {servicios.length === 0 ? (
-            <p className="rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-500">
-              Esta orden no tiene servicios registrados.
-            </p>
+            <Paper variant="outlined" sx={{ px: 2, py: 1.5 }}>
+              <Typography variant="body2" color="text.secondary">
+                Esta orden no tiene servicios registrados.
+              </Typography>
+            </Paper>
           ) : (
-            <ul className="divide-y divide-gray-200 rounded-lg border border-gray-300">
-              {servicios.map((grupo) => (
-                <li
-                  key={grupo.key}
-                  className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="font-medium text-gray-900">
-                      {grupo.servicio
-                        ? `${grupo.servicio.codigo} — ${grupo.servicio.descripcion}`
-                        : "Servicio sin tarifa activa"}
-                    </p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <ClockIcon className="h-3.5 w-3.5" />
-                        {formatHora(grupo.horaInicio)} -{" "}
-                        {formatHora(grupo.horaFin)}
-                      </span>
-                      {grupo.dias && <span>{grupo.dias}</span>}
-                      {grupo.fechas.length > 0 && (
-                        <span>
-                          {grupo.fechas[0]}
-                          {grupo.fechas.length > 1 &&
-                            ` → ${grupo.fechas[grupo.fechas.length - 1]}`}
+            <Paper variant="outlined">
+              <List disablePadding>
+                {servicios.map((grupo, i) => (
+                  <ListItem
+                    key={grupo.key}
+                    divider={i < servicios.length - 1}
+                    className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1"
+                  >
+                    <div className="min-w-0">
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {grupo.servicio
+                          ? `${grupo.servicio.codigo} — ${grupo.servicio.descripcion}`
+                          : "Servicio sin tarifa activa"}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        component="div"
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1"
+                        sx={{ mt: 0.5 }}
+                      >
+                        <span className="flex items-center gap-1">
+                          <ScheduleOutlinedIcon sx={{ fontSize: 16 }} />
+                          {formatHora(grupo.horaInicio)} -{" "}
+                          {formatHora(grupo.horaFin)}
                         </span>
-                      )}
-                      {grupo.totalHoras != null && (
-                        <span>{grupo.totalHoras} h</span>
-                      )}
-                    </p>
-                  </div>
-                  <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-gray-600">
-                    {grupo.fechas.length > 0
-                      ? `${grupo.cantidad} ${grupo.cantidad === 1 ? "día" : "días"}`
-                      : `${grupo.cantidad} ${grupo.cantidad === 1 ? "unidad" : "unidades"}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
+                        {grupo.dias && <span>{grupo.dias}</span>}
+                        {grupo.fechas.length > 0 && (
+                          <span>
+                            {grupo.fechas[0]}
+                            {grupo.fechas.length > 1 &&
+                              ` → ${grupo.fechas[grupo.fechas.length - 1]}`}
+                          </span>
+                        )}
+                        {grupo.totalHoras != null && (
+                          <span>{grupo.totalHoras} h</span>
+                        )}
+                      </Typography>
+                    </div>
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={
+                        grupo.fechas.length > 0
+                          ? `${grupo.cantidad} ${grupo.cantidad === 1 ? "día" : "días"}`
+                          : `${grupo.cantidad} ${grupo.cantidad === 1 ? "unidad" : "unidades"}`
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Paper>
           )}
         </div>
       )}

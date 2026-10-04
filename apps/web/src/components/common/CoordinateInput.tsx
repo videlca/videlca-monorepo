@@ -1,3 +1,5 @@
+import { fieldLabel } from "./fieldLabel";
+import TextField from "@mui/material/TextField";
 import React from "react";
 import { toast } from "sonner";
 
@@ -166,33 +168,28 @@ export const CoordinateInput = React.forwardRef<
       }
     };
 
+    const fl = fieldLabel(showLabel ? label : undefined, required);
+
     return (
-      <div className="mb-1 flex w-full flex-col gap-2">
-        {showLabel && (
-          <label htmlFor={id} className="text-sm font-medium text-gray-700">
-            {label}
-          </label>
-        )}
-        <div className="relative flex w-full items-center">
-          <input
-            ref={ref}
-            type="text"
-            inputMode="decimal"
-            id={id}
-            required={required}
-            className={`w-full rounded-md border ${error ? "border-red-500" : "border-gray-300"} px-4 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-100`}
-            placeholder={placeholder}
-            disabled={disabled}
-            autoComplete="off"
-            spellCheck="false"
-            onKeyDown={handleKeyDown}
-            onChange={handleChange}
-            onBlur={onBlur}
-            {...rest}
-          />
-        </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
-      </div>
+      <TextField
+        inputRef={ref}
+        id={id}
+        label={fl.label}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        error={!!error}
+        helperText={error}
+        autoComplete="off"
+        onKeyDown={handleKeyDown}
+        onChange={handleChange}
+        onBlur={onBlur}
+        {...rest}
+        slotProps={{
+          inputLabel: fl.inputLabel,
+          htmlInput: { inputMode: "decimal", spellCheck: false },
+        }}
+      />
     );
   },
 );

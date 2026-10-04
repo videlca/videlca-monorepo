@@ -1,4 +1,8 @@
-import React from "react";
+import CloseIcon from "@mui/icons-material/Close";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
 import type { ReactNode } from "react";
 
 interface SimpleModalProps {
@@ -10,63 +14,50 @@ interface SimpleModalProps {
   clickOutsideClose?: boolean;
 }
 
-export const SimpleModal: React.FC<SimpleModalProps> = ({
+const widths = {
+  sm: 384,
+  md: 448,
+  lg: 512,
+  xl: 672,
+  "2xl": 768,
+  "3xl": 896,
+  "4xl": 1024,
+};
+
+// keepMounted conserva el estado de los hijos al cerrar, como el modal anterior (oculto con CSS)
+export const SimpleModal = ({
   isOpen,
   onClose,
   children,
   title,
   size = "md",
   clickOutsideClose = false,
-}) => {
-  const sizeClasses = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-2xl",
-    "2xl": "max-w-3xl",
-    "3xl": "max-w-4xl",
-    "4xl": "max-w-5xl",
-  };
-
-  return (
-    <div
-      className={`fixed inset-0 z-50 items-center justify-center p-4 md:p-6 ${
-        isOpen ? "flex" : "hidden"
-      }`}
-    >
-      <div
-        className="absolute inset-0 min-h-screen bg-black/40 transition-opacity"
-        onClick={clickOutsideClose ? onClose : undefined}
-      />
-      <div
-        className={`relative mx-4 w-full rounded-lg bg-white shadow-xl ${sizeClasses[size]} max-h-[85vh] overflow-y-auto`}
-        onClick={(e) => e.stopPropagation()}
+}: SimpleModalProps) => (
+  <Dialog
+    open={isOpen}
+    onClose={clickOutsideClose ? onClose : undefined}
+    keepMounted
+    fullWidth
+    maxWidth={false}
+    slotProps={{ paper: { sx: { maxWidth: widths[size], maxHeight: "85vh" } } }}
+  >
+    {title && (
+      <DialogTitle
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 2,
+        }}
       >
-        {title && (
-          <div className="flex items-center justify-between border-b border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-            <button
-              onClick={onClose}
-              className="cursor-pointer text-gray-400 transition-colors hover:text-gray-600"
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        )}
-        <div className="p-6">{children}</div>
-      </div>
-    </div>
-  );
-};
+        {title}
+        <IconButton aria-label="Cerrar" onClick={onClose} edge="end">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+    )}
+    <DialogContent dividers={!!title} sx={{ p: 3 }}>
+      {children}
+    </DialogContent>
+  </Dialog>
+);

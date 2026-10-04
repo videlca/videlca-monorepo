@@ -1,3 +1,4 @@
+import { StepHeader } from "../../ui/common/StepHeader";
 import type { UseFormRegister } from "react-hook-form";
 import { InputForm } from "../InputForm";
 
@@ -9,16 +10,12 @@ export const NombreAdicional = ({
   showHeader?: boolean;
 }) => {
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       {showHeader && (
-        <div className="text-center">
-          <h3 className="mb-2 text-lg font-semibold text-gray-900">
-            Nombre del Adicional
-          </h3>
-          <p className="text-sm text-gray-600">
-            Ingrese el nombre con el que se identificará este adicional
-          </p>
-        </div>
+        <StepHeader
+          title="Nombre del Adicional"
+          description="Ingrese el nombre con el que se identificará este adicional"
+        />
       )}
 
       <InputForm

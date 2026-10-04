@@ -1,11 +1,17 @@
+import AddIcon from "@mui/icons-material/Add";
+import DeleteOutlined from "@mui/icons-material/DeleteOutlined";
+import EditOutlined from "@mui/icons-material/EditOutlined";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import { ButtonAction } from "../../../common/ButtonAction";
-import {
-  ChevronDown,
-  ChevronUp,
-  PencilIcon,
-  PlusIcon,
-  TrashIcon,
-} from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { StateLabel } from "../../../common/StateLabel";
@@ -245,9 +251,9 @@ export function SegmentacionTab() {
       accessorKey: "descripcion",
       header: "Descripción",
       cell: ({ row }) => (
-        <span className="text-md font-medium text-gray-700">
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
           {row.original.descripcion}
-        </span>
+        </Typography>
       ),
     },
     {
@@ -255,18 +261,19 @@ export function SegmentacionTab() {
       header: "Sub-Segmentaciones",
       cell: ({ row }) => (
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium whitespace-nowrap text-gray-500">
+          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
             {row.original.subSegmentaciones?.length} Sub Segmentaciones
-          </p>
+          </Typography>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-center gap-1">
             {row.original.subSegmentaciones?.map((subSegmentacion) => (
-              <span
-                className="w-fit rounded-md bg-blue-100 px-2 py-1 text-center text-sm font-medium whitespace-nowrap text-blue-600 hover:bg-blue-200"
+              <Chip
                 key={subSegmentacion.idSubSegmentacion}
-              >
-                {subSegmentacion.descripcion}
-              </span>
+                size="small"
+                color="primary"
+                variant="outlined"
+                label={subSegmentacion.descripcion}
+              />
             ))}
           </div>
         </div>
@@ -316,10 +323,10 @@ export function SegmentacionTab() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex justify-end">
         <ButtonAction
-          Icon={PlusIcon}
+          Icon={AddIcon}
           label="Agregar segmentación"
           onClick={handleShowAddSegmentacionModal}
         />
@@ -348,7 +355,7 @@ export function SegmentacionTab() {
           updating={false}
           onSubmit={handleSubmitCreate(handleCreateSegmentacion)}
         >
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
             <InputForm
               label="Descripción *"
               placeholder="Ej: Segmentación por Industria"
@@ -358,34 +365,27 @@ export function SegmentacionTab() {
               {...registerCreate("descripcion")}
             />
 
-            <div className="border-t border-gray-200 pt-6">
+            <Divider />
+            <div>
               <div className="mb-4 flex items-center justify-between">
-                <h4 className="text-md font-medium text-gray-900">
+                <Typography variant="h5" component="h4">
                   Sub-segmentaciones (Opcional)
-                </h4>
-                <button
-                  type="button"
+                </Typography>
+                <Button
+                  size="small"
                   onClick={() => setShowSubSegmentations(!showSubSegmentations)}
-                  className="flex cursor-pointer items-center space-x-2 text-blue-600 transition-colors hover:text-blue-700"
+                  startIcon={showSubSegmentations ? <ExpandLess /> : <ExpandMore />}
                 >
-                  {showSubSegmentations ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                  <span className="text-sm font-medium">
-                    {showSubSegmentations ? "Ocultar" : "Agregar"}{" "}
-                    Sub-segmentaciones
-                  </span>
-                </button>
+                  {showSubSegmentations ? "Ocultar" : "Agregar"} Sub-segmentaciones
+                </Button>
               </div>
 
               {showSubSegmentations && (
-                <div className="space-y-4 rounded-lg bg-gray-50 p-4">
-                  <div className="rounded-lg border border-gray-200 bg-white p-4">
-                    <h5 className="mb-3 text-sm font-medium text-gray-900">
+                <Box className="flex flex-col gap-4 rounded-lg p-4" sx={{ bgcolor: "background.default" }}>
+                  <Paper variant="outlined" className="flex flex-col gap-4 p-4">
+                    <Typography variant="h6" component="h5">
                       Agregar Sub-segmentación
-                    </h5>
+                    </Typography>
 
                     <InputForm
                       label="Descripción *"
@@ -397,67 +397,38 @@ export function SegmentacionTab() {
                       onChange={handleChangeSubSegmentacion}
                     />
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="flex space-x-2">
-                        {/* Cancelar al actualizar */}
-                        {/* <button
-                          type="button"
-                          className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-                        >
-                          Cancelar
-                        </button> */}
-
-                        <button
-                          type="button"
-                          className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700 disabled:bg-blue-300"
-                          onClick={handleAddSubSegmentacion}
-                        >
-                          Agregar
-                        </button>
-                      </div>
+                    <div className="flex gap-2">
+                      <Button size="small" variant="contained" onClick={handleAddSubSegmentacion}>
+                        Agregar
+                      </Button>
                     </div>
-                  </div>
+                  </Paper>
 
                   {/* List of Sub-segmentations */}
                   {formCreateSubSegmentaciones.length > 0 && (
-                    <div className="space-y-2">
-                      <h5 className="text-sm font-medium text-gray-900">
-                        Sub-segmentaciones (
-                        {formCreateSubSegmentaciones.length})
-                      </h5>
-                      <div className="max-h-48 space-y-2 overflow-y-auto">
+                    <div className="flex flex-col gap-2">
+                      <Typography variant="h6" component="h5">
+                        Sub-segmentaciones ({formCreateSubSegmentaciones.length})
+                      </Typography>
+                      <div className="flex max-h-48 flex-col gap-2 overflow-y-auto">
                         {formCreateSubSegmentaciones.map((subSeg, index) => (
-                          <div
+                          <Paper
+                            variant="outlined"
                             key={index}
-                            className="flex items-center justify-between rounded border border-gray-200 bg-white p-3"
+                            className="flex items-center justify-between px-3 py-2"
                           >
                             <div className="flex-1">
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium text-gray-900">
+                              <div className="flex items-center gap-2">
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
                                   {subSeg.descripcion}
-                                </span>
-                                {/* <span
-                                  className={`rounded-full px-2 py-1 text-xs ${
-                                    true
-                                      ? "bg-green-100 text-green-800"
-                                      : "bg-red-100 text-red-800"
-                                  }`}
-                                >
-                                  {true ? "Activa" : "Inactiva"}
-                                </span> */}
+                                </Typography>
                               </div>
                             </div>
-                            <div className="flex space-x-2">
-                              {/* <button
-                                type="button"
-                                onClick={() => {}}
-                                className="text-blue-600 transition-colors hover:text-blue-700"
-                              >
-                                <PencilIcon className="h-4 w-4" />
-                              </button> */}
-                              <button
-                                type="button"
-                                onClick={() => {
+                            <div className="flex gap-1">
+                              <Tooltip title="Quitar">
+                                <IconButton
+                                  color="error"
+                                  onClick={() => {
                                   setValueCreate(
                                     "subSegmentaciones",
                                     formCreateSubSegmentaciones.filter(
@@ -465,17 +436,17 @@ export function SegmentacionTab() {
                                     ),
                                   );
                                 }}
-                                className="cursor-pointer text-red-600 transition-colors hover:text-red-700"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </button>
+                                >
+                                  <DeleteOutlined fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
                             </div>
-                          </div>
+                          </Paper>
                         ))}
                       </div>
                     </div>
                   )}
-                </div>
+                </Box>
               )}
             </div>
           </div>
@@ -498,7 +469,7 @@ export function SegmentacionTab() {
           updating={true}
           onSubmit={handleSubmitEdit(handleUpdateSegmentacion)}
         >
-          <div className="space-y-6">
+          <div className="flex flex-col gap-6">
             <InputForm
               label="Descripción *"
               placeholder="Ej: Segmentación por Industria"
@@ -515,34 +486,27 @@ export function SegmentacionTab() {
               {...registerEdit("estado")}
             />
 
-            <div className="border-t border-gray-200 pt-6">
+            <Divider />
+            <div>
               <div className="mb-4 flex items-center justify-between">
-                <h4 className="text-md font-medium text-gray-900">
+                <Typography variant="h5" component="h4">
                   Sub-segmentaciones
-                </h4>
-                <button
-                  type="button"
+                </Typography>
+                <Button
+                  size="small"
                   onClick={() => setShowSubSegmentations(!showSubSegmentations)}
-                  className="flex cursor-pointer items-center space-x-2 text-blue-600 transition-colors hover:text-blue-700"
+                  startIcon={showSubSegmentations ? <ExpandLess /> : <ExpandMore />}
                 >
-                  {showSubSegmentations ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                  <span className="text-sm font-medium">
-                    {showSubSegmentations ? "Ocultar" : "Editar"}{" "}
-                    Sub-segmentaciones
-                  </span>
-                </button>
+                  {showSubSegmentations ? "Ocultar" : "Editar"} Sub-segmentaciones
+                </Button>
               </div>
 
               {showSubSegmentations && (
-                <div className="space-y-4 rounded-lg bg-gray-50 p-4">
-                  <div className="rounded-lg border border-gray-200 bg-white p-4">
-                    <h5 className="mb-3 text-sm font-medium text-gray-900">
+                <Box className="flex flex-col gap-4 rounded-lg p-4" sx={{ bgcolor: "background.default" }}>
+                  <Paper variant="outlined" className="flex flex-col gap-4 p-4">
+                    <Typography variant="h6" component="h5">
                       Editar Sub-segmentación (Opcional)
-                    </h5>
+                    </Typography>
 
                     <InputForm
                       label="Descripción *"
@@ -572,20 +536,19 @@ export function SegmentacionTab() {
                       }
                     />
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="flex space-x-2">
-                        <button
-                          type="button"
-                          className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-                          onClick={() => setShowSubSegmentations(false)}
-                        >
-                          Cancelar
-                        </button>
-
-                        <button
-                          type="button"
-                          className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700 disabled:bg-blue-300"
-                          onClick={() => {
+                    <div className="flex gap-2">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => setShowSubSegmentations(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => {
                             handleUpdateSubSegmentacion(
                               subSegmentaciones?.idSubSegmentacion || 0,
                               {
@@ -594,73 +557,66 @@ export function SegmentacionTab() {
                                 estado: subSegmentaciones?.estado,
                               },
                             );
-                          }}
-                        >
-                          Actualizar
-                        </button>
-                      </div>
+                        }}
+                      >
+                        Actualizar
+                      </Button>
                     </div>
-                  </div>
+                  </Paper>
 
                   {/* List of Sub-segmentations */}
-                  {segmentacionById?.data?.subSegmentaciones?.length &&
-                    segmentacionById?.data?.subSegmentaciones?.length > 0 && (
-                      <div className="space-y-2">
-                        <h5 className="text-sm font-medium text-gray-900">
+                  {!!segmentacionById?.data?.subSegmentaciones?.length && (
+                      <div className="flex flex-col gap-2">
+                        <Typography variant="h6" component="h5">
                           Sub-segmentaciones (
                           {segmentacionById?.data?.subSegmentaciones?.length})
-                        </h5>
-                        <div className="max-h-48 space-y-2 overflow-y-auto">
+                        </Typography>
+                        <div className="flex max-h-48 flex-col gap-2 overflow-y-auto">
                           {segmentacionById?.data?.subSegmentaciones?.map(
                             (subSeg, index) => (
-                              <div
+                              <Paper
+                                variant="outlined"
                                 key={index}
-                                className="flex items-center justify-between rounded border border-gray-200 bg-white p-3"
+                                className="flex items-center justify-between px-3 py-2"
                               >
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2">
-                                    <span className="font-medium text-gray-900">
-                                      {subSeg.descripcion}
-                                    </span>
-                                    <span
-                                      className={`rounded-full px-2 py-1 text-xs ${subSeg.estado
-                                          ? "bg-green-100 text-green-800"
-                                          : "bg-red-100 text-red-800"
-                                        }`}
+                                <div className="flex flex-1 items-center gap-2">
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    {subSeg.descripcion}
+                                  </Typography>
+                                  <Chip
+                                    size="small"
+                                    label={subSeg.estado ? "Activa" : "Inactiva"}
+                                    color={subSeg.estado ? "success" : "error"}
+                                    variant="outlined"
+                                  />
+                                </div>
+                                <div className="flex gap-1">
+                                  <Tooltip title="Editar">
+                                    <IconButton
+                                      color="primary"
+                                      onClick={() => handleShowEditSubSegmentacion(subSeg)}
                                     >
-                                      {subSeg.estado ? "Activa" : "Inactiva"}
-                                    </span>
-                                  </div>
+                                      <EditOutlined fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Eliminar">
+                                    <IconButton
+                                      color="error"
+                                      onClick={() =>
+                                        handleDeleteSubSegmentacion(subSeg.idSubSegmentacion || 0)
+                                      }
+                                    >
+                                      <DeleteOutlined fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
                                 </div>
-                                <div className="flex space-x-2">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleShowEditSubSegmentacion(subSeg)
-                                    }
-                                    className="text-blue-600 transition-colors hover:text-blue-700"
-                                  >
-                                    <PencilIcon className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleDeleteSubSegmentacion(
-                                        subSeg.idSubSegmentacion || 0,
-                                      )
-                                    }
-                                    className="cursor-pointer text-red-600 transition-colors hover:text-red-700"
-                                  >
-                                    <TrashIcon className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              </div>
+                              </Paper>
                             ),
                           )}
                         </div>
                       </div>
                     )}
-                </div>
+                </Box>
               )}
             </div>
           </div>

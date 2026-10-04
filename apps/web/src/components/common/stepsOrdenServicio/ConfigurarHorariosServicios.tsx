@@ -1,3 +1,10 @@
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import Chip from "@mui/material/Chip";
+import Link from "@mui/material/Link";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { StepHeader } from "../../ui/common/StepHeader";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import type {
@@ -89,26 +96,22 @@ const SelectorDiasSemana = ({
   };
 
   return (
-    <div className="space-y-3">
-      <label className="text-sm font-medium text-gray-700">
+    <div className="flex flex-col gap-3">
+      <Typography variant="body2" sx={{ fontWeight: 500 }}>
         Días en que se presta el servicio
-      </label>
+      </Typography>
       <div className="flex flex-wrap gap-2">
         {DIAS_SEMANA.map(({ key, label }) => {
           const activo = fila?.[key] ?? true;
           return (
-            <button
+            <Chip
               key={key}
-              type="button"
+              label={label}
+              color={activo ? "primary" : "default"}
+              variant={activo ? "filled" : "outlined"}
+              aria-pressed={activo}
               onClick={() => toggleDia(key)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 ${
-                activo
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 text-gray-500 hover:border-gray-300"
-              }`}
-            >
-              {label}
-            </button>
+            />
           );
         })}
       </div>
@@ -206,18 +209,17 @@ export const ConfigurarHorariosServicios = ({
       !esMonitoreoAlarmas || !!personalizarDiasMonitoreo[service.idServicio];
 
     return (
-      <div
-        key={indices.join("-")}
-        className="rounded-lg border border-gray-200 p-4"
-      >
-        <div className="flex flex-col gap-2">
-          <h4 className="text-sm font-medium text-gray-900">{titulo}</h4>
+      <Paper key={indices.join("-")} variant="outlined" className="p-4">
+        <div className="flex flex-col gap-3">
+          <Typography variant="body1" component="h4" sx={{ fontWeight: 600 }}>
+            {titulo}
+          </Typography>
           {service.horasFijas === 24 ? (
             <>
-              <p className="text-sm font-medium text-gray-700">
+              <Typography variant="body2" color="text.secondary">
                 Horario Fijo (Servicio de 24 horas) configurar la hora de
                 inicio de la orden.
-              </p>
+              </Typography>
               <InputTime24H
                 label="Hora de Inicio"
                 placeholder="Selecciona una hora de inicio"
@@ -234,12 +236,10 @@ export const ConfigurarHorariosServicios = ({
               />
             </>
           ) : (
-            <div className="">
-              <div className="mb-3 flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">
-                  Rango de Horario
-                </label>
-              </div>
+            <div className="flex flex-col gap-3">
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                Rango de Horario
+              </Typography>
               <div className="grid grid-cols-2 gap-4">
                 <InputTime24H
                   label="Hora de Inicio"
@@ -275,9 +275,10 @@ export const ConfigurarHorariosServicios = ({
               setConfiguracionServicioTarifa={setConfiguracionServicioTarifa}
             />
           ) : (
-            <button
+            <Link
+              component="button"
               type="button"
-              className="text-xs font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700"
+              variant="caption"
               onClick={() =>
                 setPersonalizarDiasMonitoreo((prev) => ({
                   ...prev,
@@ -287,13 +288,12 @@ export const ConfigurarHorariosServicios = ({
             >
               ¿Este cliente necesita un patrón de días distinto a "todos los
               días"? Personalizar días
-            </button>
+            </Link>
           )}
         </div>
 
-        <div className="mt-4 space-y-1 rounded-lg border border-yellow-500 bg-yellow-50 px-4 py-2 text-left">
-          <h4 className="text-base font-medium text-yellow-600">Nota:</h4>{" "}
-          <p className="text-xs text-yellow-600">
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          <AlertTitle>Nota:</AlertTitle>
             {service.idTipoDuracion.descripcion.toLowerCase() === "fija" &&
             service.horasFijas === 12 ? (
               <>
@@ -318,35 +318,30 @@ export const ConfigurarHorariosServicios = ({
               {". "}Segun el tipo de duracion del servicio{" "}
               <b>{service.idTipoDuracion.descripcion}</b>
             </>
-          </p>
-        </div>
-      </div>
+        </Alert>
+      </Paper>
     );
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="text-center">
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          Configuración de Horarios para{" "}
-          {configuracionServicioTarifa.length > 1
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <StepHeader
+        title={`Configuración de Horarios para ${
+          configuracionServicioTarifa.length > 1
             ? `${configuracionServicioTarifa.length} servicios`
-            : "servicio"}
-        </h3>
-        <p className="text-sm text-gray-600">
-          Seleccionar las horas necesarias para cumplir con el horario del
-          servicio.
-        </p>
-      </div>
-      <div className="space-y-4">
+            : "servicio"
+        }`}
+        description="Seleccionar las horas necesarias para cumplir con el horario del servicio."
+      />
+      <div className="flex flex-col gap-4">
         {Array.from(gruposMonitoreoPorServicio.values()).map((indices) =>
           renderTarjetaHorario(
             indices,
             <>
               {selectedServices[indices[0]].descripcion}
-              <span className="ml-2 text-xs font-normal text-gray-500">
+              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
                 ({indices.length} {indices.length > 1 ? "unidades" : "unidad"})
-              </span>
+              </Typography>
             </>,
           ),
         )}
@@ -364,9 +359,9 @@ export const ConfigurarHorariosServicios = ({
             <>
               {service.codigo} - {service.descripcion}
               {totalUnidadesServicio > 1 && (
-                <span className="ml-2 text-xs font-normal text-gray-500">
+                <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
                   (Unidad {numeroUnidad} de {totalUnidadesServicio})
-                </span>
+                </Typography>
               )}
             </>,
           );

@@ -1,11 +1,19 @@
+import { fieldLabel } from "./fieldLabel";
+import TextField from "@mui/material/TextField";
 import React from "react";
 
-interface InputTime24HProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+interface InputTime24HProps extends Omit<
+  React.SelectHTMLAttributes<HTMLSelectElement>,
+  "size"
+> {
   label?: string;
   placeholder?: string;
   error?: string;
 }
+
+const hours = Array.from({ length: 24 }, (_, i) =>
+  i.toString().padStart(2, "0"),
+);
 
 export const InputTime24H = React.forwardRef<
   HTMLSelectElement,
@@ -14,49 +22,46 @@ export const InputTime24H = React.forwardRef<
   (
     {
       disabled = false,
-      className = "",
+      className,
       id,
       name,
       required = false,
       placeholder = "Selecciona una hora",
       label = "",
       error,
-      ...rest
+      value,
+      onChange,
+      onBlur,
     },
     ref,
   ) => {
-    // Generate hours array from 00 to 23
-    const hours = Array.from({ length: 24 }, (_, i) =>
-      i.toString().padStart(2, "0"),
-    );
-
+    const fl = fieldLabel(label, required);
     return (
-      <div className="mb-1 flex flex-col gap-2">
-        <label htmlFor={id} className="text-sm font-medium text-gray-700">
-          {label}
-        </label>
-        <select
-          ref={ref}
-          onChange={rest.onChange}
-          disabled={disabled}
-          className={`w-full rounded-md border ${error ? "border-red-500" : "border-gray-300"} px-4 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-100`}
-          id={id}
-          name={name}
-          required={required}
-          value={rest.value}
-          onBlur={rest.onBlur}
-        >
-          <option value="" disabled>
-            {placeholder}
+      <TextField
+        select
+        inputRef={ref}
+        id={id}
+        name={name}
+        required={required}
+        disabled={disabled}
+        value={value}
+        onChange={onChange as React.ChangeEventHandler}
+        onBlur={onBlur as React.FocusEventHandler}
+        label={fl.label}
+        error={!!error}
+        helperText={error}
+        className={className}
+        slotProps={{ inputLabel: fl.inputLabel, select: { native: true } }}
+      >
+        <option value="" disabled>
+          {placeholder}
+        </option>
+        {hours.map((hour) => (
+          <option key={hour} value={`${hour}:00:00`}>
+            {hour}:00
           </option>
-          {hours.map((hour) => (
-            <option key={hour} value={`${hour}:00:00`}>
-              {hour}:00
-            </option>
-          ))}
-        </select>
-        {error && <p className="text-sm text-red-500">{error}</p>}
-      </div>
+        ))}
+      </TextField>
     );
   },
 );

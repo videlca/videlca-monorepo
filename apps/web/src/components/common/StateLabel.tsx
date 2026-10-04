@@ -1,11 +1,13 @@
+import Chip from "@mui/material/Chip";
+import { tones } from "../../theme/tones";
+
 export const StateLabel = ({ state }: { state: boolean }) => {
+  const tone = tones[state ? "green" : "red"];
   return (
-    <span
-      className={`rounded-full px-2 py-1 text-sm font-semibold ${
-        state ? "bg-green-200 text-green-600" : "bg-red-200 text-red-600"
-      }`}
-    >
-      {state ? "Activo" : "Inactivo"}
-    </span>
+    <Chip
+      size="small"
+      label={state ? "Activo" : "Inactivo"}
+      sx={{ color: tone.main, bgcolor: tone.bg }}
+    />
   );
 };

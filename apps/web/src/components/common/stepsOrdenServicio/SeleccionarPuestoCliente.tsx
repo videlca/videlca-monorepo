@@ -1,15 +1,20 @@
-import {
-  Building2,
-  Check,
-  IdCard,
-  MapPin,
-  Phone,
-  PlusIcon,
-  Search,
-  Tag,
-  User,
-  XIcon,
-} from "lucide-react";
+import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Typography from "@mui/material/Typography";
+import { SelectableCard } from "../../ui/common/SelectableCard";
+import { StepHeader } from "../../ui/common/StepHeader";
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import SearchIcon from "@mui/icons-material/Search";
 import type { Cliente, Puesto } from "../../../types";
 import { useFilterPuestos, useFilterClientes } from "../../../api/queryFunctions/clientes";
 import { useEffect, useState } from "react";
@@ -144,257 +149,196 @@ export const SeleccionarPuestoCliente = ({
   }, [debouncedSearchText, searchColumn, buscarPorCliente]);
 
   const navigate = useNavigate();
+  const limpiarSeleccion = () => {
+    if (buscarPorCliente) {
+      setValue("idCliente", 0);
+    } else {
+      setValue("idLocacion", 0);
+    }
+  };
+  const mensajeVacio = (texto: string) => (
+    <Typography variant="body2" color="text.secondary" align="center">
+      {texto}
+    </Typography>
+  );
+
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="text-center">
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          {buscarPorCliente ? "Seleccionar Cliente" : "Seleccionar Puesto"}
-        </h3>
-        <p className="text-sm text-gray-600">
-          {esOrdenMonitoreo
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <StepHeader
+        title={buscarPorCliente ? "Seleccionar Cliente" : "Seleccionar Puesto"}
+        description={
+          esOrdenMonitoreo
             ? "Busque y seleccione el cliente al que se le prestará el servicio de monitoreo de alarmas"
             : buscarPorCliente
               ? "Busque y seleccione el cliente al que se le prestará el servicio"
-              : "Busque y seleccione el cliente y el puesto donde se prestada el servicio"}
-        </p>
-      </div>
+              : "Busque y seleccione el cliente y el puesto donde se prestada el servicio"
+        }
+      />
 
       {esVigilanciaYEscolta && (
         <div className="flex justify-center">
-          <div className="inline-flex rounded-lg bg-gray-100 p-1">
-            <button
-              type="button"
-              onClick={() => setModoBusqueda("puesto")}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                modoBusqueda === "puesto"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            color="primary"
+            value={modoBusqueda}
+            onChange={(_, modo: "puesto" | "cliente" | null) => modo && setModoBusqueda(modo)}
+          >
+            <ToggleButton value="puesto" sx={{ px: 2 }}>
               Buscar por Puesto
-            </button>
-            <button
-              type="button"
-              onClick={() => setModoBusqueda("cliente")}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                modoBusqueda === "cliente"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
+            </ToggleButton>
+            <ToggleButton value="cliente" sx={{ px: 2 }}>
               Buscar por Cliente
-            </button>
-          </div>
+            </ToggleButton>
+          </ToggleButtonGroup>
         </div>
       )}
 
       {/* Buscador */}
-      <div className="flex flex-row justify-between gap-2">
-        <div className="flex-1">
-          <select
-            id="search"
-            value={searchColumn}
-            onChange={(e) => {
-              setSearchColumn(
-                e.target.value as LocacionFilterColumn | ClienteFilterColumn,
-              );
-              if (buscarPorCliente) {
-                setValue("idCliente", 0);
-              } else {
-                setValue("idLocacion", 0);
-              }
-            }}
-            className="w-full rounded-md border border-gray-300 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          >
-            <option value="" disabled>
-              Seleccionar columna
-            </option>
-            {buscarPorCliente
-              ? Object.values(ClienteFilterColumn).map((column) => (
-                  <option key={column} value={column}>
-                    {CLIENTE_COLUMN_LABELS[column]}
-                  </option>
-                ))
-              : [
-                  <option key="nombre" value="nombre">
-                    Nombre
-                  </option>,
-                  <option key="direccion" value="direccion">
-                    Dirección
-                  </option>,
-                  <option key="cliente" value="cliente">
-                    Cliente
-                  </option>,
-                  <option key="ciudad" value="ciudad">
-                    Ciudad
-                  </option>,
-                ]}
-          </select>
-        </div>
-        <div className="relative flex-2">
-          <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder={
-              buscarPorCliente
-                ? "Buscar por nombre, identificación, tipo o subsegmentación del cliente..."
-                : "Buscar por nombre del cliente, puesto o dirección..."
-            }
-            className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            value={searchText}
-            onChange={(e) => {
-              setSearchText(e.target.value);
-              if (buscarPorCliente) {
-                setValue("idCliente", 0);
-              } else {
-                setValue("idLocacion", 0);
-              }
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-700">
+      <div className="flex flex-row gap-2">
+        <TextField
+          select
+          id="search"
+          label="Columna"
+          value={searchColumn}
+          onChange={(e) => {
+            setSearchColumn(
+              e.target.value as LocacionFilterColumn | ClienteFilterColumn,
+            );
+            limpiarSeleccion();
+          }}
+          sx={{ flex: 1 }}
+          slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}
+        >
+          <MenuItem value="" disabled>
+            Seleccionar columna
+          </MenuItem>
           {buscarPorCliente
-            ? `Clientes encontrados (${filteredClientes?.length || 0})`
-            : `Puestos encontrados (${filteredPuestos?.length || 0})`}
-        </p>
-        {/* {!buscarPorCliente && (
-          <div className="justify-end">
-            <button
-              className="flex cursor-pointer items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-              onClick={() => setIsOpenCreatePuesto(true)}
-            >
-              <PlusIcon className="h-4 w-4" />
-              Crear Puesto
-            </button>
-          </div>
-        )} */}
+            ? Object.values(ClienteFilterColumn).map((column) => (
+                <MenuItem key={column} value={column}>
+                  {CLIENTE_COLUMN_LABELS[column]}
+                </MenuItem>
+              ))
+            : [
+                <MenuItem key="nombre" value="nombre">
+                  Nombre
+                </MenuItem>,
+                <MenuItem key="direccion" value="direccion">
+                  Dirección
+                </MenuItem>,
+                <MenuItem key="cliente" value="cliente">
+                  Cliente
+                </MenuItem>,
+                <MenuItem key="ciudad" value="ciudad">
+                  Ciudad
+                </MenuItem>,
+              ]}
+        </TextField>
+        <TextField
+          placeholder={
+            buscarPorCliente
+              ? "Buscar por nombre, identificación, tipo o subsegmentación del cliente..."
+              : "Buscar por nombre del cliente, puesto o dirección..."
+          }
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            limpiarSeleccion();
+          }}
+          sx={{ flex: 2 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
       </div>
 
-      <div className="max-h-80 min-h-40 space-y-3 overflow-y-auto">
+      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+        {buscarPorCliente
+          ? `Clientes encontrados (${filteredClientes?.length || 0})`
+          : `Puestos encontrados (${filteredPuestos?.length || 0})`}
+      </Typography>
+
+      <div className="flex max-h-80 min-h-40 flex-col gap-3 overflow-y-auto">
         {buscarPorCliente ? (
           <>
             {filteredClientes?.map((cliente) => (
-              <div
+              <SelectableCard
                 key={cliente.idCliente}
-                className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-                  idCliente === cliente.idCliente
-                    ? "border-blue-500 bg-blue-50 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                }`}
+                selected={idCliente === cliente.idCliente}
                 onClick={() => {
                   setValue("idCliente", cliente.idCliente);
                   setSelectedCliente(cliente);
                 }}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-blue-600" />
-                      <h4 className="font-medium text-gray-900">
-                        {cliente.nombre}
-                      </h4>
-                      {idCliente === cliente.idCliente && (
-                        <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-blue-600">
-                          <Check className="h-4 w-4 text-white" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="mb-1 flex items-center gap-1 text-sm text-gray-600">
-                      <IdCard className="h-3 w-3" />
-                      <span>{cliente.numeroIdentificacion}</span>
-                    </div>
-                    {cliente.idTipoCliente && (
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <Tag className="h-3 w-3" />
-                          <span>{cliente.idTipoCliente.descripcion}</span>
-                        </div>
-                        {cliente.idSubSegmentacion && (
-                          <span>{cliente.idSubSegmentacion.descripcion}</span>
-                        )}
-                      </div>
+                <Typography variant="body1" className="flex items-center gap-2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                  <BusinessOutlinedIcon fontSize="small" color="primary" />
+                  {cliente.nombre}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" className="flex items-center gap-1">
+                  <BadgeOutlinedIcon sx={{ fontSize: 14 }} />
+                  {cliente.numeroIdentificacion}
+                </Typography>
+                {cliente.idTipoCliente && (
+                  <Typography variant="body2" color="text.secondary" className="flex items-center gap-4">
+                    <span className="flex items-center gap-1">
+                      <LocalOfferOutlinedIcon sx={{ fontSize: 14 }} />
+                      {cliente.idTipoCliente.descripcion}
+                    </span>
+                    {cliente.idSubSegmentacion && (
+                      <span>{cliente.idSubSegmentacion.descripcion}</span>
                     )}
-                  </div>
-                </div>
-              </div>
+                  </Typography>
+                )}
+              </SelectableCard>
             ))}
-            {filteredClientes?.length === 0 && (
-              <p className="text-center text-sm text-gray-500">
-                No se encontraron clientes.
-              </p>
-            )}
-            {filteredClientes === undefined && (
-              <p className="text-center text-sm text-gray-500">
-                Seleccione una columna y un texto para buscar clientes.
-              </p>
-            )}
+            {filteredClientes?.length === 0 && mensajeVacio("No se encontraron clientes.")}
+            {filteredClientes === undefined &&
+              mensajeVacio("Seleccione una columna y un texto para buscar clientes.")}
           </>
         ) : (
           <>
             {filteredPuestos?.map((puesto) => (
-              <div
+              <SelectableCard
                 key={puesto.idLocacion}
-                className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-                  idLocacion === puesto.idLocacion
-                    ? "border-blue-500 bg-blue-50 shadow-sm"
-                    : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                }`}
+                selected={idLocacion === puesto.idLocacion}
                 onClick={() => {
                   setValue("idLocacion", puesto.idLocacion);
                   setSelectedPuesto(puesto);
                 }}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-blue-600" />
-                      <h4 className="font-medium text-gray-900">{puesto.nombre}</h4>
-                      {idLocacion === puesto.idLocacion && (
-                        <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-blue-600">
-                          <Check className="h-4 w-4 text-white" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="mb-1 flex items-center gap-1 text-sm text-gray-600">
-                      <Building2 className="h-3 w-3" />
-                      <span>{puesto.idCliente.nombre}</span>
-                    </div>
-                    <div className="mb-1 flex items-center gap-1 text-sm text-gray-600">
-                      <MapPin className="h-3 w-3" />
-                      <span>
-                        {puesto.direccion} - {puesto.idCiudad.descripcion}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        <span>
-                          {puesto.primerNombreResponsable}{" "}
-                          {puesto.primerApellidoResponsable}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
-                        <span>{puesto.telefono}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <Typography variant="body1" className="flex items-center gap-2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                  <PlaceOutlinedIcon fontSize="small" color="primary" />
+                  {puesto.nombre}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" className="flex items-center gap-1">
+                  <BusinessOutlinedIcon sx={{ fontSize: 14 }} />
+                  {puesto.idCliente.nombre}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" className="flex items-center gap-1">
+                  <PlaceOutlinedIcon sx={{ fontSize: 14 }} />
+                  {puesto.direccion} - {puesto.idCiudad.descripcion}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" className="flex items-center gap-4">
+                  <span className="flex items-center gap-1">
+                    <PersonOutlinedIcon sx={{ fontSize: 14 }} />
+                    {puesto.primerNombreResponsable} {puesto.primerApellidoResponsable}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <PhoneOutlinedIcon sx={{ fontSize: 14 }} />
+                    {puesto.telefono}
+                  </span>
+                </Typography>
+              </SelectableCard>
             ))}
-            {filteredPuestos?.length === 0 && (
-              <p className="text-center text-sm text-gray-500">
-                No se encontraron puestos.
-              </p>
-            )}
-            {filteredPuestos === undefined && (
-              <p className="text-center text-sm text-gray-500">
-                Seleccione una columna y un texto para buscar puestos.
-              </p>
-            )}
+            {filteredPuestos?.length === 0 && mensajeVacio("No se encontraron puestos.")}
+            {filteredPuestos === undefined &&
+              mensajeVacio("Seleccione una columna y un texto para buscar puestos.")}
           </>
         )}
       </div>
@@ -404,20 +348,25 @@ export const SeleccionarPuestoCliente = ({
         onClose={() => setIsOpenCreatePuesto(false)}
         size="md"
       >
-        <h3 className="text-center text-lg font-medium">Crear Puesto</h3>
-        <p className="text-center text-sm text-gray-600">
+        <Typography variant="h4" component="h3" align="center">
+          Crear Puesto
+        </Typography>
+        <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 1 }}>
           Será dirigido a la vista de creación de puesto. En caso de querer
           crear un puesto, por favor, haga clic en el botón "Crear Puesto".
-        </p>
+        </Typography>
         <div className="flex justify-center gap-2 pt-4">
           <ButtonAction
-            Icon={XIcon}
+            Icon={CloseIcon}
             label="Cancelar"
+            color="blue-light"
+            type="button"
             onClick={() => setIsOpenCreatePuesto(false)}
           />
           <ButtonAction
-            Icon={Check}
+            Icon={CheckIcon}
             label="Crear Puesto"
+            type="button"
             onClick={() => {
               setIsOpenCreatePuesto(false);
               navigate({

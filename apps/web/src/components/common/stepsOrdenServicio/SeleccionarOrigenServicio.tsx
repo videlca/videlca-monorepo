@@ -1,4 +1,8 @@
-import { Check } from "lucide-react";
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import Typography from "@mui/material/Typography";
+import { SelectableCard } from "../../ui/common/SelectableCard";
+import { StepHeader } from "../../ui/common/StepHeader";
 import { useEffect } from "react";
 import { useGetOrigenServicio } from "../../../api/queryFunctions/orden-servicio/origen-servicio";
 import { OrigenServicioEnum } from "../../../api/dtos";
@@ -28,56 +32,41 @@ export const SeleccionarOrigenServicio = ({
   }, [esMonitoreoAlarmas]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="text-center">
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          Origen de la Orden de Servicio
-        </h3>
-        <p className="text-sm text-gray-600">
-          Seleccione cómo desea crear esta orden de servicio
-        </p>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <StepHeader
+        title="Origen de la Orden de Servicio"
+        description="Seleccione cómo desea crear esta orden de servicio"
+      />
 
       {esMonitoreoAlarmas ? (
-        <div className="space-y-1 rounded-lg border border-yellow-500 bg-yellow-50 px-4 py-3 text-left">
-          <h4 className="text-base font-medium text-yellow-600">Nota:</h4>
-          <p className="text-xs text-yellow-600">
-            Las órdenes de <b>Monitoreo de alarmas</b> siempre se crean desde
-            el catálogo, no es necesario seleccionar el origen.
-          </p>
-        </div>
+        <Alert severity="warning">
+          <AlertTitle>Nota:</AlertTitle>
+          Las órdenes de <b>Monitoreo de alarmas</b> siempre se crean desde
+          el catálogo, no es necesario seleccionar el origen.
+        </Alert>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {(origenServicioQuery?.data || []).map((origen) => (
-            <div
+            <SelectableCard
               key={origen.idOrigenServicio}
-              className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-                origenServicio === origen.code
-                  ? "border-blue-500 bg-blue-50 shadow-sm"
-                  : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-              }`}
+              selected={origenServicio === origen.code}
               onClick={() =>
                 setOrigenServicio(origen.code as OrigenServicioEnum)
               }
             >
-              <div className="mb-2 flex items-start justify-between">
-                <h4 className="text-sm font-medium text-gray-900">
-                  {origen.nombre}
-                </h4>
-                {origenServicio === origen.code && (
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600">
-                    <Check className="h-3 w-3 text-white" />
-                  </div>
-                )}
-              </div>
-              <p className="text-xs text-gray-600">{origen.descripcion}</p>
-            </div>
+              <Typography variant="body2" component="h4" sx={{ fontWeight: 600, mb: 1, pr: 4 }}>
+                {origen.nombre}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {origen.descripcion}
+              </Typography>
+            </SelectableCard>
           ))}
 
           {(origenServicioQuery?.data || []).length === 0 && (
-            <div className="col-span-2 py-8 text-center text-gray-500">
+            <Typography color="text.secondary" align="center" className="col-span-2" sx={{ py: 4 }}>
               No hay orígenes de servicio disponibles
-            </div>
+            </Typography>
           )}
         </div>
       )}

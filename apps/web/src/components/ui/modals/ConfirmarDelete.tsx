@@ -1,6 +1,8 @@
-import { TrashIcon, XIcon } from "lucide-react";
-import { SimpleModal } from "../../common/SimpleModal";
-import { ButtonAction } from "../../common/ButtonAction";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import Typography from "@mui/material/Typography";
 
 export const ConfirmarDelete = ({
   isOpenDelete,
@@ -16,21 +18,20 @@ export const ConfirmarDelete = ({
   onClose: () => void;
   actionLabel?: string;
   cancelLabel?: string;
-}) => {
-  return (
-    <SimpleModal isOpen={isOpenDelete} onClose={onClose} size="md">
-      <div className="text-center text-lg font-medium">{text}</div>
-      <div className="flex justify-center gap-2 pt-4">
-        <ButtonAction Icon={XIcon} label={cancelLabel} onClick={() => onClose()} />
-        <ButtonAction
-          Icon={TrashIcon}
-          label={actionLabel}
-          onClick={() => {
-            onDelete();
-          }}
-          color="red"
-        />
-      </div>
-    </SimpleModal>
-  );
-};
+}) => (
+  <Dialog open={isOpenDelete} onClose={onClose} fullWidth maxWidth="xs">
+    <DialogContent sx={{ pt: 3 }}>
+      <Typography variant="h4" component="p" sx={{ textAlign: "center" }}>
+        {text}
+      </Typography>
+    </DialogContent>
+    <DialogActions sx={{ justifyContent: "center", pb: 3, gap: 1 }}>
+      <Button variant="outlined" color="secondary" onClick={onClose}>
+        {cancelLabel}
+      </Button>
+      <Button variant="contained" color="error" onClick={onDelete}>
+        {actionLabel}
+      </Button>
+    </DialogActions>
+  </Dialog>
+);

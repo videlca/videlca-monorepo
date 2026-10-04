@@ -1,3 +1,4 @@
+import Typography from "@mui/material/Typography";
 import type { OrdenServicio, OrdenServicioId } from "../../../../api/types/orden-servicio";
 import { Section } from "../Section";
 import { useState } from "react";
@@ -27,9 +28,9 @@ export function IdentificadoresEmitidos() {
             accessorKey: "descripcionId",
             cell: ({ row }) => {
                 return (
-                    <span className="font-medium whitespace-nowrap text-gray-700">
+                    <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: "nowrap" }}>
                         {row.original.descripcionId}
-                    </span>
+                    </Typography>
                 );
             },
         },
@@ -38,9 +39,9 @@ export function IdentificadoresEmitidos() {
             accessorKey: "fechaCreacion",
             cell: ({ row }) => {
                 return (
-                    <span className="text-sm whitespace-nowrap text-gray-500">
+                    <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
                         {row.original.fechaCreacion}
-                    </span>
+                    </Typography>
                 );
             },
         },

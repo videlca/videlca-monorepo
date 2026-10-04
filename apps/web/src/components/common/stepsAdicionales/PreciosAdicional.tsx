@@ -1,6 +1,12 @@
+import { StepHeader } from "../../ui/common/StepHeader";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
 import { useEffect, useState } from "react";
 import type { UseFormSetValue } from "react-hook-form";
-import { Calculator, RotateCcw } from "lucide-react";
+import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { InputPrice } from "../InputPrice";
 import {
   calcularAuiAdicional,
@@ -130,29 +136,24 @@ export const PreciosAdicional = ({
 
   const botonRecalcular = (campo: CampoCalculadoAdicional) =>
     camposManuales.has(campo) && (
-      <button
-        type="button"
+      <Button
+        size="small"
+        color="success"
+        startIcon={<RestartAltIcon />}
         onClick={() => onToggleManual(campo, false)}
-        className="flex w-fit cursor-pointer items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900"
+        sx={{ alignSelf: "flex-start" }}
       >
-        <RotateCcw className="h-3 w-3" />
         Recalcular automáticamente
-      </button>
+      </Button>
     );
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       {showHeader && (
-        <div className="text-center">
-          <h3 className="mb-2 text-lg font-semibold text-gray-900">
-            Valores del Adicional
-          </h3>
-          <p className="text-sm text-gray-600">
-            Ingrese los valores del adicional. El AUI (10% de costos directos + seguro
-            de vida) y el desglose se calculan automáticamente y pueden
-            ajustarse manualmente si se requiere
-          </p>
-        </div>
+        <StepHeader
+          title="Valores del Adicional"
+          description="Ingrese los valores del adicional. El AUI (10% de costos directos + seguro de vida) y el desglose se calculan automáticamente y pueden ajustarse manualmente si se requiere"
+        />
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -180,13 +181,18 @@ export const PreciosAdicional = ({
         </div>
       </div>
 
-      <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <Calculator className="h-6 w-6 text-green-600" />
-          <h4 className="text-lg font-semibold text-green-900">
-            Precio Calculado
-          </h4>
-        </div>
+      <Box
+        className="rounded-lg p-4"
+        sx={{
+          border: 1,
+          borderColor: "success.light",
+          bgcolor: (t) => alpha(t.palette.success.main, 0.06),
+        }}
+      >
+        <Typography variant="h4" component="h4" className="flex items-center gap-2" sx={{ mb: 1.5 }}>
+          <CalculateOutlinedIcon color="success" />
+          Precio Calculado
+        </Typography>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {(
             Object.keys(CAMPOS_CALCULADOS_LABELS) as CampoPrecioCalculado[]
@@ -203,11 +209,14 @@ export const PreciosAdicional = ({
             </div>
           ))}
         </div>
-        <p className="mt-4 border-t border-green-200 pt-3 text-sm text-green-800">
+        <Typography
+          variant="body2"
+          sx={{ mt: 2, pt: 1.5, borderTop: 1, borderColor: "success.light", color: "success.dark" }}
+        >
           Precio Total es el valor que se cobrará cada mes mientras el adicional
           esté vigente.
-        </p>
-      </div>
+        </Typography>
+      </Box>
     </div>
   );
 };

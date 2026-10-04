@@ -1,3 +1,5 @@
+import CircularProgress from "@mui/material/CircularProgress";
+import Typography from "@mui/material/Typography";
 import {
   createFileRoute,
   redirect,
@@ -22,7 +24,11 @@ function RouteComponent() {
   const navigate = useNavigate();
 
   if (isLoading) {
-    return <div>Cargando...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <CircularProgress />
+      </div>
+    );
   } else if (data?.status !== 200) {
     navigate({ to: "/" });
   }
@@ -33,10 +39,8 @@ function RouteComponent() {
 
   return (
     <AuthLayout>
-      <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">
-          Recuperar Contraseña
-        </h2>
+      <div className="text-center">
+        <Typography variant="h2">Recuperar Contraseña</Typography>
       </div>
     </AuthLayout>
   );

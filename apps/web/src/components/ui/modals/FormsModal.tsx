@@ -12,15 +12,13 @@ export const FormsModal = ({
   isLoading: boolean;
   onCancel: () => void;
   updating: boolean;
-}) => {
-  return (
-    <form className="flex flex-col gap-16" onSubmit={onSubmit}>
-      {children}
-      <FormButtons
-        isLoading={isLoading}
-        onCancel={onCancel}
-        updating={updating}
-      />
-    </form>
-  );
-};
+}) => (
+  <form className="flex flex-col gap-8" onSubmit={onSubmit}>
+    {children}
+    <FormButtons
+      isLoading={isLoading}
+      onCancel={onCancel}
+      updating={updating}
+    />
+  </form>
+);

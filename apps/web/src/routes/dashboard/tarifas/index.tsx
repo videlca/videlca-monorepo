@@ -1,3 +1,4 @@
+import { PageHeader } from "../../../components/ui/common/PageHeader";
 import { createFileRoute } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 
@@ -8,9 +9,7 @@ export const Route = createFileRoute("/dashboard/tarifas/")({
 function RouteComponent() {
   return (
     <Section>
-      <div className="flex flex-col gap-8">
-        <h1 className="text-2xl font-bold">Configurar tarifas</h1>
-      </div>
+      <PageHeader title="Configurar tarifas" />
     </Section>
   );
 }

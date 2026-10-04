@@ -1,4 +1,5 @@
-import { ChevronDown, Search } from "lucide-react";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import SearchIcon from "@mui/icons-material/Search";
 import { ButtonAction } from "../ButtonAction";
 import { InputForm } from "../InputForm";
 import type {
@@ -291,7 +292,7 @@ export const AsignacionPersonalServicio = ({
                                   Buscar Empleado
                                 </label>
                                 <ButtonAction
-                                  Icon={Search}
+                                  Icon={SearchIcon}
                                   label=""
                                   color="blue"
                                   disabled={
@@ -363,7 +364,7 @@ export const AsignacionPersonalServicio = ({
                                     ),
                                   )}
                                 </select>
-                                <ChevronDown className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                                <ExpandMoreIcon className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                               </div>
                             </label>
                           </div>

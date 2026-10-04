@@ -1,5 +1,10 @@
+import Typography from "@mui/material/Typography";
 import { ButtonAction } from "../../../common/ButtonAction";
-import { Building2, Download, Mail, PlusIcon, User } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import BusinessOutlined from "@mui/icons-material/BusinessOutlined";
+import FileDownloadOutlined from "@mui/icons-material/FileDownloadOutlined";
+import MailOutlined from "@mui/icons-material/MailOutlined";
+import PersonOutlined from "@mui/icons-material/PersonOutlined";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import type { ServerFilterColumn } from "../../../common/Table";
@@ -103,6 +108,7 @@ export function ClientesTab() {
   // Formularios con react-hook-form + yup
   const {
     register: registerCreate,
+    control: controlCreate,
     handleSubmit: handleSubmitCreate,
     reset: resetCreate,
     watch: watchCreate,
@@ -120,6 +126,7 @@ export function ClientesTab() {
 
   const {
     register: registerEdit,
+    control: controlEdit,
     handleSubmit: handleSubmitEdit,
     reset: resetEdit,
     watch: watchEdit,
@@ -138,6 +145,7 @@ export function ClientesTab() {
 
   const {
     register: registerAddPuesto,
+    control: controlAddPuesto,
     handleSubmit: handleSubmitAddPuesto,
     reset: resetAddPuesto,
     setValue: setValueAddPuesto,
@@ -299,24 +307,24 @@ export function ClientesTab() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <div className="flex justify-end gap-2">
         <ButtonAction
-          Icon={Download}
+          Icon={FileDownloadOutlined}
           label={isDownloadingExcel ? "Descargando..." : "Descargar Excel"}
           onClick={() => descargarExcel(undefined)}
           color="green-light"
           disabled={isDownloadingExcel}
         />
         <ButtonAction
-          Icon={Mail}
+          Icon={MailOutlined}
           label={isSendingExcel ? "Enviando..." : "Enviar Excel"}
           onClick={() => setIsOpenEmail(true)}
           color="yellow-light"
           disabled={isSendingExcel}
         />
         <ButtonAction
-          Icon={PlusIcon}
+          Icon={AddIcon}
           label="Nuevo cliente"
           onClick={() => setIsAddModalOpen(true)}
         />
@@ -419,7 +427,8 @@ export function ClientesTab() {
                 })) || []
               }
               required
-              {...registerCreate("idTipoIdentificacion")}
+              control={controlCreate}
+              name="idTipoIdentificacion"
             />
             <InputForm
               label="Número de identificación"
@@ -448,7 +457,8 @@ export function ClientesTab() {
                 })) || []
               }
               required
-              {...registerCreate("idTipoCliente")}
+              control={controlCreate}
+              name="idTipoCliente"
             />
             <CheckboxForm
               label="Aplica segmentación"
@@ -469,7 +479,8 @@ export function ClientesTab() {
                     })) || []
                   }
                   required
-                  {...registerCreate("idSegmentacion")}
+                  control={controlCreate}
+                  name="idSegmentacion"
                 />
                 <InputSelect
                   label="Subsegmentación"
@@ -482,7 +493,8 @@ export function ClientesTab() {
                     })) || []
                   }
                   required
-                  {...registerCreate("idSubSegmentacion")}
+                  control={controlCreate}
+                  name="idSubSegmentacion"
                 />
               </>
             )}
@@ -561,7 +573,8 @@ export function ClientesTab() {
                 })) || []
               }
               required
-              {...registerEdit("idTipoIdentificacion")}
+              control={controlEdit}
+              name="idTipoIdentificacion"
             />
             <InputForm
               label="Número de identificación"
@@ -590,7 +603,8 @@ export function ClientesTab() {
                 })) || []
               }
               required
-              {...registerEdit("idTipoCliente")}
+              control={controlEdit}
+              name="idTipoCliente"
             />
             <CheckboxForm
               label="Aplica segmentación"
@@ -611,7 +625,8 @@ export function ClientesTab() {
                     })) || []
                   }
                   required
-                  {...registerEdit("idSegmentacion")}
+                  control={controlEdit}
+                  name="idSegmentacion"
                 />
                 <InputSelect
                   label="Subsegmentación"
@@ -625,7 +640,8 @@ export function ClientesTab() {
                   }
                   required
                   disabled={!watchIdSegmentacionEdit}
-                  {...registerEdit("idSubSegmentacion")}
+                  control={controlEdit}
+                  name="idSubSegmentacion"
                 />
               </>
             )}
@@ -679,7 +695,7 @@ export function ClientesTab() {
             <FormSection
               title="Información del puesto"
               description="Información del puesto"
-              Icon={Building2}
+              Icon={BusinessOutlined}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InputForm
@@ -701,7 +717,8 @@ export function ClientesTab() {
                     })) || []
                   }
                   required
-                  {...registerAddPuesto("idCiudad")}
+                  control={controlAddPuesto}
+                  name="idCiudad"
                 />
                 <InputForm
                   label="Dirección*"
@@ -762,7 +779,8 @@ export function ClientesTab() {
                         })) || []
                       }
                       required
-                      {...registerAddPuesto("idClienteFacturacion")}
+                      control={controlAddPuesto}
+                      name="idClienteFacturacion"
                     />
                   </div>
                 )}
@@ -771,7 +789,7 @@ export function ClientesTab() {
             <FormSection
               title="Información de contacto"
               description="Información de contacto"
-              Icon={User}
+              Icon={PersonOutlined}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InputForm
@@ -817,11 +835,11 @@ export function ClientesTab() {
             <FormSection
               title="Correos electrónicos"
               description="Correos electrónicos"
-              Icon={Mail}
+              Icon={MailOutlined}
               Details={
-                <p className="text-sm font-medium text-gray-900">
-                  Correos configurados ({correos.length || 0})
-                </p>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  Correos configurados ({correos.length})
+                </Typography>
               }
             >
               <ConfiguracionCorreo

@@ -1,18 +1,26 @@
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import ButtonBase from "@mui/material/ButtonBase";
+import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { alpha, type Theme } from "@mui/material/styles";
+import { EmptyState } from "../../../components/ui/common/EmptyState";
+import { SectionCard } from "../../../components/ui/common/SectionCard";
+import { OrderStateLabel } from "../../../components/common/OrderStateLabel";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import {
-  AlertCircleIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  EyeIcon,
-  FileTextIcon,
-  ListChecksIcon,
-  PlusIcon,
-  Search,
-  XIcon,
-} from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import ChecklistOutlinedIcon from "@mui/icons-material/ChecklistOutlined";
+import CloseIcon from "@mui/icons-material/Close";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import ErrorOutlinedIcon from "@mui/icons-material/ErrorOutlined";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import { format, getYear, subYears } from "date-fns";
 import { es } from "date-fns/locale";
 import { InputSelect } from "../../../components/common/InputSelect";
@@ -24,7 +32,6 @@ import {
 import { priceFormat } from "../../../utils/PriceFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
 import { toast } from "sonner";
-import { getStatusColor } from "../../../utils/StatusColor";
 import type { OrdenServicio } from "../../../api/types/orden-servicio";
 import type {
   AdicionalPorMes,
@@ -342,121 +349,108 @@ function RouteComponent() {
 
   return (
     <Section>
-      <div className="flex flex-col gap-8">
-        <div className="rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold">Filtros de Búsqueda</h2>
-          <p className="mb-4 text-sm text-gray-500">
-            Selecciona el mes y año para filtrar las órdenes de servicio y
-            adicionales.
-          </p>
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="min-w-48 flex-1">
-              <InputSelect
-                label="Año"
-                placeholder="Selecciona un año"
-                id="searchYear"
-                value={searchYear}
-                onChange={(e) => {
-                  setSearchYear(e.target.value);
-                  setIsSearching(false);
-                  setExpandedClients(new Set());
-                  setSeleccion(null);
-                }}
-                options={yearsOptions as { id: number; descripcion: string }[]}
-              />
-            </div>
-            <div className="min-w-48 flex-1">
-              <InputSelect
-                label="Mes"
-                placeholder="Selecciona un mes"
-                id="searchMonth"
-                value={searchMonth}
-                onChange={(e) => {
-                  setSearchMonth(e.target.value);
-                  setIsSearching(false);
-                  setExpandedClients(new Set());
-                  setSeleccion(null);
-                }}
-                options={monthsOptions}
-              />
-            </div>
-            <div className="min-w-48 flex-1">
-              <InputSelect
-                label="Meses atrás"
-                placeholder="Selecciona meses atrás"
-                id="searchMesesAtras"
-                value={searchMesesAtras}
-                onChange={(e) => {
-                  setSearchMesesAtras(e.target.value);
-                  setIsSearching(false);
-                  setExpandedClients(new Set());
-                  setSeleccion(null);
-                }}
-                options={mesesAtrasOptions}
-              />
-            </div>
-            <ButtonAction
-              onClick={() => {
-                setIsSearching(true);
-                refetchLiquidaciones();
-                refetchAdicionales();
+      <SectionCard
+        title="Filtros de Búsqueda"
+        description="Selecciona el mes y año para filtrar las órdenes de servicio y adicionales."
+      >
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="min-w-48 flex-1">
+            <InputSelect
+              label="Año"
+              placeholder="Selecciona un año"
+              id="searchYear"
+              value={searchYear}
+              onChange={(e) => {
+                setSearchYear(e.target.value);
+                setIsSearching(false);
                 setExpandedClients(new Set());
                 setSeleccion(null);
               }}
-              disabled={isLoadingLiquidaciones || isLoadingAdicionales}
-              Icon={Search}
-              label={
-                isLoadingLiquidaciones || isLoadingAdicionales
-                  ? "Buscando..."
-                  : "Buscar"
-              }
+              options={yearsOptions as { id: number; descripcion: string }[]}
             />
           </div>
+          <div className="min-w-48 flex-1">
+            <InputSelect
+              label="Mes"
+              placeholder="Selecciona un mes"
+              id="searchMonth"
+              value={searchMonth}
+              onChange={(e) => {
+                setSearchMonth(e.target.value);
+                setIsSearching(false);
+                setExpandedClients(new Set());
+                setSeleccion(null);
+              }}
+              options={monthsOptions}
+            />
+          </div>
+          <div className="min-w-48 flex-1">
+            <InputSelect
+              label="Meses atrás"
+              placeholder="Selecciona meses atrás"
+              id="searchMesesAtras"
+              value={searchMesesAtras}
+              onChange={(e) => {
+                setSearchMesesAtras(e.target.value);
+                setIsSearching(false);
+                setExpandedClients(new Set());
+                setSeleccion(null);
+              }}
+              options={mesesAtrasOptions}
+            />
+          </div>
+          <ButtonAction
+            onClick={() => {
+              setIsSearching(true);
+              refetchLiquidaciones();
+              refetchAdicionales();
+              setExpandedClients(new Set());
+              setSeleccion(null);
+            }}
+            disabled={isLoadingLiquidaciones || isLoadingAdicionales}
+            Icon={SearchIcon}
+            label={
+              isLoadingLiquidaciones || isLoadingAdicionales
+                ? "Buscando..."
+                : "Buscar"
+            }
+          />
         </div>
-      </div>
+      </SectionCard>
 
       {isSearching &&
         !isLoadingLiquidaciones &&
         !isLoadingAdicionales &&
         (!hayResultados || (isErrorLiquidaciones && isErrorAdicionales)) && (
-          <div className="py-12 text-center">
-            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
-              {isErrorLiquidaciones && isErrorAdicionales ? (
-                <AlertCircleIcon className="h-12 w-12 text-gray-400" />
+          <EmptyState
+            icon={
+              isErrorLiquidaciones && isErrorAdicionales ? (
+                <ErrorOutlinedIcon />
               ) : (
-                <FileTextIcon className="h-12 w-12 text-gray-400" />
-              )}
-            </div>
-            <h3 className="mb-2 text-lg font-medium text-gray-900">
-              {isErrorLiquidaciones && isErrorAdicionales
-                ? errorLiquidaciones?.message || errorAdicionales?.message
-                : "No se encontraron órdenes de servicio ni adicionales"}
-            </h3>
-          </div>
+                <DescriptionOutlinedIcon />
+              )
+            }
+            title={
+              isErrorLiquidaciones && isErrorAdicionales
+                ? errorLiquidaciones?.message || errorAdicionales?.message || ""
+                : "No se encontraron órdenes de servicio ni adicionales"
+            }
+          />
         )}
 
       {isSearching &&
       !isLoadingLiquidaciones &&
       !isLoadingAdicionales &&
       hayResultados ? (
-        <div className="space-y-6 rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
-          <div className="mb-2">
-            <h2 className="text-xl font-semibold">
-              Clientes ({clientesGrupos.length}{" "}
-              {clientesGrupos.length === 1 ? "encontrado" : "encontrados"})
-            </h2>
-            <p className="text-sm text-gray-500">
-              {liquidacionesData.length}{" "}
-              {liquidacionesData.length === 1
-                ? "orden de servicio"
-                : "órdenes de servicio"}{" "}
-              y {adicionalesData.length}{" "}
-              {adicionalesData.length === 1 ? "adicional" : "adicionales"} por
-              liquidar
-            </p>
-          </div>
-
-          <div className="space-y-8">
+        <SectionCard
+          title={`Clientes (${clientesGrupos.length} ${clientesGrupos.length === 1 ? "encontrado" : "encontrados"})`}
+          description={`${liquidacionesData.length} ${
+            liquidacionesData.length === 1 ? "orden de servicio" : "órdenes de servicio"
+          } y ${adicionalesData.length} ${
+            adicionalesData.length === 1 ? "adicional" : "adicionales"
+          } por liquidar`}
+        >
+          <div className="flex flex-col gap-4">
             {clientesGrupos.map((grupo) => {
               const isExpanded = expandedClients.has(grupo.clienteKey);
               const isLiquidandoEsteCliente =
@@ -470,89 +464,79 @@ function RouteComponent() {
               const totalItems =
                 grupo.ordenes.length + grupo.adicionales.length;
 
-              const cardClassName = (
-                seleccionado: boolean,
-                esMesAnterior: boolean,
-              ) => {
-                const base = esMesAnterior
-                  ? "border-amber-300 bg-amber-50"
-                  : "border-gray-200 bg-gray-50";
-                return `rounded-md border px-3 py-2 text-sm ${
-                  isSeleccionando
-                    ? `cursor-pointer text-left transition-colors ${
-                        seleccionado
-                          ? "border-blue-400 bg-blue-50 ring-1 ring-blue-300"
-                          : `${base} hover:border-blue-300`
-                      }`
-                    : base
-                }`;
-              };
+              const cardSx = (seleccionado: boolean, esMesAnterior: boolean) => ({
+                px: 1.5,
+                py: 1,
+                textAlign: "left",
+                bgcolor: seleccionado
+                  ? "action.selected"
+                  : esMesAnterior
+                    ? (t: Theme) => alpha(t.palette.warning.main, 0.08)
+                    : "background.default",
+                borderColor: seleccionado
+                  ? "primary.main"
+                  : esMesAnterior
+                    ? "warning.light"
+                    : "divider",
+                ...(isSeleccionando && {
+                  cursor: "pointer",
+                  "&:hover": { borderColor: "primary.light" },
+                }),
+              });
 
               const renderBadgeMesAnterior = (fila: LiquidarMesInfo) =>
                 fila.esMesAnterior && (
-                  <span className="mt-1 inline-block rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-amber-800">
-                    Mes anterior · {formatMesLiquidar(fila)}
-                  </span>
+                  <Chip
+                    size="small"
+                    color="warning"
+                    variant="outlined"
+                    sx={{ mt: 0.5 }}
+                    label={`Mes anterior · ${formatMesLiquidar(fila)}`}
+                  />
                 );
 
               const renderCheckbox = (seleccionado: boolean) =>
                 isSeleccionando && (
-                  <span
-                    className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
-                      seleccionado
-                        ? "border-blue-500 bg-blue-500 text-white"
-                        : "border-gray-400 bg-white"
-                    }`}
-                  >
-                    {seleccionado && <CheckIcon className="h-3 w-3" />}
-                  </span>
+                  <Checkbox
+                    size="small"
+                    checked={seleccionado}
+                    tabIndex={-1}
+                    sx={{ p: 0 }}
+                    slotProps={{ input: { "aria-hidden": true } }}
+                  />
                 );
 
               return (
-                <div
-                  key={grupo.clienteKey}
-                  className="rounded-lg border border-gray-300 bg-white"
-                >
+                <Paper key={grupo.clienteKey} variant="outlined">
                   <div className="flex flex-wrap items-center justify-between gap-4 p-3">
-                    <button
-                      type="button"
+                    <ButtonBase
                       onClick={() => toggleExpandCliente(grupo.clienteKey)}
-                      className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
+                      className="flex min-w-0 flex-1 items-center gap-2"
+                      sx={{ justifyContent: "flex-start", textAlign: "left", borderRadius: 1 }}
                     >
-                      <ChevronDownIcon
-                        className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
+                      <ExpandMoreIcon
+                        fontSize="small"
+                        sx={{
+                          color: "text.secondary",
+                          transition: "transform .2s",
+                          transform: isExpanded ? "rotate(180deg)" : "none",
+                        }}
                       />
                       <div className="min-w-0">
-                        <h3 className="truncate text-lg font-semibold text-gray-900">
+                        <Typography variant="h4" component="h3" noWrap>
                           {grupo.clienteNombre}
-                        </h3>
-                        <p className="text-xs text-gray-500">
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
                           {grupo.ordenes.length}{" "}
                           {grupo.ordenes.length === 1 ? "orden" : "órdenes"} ·{" "}
                           {grupo.adicionales.length}{" "}
                           {grupo.adicionales.length === 1
                             ? "adicional"
                             : "adicionales"}
-                        </p>
+                        </Typography>
                       </div>
-                    </button>
-                    <div className="flex items-center gap-4">
-                      {/* <div className="text-right text-xs whitespace-nowrap">
-                        <p className="text-gray-500">
-                          Antes de IVA:{" "}
-                          <span className="font-medium text-gray-700">
-                            {priceFormat(grupo.totalAntesIva)}
-                          </span>
-                        </p>
-                        <p className="text-gray-500">
-                          Total:{" "}
-                          <span className="text-sm font-semibold text-green-600">
-                            {priceFormat(grupo.total)}
-                          </span>
-                        </p>
-                      </div> */}
+                    </ButtonBase>
+                    <div className="flex items-center gap-2">
                       {isSeleccionando ? (
                         <>
                           <ButtonAction
@@ -560,7 +544,7 @@ function RouteComponent() {
                             color="red"
                             onClick={() => setSeleccion(null)}
                             disabled={isCreatingLiquidacionMensualPending}
-                            Icon={XIcon}
+                            Icon={CloseIcon}
                             label="Cancelar"
                           />
                           <ButtonAction
@@ -571,7 +555,7 @@ function RouteComponent() {
                               isCreatingLiquidacionMensualPending ||
                               cantidadSeleccionada === 0
                             }
-                            Icon={PlusIcon}
+                            Icon={AddIcon}
                             label={
                               isLiquidandoEsteCliente
                                 ? "Liquidando..."
@@ -592,7 +576,7 @@ function RouteComponent() {
                               seleccion !== null ||
                               totalItems < 2
                             }
-                            Icon={ListChecksIcon}
+                            Icon={ChecklistOutlinedIcon}
                             label="Seleccionar"
                           />
                           <ButtonAction
@@ -602,7 +586,7 @@ function RouteComponent() {
                               !grupo.idCliente ||
                               seleccion !== null
                             }
-                            Icon={PlusIcon}
+                            Icon={AddIcon}
                             label={
                               isLiquidandoEsteCliente
                                 ? "Liquidando..."
@@ -615,19 +599,20 @@ function RouteComponent() {
                   </div>
 
                   {isExpanded && (
-                    <div className="grid grid-cols-1 gap-2 border-t border-gray-200 p-3 md:grid-cols-2 xl:grid-cols-3">
+                    <Box
+                      className="grid grid-cols-1 gap-2 p-3 md:grid-cols-2 xl:grid-cols-3"
+                      sx={{ borderTop: 1, borderColor: "divider" }}
+                    >
                       {grupo.ordenes.map((orden) => {
                         const clave = claveOrden(orden);
                         const seleccionado =
                           isSeleccionando && seleccion.ordenKeys.has(clave);
 
                         return (
-                          <div
+                          <Paper
                             key={clave}
-                            className={cardClassName(
-                              seleccionado,
-                              orden.esMesAnterior,
-                            )}
+                            variant="outlined"
+                            sx={cardSx(seleccionado, orden.esMesAnterior)}
                             role={isSeleccionando ? "checkbox" : undefined}
                             aria-checked={
                               isSeleccionando ? seleccionado : undefined
@@ -639,45 +624,41 @@ function RouteComponent() {
                             }
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <span className="flex items-center gap-2 font-medium text-gray-900">
+                              <Typography
+                                variant="body2"
+                                className="flex items-center gap-2"
+                                sx={{ fontWeight: 500 }}
+                              >
                                 {renderCheckbox(seleccionado)}
                                 {orden.ordenServicioId?.descripcionId}
-                              </span>
-                              <span
-                                className={`rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap capitalize ${getStatusColor(orden.idEstadoOrdenServicio?.nombre || "")}`}
-                              >
-                                {orden.idEstadoOrdenServicio?.nombre}
-                              </span>
+                              </Typography>
+                              <OrderStateLabel state={orden.idEstadoOrdenServicio?.nombre || ""} />
                             </div>
                             {renderBadgeMesAnterior(orden)}
                             {orden.idLocacion && (
-                              <p className="mt-1 truncate text-gray-600">
+                              <Typography variant="body2" color="text.secondary" noWrap sx={{ mt: 0.5 }}>
                                 {orden.idLocacion.nombre} -{" "}
                                 {orden.idLocacion.direccion}
-                              </p>
+                              </Typography>
                             )}
-                            <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-gray-500">
-                              <span>
+                            <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                              <Typography variant="body2" color="text.secondary">
                                 {orden.fechaInicio || ""} →{" "}
                                 {orden.fechaFin || "Indefinida"}
-                              </span>
-                              {/* <span className="font-medium text-green-600">
-                              {priceFormat(Number(orden.precioTotal))}
-                            </span> */}
-                              <button
-                                type="button"
+                              </Typography>
+                              <Button
+                                size="small"
+                                startIcon={<VisibilityOutlinedIcon />}
                                 onClick={(e) => {
                                   // En modo seleccion la tarjeta completa alterna la orden, no debe hacerlo este boton
                                   e.stopPropagation();
                                   setOrdenServicios(orden);
                                 }}
-                                className="flex cursor-pointer items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
                               >
-                                <EyeIcon className="h-3.5 w-3.5" />
                                 Mostrar servicios
-                              </button>
+                              </Button>
                             </div>
-                          </div>
+                          </Paper>
                         );
                       })}
 
@@ -687,12 +668,10 @@ function RouteComponent() {
                           isSeleccionando && seleccion.adicionalKeys.has(clave);
 
                         return (
-                          <div
+                          <Paper
                             key={clave}
-                            className={cardClassName(
-                              seleccionado,
-                              adicional.esMesAnterior,
-                            )}
+                            variant="outlined"
+                            sx={cardSx(seleccionado, adicional.esMesAnterior)}
                             role={isSeleccionando ? "checkbox" : undefined}
                             aria-checked={
                               isSeleccionando ? seleccionado : undefined
@@ -705,36 +684,37 @@ function RouteComponent() {
                             }
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <span className="flex items-center gap-2 font-medium text-gray-900">
+                              <Typography
+                                variant="body2"
+                                className="flex items-center gap-2"
+                                sx={{ fontWeight: 500 }}
+                              >
                                 {renderCheckbox(seleccionado)}
                                 {adicional.nombre}
-                              </span>
-                              <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-gray-600">
-                                Adicional
-                              </span>
+                              </Typography>
+                              <Chip size="small" label="Adicional" />
                             </div>
                             {renderBadgeMesAnterior(adicional)}
-                            <p className="mt-1 text-gray-600 capitalize">
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ mt: 0.5, textTransform: "capitalize" }}
+                            >
                               {formatMesAdicional(adicional.mesInicio)} -{" "}
                               {adicional.mesFin
                                 ? formatMesAdicional(adicional.mesFin)
                                 : "Indefinido"}
-                            </p>
-                            {/* <div className="mt-1 flex justify-end text-gray-500">
-                            <span className="font-medium text-green-600">
-                              {priceFormat(Number(adicional.precioTotal))}
-                            </span>
-                          </div> */}
-                          </div>
+                            </Typography>
+                          </Paper>
                         );
                       })}
-                    </div>
+                    </Box>
                   )}
-                </div>
+                </Paper>
               );
             })}
           </div>
-        </div>
+        </SectionCard>
       ) : null}
 
       <ServiciosOrden

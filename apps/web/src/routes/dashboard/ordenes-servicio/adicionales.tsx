@@ -1,3 +1,7 @@
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
+import { WizardFooter, WizardStepper } from "../../../components/ui/common/Wizard";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -5,7 +9,7 @@ import { toast } from "sonner";
 import { format, getYear } from "date-fns";
 import { es } from "date-fns/locale";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Check, PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
@@ -339,25 +343,23 @@ function RouteComponent() {
       header: "Nombre",
       accessorKey: "nombre",
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap text-gray-700">
+        <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: "nowrap" }}>
           {row.original.nombre}
-        </span>
+        </Typography>
       ),
     },
     {
       header: "Cliente",
       accessorKey: "idCliente",
       cell: ({ row }) => (
-        <span className="whitespace-nowrap text-gray-700">
-          {row.original.idCliente?.nombre}
-        </span>
+        <span className="whitespace-nowrap">{row.original.idCliente?.nombre}</span>
       ),
     },
     {
       header: "Mes Inicio",
       accessorKey: "mesInicio",
       cell: ({ row }) => (
-        <span className="capitalize whitespace-nowrap text-gray-600">
+        <span className="capitalize whitespace-nowrap">
           {formatMes(row.original.mesInicio)}
         </span>
       ),
@@ -367,35 +369,34 @@ function RouteComponent() {
       accessorKey: "mesFin",
       cell: ({ row }) =>
         row.original.mesFin ? (
-          <span className="capitalize whitespace-nowrap text-gray-600">
+          <span className="capitalize whitespace-nowrap">
             {formatMes(row.original.mesFin)}
           </span>
         ) : (
-          <span className="whitespace-nowrap text-gray-500">Indefinido</span>
+          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+            Indefinido
+          </Typography>
         ),
     },
     {
       header: "Precio Total",
       accessorKey: "precioTotal",
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap text-green-600">
+        <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: "nowrap", color: "success.main" }}>
           {priceFormat(Number(row.original.precioTotal))}
-        </span>
+        </Typography>
       ),
     },
     {
       header: "Estado",
       accessorKey: "estado",
       cell: ({ row }) => (
-        <span
-          className={`rounded-full px-2 py-1 text-xs font-medium ${
-            row.original.estado
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-600"
-          }`}
-        >
-          {row.original.estado ? "Activo" : "Cancelado"}
-        </span>
+        <Chip
+          size="small"
+          color={row.original.estado ? "success" : "error"}
+          variant="outlined"
+          label={row.original.estado ? "Activo" : "Cancelado"}
+        />
       ),
     },
     {
@@ -433,7 +434,7 @@ function RouteComponent() {
     <Section>
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
-          <ButtonAction Icon={PlusIcon} label="Agregar Adicional" onClick={handleOpenAdd} />
+          <ButtonAction Icon={AddIcon} label="Agregar Adicional" onClick={handleOpenAdd} />
         </div>
         <Table
           columns={columns}
@@ -460,30 +461,9 @@ function RouteComponent() {
         size="3xl"
       >
         <>
-          <div className="flex items-center justify-center px-6 py-6">
-            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
-              <div key={step} className="flex items-center">
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                    step < currentStep
-                      ? "bg-green-500 text-white"
-                      : step === currentStep
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-600"
-                  }`}
-                >
-                  {step < currentStep ? <Check className="h-4 w-4" /> : step}
-                </div>
-                {step < totalSteps && (
-                  <div
-                    className={`mx-2 h-0.5 w-16 ${step < currentStep ? "bg-green-500" : "bg-gray-200"}`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+          <WizardStepper currentStep={currentStep} totalSteps={totalSteps} />
 
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto px-2 py-4">
             {currentStep === 1 && <NombreAdicional register={registerCreate} />}
             {currentStep === 2 && (
               <SeleccionarClienteAdicional
@@ -516,46 +496,18 @@ function RouteComponent() {
             )}
           </div>
 
-          <div className="flex items-center justify-between border-t border-gray-200 px-6 pt-6 pb-4">
-            <div className="text-sm text-gray-500">
-              Paso {currentStep} de {totalSteps}
-              {selectedCliente && currentStep > 2 ? ` · ${selectedCliente.nombre}` : ""}
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-                onClick={handleCloseAdd}
-              >
-                Cancelar
-              </button>
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-                  onClick={handlePrevious}
-                >
-                  Anterior
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={currentStep < totalSteps ? handleNext : handleCreateAdicional}
-                disabled={isCreatingAdicional}
-                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
-                  currentStep < totalSteps
-                    ? "bg-blue-600 hover:bg-blue-700"
-                    : "bg-green-600 hover:bg-green-700"
-                }`}
-              >
-                {isCreatingAdicional
-                  ? "Creando..."
-                  : currentStep < totalSteps
-                    ? "Siguiente"
-                    : "Crear Adicional"}
-              </button>
-            </div>
-          </div>
+          <WizardFooter
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            info={selectedCliente && currentStep > 2 ? ` · ${selectedCliente.nombre}` : ""}
+            onCancel={handleCloseAdd}
+            onPrevious={handlePrevious}
+            onNext={currentStep < totalSteps ? handleNext : handleCreateAdicional}
+            nextDisabled={isCreatingAdicional}
+            loading={isCreatingAdicional}
+            finalLabel="Crear Adicional"
+            loadingLabel="Creando..."
+          />
         </>
       </SimpleModal>
 
@@ -573,13 +525,13 @@ function RouteComponent() {
           onCancel={() => setIsOpenEdit(false)}
         >
           <div className="flex flex-col gap-6">
-            <p className="text-sm text-gray-600">
+            <Typography variant="body2" color="text.secondary">
               Cliente:{" "}
-              <span className="font-medium text-gray-800">
+              <Box component="span" sx={{ fontWeight: 500, color: "text.primary" }}>
                 {selectedAdicional?.idCliente?.nombre}
-              </span>{" "}
+              </Box>{" "}
               (no se puede cambiar)
-            </p>
+            </Typography>
             <NombreAdicional register={registerEdit} showHeader={false} />
             <VigenciaAdicional
               setValue={setValueEdit}

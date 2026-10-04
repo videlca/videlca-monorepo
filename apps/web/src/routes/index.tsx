@@ -1,6 +1,9 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { RouterLink } from "../components/ui/common/RouterLink";
+import LockOutlined from "@mui/icons-material/LockOutlined";
+import PersonOutlined from "@mui/icons-material/PersonOutlined";
+import Typography from "@mui/material/Typography";
 import { AuthLayout } from "../components/layout/AuthLayout";
-import { Lock, User } from "lucide-react";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import { useLogin } from "../api/queryFunctions/auth";
@@ -38,17 +41,17 @@ function Index() {
 
   return (
     <AuthLayout>
-      <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Iniciar Sesión</h2>
-        <p className="text-gray-600">
+      <div className="text-center">
+        <Typography variant="h2">Iniciar Sesión</Typography>
+        <Typography color="text.secondary" sx={{ mt: 1 }}>
           Ingrese sus credenciales para acceder al sistema
-        </p>
+        </Typography>
       </div>
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         <Input
           label="Usuario"
           placeholder="Ingrese su nombre de usuario"
-          icon={User}
+          icon={PersonOutlined}
           type="text"
           id="email"
           {...register("email")}
@@ -57,21 +60,23 @@ function Index() {
         <Input
           label="Contraseña"
           placeholder="Ingrese su contraseña"
-          icon={Lock}
+          icon={LockOutlined}
           type="password"
           id="clave"
           {...register("clave")}
         />
         <div className="text-right">
-          <Link
-            to="/recuperar"
-            className="cursor-pointer text-sm text-blue-600 hover:text-blue-700 hover:underline"
-          >
+          <RouterLink to="/recuperar" variant="body2" underline="hover">
             ¿Olvidó su contraseña?
-          </Link>
+          </RouterLink>
         </div>
 
-        <Button type="submit" disabled={mutation.isPending} className="w-full">
+        <Button
+          type="submit"
+          loading={mutation.isPending}
+          fullWidth
+          size="large"
+        >
           {mutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
         </Button>
       </form>

@@ -3,7 +3,7 @@ import type { Departamento } from "../../../../types";
 import type { ColumnDef } from "@tanstack/react-table";
 import Table from "../../../common/Table";
 import { ButtonAction } from "../../../common/ButtonAction";
-import { EditIcon, PlusIcon, TrashIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import { SimpleModal } from "../../../common/SimpleModal";
 import {
   useActualizarDepartamento,
@@ -42,10 +42,10 @@ export const DepartamentoTab = () => {
   } = useActualizarDepartamento();
   const { mutate: eliminarDepartamento } = useEliminarDepartamento();
   // Formularios
-  const { register: registerCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } = useForm<CreateDepartamentoDto>({
+  const { register: registerCrear, control: controlCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } = useForm<CreateDepartamentoDto>({
     defaultValues: { descripcion: "", pais: 0, codigoDepartamento: "" },
   });
-  const { register: registerEditar, handleSubmit: handleSubmitEditar, reset: resetEditar } = useForm<UpdateDepartamentoDto>({
+  const { register: registerEditar, control: controlEditar, handleSubmit: handleSubmitEditar, reset: resetEditar } = useForm<UpdateDepartamentoDto>({
     defaultValues: { descripcion: "", pais: 0, codigoDepartamento: "" },
   });
 
@@ -133,10 +133,10 @@ export const DepartamentoTab = () => {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar departamento"
             onClick={() => setIsModalOpen(true)}
           />
@@ -183,7 +183,9 @@ export const DepartamentoTab = () => {
                 id="pais"
                 options={paisOptions}
                 required
-                {...registerCrear("pais", { valueAsNumber: true })}
+                control={controlCrear}
+                name="pais"
+                valueAsNumber
               />
               <InputForm
                 label="Código de departamento"
@@ -230,7 +232,9 @@ export const DepartamentoTab = () => {
                 placeholder="Pais"
                 id="pais"
                 options={paisOptions}
-                {...registerEditar("pais", { valueAsNumber: true })}
+                control={controlEditar}
+                name="pais"
+                valueAsNumber
               />
               <InputForm
                 label="Código de departamento"

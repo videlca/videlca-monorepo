@@ -1,8 +1,9 @@
+import Typography from "@mui/material/Typography";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 import Table from "../../../components/common/Table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import type { Periodo } from "../../../api/types/periodo";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
@@ -49,6 +50,7 @@ function RouteComponent() {
   // Formularios
   const {
     register: registerCrear,
+    control: controlCrear,
     handleSubmit: handleSubmitCrear,
     reset: resetCrear,
   } = useForm<CreatePeriodoDto>({
@@ -61,6 +63,7 @@ function RouteComponent() {
 
   const {
     register: registerEditar,
+    control: controlEditar,
     handleSubmit: handleSubmitEditar,
     reset: resetEditar,
   } = useForm<UpdatePeriodoDto>({
@@ -77,9 +80,9 @@ function RouteComponent() {
       accessorKey: "nombre",
       cell: ({ row }) => {
         return (
-          <span className="font-semibold whitespace-nowrap">
+          <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: "nowrap" }}>
             {row.original.nombre}
-          </span>
+          </Typography>
         );
       },
     },
@@ -170,7 +173,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar Periodo"
             onClick={() => setIsOpenAddTarifa(true)}
           />
@@ -251,7 +254,8 @@ function RouteComponent() {
               label="Activo para facturación"
               id="periodoActivoFacturacion"
               required={false}
-              {...registerCrear("periodoActivoFacturacion")}
+              control={controlCrear}
+              name="periodoActivoFacturacion"
             />
           </div>
         </FormsModal>
@@ -320,7 +324,8 @@ function RouteComponent() {
               label="Activo para facturación"
               id="periodoActivoFacturacion"
               required={false}
-              {...registerEditar("periodoActivoFacturacion")}
+              control={controlEditar}
+              name="periodoActivoFacturacion"
             />
           </div>
         </FormsModal>

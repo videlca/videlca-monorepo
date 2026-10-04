@@ -1,7 +1,19 @@
+import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import Collapse from "@mui/material/Collapse";
+import Divider from "@mui/material/Divider";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import { useEffect, useState } from "react";
 import { ButtonAction } from "./ButtonAction";
 import { InputForm } from "./InputForm";
-import { CheckIcon, ChevronDown, PlusIcon, XIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { toast } from "sonner";
 import type { CreateCorreoDefaultDto } from "../../api/dtos/configuracion";
 import { useEstadoOrden } from "../../api/queryFunctions/configuracion";
@@ -176,195 +188,200 @@ export function ConfiguracionCorreosDefault({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {/* Formulario para añadir correos */}
-      <div className="col-span-2 space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-        <div className="flex flex-col gap-2">
-          <InputForm
-            label="Descripción*"
-            placeholder="Descripción del correo"
-            type="text"
-            id="descripcion"
-            value={correoInput.descripcion}
-            onChange={(e) =>
-              setCorreoInput({
-                ...correoInput,
-                descripcion: e.target.value,
-              })
-            }
+      <Box
+        className="flex flex-col gap-4 rounded-lg p-4"
+        sx={{ bgcolor: "background.default", border: 1, borderColor: "divider" }}
+      >
+        <InputForm
+          label="Descripción*"
+          placeholder="Descripción del correo"
+          type="text"
+          id="descripcion"
+          value={correoInput.descripcion}
+          onChange={(e) =>
+            setCorreoInput({
+              ...correoInput,
+              descripcion: e.target.value,
+            })
+          }
+        />
+        <InputForm
+          label="Correo*"
+          placeholder="Correo electrónico"
+          type="email"
+          id="email"
+          value={correoInput.email}
+          onChange={(e) =>
+            setCorreoInput({
+              ...correoInput,
+              email: e.target.value,
+            })
+          }
+        />
+        <Typography variant="body2" color="text.secondary">
+          Presione el botón de "Añadir" para agregar un nuevo correo a la lista
+        </Typography>
+        <div className="flex justify-end gap-2">
+          <ButtonAction
+            Icon={AddIcon}
+            label="Añadir"
+            type="button"
+            color="blue-light"
+            onClick={handleAddCorreo}
           />
-          <InputForm
-            label="Correo*"
-            placeholder="Correo electrónico"
-            type="email"
-            id="email"
-            value={correoInput.email}
-            onChange={(e) =>
-              setCorreoInput({
-                ...correoInput,
-                email: e.target.value,
-              })
-            }
+          <ButtonAction
+            Icon={CheckIcon}
+            label="Confirmar y guardar cambios"
+            type="button"
+            onClick={handleConfirmAndSaveChanges}
+            disabled={isCreatingCorreoDefault}
           />
-          <p className="text-sm text-gray-500">
-            Presione el botón de "Añadir" para agregar un nuevo correo a la
-            lista
-          </p>
-          <div className="flex justify-end gap-2">
-            <ButtonAction
-              Icon={PlusIcon}
-              label="Añadir"
-              type="button"
-              onClick={handleAddCorreo}
-            />
-            <ButtonAction
-              Icon={CheckIcon}
-              label="Confirmar y guardar cambios"
-              type="button"
-              onClick={handleConfirmAndSaveChanges}
-              disabled={isCreatingCorreoDefault}
-            />
-          </div>
         </div>
-      </div>
+      </Box>
 
       {/* Lista de correos configurados */}
-      <div className="mt-4 flex h-full flex-col gap-2 overflow-y-auto">
-        {correos?.length > 0 &&
-          correos
-            .flatMap((correoGroup) => correoGroup)
-            .map((correo) => (
-              <div
-                key={correo.email}
-                className="flex flex-col gap-2 rounded-md border border-gray-200 bg-gray-50 px-4 py-4"
-              >
-                <div className="flex flex-row items-center justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {correo.email}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {correo.descripcion}
-                    </p>
-                  </div>
-                  <div className="space-x-2">
-                    <button
-                      type="button"
-                      className="cursor-pointer rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-200"
-                      onClick={() => toggleEmailStates(correo.email)}
-                    >
-                      <ChevronDown
-                        className={`h-4 w-4 transition-transform duration-200 ${expandedEmails.has(correo.email) ? "rotate-180" : ""
-                          }`}
+      <div className="flex h-full flex-col gap-2 overflow-y-auto">
+        {correos.map((correo) => {
+          const expanded = expandedEmails.has(correo.email);
+          return (
+            <Paper
+              key={correo.email}
+              variant="outlined"
+              className="flex flex-col px-4 py-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {correo.email}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {correo.descripcion}
+                  </Typography>
+                </div>
+                <div className="flex gap-1">
+                  <Tooltip title={expanded ? "Ocultar estados" : "Estados de notificación"}>
+                    <IconButton onClick={() => toggleEmailStates(correo.email)}>
+                      <ExpandMoreIcon
+                        fontSize="small"
+                        sx={{
+                          transition: "transform .2s",
+                          transform: expanded ? "rotate(180deg)" : "none",
+                        }}
                       />
-                    </button>
-                    <button
-                      type="button"
-                      className="cursor-pointer rounded-md px-2 py-1 text-sm text-gray-500 hover:bg-gray-200 hover:text-red-500"
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Quitar correo">
+                    <IconButton
+                      color="error"
                       onClick={() => handleRemoveCorreo(correo.email)}
                     >
-                      <XIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-                <div
-                  className={expandedEmails.has(correo.email) ? "" : "hidden"}
-                >
-                  <label className="mb-2 block text-sm font-medium text-gray-700">
-                    Estados de Notificación
-                    <span className="ml-1 text-xs text-gray-500">
-                      (
-                      {(correo.estados || []).length +
-                        (correo.estadosApp || []).length}{" "}
-                      seleccionados)
-                    </span>
-                  </label>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {estadosOrdenServicio?.data?.data
-                      ?.filter((estado) => estado.estado) // Solo estados activos
-                      .map((estado) => (
-                        <div
-                          key={estado.nombre}
-                          className="flex items-start space-x-2 rounded-md p-2 hover:bg-gray-50"
-                        >
-                          <input
-                            type="checkbox"
-                            id={`estado-${correo.email}-${estado.nombre}-${estado.idEstadoOrdenServicio}`}
-                            checked={(correo.estados || []).includes(
-                              estado.idEstadoOrdenServicio,
-                            )}
-                            onChange={(e) =>
-                              handleEstadoChange(
-                                correo.email,
-                                estado.idEstadoOrdenServicio,
-                                e.target.checked,
-                              )
-                            }
-                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <div className="flex-1">
-                            <label
-                              htmlFor={`estado-${correo.email}-${estado.nombre}-${estado.idEstadoOrdenServicio}`}
-                              className="cursor-pointer text-sm font-medium text-gray-700 capitalize"
-                            >
-                              {estado.nombre}
-                            </label>
-                            <p className="mt-0.5 text-xs text-gray-500">
-                              {estado.descripcion}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                  <>
-                    <hr className="mt-2 border-b border-gray-200" />
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      {estadosApp?.data?.data?.map((estado) => (
-                        <div
-                          key={estado.nombre}
-                          className="flex items-start space-x-2 rounded-md p-2 hover:bg-gray-50"
-                        >
-                          <input
-                            type="checkbox"
-                            id={`estadoApp-${correo.email}-${estado.nombre}-${estado.idEstadoApp}`}
-                            checked={(correo.estadosApp || []).includes(
-                              estado.idEstadoApp,
-                            )}
-                            onChange={(e) =>
-                              handleEstadoAppChange(
-                                correo.email,
-                                estado.idEstadoApp,
-                                e.target.checked,
-                              )
-                            }
-                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <div className="flex-1">
-                            <label
-                              htmlFor={`estadoApp-${correo.email}-${estado.nombre}-${estado.idEstadoApp}`}
-                              className="cursor-pointer text-sm font-medium text-gray-700 capitalize"
-                            >
-                              {estado.nombre}
-                            </label>
-                            <p className="mt-0.5 text-xs text-gray-500">
-                              {estado.descripcion}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </div>
               </div>
-            ))}
-        {(correos?.length === 0 ||
-          correos.flatMap((correoGroup) => correoGroup).length === 0) && (
-            <div className="rounded-md border border-gray-200 bg-gray-50 p-2 py-10 text-center text-sm text-gray-500">
-              No hay correos configurados
-            </div>
-          )}
+              <Collapse in={expanded}>
+                <Typography variant="body2" sx={{ fontWeight: 500, mt: 1 }}>
+                  Estados de Notificación{" "}
+                  <Typography component="span" variant="caption" color="text.secondary">
+                    (
+                    {(correo.estados || []).length +
+                      (correo.estadosApp || []).length}{" "}
+                    seleccionados)
+                  </Typography>
+                </Typography>
+                <div className="grid grid-cols-2 gap-2 py-2">
+                  {estadosOrdenServicio?.data?.data
+                    ?.filter((estado) => estado.estado) // Solo estados activos
+                    .map((estado) => (
+                      <EstadoCheckbox
+                        key={estado.nombre}
+                        nombre={estado.nombre}
+                        descripcion={estado.descripcion}
+                        checked={(correo.estados || []).includes(
+                          estado.idEstadoOrdenServicio,
+                        )}
+                        onChange={(checked) =>
+                          handleEstadoChange(
+                            correo.email,
+                            estado.idEstadoOrdenServicio,
+                            checked,
+                          )
+                        }
+                      />
+                    ))}
+                </div>
+                <Divider />
+                <div className="grid grid-cols-2 gap-2 py-2">
+                  {estadosApp?.data?.data?.map((estado) => (
+                    <EstadoCheckbox
+                      key={estado.nombre}
+                      nombre={estado.nombre}
+                      descripcion={estado.descripcion}
+                      checked={(correo.estadosApp || []).includes(
+                        estado.idEstadoApp,
+                      )}
+                      onChange={(checked) =>
+                        handleEstadoAppChange(
+                          correo.email,
+                          estado.idEstadoApp,
+                          checked,
+                        )
+                      }
+                    />
+                  ))}
+                </div>
+              </Collapse>
+            </Paper>
+          );
+        })}
+        {correos.length === 0 && (
+          <Paper
+            variant="outlined"
+            sx={{ py: 5, textAlign: "center", color: "text.secondary", bgcolor: "background.default" }}
+          >
+            <Typography variant="body2">No hay correos configurados</Typography>
+          </Paper>
+        )}
       </div>
     </div>
+  );
+}
+
+function EstadoCheckbox({
+  nombre,
+  descripcion,
+  checked,
+  onChange,
+}: {
+  nombre: string;
+  descripcion?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <FormControlLabel
+      sx={{ alignItems: "flex-start", m: 0 }}
+      control={
+        <Checkbox
+          size="small"
+          sx={{ pt: 0.25 }}
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+        />
+      }
+      label={
+        <div>
+          <Typography variant="body2" sx={{ fontWeight: 500, textTransform: "capitalize" }}>
+            {nombre}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {descripcion}
+          </Typography>
+        </div>
+      }
+    />
   );
 }

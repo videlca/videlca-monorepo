@@ -1,3 +1,5 @@
+import { PageHeader } from "../../../components/ui/common/PageHeader";
+import Typography from "@mui/material/Typography";
 import {
   createFileRoute,
   useNavigate,
@@ -22,7 +24,11 @@ import type { Puesto } from "../../../types";
 import type { ColumnDef, Row } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { ArrowLeftIcon, Building2, Mail, User, PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import BusinessOutlined from "@mui/icons-material/BusinessOutlined";
+import MailOutlined from "@mui/icons-material/MailOutlined";
+import PersonOutlined from "@mui/icons-material/PersonOutlined";
 import Table from "../../../components/common/Table";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { FormsModal } from "../../../components/ui/modals/FormsModal";
@@ -68,6 +74,7 @@ export function RouteComponent() {
 
   const {
     register: registerAddPuesto,
+    control: controlAddPuesto,
     handleSubmit: handleSubmitAddPuesto,
     reset: resetAddPuesto,
     setValue: setValueAddPuesto,
@@ -94,6 +101,7 @@ export function RouteComponent() {
 
   const {
     register: registerEdit,
+    control: controlEdit,
     handleSubmit: handleSubmitEdit,
     reset: resetEditForm,
     setValue: setValueEdit,
@@ -189,9 +197,7 @@ export function RouteComponent() {
       accessorKey: "direccion",
       header: "Dirección",
       cell: ({ row }) => (
-        <span className="text-sm font-medium whitespace-nowrap text-gray-900">
-          {row.original.direccion}
-        </span>
+        <span className="whitespace-nowrap">{row.original.direccion}</span>
       ),
     },
     {
@@ -218,9 +224,7 @@ export function RouteComponent() {
       accessorKey: "segundoTelefono",
       header: "Teléfono 2",
       cell: ({ row }) => (
-        <span className="text-sm font-medium text-gray-900">
-          {row.original.segundoTelefono || "N/A"}
-        </span>
+        <>{row.original.segundoTelefono || "N/A"}</>
       ),
     },
     {
@@ -231,9 +235,7 @@ export function RouteComponent() {
       accessorKey: "correos",
       header: "Correos",
       cell: ({ row }) => (
-        <span className="text-sm font-medium text-gray-900">
-          {row.original.correos.map((correo) => correo.email).join(", ")}
-        </span>
+        <>{row.original.correos.map((correo) => correo.email).join(", ")}</>
       ),
     },
     {
@@ -270,26 +272,30 @@ export function RouteComponent() {
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between">
-        <h1 className="text-2xl font-bold">Puestos cliente</h1>
-        <div className="flex gap-2">
-          <ButtonAction
-            Icon={ArrowLeftIcon}
-            label="Volver"
-            onClick={() => {
-              navigate({
-                to: "/dashboard/clientes",
-              });
-            }}
-          />
-          <ButtonAction
-            Icon={PlusIcon}
-            label="Agregar puesto"
-            onClick={() => setIsAddPuestoModalOpen(true)}
-          />
-        </div>
-      </div>
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        title="Puestos cliente"
+        actions={
+          <>
+            <ButtonAction
+              Icon={ArrowBackIcon}
+              label="Volver"
+              color="blue-light"
+              type="button"
+              onClick={() => {
+                navigate({
+                  to: "/dashboard/clientes",
+                });
+              }}
+            />
+            <ButtonAction
+              Icon={AddIcon}
+              label="Agregar puesto"
+              onClick={() => setIsAddPuestoModalOpen(true)}
+            />
+          </>
+        }
+      />
       <Table
         data={puestos?.data?.data || []}
         columns={columnsPuestos}
@@ -345,7 +351,7 @@ export function RouteComponent() {
             <FormSection
               title="Información del puesto"
               description="Información del puesto"
-              Icon={Building2}
+              Icon={BusinessOutlined}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InputForm
@@ -367,7 +373,8 @@ export function RouteComponent() {
                     })) || []
                   }
                   required
-                  {...registerAddPuesto("idCiudad")}
+                  control={controlAddPuesto}
+                  name="idCiudad"
                 />
                 <InputForm
                   label="Dirección*"
@@ -428,7 +435,8 @@ export function RouteComponent() {
                         })) || []
                       }
                       required
-                      {...registerAddPuesto("idClienteFacturacion")}
+                      control={controlAddPuesto}
+                      name="idClienteFacturacion"
                     />
                   </div>
                 )}
@@ -437,7 +445,7 @@ export function RouteComponent() {
             <FormSection
               title="Información de contacto"
               description="Información de contacto"
-              Icon={User}
+              Icon={PersonOutlined}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InputForm
@@ -483,11 +491,11 @@ export function RouteComponent() {
             <FormSection
               title="Correos electrónicos"
               description="Correos electrónicos"
-              Icon={Mail}
+              Icon={MailOutlined}
               Details={
-                <p className="text-sm font-medium text-gray-900">
-                  Correos configurados ({correos.length || 0})
-                </p>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  Correos configurados ({correos.length})
+                </Typography>
               }
             >
               <ConfiguracionCorreo
@@ -539,7 +547,7 @@ export function RouteComponent() {
             <FormSection
               title="Información de la puesto"
               description="Información de la puesto"
-              Icon={Building2}
+              Icon={BusinessOutlined}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InputForm
@@ -561,7 +569,8 @@ export function RouteComponent() {
                     })) || []
                   }
                   required
-                  {...registerEdit("idCiudad")}
+                  control={controlEdit}
+                  name="idCiudad"
                 />
                 <InputForm
                   label="Dirección*"
@@ -622,7 +631,8 @@ export function RouteComponent() {
                         })) || []
                       }
                       required
-                      {...registerEdit("idClienteFacturacion")}
+                      control={controlEdit}
+                      name="idClienteFacturacion"
                     />
                   </div>
                 )}
@@ -632,7 +642,7 @@ export function RouteComponent() {
             <FormSection
               title="Información de contacto"
               description="Información de contacto"
-              Icon={User}
+              Icon={PersonOutlined}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <InputForm
@@ -679,11 +689,11 @@ export function RouteComponent() {
             <FormSection
               title="Correos electrónicos"
               description="Correos electrónicos"
-              Icon={Mail}
+              Icon={MailOutlined}
               Details={
-                <p className="text-sm font-medium text-gray-900">
-                  Correos configurados ({correos.length || 0})
-                </p>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  Correos configurados ({correos.length})
+                </Typography>
               }
             >
               <ConfiguracionCorreo

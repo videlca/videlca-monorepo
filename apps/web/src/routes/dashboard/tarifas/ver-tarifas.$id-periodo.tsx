@@ -1,3 +1,12 @@
+import Box from "@mui/material/Box";
+import ButtonBase from "@mui/material/ButtonBase";
+import Chip from "@mui/material/Chip";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
+import type { ReactNode } from "react";
+import { PageHeader } from "../../../components/ui/common/PageHeader";
+import { PeriodoFacturacionChip } from "../../../components/ui/dashboard/tarifas/PeriodoFacturacionChip";
 import {
   createFileRoute,
   useNavigate,
@@ -6,18 +15,15 @@ import {
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import Table from "../../../components/common/Table";
-import {
-  ArrowLeftIcon,
-  Calculator,
-  Calendar,
-  ChevronDown,
-  ChevronRight,
-  DollarSign,
-  FileSpreadsheet,
-  Mail,
-  Settings,
-  SettingsIcon,
-} from "lucide-react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import MailOutlinedIcon from "@mui/icons-material/MailOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import TableChartOutlinedIcon from "@mui/icons-material/TableChartOutlined";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Tarifa } from "../../../api/types/periodo";
 import {
@@ -80,6 +86,7 @@ function RouteComponent() {
   // Formularios
   const {
     register,
+    control,
     handleSubmit,
     reset,
   } = useForm<UpdateTarifaDto>({
@@ -138,12 +145,12 @@ function RouteComponent() {
       cell: ({ row }) => {
         return (
           <div className="flex flex-col text-left">
-            <span className="text-base font-semibold">
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
               {row.original.idServicio?.codigo || "-"}
-            </span>
-            <span className="text-sm">
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
               {row.original.idServicio?.descripcion || "-"}
-            </span>
+            </Typography>
           </div>
         );
       },
@@ -153,11 +160,9 @@ function RouteComponent() {
       accessorKey: "idPeriodo.nombre",
       cell: ({ row }) => {
         return (
-          <div className="flex flex-col text-left whitespace-nowrap">
-            <span className="text-base font-semibold">
-              {row.original.idPeriodo?.nombre || "-"}
-            </span>
-          </div>
+          <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: "nowrap", textAlign: "left" }}>
+            {row.original.idPeriodo?.nombre || "-"}
+          </Typography>
         );
       },
     },
@@ -166,9 +171,9 @@ function RouteComponent() {
       accessorKey: "seguroVida",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+          <Precio>
             {priceFormat(row.original.seguroVida || 0)}
-          </span>
+          </Precio>
         );
       },
     },
@@ -177,9 +182,9 @@ function RouteComponent() {
       accessorKey: "aui",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+          <Precio>
             {priceFormat(row.original.aui || 0)}
-          </span>
+          </Precio>
         );
       },
     },
@@ -188,9 +193,9 @@ function RouteComponent() {
       accessorKey: "costosDirectos",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+          <Precio>
             {priceFormat(row.original.costosDirectos || 0)}
-          </span>
+          </Precio>
         );
       },
     },
@@ -199,9 +204,9 @@ function RouteComponent() {
       accessorKey: "costosDirectosSeguroVida",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+          <Precio>
             {priceFormat(row.original.costosDirectosSeguroVida || 0)}
-          </span>
+          </Precio>
         );
       },
     },
@@ -210,9 +215,9 @@ function RouteComponent() {
       accessorKey: "precioAntesIva",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+          <Precio>
             {priceFormat(row.original.precioAntesIva || 0)}
-          </span>
+          </Precio>
         );
       },
     },
@@ -221,9 +226,9 @@ function RouteComponent() {
       accessorKey: "iva",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+          <Precio>
             {priceFormat(row.original.iva || 0)}
-          </span>
+          </Precio>
         );
       },
     },
@@ -232,9 +237,9 @@ function RouteComponent() {
       accessorKey: "precioTotal",
       cell: ({ row }) => {
         return (
-          <span className="text-center text-base font-medium whitespace-nowrap text-green-700">
+          <Precio>
             {priceFormat(row.original.precioTotal || 0)}
-          </span>
+          </Precio>
         );
       },
     },
@@ -267,89 +272,78 @@ function RouteComponent() {
 
   return (
     <Section>
-      <div className="flex flex-col items-center justify-between gap-8">
-        <div className="flex w-full flex-col gap-2">
-          <h1 className="text-3xl font-bold">
-            {" "}
-            Periodo {periodo?.data?.anioInicio}{" "}
-            <span
-              className={`ml-2 rounded-full px-3 py-1.5 text-sm font-semibold ${periodo?.data?.periodoActivoFacturacion
-                ? "bg-green-200 text-green-700"
-                : "bg-red-200 text-red-700"
-                }`}
-            >
-              {periodo?.data?.periodoActivoFacturacion
-                ? "Activo para facturación"
-                : "Inactivo para facturación"}
-            </span>
-          </h1>
-          <h1 className="text-base font-semibold text-gray-600">
-            {periodo?.data?.nombre}
-          </h1>
-        </div>
-        <div className="flex w-full flex-col justify-end gap-2 lg:flex-row">
-          <ButtonAction
-            Icon={ArrowLeftIcon}
-            label="Volver"
-            onClick={() => {
-              navigate({
-                to: "/dashboard/tarifas/periodo",
-              });
-            }}
-          />
-          {hasServicios && (
-            <>
+      <PageHeader
+        title={
+          <>
+            Periodo {periodo?.data?.anioInicio}
+            <PeriodoFacturacionChip activo={!!periodo?.data?.periodoActivoFacturacion} />
+          </>
+        }
+        description={periodo?.data?.nombre}
+        actions={
+          <>
               <ButtonAction
-                Icon={FileSpreadsheet}
-                label="Descargar Excel"
+                Icon={ArrowBackIcon}
+                label="Volver"
+                color="blue-light"
+                type="button"
                 onClick={() => {
-                  handleDownloadExcel(Number(idPeriodoParam));
+                  navigate({
+                    to: "/dashboard/tarifas/periodo",
+                  });
                 }}
-                color="green-light"
               />
+              {hasServicios && (
+                <>
+                  <ButtonAction
+                    Icon={TableChartOutlinedIcon}
+                    label="Descargar Excel"
+                    onClick={() => {
+                      handleDownloadExcel(Number(idPeriodoParam));
+                    }}
+                    color="green-light"
+                  />
+                  <ButtonAction
+                    Icon={MailOutlinedIcon}
+                    label="Enviar por correo"
+                    onClick={() => {
+                      setIsOpenSendExcel(true);
+                    }}
+                    color="yellow-light"
+                  />
+                </>
+              )}
               <ButtonAction
-                Icon={Mail}
-                label="Enviar por correo"
+                Icon={SettingsOutlinedIcon}
+                label="Configurar Servicios para este periodo"
                 onClick={() => {
-                  setIsOpenSendExcel(true);
+                  navigate({
+                    to: "/dashboard/tarifas/configurar-servicios/$id-periodo",
+                    params: {
+                      "id-periodo": idPeriodoParam,
+                    },
+                  });
                 }}
-                color="yellow-light"
               />
-            </>
-          )}
-          <ButtonAction
-            Icon={SettingsIcon}
-            label="Configurar Servicios para este periodo"
-            onClick={() => {
-              navigate({
-                to: "/dashboard/tarifas/configurar-servicios/$id-periodo",
-                params: {
-                  "id-periodo": idPeriodoParam,
-                },
-              });
-            }}
-          />
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="flex flex-col gap-6">
         {!hasServicios ? (
-          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500 shadow-sm">
-            <p className="text-base font-medium text-gray-600">
+          <Paper variant="outlined" sx={{ p: 4, textAlign: "center" }}>
+            <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
               No hay tarifas configuradas para este periodo.
-            </p>
-          </div>
+            </Typography>
+          </Paper>
         ) : (
           serviciosData.map(([key, value]: [string, any]) => {
             const isCollapsed = collapsedGroups.has(key);
             return (
-              <div
-                key={key}
-                className="rounded-lg border border-blue-200 bg-blue-100/70 pt-2"
-              >
-                <button
-                  type="button"
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg p-2 px-4 text-left transition-colors hover:bg-blue-200/50"
+              <div key={key} className="flex flex-col gap-2">
+                <ButtonBase
+                  className="flex items-center gap-1 self-start"
+                  sx={{ borderRadius: 1, px: 0.5 }}
                   onClick={() => {
                     setCollapsedGroups((prev) => {
                       const next = new Set(prev);
@@ -363,14 +357,14 @@ function RouteComponent() {
                   }}
                 >
                   {isCollapsed ? (
-                    <ChevronRight className="h-5 w-5 text-blue-600" />
+                    <ChevronRightIcon color="primary" />
                   ) : (
-                    <ChevronDown className="h-5 w-5 text-blue-600" />
+                    <ExpandMoreIcon color="primary" />
                   )}
-                  <h2 className="text-xl font-medium text-blue-600">
+                  <Typography variant="h4" component="h2" color="primary">
                     {key}
-                  </h2>
-                </button>
+                  </Typography>
+                </ButtonBase>
                 {!isCollapsed && (
                   <Table
                     columns={columns}
@@ -392,179 +386,94 @@ function RouteComponent() {
         title="Ver detalles de la tarifa"
         size="2xl"
       >
-        <div className="flex-1 space-y-6 overflow-y-auto p-6">
-          {/* Información General */}
-          <div>
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <Calculator className="h-5 w-5 text-blue-600" />
-              Información General
-            </h3>
-            <div className="grid grid-cols-1 gap-4 text-sm text-gray-700 md:grid-cols-2">
-              <div>
-                <p>
-                  <span className="font-medium">ID Tarifa:</span>{" "}
-                  {tarifaSelected?.idTarifa}
-                </p>
-                <p>
-                  <span className="font-medium">Tipo de Tarifa:</span>{" "}
-                  {tarifaSelected?.idTipoTarifa?.nombre || "-"}
-                </p>
-                <p>
-                  <span className="font-medium">Estado:</span>{" "}
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.estado
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                      }`}
-                  >
-                    {tarifaSelected?.estado ? "Activa" : "Inactiva"}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <p>
-                  <span className="font-medium">Fecha Creación:</span>{" "}
-                  {tarifaSelected?.fechaCreacion
-                    ? new Date(tarifaSelected.fechaCreacion).toLocaleString("es-ES")
-                    : "-"}
-                </p>
-                <p>
-                  <span className="font-medium">Última Actualización:</span>{" "}
-                  {tarifaSelected?.fechaActualizacion
-                    ? new Date(tarifaSelected.fechaActualizacion).toLocaleString("es-ES")
-                    : "-"}
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="flex flex-col gap-6">
+          <DetalleSeccion icon={<CalculateOutlinedIcon />} titulo="Información General">
+            <Campo label="ID Tarifa" valor={tarifaSelected?.idTarifa} />
+            <Campo
+              label="Fecha Creación"
+              valor={
+                tarifaSelected?.fechaCreacion
+                  ? new Date(tarifaSelected.fechaCreacion).toLocaleString("es-ES")
+                  : "-"
+              }
+            />
+            <Campo label="Tipo de Tarifa" valor={tarifaSelected?.idTipoTarifa?.nombre || "-"} />
+            <Campo
+              label="Última Actualización"
+              valor={
+                tarifaSelected?.fechaActualizacion
+                  ? new Date(tarifaSelected.fechaActualizacion).toLocaleString("es-ES")
+                  : "-"
+              }
+            />
+            <Campo
+              label="Estado"
+              valor={<SiNoChip valor={!!tarifaSelected?.estado} si="Activa" no="Inactiva" />}
+            />
+          </DetalleSeccion>
 
-          {/* Información del Periodo */}
-          <div>
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <Calendar className="h-5 w-5 text-blue-600" />
-              Periodo
-            </h3>
-            <div className="grid grid-cols-1 gap-4 text-sm text-gray-700 md:grid-cols-2">
-              <div>
-                <p>
-                  <span className="font-medium">Nombre:</span>{" "}
-                  {tarifaSelected?.idPeriodo?.nombre || "-"}
-                </p>
-                <p>
-                  <span className="font-medium">Fecha Inicio:</span>{" "}
-                  {tarifaSelected?.idPeriodo?.fechaInicio
-                    ? new Date(tarifaSelected.idPeriodo.fechaInicio).toLocaleDateString("es-ES")
-                    : "-"}
-                </p>
-                <p>
-                  <span className="font-medium">Fecha Fin:</span>{" "}
-                  {tarifaSelected?.idPeriodo?.fechaFin
-                    ? new Date(tarifaSelected.idPeriodo.fechaFin).toLocaleDateString("es-ES")
-                    : "-"}
-                </p>
-              </div>
-              <div>
-                <p>
-                  <span className="font-medium">Mes Inicio:</span>{" "}
-                  {tarifaSelected?.idPeriodo?.mesInicio}/
-                  {tarifaSelected?.idPeriodo?.anioInicio}
-                </p>
-                <p>
-                  <span className="font-medium">Mes Fin:</span>{" "}
-                  {tarifaSelected?.idPeriodo?.mesFin}/
-                  {tarifaSelected?.idPeriodo?.anioFin}
-                </p>
-                <p>
-                  <span className="font-medium">Activo para Facturación:</span>{" "}
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.idPeriodo?.periodoActivoFacturacion
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                      }`}
-                  >
-                    {tarifaSelected?.idPeriodo?.periodoActivoFacturacion
-                      ? "Sí"
-                      : "No"}
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
+          <DetalleSeccion icon={<CalendarMonthOutlinedIcon />} titulo="Periodo">
+            <Campo label="Nombre" valor={tarifaSelected?.idPeriodo?.nombre || "-"} />
+            <Campo
+              label="Mes Inicio"
+              valor={`${tarifaSelected?.idPeriodo?.mesInicio}/${tarifaSelected?.idPeriodo?.anioInicio}`}
+            />
+            <Campo
+              label="Fecha Inicio"
+              valor={
+                tarifaSelected?.idPeriodo?.fechaInicio
+                  ? new Date(tarifaSelected.idPeriodo.fechaInicio).toLocaleDateString("es-ES")
+                  : "-"
+              }
+            />
+            <Campo
+              label="Mes Fin"
+              valor={`${tarifaSelected?.idPeriodo?.mesFin}/${tarifaSelected?.idPeriodo?.anioFin}`}
+            />
+            <Campo
+              label="Fecha Fin"
+              valor={
+                tarifaSelected?.idPeriodo?.fechaFin
+                  ? new Date(tarifaSelected.idPeriodo.fechaFin).toLocaleDateString("es-ES")
+                  : "-"
+              }
+            />
+            <Campo
+              label="Activo para Facturación"
+              valor={<SiNoChip valor={!!tarifaSelected?.idPeriodo?.periodoActivoFacturacion} />}
+            />
+          </DetalleSeccion>
 
-          {/* Información del Servicio */}
-          <div>
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <Settings className="h-5 w-5 text-blue-600" />
-              Servicio
-            </h3>
-            <div className="grid grid-cols-1 gap-4 text-sm text-gray-700 md:grid-cols-2">
-              <div>
-                <p>
-                  <span className="font-medium">Código:</span>{" "}
-                  {tarifaSelected?.idServicio?.codigo || "-"}
-                </p>
-                <p>
-                  <span className="font-medium">Descripción:</span>{" "}
-                  {tarifaSelected?.idServicio?.descripcion || "-"}
-                </p>
-                <p>
-                  <span className="font-medium">Tipo de Servicio:</span>{" "}
-                  {tarifaSelected?.idServicio?.idTipoServicio?.descripcion || "-"}
-                </p>
-                <p>
-                  <span className="font-medium">Tipo de Duración:</span>{" "}
-                  {tarifaSelected?.idServicio?.idTipoDuracion?.descripcion || "-"}
-                </p>
-              </div>
-              <div>
-                <p>
-                  <span className="font-medium">Tipo de Horario:</span>{" "}
-                  {tarifaSelected?.idServicio?.idTipoHorarioDescripcion?.nombre || "-"}
-                </p>
-                <p>
-                  <span className="font-medium">Estado del Servicio:</span>{" "}
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tarifaSelected?.idServicio?.estado
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                      }`}
-                  >
-                    {tarifaSelected?.idServicio?.estado ? "Activo" : "Inactivo"}
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
+          <DetalleSeccion icon={<SettingsOutlinedIcon />} titulo="Servicio">
+            <Campo label="Código" valor={tarifaSelected?.idServicio?.codigo || "-"} />
+            <Campo
+              label="Tipo de Horario"
+              valor={tarifaSelected?.idServicio?.idTipoHorarioDescripcion?.nombre || "-"}
+            />
+            <Campo label="Descripción" valor={tarifaSelected?.idServicio?.descripcion || "-"} />
+            <Campo
+              label="Estado del Servicio"
+              valor={<SiNoChip valor={!!tarifaSelected?.idServicio?.estado} si="Activo" no="Inactivo" />}
+            />
+            <Campo
+              label="Tipo de Servicio"
+              valor={tarifaSelected?.idServicio?.idTipoServicio?.descripcion || "-"}
+            />
+            <Campo
+              label="Tipo de Duración"
+              valor={tarifaSelected?.idServicio?.idTipoDuracion?.descripcion || "-"}
+            />
+          </DetalleSeccion>
 
-          {/* Información de Precios */}
           <div>
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-              <DollarSign className="h-5 w-5 text-blue-600" />
+            <Typography variant="h5" component="h3" className="flex items-center gap-2" sx={{ mb: 1.5 }}>
+              <AttachMoneyIcon color="primary" fontSize="small" />
               Precios
-            </h3>
+            </Typography>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <p className="text-sm font-medium text-blue-900">
-                  Precio Sin IVA
-                </p>
-                <p className="text-2xl font-bold whitespace-nowrap text-blue-600">
-                  {priceFormat(tarifaSelected?.precioAntesIva || 0)}
-                </p>
-              </div>
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <p className="text-sm font-medium text-blue-900">IVA (19%)</p>
-                <p className="text-2xl font-bold whitespace-nowrap text-blue-600">
-                  {priceFormat(tarifaSelected?.iva || 0)}
-                </p>
-              </div>
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                <p className="text-sm font-medium text-green-900">
-                  Precio Total
-                </p>
-                <p className="text-2xl font-bold whitespace-nowrap text-green-600">
-                  {priceFormat(tarifaSelected?.precioTotal || 0)}
-                </p>
-              </div>
+              <PrecioTile label="Precio Sin IVA" valor={priceFormat(tarifaSelected?.precioAntesIva || 0)} />
+              <PrecioTile label="IVA (19%)" valor={priceFormat(tarifaSelected?.iva || 0)} />
+              <PrecioTile label="Precio Total" valor={priceFormat(tarifaSelected?.precioTotal || 0)} total />
             </div>
           </div>
         </div>
@@ -591,10 +500,10 @@ function RouteComponent() {
           <div className="flex-1 overflow-y-auto">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Selección de Periodo y Servicio */}
-              <div className="space-y-4">
-                <h3 className="border-b pb-2 text-lg font-medium text-gray-900">
+              <div className="flex flex-col gap-4">
+                <Typography variant="h5" component="h3" sx={{ pb: 1, borderBottom: 1, borderColor: "divider" }}>
                   Periodo y Servicio
-                </h3>
+                </Typography>
                 <InputSelect
                   label="Tipo de tarifa"
                   options={
@@ -608,7 +517,9 @@ function RouteComponent() {
                   }
                   placeholder="Seleccione un tipo de tarifa"
                   id="idTipoTarifa"
-                  {...register("idTipoTarifa", { valueAsNumber: true })}
+                  control={control}
+                  name="idTipoTarifa"
+                  valueAsNumber
                 />
                 <InputSelectStateBoolean
                   label="Estado"
@@ -619,10 +530,10 @@ function RouteComponent() {
               </div>
 
               {/* Información de Precios */}
-              <div className="space-y-4">
-                <h3 className="border-b pb-2 text-lg font-medium text-gray-900">
+              <div className="flex flex-col gap-4">
+                <Typography variant="h5" component="h3" sx={{ pb: 1, borderBottom: 1, borderColor: "divider" }}>
                   Información de Precios
-                </h3>
+                </Typography>
                 <InputPrice
                   size="full"
                   label="Costos Directos:"
@@ -671,3 +582,86 @@ function RouteComponent() {
     </Section>
   );
 }
+
+const Precio = ({ children }: { children: ReactNode }) => (
+  <Typography
+    variant="body2"
+    sx={{ fontWeight: 500, whiteSpace: "nowrap", color: "success.dark" }}
+  >
+    {children}
+  </Typography>
+);
+
+const SiNoChip = ({
+  valor,
+  si = "Sí",
+  no = "No",
+}: {
+  valor: boolean;
+  si?: string;
+  no?: string;
+}) => (
+  <Chip size="small" color={valor ? "success" : "error"} variant="outlined" label={valor ? si : no} />
+);
+
+const DetalleSeccion = ({
+  icon,
+  titulo,
+  children,
+}: {
+  icon: ReactNode;
+  titulo: string;
+  children: ReactNode;
+}) => (
+  <div>
+    <Typography
+      variant="h5"
+      component="h3"
+      className="flex items-center gap-2"
+      sx={{ mb: 1.5, "& svg": { color: "primary.main", fontSize: 20 } }}
+    >
+      {icon}
+      {titulo}
+    </Typography>
+    <div className="grid grid-cols-1 gap-x-4 gap-y-1 md:grid-cols-2">{children}</div>
+  </div>
+);
+
+const Campo = ({ label, valor }: { label: string; valor: ReactNode }) => (
+  <Typography variant="body2" color="text.secondary" component="div" className="flex items-center gap-1">
+    <Box component="span" sx={{ fontWeight: 500, color: "text.primary" }}>
+      {label}:
+    </Box>{" "}
+    {valor}
+  </Typography>
+);
+
+const PrecioTile = ({
+  label,
+  valor,
+  total = false,
+}: {
+  label: string;
+  valor: string;
+  total?: boolean;
+}) => (
+  <Box
+    className="rounded-lg p-4"
+    sx={{
+      border: 1,
+      borderColor: total ? "success.light" : "primary.light",
+      bgcolor: (t) => alpha(total ? t.palette.success.main : t.palette.primary.main, 0.06),
+    }}
+  >
+    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+      {label}
+    </Typography>
+    <Typography
+      variant="h2"
+      component="p"
+      sx={{ whiteSpace: "nowrap", color: total ? "success.main" : "primary.main" }}
+    >
+      {valor}
+    </Typography>
+  </Box>
+);

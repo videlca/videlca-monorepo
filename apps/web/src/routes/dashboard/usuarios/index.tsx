@@ -4,7 +4,7 @@ import type { Usuario } from "../../../types";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PencilIcon, PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import Table from "../../../components/common/Table";
 import {
   useCreateUsuario,
@@ -59,6 +59,7 @@ function RouteComponent() {
   // Formularios
   const {
     register: registerCrear,
+    control: controlCrear,
     handleSubmit: handleSubmitCrear,
     reset: resetCrear,
   } = useForm<CreateUserDto>({
@@ -77,6 +78,7 @@ function RouteComponent() {
 
   const {
     register: registerEditar,
+    control: controlEditar,
     handleSubmit: handleSubmitEditar,
     reset: resetEditar,
   } = useForm<UpdateUserStatusDto>({
@@ -198,7 +200,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Nuevo usuario"
             onClick={() => {
               setIsModalOpenUsuario(true);
@@ -319,7 +321,9 @@ function RouteComponent() {
                 })) || []
               }
               required
-              {...registerCrear("idTipoIdentificacion", { valueAsNumber: true })}
+              control={controlCrear}
+              name="idTipoIdentificacion"
+              valueAsNumber
             />
             <InputForm
               label="Número de identificación"
@@ -340,7 +344,9 @@ function RouteComponent() {
                 })) || []
               }
               required
-              {...registerCrear("idRol", { valueAsNumber: true })}
+              control={controlCrear}
+              name="idRol"
+              valueAsNumber
             />
           </div>
         </FormsModal>
@@ -382,7 +388,9 @@ function RouteComponent() {
                 })) || []
               }
               required
-              {...registerEditar("idRol", { valueAsNumber: true })}
+              control={controlEditar}
+              name="idRol"
+              valueAsNumber
             />
           </div>
         </FormsModal>

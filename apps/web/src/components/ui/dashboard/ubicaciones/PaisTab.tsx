@@ -4,7 +4,7 @@ import { ButtonAction } from "../../../common/ButtonAction";
 import { SimpleModal } from "../../../common/SimpleModal";
 import Table from "../../../common/Table";
 import type { ColumnDef } from "@tanstack/react-table";
-import { PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import {
   // useActualizarPais,
   useCrearPais,
@@ -76,10 +76,10 @@ export const PaisTab = () => {
   ];
   return (
     <>
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar pais"
             onClick={() => setIsModalOpen(true)}
           />
@@ -141,17 +141,17 @@ export const PaisTab = () => {
               onChange={handleChangeEditar}
               type="text"
             />
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-2">
               <Button
                 onClick={() => {
                   setIsModalOpenEditar(false);
                   resetFormEditar();
                 }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
+                variant="secondary"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
+              <Button type="submit" loading={isLoading}>
                 {isLoading ? "Actualizando..." : "Actualizar"}
               </Button>
             </div>

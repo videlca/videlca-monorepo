@@ -1,8 +1,12 @@
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import { WizardFooter, WizardStepper } from "../../../components/ui/common/Wizard";
 import { createFileRoute } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { Check, ChevronRightIcon, PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Table from "../../../components/common/Table";
 import { ServiciosOrdenResumen } from "../../../components/common/ServiciosOrdenResumen";
 import { SimpleModal } from "../../../components/common/SimpleModal";
@@ -1054,19 +1058,24 @@ function RouteComponent() {
       header: "Id. Orden de Servicio",
       // El chevron despliega/oculta el resumen de servicios de esta fila (ver renderExpandedRow en <Table>)
       cell: ({ row }) => (
-        <button
-          type="button"
+        <Button
+          size="small"
+          color="inherit"
           onClick={row.getToggleExpandedHandler()}
           title={row.getIsExpanded() ? "Ocultar servicios" : "Ver servicios"}
-          className="flex cursor-pointer items-center gap-1.5 font-medium whitespace-nowrap text-black"
+          startIcon={
+            <ChevronRightIcon
+              sx={{
+                color: "text.secondary",
+                transition: "transform .2s",
+                transform: row.getIsExpanded() ? "rotate(90deg)" : "none",
+              }}
+            />
+          }
+          sx={{ fontWeight: 500 }}
         >
-          <ChevronRightIcon
-            className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform ${
-              row.getIsExpanded() ? "rotate-90" : ""
-            }`}
-          />
           {row.original.ordenServicioId.descripcionId}
-        </button>
+        </Button>
       ),
     },
     {
@@ -1075,7 +1084,7 @@ function RouteComponent() {
       // Vigilancia y escolta: cliente del puesto. Monitoreo de alarmas: cliente asignado directo a la orden
       // (idLocacion es null en ese caso, ver esOrdenMonitoreo)
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap text-black capitalize">
+        <span className="whitespace-nowrap capitalize">
           {row.original.idLocacion?.idCliente.nombre ||
             row.original.idCliente?.nombre ||
             "No especificado"}
@@ -1086,12 +1095,12 @@ function RouteComponent() {
       accessorKey: "idLocacion",
       header: "Puesto",
       cell: ({ row }) => (
-        <span className="flex flex-col gap-1 font-medium whitespace-nowrap text-black capitalize">
+        <span className="flex flex-col gap-1 whitespace-nowrap capitalize">
           {row.original.idLocacion?.nombre ||
             (row.original.idCliente ? "N/A" : "No especificado")}
-          <span className="text-sm text-gray-500">
+          <Typography variant="caption" color="text.secondary">
             {row.original.idLocacion?.direccion}
-          </span>
+          </Typography>
         </span>
       ),
     },
@@ -1099,19 +1108,19 @@ function RouteComponent() {
       accessorKey: "fechas",
       header: "Fechas",
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap text-gray-500">
+        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
           Inicio: {row.original.fechaInicio} - Fin:{" "}
           {row.original.fechaFin || "Indefinida"}
-        </span>
+        </Typography>
       ),
     },
     {
       accessorKey: "precioTotal",
       header: "Precio Total",
       cell: ({ row }) => (
-        <span className="font-medium whitespace-nowrap text-green-500">
+        <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: "nowrap", color: "success.main" }}>
           {priceFormat(Number(row.original.precioTotal))}
-        </span>
+        </Typography>
       ),
     },
     {
@@ -1407,7 +1416,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar orden de servicio"
             onClick={() => {
               setIsOpenAdd(true);
@@ -1461,106 +1470,50 @@ function RouteComponent() {
         size="3xl"
       >
         <>
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center px-6 py-6">
-            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
-              <div key={step} className="flex items-center">
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step < currentStep
-                    ? "bg-green-500 text-white"
-                    : step === currentStep
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-600"
-                    }`}
-                >
-                  {step < currentStep ? <Check className="h-4 w-4" /> : step}
-                </div>
-                {step < totalSteps && (
-                  <div
-                    className={`mx-2 h-0.5 w-16 ${step < currentStep ? `bg-green-500` : `bg-gray-200`}`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+          <WizardStepper currentStep={currentStep} totalSteps={totalSteps} />
 
           {/* Step Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto px-2 py-4">
             {renderStepContent()}
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between border-t border-gray-200 px-6 pt-6 pb-4">
-            <div className="text-sm text-gray-500">
-              Paso {currentStep} de {totalSteps}
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-                onClick={() => {
-                  handleCloseModal();
-                }}
-              >
-                Cancelar
-              </button>
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-                  onClick={handlePrevious}
-                >
-                  Anterior
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={currentStep < totalSteps ? handleNext : handleSaveOrder}
-                disabled={
-                  isValidateFechasOrdenServicioPending ||
-                  isGetPrecioOrdenPending ||
-                  isCrearOrdenServicioPending ||
-                  isValidarIdOrdenServicioPending ||
-                  isValidarRangoHorarioPersonalOrdenServicioPending ||
-                  isValidarHorarioServicioOrdenServicioPending ||
-                  (currentStep === 1 &&
-                    (identificador.codigoTipoServicio === 0 ||
-                      identificador.codigo === 0)) ||
-                  (currentStep === 2 &&
-                    !watchCreate("idCliente") &&
-                    !watchCreate("idLocacion")) ||
-                  (currentStep === 3 && !watchCreate("fechaInicio")) ||
-                  (currentStep === 3 &&
-                    cobroParcial.activo &&
-                    (cobroParcial.diaInicio == null || cobroParcial.diaFin == null)) ||
-                  (currentStep === 4 && !origenServicio) ||
-                  (currentStep === 5 &&
-                    origenServicio === OrigenServicioEnum.CATALOGO &&
-                    configuracionServicioTarifa.length === 0) ||
-                  (currentStep === 5 &&
-                    origenServicio === OrigenServicioEnum.A_MEDIDA &&
-                    (horarioAMedida.horaInicio === "" ||
-                      horarioAMedida.horaFin === ""))
-                  // TODO: Revisar validaciones de los pasos
-                }
-                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${currentStep < totalSteps
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-green-600 hover:bg-green-700"
-                  } ${isCrearOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
-              >
-                {isCrearOrdenServicioPending ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                    Creando...
-                  </div>
-                ) : currentStep < totalSteps ? (
-                  "Siguiente"
-                ) : (
-                  "Crear Orden"
-                )}
-              </button>
-            </div>
-          </div>
+          <WizardFooter
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            onCancel={handleCloseModal}
+            onPrevious={handlePrevious}
+            onNext={currentStep < totalSteps ? handleNext : handleSaveOrder}
+            nextDisabled={
+              isValidateFechasOrdenServicioPending ||
+              isGetPrecioOrdenPending ||
+              isCrearOrdenServicioPending ||
+              isValidarIdOrdenServicioPending ||
+              isValidarRangoHorarioPersonalOrdenServicioPending ||
+              isValidarHorarioServicioOrdenServicioPending ||
+              (currentStep === 1 &&
+                (identificador.codigoTipoServicio === 0 ||
+                  identificador.codigo === 0)) ||
+              (currentStep === 2 &&
+                !watchCreate("idCliente") &&
+                !watchCreate("idLocacion")) ||
+              (currentStep === 3 && !watchCreate("fechaInicio")) ||
+              (currentStep === 3 &&
+                cobroParcial.activo &&
+                (cobroParcial.diaInicio == null || cobroParcial.diaFin == null)) ||
+              (currentStep === 4 && !origenServicio) ||
+              (currentStep === 5 &&
+                origenServicio === OrigenServicioEnum.CATALOGO &&
+                configuracionServicioTarifa.length === 0) ||
+              (currentStep === 5 &&
+                origenServicio === OrigenServicioEnum.A_MEDIDA &&
+                (horarioAMedida.horaInicio === "" ||
+                  horarioAMedida.horaFin === ""))
+              // TODO: Revisar validaciones de los pasos
+            }
+            loading={isCrearOrdenServicioPending}
+            finalLabel="Crear Orden"
+            loadingLabel="Creando..."
+          />
         </>
       </SimpleModal>
 
@@ -1574,83 +1527,26 @@ function RouteComponent() {
         size="3xl"
       >
         <>
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center px-6 py-6">
-            {[1, 2].map((step) => (
-              <div key={step} className="flex items-center">
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${step < currentStep
-                    ? "bg-green-500 text-white"
-                    : step === currentStep
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-600"
-                    }`}
-                >
-                  {step < currentStep ? <Check className="h-4 w-4" /> : step}
-                </div>
-                {step < 2 && (
-                  <div
-                    className={`mx-2 h-0.5 w-16 ${step < currentStep ? `bg-green-500` : `bg-gray-200`}`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+          <WizardStepper currentStep={currentStep} totalSteps={2} />
 
           {/* Step Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto px-2 py-4">
             {renderStepEditContent()}
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between border-t border-gray-200 px-6 pt-6 pb-4">
-            <div className="text-sm text-gray-500">
-              Paso {currentStep} de {2}
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-                onClick={() => {
-                  handleCloseModal();
-                }}
-              >
-                Cancelar
-              </button>
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-                  onClick={handlePrevious}
-                >
-                  Anterior
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={currentStep < 2 ? handleNextEdit : handleUpdateOrder}
-                disabled={
-                  isValidateFechasOrdenServicioPending ||
-                  isGetPrecioOrdenPending
-                }
-                className={`inline-flex cursor-pointer items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${currentStep < 2
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-green-600 hover:bg-green-700"
-                  } ${isActualizarOrdenServicioPending ? "cursor-not-allowed opacity-50" : ""}`}
-              >
-                {isActualizarOrdenServicioPending ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                    Actualizando...
-                  </div>
-                ) : currentStep < 2 ? (
-                  "Siguiente"
-                ) : (
-                  "Actualizar Orden"
-                )}
-              </button>
-            </div>
-          </div>
+          <WizardFooter
+            currentStep={currentStep}
+            totalSteps={2}
+            onCancel={handleCloseModal}
+            onPrevious={handlePrevious}
+            onNext={currentStep < 2 ? handleNextEdit : handleUpdateOrder}
+            nextDisabled={
+              isValidateFechasOrdenServicioPending || isGetPrecioOrdenPending
+            }
+            loading={isActualizarOrdenServicioPending}
+            finalLabel="Actualizar Orden"
+            loadingLabel="Actualizando..."
+          />
         </>
       </SimpleModal>
 

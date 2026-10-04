@@ -1,3 +1,5 @@
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
 import { createContext, useContext, useEffect, useState } from "react";
 import { checkAuth } from "../api/functions/auth";
 
@@ -40,9 +42,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Verificando autenticación...</p>
+        <div className="flex flex-col items-center gap-2">
+          <CircularProgress />
+          <Typography color="text.secondary">Verificando autenticación...</Typography>
         </div>
       </div>
     );

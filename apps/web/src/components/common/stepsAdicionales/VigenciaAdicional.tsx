@@ -1,3 +1,5 @@
+import { StepHeader } from "../../ui/common/StepHeader";
+import Typography from "@mui/material/Typography";
 import { useEffect } from "react";
 import type { UseFormSetValue } from "react-hook-form";
 import { getYear } from "date-fns";
@@ -63,22 +65,19 @@ export const VigenciaAdicional = ({
   }, [vigencia, isIndefinido]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       {showHeader && (
-        <div className="text-center">
-          <h3 className="mb-2 text-lg font-semibold text-gray-900">
-            Vigencia del Adicional
-          </h3>
-          <p className="text-sm text-gray-600">
-            Seleccione el mes desde el que empieza a cobrar el adicional. Si no
-            define un mes de fin, se cobrará indefinidamente cada mes
-          </p>
-        </div>
+        <StepHeader
+          title="Vigencia del Adicional"
+          description="Seleccione el mes desde el que empieza a cobrar el adicional. Si no define un mes de fin, se cobrará indefinidamente cada mes"
+        />
       )}
 
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div>
-          <p className="mb-2 text-sm font-medium text-gray-700">Mes de Inicio</p>
+          <Typography variant="body2" sx={{ mb: 1.5, fontWeight: 500 }}>
+            Mes de Inicio
+          </Typography>
           <div className="grid grid-cols-2 gap-4">
             <InputSelect
               id="vigenciaAnoInicio"
@@ -111,7 +110,9 @@ export const VigenciaAdicional = ({
         />
 
         <div>
-          <p className="mb-2 text-sm font-medium text-gray-700">Mes de Fin</p>
+          <Typography variant="body2" sx={{ mb: 1.5, fontWeight: 500 }}>
+            Mes de Fin
+          </Typography>
           <div className="grid grid-cols-2 gap-4">
             <InputSelect
               id="vigenciaAnoFin"

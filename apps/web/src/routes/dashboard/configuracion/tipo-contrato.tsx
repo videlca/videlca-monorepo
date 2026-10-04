@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { Section } from "../../../components/ui/dashboard/Section";
 import Table from "../../../components/common/Table";
@@ -44,13 +44,14 @@ function RouteComponent() {
   const { mutate: eliminarTipoContrato } = useEliminarTipoContrato();
 
   // Formularios
-  const { register: registerCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } =
+  const { register: registerCrear, control: controlCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } =
     useForm<CreateTipoContrato>({
       defaultValues: { descripcion: "", indefinido: false },
     });
 
   const {
     register: registerEditar,
+    control: controlEditar,
     handleSubmit: handleSubmitEditar,
     reset: resetEditar,
   } = useForm<ActualizarTipoContrato>({
@@ -114,7 +115,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar tipo de contrato"
             onClick={() => {
               setIsModalOpen(true);
@@ -167,7 +168,8 @@ function RouteComponent() {
               <CheckboxForm
                 label="Tipo de contrato indefinido (sin fecha de fin)?"
                 id="indefinido"
-                {...registerCrear("indefinido")}
+                control={controlCrear}
+                name="indefinido"
               />
             </div>
           </FormsModal>
@@ -228,7 +230,8 @@ function RouteComponent() {
               <CheckboxForm
                 label="Tipo de contrato indefinido (sin fecha de fin)?"
                 id="indefinido"
-                {...registerEditar("indefinido")}
+                control={controlEditar}
+                name="indefinido"
               />
             </div>
           </FormsModal>

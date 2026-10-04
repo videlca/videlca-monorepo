@@ -3,7 +3,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import Table from "../../../components/common/Table";
 import type { TipoNovedad } from "../../../types";
 import { useForm } from "react-hook-form";
@@ -115,7 +115,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar tipo novedad"
             onClick={() => {
               setIsModalOpen(true);

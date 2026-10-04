@@ -1,3 +1,9 @@
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { SectionCard } from "../../../components/ui/common/SectionCard";
+import { GrupoLiquidacionCard } from "../../../components/common/GrupoLiquidacionCard";
+import { EmptyState } from "../../../components/ui/common/EmptyState";
 import { createFileRoute } from "@tanstack/react-router";
 import { getYear, subYears } from "date-fns";
 import { useState } from "react";
@@ -11,16 +17,12 @@ import {
 import { Section } from "../../../components/ui/dashboard/Section";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import {
-  EyeOff,
-  FileDown,
-  FileTextIcon,
-  Mail,
-  MessageSquareTextIcon,
-  Search,
-  Send,
-} from "lucide-react";
-import { OrdenServicioCard } from "../../../components/common/OrdenServicioCard";
+import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import MailOutlinedIcon from "@mui/icons-material/MailOutlined";
+import SearchIcon from "@mui/icons-material/Search";
+import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/ObservacionesGrupoOrdenes";
@@ -68,13 +70,13 @@ const currentMonth = (new Date().getMonth() + 1).toString();
 const TODOS_LOS_CLIENTES = "0";
 
 function RouteComponent() {
-  const [hiddenGroups, setHiddenGroups] = useState<Set<number>>(new Set());
   const [searchMonth, setSearchMonth] = useState<string>(currentMonth);
   const [searchYear, setSearchYear] = useState<string>(currentYear);
   const [searchCliente, setSearchCliente] =
     useState<string>(TODOS_LOS_CLIENTES);
-  const [searchTipos, setSearchTipos] =
-    useState<TipoServicioFiltro[]>(TIPOS_SERVICIO_FILTRO);
+  const [searchTipos, setSearchTipos] = useState<TipoServicioFiltro[]>(
+    TIPOS_SERVICIO_FILTRO,
+  );
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [isOpenEmail, setIsOpenEmail] = useState(false);
   const [isOpenPdf, setIsOpenPdf] = useState(false);
@@ -135,16 +137,6 @@ function RouteComponent() {
     isPending: enviarPdfLiquidacionPending,
   } = useEnviarPdfLiquidacion();
 
-  const toggleHideOrders = (groupId: number) => {
-    const newHidden = new Set(hiddenGroups);
-    if (newHidden.has(groupId)) {
-      newHidden.delete(groupId);
-    } else {
-      newHidden.add(groupId);
-    }
-    setHiddenGroups(newHidden);
-  };
-
   const handleGenerarReporteLiquidacion = (groupId: number) => {
     generarReporteArchivoLiquidacion(groupId);
   };
@@ -189,228 +181,172 @@ function RouteComponent() {
 
   return (
     <Section>
-      <div className="flex flex-col gap-8">
-        <div className="rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold">Filtros de Búsqueda</h2>
-          <p className="mb-4 text-sm text-gray-500">
-            Para ver el historial de liquidaciones, selecciona el mes y año de
-            la liquidación. Opcionalmente, filtra por cliente y tipo de servicio.
-          </p>
-          <div className="flex flex-wrap items-end gap-4">
-            <div className="min-w-48 flex-1">
-              <InputSelect
-                label="Año"
-                placeholder="Selecciona un año"
-                id="searchYear"
-                value={searchYear}
-                onChange={(e) => {
-                  setSearchYear(e.target.value);
-                  setIsSearching(false);
-                }}
-                options={yearsOptions as { id: number; descripcion: string }[]}
-              />
-            </div>
-            <div className="min-w-48 flex-1">
-              <InputSelect
-                label="Mes"
-                placeholder="Selecciona un mes"
-                id="searchMonth"
-                value={searchMonth}
-                onChange={(e) => {
-                  setSearchMonth(e.target.value);
-                  setIsSearching(false);
-                }}
-                options={monthsOptions}
-              />
-            </div>
-            <div className="min-w-48 flex-1">
-              <InputSelect
-                label="Cliente"
-                placeholder="Selecciona un cliente"
-                id="searchCliente"
-                value={searchCliente}
-                onChange={(e) => {
-                  setSearchCliente(e.target.value);
-                  setIsSearching(false);
-                }}
-                options={clientesOptions}
-              />
-            </div>
-            <FiltroTiposServicio
-              value={searchTipos}
-              onChange={(tipos) => {
-                setSearchTipos(tipos);
+      <SectionCard
+        title="Filtros de Búsqueda"
+        description="Para ver el historial de liquidaciones, selecciona el mes y año de la liquidación. Opcionalmente, filtra por cliente y tipo de servicio."
+      >
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="min-w-48 flex-1">
+            <InputSelect
+              label="Año"
+              placeholder="Selecciona un año"
+              id="searchYear"
+              value={searchYear}
+              onChange={(e) => {
+                setSearchYear(e.target.value);
                 setIsSearching(false);
               }}
-            />
-            <ButtonAction
-              onClick={() => {
-                setIsSearching(true);
-                refetchLiquidaciones();
-              }}
-              disabled={isLoadingLiquidaciones}
-              Icon={Search}
-              label={isLoadingLiquidaciones ? "Buscando..." : "Buscar"}
+              options={yearsOptions as { id: number; descripcion: string }[]}
             />
           </div>
+          <div className="min-w-48 flex-1">
+            <InputSelect
+              label="Mes"
+              placeholder="Selecciona un mes"
+              id="searchMonth"
+              value={searchMonth}
+              onChange={(e) => {
+                setSearchMonth(e.target.value);
+                setIsSearching(false);
+              }}
+              options={monthsOptions}
+            />
+          </div>
+          <div className="min-w-48 flex-1">
+            <InputSelect
+              label="Cliente"
+              placeholder="Selecciona un cliente"
+              id="searchCliente"
+              value={searchCliente}
+              onChange={(e) => {
+                setSearchCliente(e.target.value);
+                setIsSearching(false);
+              }}
+              options={clientesOptions}
+            />
+          </div>
+          <FiltroTiposServicio
+            value={searchTipos}
+            onChange={(tipos) => {
+              setSearchTipos(tipos);
+              setIsSearching(false);
+            }}
+          />
+          <ButtonAction
+            onClick={() => {
+              setIsSearching(true);
+              refetchLiquidaciones();
+            }}
+            disabled={isLoadingLiquidaciones}
+            Icon={SearchIcon}
+            label={isLoadingLiquidaciones ? "Buscando..." : "Buscar"}
+          />
         </div>
-      </div>
+      </SectionCard>
 
       {isSearching &&
         !isLoadingLiquidaciones &&
         liquidacionesData.length === 0 && (
-          <div className="py-12 text-center">
-            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
-              <FileTextIcon className="h-12 w-12 text-gray-400" />
-            </div>
-            <h3 className="mb-2 text-lg font-medium text-gray-900">
-              No se encontraron órdenes de servicio
-            </h3>
-          </div>
+          <EmptyState
+            icon={<DescriptionOutlinedIcon />}
+            title="No se encontraron órdenes de servicio"
+          />
         )}
 
       {isSearching &&
       !isLoadingLiquidaciones &&
       liquidacionesData.length > 0 ? (
         <>
-          <div className="mb-4 flex justify-between">
-            <div className="mb-2 flex-col items-start justify-between gap-2">
-              <h2 className="text-xl font-semibold">
-                Resultados ({liquidacionesData.length} grupos encontrados)
-              </h2>
-            </div>
-          </div>
+          <Typography variant="h3" component="h2">
+            Resultados ({liquidacionesData.length} grupos encontrados)
+          </Typography>
 
-          <div className="mb-6 flex flex-wrap items-center justify-end gap-6 rounded-lg border border-gray-300 bg-white p-4 shadow-sm">
-            <span className="text-sm text-gray-600">
+          <Paper
+            variant="outlined"
+            className="flex flex-wrap items-center justify-end gap-6 p-4"
+          >
+            <Typography variant="body2" color="text.secondary">
               Total antes de IVA:{" "}
-              <span className="font-medium text-gray-700">
-                {priceFormat(totalAntesIvaGeneral)}
-              </span>
-            </span>
-            <span className="text-sm text-gray-600">
-              Liquidación Total:{" "}
-              <span className="text-base font-semibold text-green-600">
-                {priceFormat(totalLiquidacionGeneral)}
-              </span>
-            </span>
-          </div>
-
-          <div className="space-y-4">
-            {liquidacionesData.map((group) => (
-              <div
-                key={group.idGrupoLiquidacion}
-                className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm"
+              <Box
+                component="span"
+                sx={{ fontWeight: 500, color: "text.primary" }}
               >
-                <div className="border-b border-gray-200 bg-gray-50 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex w-full flex-col items-center justify-between gap-4 md:flex-row md:gap-0">
-                      <div className="text-gray-600">
-                        <h3
-                          className={`mb-2 border-b border-gray-200 pb-2 text-xl font-semibold ${
-                            group.idCliente?.nombre
-                              ? "text-gray-900"
-                              : "text-gray-400 italic"
-                          }`}
-                        >
-                          {group.idCliente?.nombre || "Sin cliente"}
-                        </h3>
-                        <div className="text-sm">
-                          <span className="font-medium">Descripción:</span>{" "}
-                          {group.descripcion} <br />
-                          <span className="font-medium">Órdenes:</span>{" "}
-                          {group.liquidaciones?.length || 0}
-                          <br />
-                          <span className="font-medium">Creado:</span>{" "}
-                          {group.fechaCreacion
-                            ? new Date(group.fechaCreacion).toLocaleDateString(
-                                "es-ES",
-                              )
-                            : ""}
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end md:gap-4">
-                        <ButtonOrdenes
-                          onClick={() =>
-                            toggleHideOrders(group.idGrupoLiquidacion)
-                          }
-                          color="gray"
-                          title={
-                            hiddenGroups.has(group.idGrupoLiquidacion)
-                              ? "Mostrar órdenes"
-                              : "Ocultar órdenes"
-                          }
-                        >
-                          <EyeOff className="mr-1 h-4 w-4" />
-                          {hiddenGroups.has(group.idGrupoLiquidacion)
-                            ? "Mostrar"
-                            : "Ocultar"}
-                        </ButtonOrdenes>
-                        <ButtonOrdenes
-                          onClick={() => {
-                            setIsOpenObservacionesModal(true);
-                            setGroupLiquidacionSelected(group);
-                          }}
-                          color="green"
-                        >
-                          <MessageSquareTextIcon className="mr-1 h-4 w-4" />
-                          Observaciones
-                        </ButtonOrdenes>
-                        <ButtonOrdenes
-                          onClick={() =>
-                            handleGenerarReporteLiquidacion(
-                              group.idGrupoLiquidacion,
-                            )
-                          }
-                          color="blue"
-                        >
-                          <FileTextIcon className="mr-1 h-4 w-4" />
-                          Generar reporte
-                        </ButtonOrdenes>
-                        <ButtonOrdenes
-                          onClick={() =>
-                            handleEnviarCorreoLiquidacion(
-                              group.idGrupoLiquidacion,
-                            )
-                          }
-                          color="amber"
-                        >
-                          <Mail className="mr-1 h-4 w-4" />
-                          Enviar correo
-                        </ButtonOrdenes>
-                        <ButtonOrdenes
-                          onClick={() =>
-                            handleDescargarPdfLiquidacion(
-                              group.idGrupoLiquidacion,
-                            )
-                          }
-                          color="red"
-                        >
-                          <FileDown className="mr-1 h-4 w-4" />
-                          Descargar PDF
-                        </ButtonOrdenes>
-                        <ButtonOrdenes
-                          onClick={() =>
-                            handleEnviarPdfLiquidacion(group.idGrupoLiquidacion)
-                          }
-                          color="purple"
-                        >
-                          <Send className="mr-1 h-4 w-4" />
-                          Enviar PDF
-                        </ButtonOrdenes>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {priceFormat(totalAntesIvaGeneral)}
+              </Box>
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Liquidación Total:{" "}
+              <Box
+                component="span"
+                sx={{
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: "success.main",
+                }}
+              >
+                {priceFormat(totalLiquidacionGeneral)}
+              </Box>
+            </Typography>
+          </Paper>
 
-                {!hiddenGroups.has(group.idGrupoLiquidacion) && (
-                  <OrdenServicioCard
-                    key={group.idGrupoLiquidacion}
-                    grupoLiquidacion={group}
-                    showTotal={true}
-                  />
-                )}
-              </div>
+          <div className="flex flex-col gap-4">
+            {liquidacionesData.map((group) => (
+              <GrupoLiquidacionCard
+                key={group.idGrupoLiquidacion}
+                group={group}
+                actions={
+                  <>
+                    <ButtonOrdenes
+                      onClick={() => {
+                        setIsOpenObservacionesModal(true);
+                        setGroupLiquidacionSelected(group);
+                      }}
+                      color="green"
+                      icon={<CommentOutlinedIcon />}
+                    >
+                      Observaciones
+                    </ButtonOrdenes>
+                    <ButtonOrdenes
+                      onClick={() =>
+                        handleGenerarReporteLiquidacion(
+                          group.idGrupoLiquidacion,
+                        )
+                      }
+                      color="blue"
+                      icon={<DescriptionOutlinedIcon />}
+                    >
+                      Generar reporte
+                    </ButtonOrdenes>
+                    <ButtonOrdenes
+                      onClick={() =>
+                        handleEnviarCorreoLiquidacion(group.idGrupoLiquidacion)
+                      }
+                      color="amber"
+                      icon={<MailOutlinedIcon />}
+                    >
+                      Enviar correo
+                    </ButtonOrdenes>
+                    <ButtonOrdenes
+                      onClick={() =>
+                        handleDescargarPdfLiquidacion(group.idGrupoLiquidacion)
+                      }
+                      color="red"
+                      icon={<FileDownloadOutlinedIcon />}
+                    >
+                      Descargar PDF
+                    </ButtonOrdenes>
+                    <ButtonOrdenes
+                      onClick={() =>
+                        handleEnviarPdfLiquidacion(group.idGrupoLiquidacion)
+                      }
+                      color="purple"
+                      icon={<SendOutlinedIcon />}
+                    >
+                      Enviar PDF
+                    </ButtonOrdenes>
+                  </>
+                }
+              />
             ))}
           </div>
         </>

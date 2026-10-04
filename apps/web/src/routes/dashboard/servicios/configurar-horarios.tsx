@@ -3,7 +3,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { TipoHorario } from "../../../api/types/servicio";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import Table from "../../../components/common/Table";
 import { useState } from "react";
 import {
@@ -236,7 +236,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar Horario"
             onClick={() => {
               setIsOpenAddTipoHorario(true);

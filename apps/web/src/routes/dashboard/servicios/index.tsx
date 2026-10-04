@@ -1,15 +1,17 @@
+import Chip from "@mui/material/Chip";
+import FormLabel from "@mui/material/FormLabel";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { InfoTile } from "../../../components/ui/common/InfoTile";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  BarChart3,
-  Calendar,
-  Clock,
-  DollarSign,
-  FileText,
-  PlusIcon,
-  Shield,
-  UserCheck,
-  UserX,
-} from "lucide-react";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import HowToRegOutlinedIcon from "@mui/icons-material/HowToRegOutlined";
+import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
+import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import Table from "../../../components/common/Table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { Section } from "../../../components/ui/dashboard/Section";
@@ -155,6 +157,7 @@ function RouteComponent() {
   // Formularios con react-hook-form
   const {
     register: registerAgregar,
+    control: controlAgregar,
     handleSubmit: handleSubmitAgregar,
     reset: resetAgregar,
     setValue: setValueAgregar,
@@ -175,6 +178,7 @@ function RouteComponent() {
 
   const {
     register: registerEditar,
+    control: controlEditar,
     handleSubmit: handleSubmitEditar,
     reset: resetEditar,
     setValue: setValueEditar,
@@ -338,7 +342,7 @@ function RouteComponent() {
     <Section>
       {/* <div className="flex justify-end">
         <ButtonAction
-          Icon={PlusIcon}
+          Icon={AddIcon}
           label="Agregar Servicio"
           onClick={() => setIsOpenAddModal(true)}
         />
@@ -347,13 +351,10 @@ function RouteComponent() {
       <div className="flex flex-col gap-6">
         {serviciosData.map(([key, value]: [string, any]) => {
           return (
-            <div
-              key={key}
-              className="rounded-lg border border-blue-200 bg-blue-100/70 pt-2"
-            >
-              <h2 className="mb-2 w-fit rounded-lg p-2 px-4 text-xl font-medium text-blue-600">
+            <div key={key} className="flex flex-col gap-2">
+              <Typography variant="h4" component="h2" color="primary">
                 {key}
-              </h2>
+              </Typography>
               <Table
                 columns={columns}
                 data={value || []}
@@ -442,15 +443,12 @@ function RouteComponent() {
             <FormSection
               title="Datos del servicio"
               description="Datos del servicio"
-              Icon={FileText}
+              Icon={DescriptionOutlinedIcon}
             >
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="codigo"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Código servicio (código referencia SIGO)*
-                </label>
+                <FormLabel htmlFor="codigo" required>
+                  Código servicio (código referencia SIGO)
+                </FormLabel>
 
                 <div className="flex flex-row items-center justify-center gap-2">
                   <InputForm
@@ -516,7 +514,8 @@ function RouteComponent() {
                 }
                 id="idTipoServicio"
                 required={true}
-                {...registerAgregar("idTipoServicio")}
+                control={controlAgregar}
+                name="idTipoServicio"
               />
               <InputSelect
                 label="Tipo de horario *"
@@ -529,21 +528,20 @@ function RouteComponent() {
                 }
                 id="idTipoHorarioDescripcion"
                 required={true}
-                {...registerAgregar("idTipoHorarioDescripcion", {
-                  onChange: (e) => {
-                    const nombreSeleccionado =
-                      e.target.selectedOptions[0]?.text || null;
-                    setTipoHorarioNombre(nombreSeleccionado);
-                    setTipoDuracion(null);
-                    setValueAgregar("idTipoTarifa", 0);
-                    if (
-                      nombreSeleccionado &&
-                      !HORARIOS_CON_DOMINICAL.includes(nombreSeleccionado)
-                    ) {
-                      setValueAgregar("dominical", false);
-                    }
-                  },
-                })}
+                control={controlAgregar}
+                name="idTipoHorarioDescripcion"
+                onOptionChange={(option) => {
+                  const nombreSeleccionado = option.descripcion;
+                  setTipoHorarioNombre(nombreSeleccionado);
+                  setTipoDuracion(null);
+                  setValueAgregar("idTipoTarifa", 0);
+                  if (
+                    nombreSeleccionado &&
+                    !HORARIOS_CON_DOMINICAL.includes(nombreSeleccionado)
+                  ) {
+                    setValueAgregar("dominical", false);
+                  }
+                }}
               />
               {!ocultarDuracionYHoras && (
                 <InputSelect
@@ -557,19 +555,19 @@ function RouteComponent() {
                   }
                   id="idTipoDuracion"
                   required={true}
-                  {...registerAgregar("idTipoDuracion", {
-                    onChange: (e) => {
-                      const nuevaDuracion =
-                        tiposDuraciones?.data?.data?.find(
-                          (tipo) =>
-                            tipo.idTipoDuracion === Number(e.target.value),
-                        )?.descripcion === "flexible"
-                          ? "flexible"
-                          : "fija";
-                      setTipoDuracion(nuevaDuracion);
-                      setValueAgregar("idTipoTarifa", 0);
-                    },
-                  })}
+                  control={controlAgregar}
+                  name="idTipoDuracion"
+                  onOptionChange={(option) => {
+                    const nuevaDuracion =
+                      tiposDuraciones?.data?.data?.find(
+                        (tipo) =>
+                          tipo.idTipoDuracion === option.id,
+                      )?.descripcion === "flexible"
+                        ? "flexible"
+                        : "fija";
+                    setTipoDuracion(nuevaDuracion);
+                    setValueAgregar("idTipoTarifa", 0);
+                  }}
                 />
               )}
               <InputSelect
@@ -586,26 +584,28 @@ function RouteComponent() {
                 id="idTipoTarifa"
                 required={true}
                 disabled={tipoTarifaOptions.length === 0}
-                {...registerAgregar("idTipoTarifa")}
+                control={controlAgregar}
+                name="idTipoTarifa"
               />
               <CheckboxForm
                 label="Dominical"
                 id="dominical"
                 disabled={!permiteDominical}
-                {...registerAgregar("dominical")}
+                control={controlAgregar}
+                name="dominical"
               />
             </FormSection>
             <FormSection
               title="Configuración de horas"
               description="Configuración de horas"
-              Icon={Clock}
+              Icon={ScheduleOutlinedIcon}
             >
               {ocultarDuracionYHoras && (
-                <span className="text-sm text-gray-500">
+                <Typography variant="body2" color="text.secondary">
                   {esMixto
                     ? "El servicio es de horario mixto. La duración y las horas las calcula el sistema automáticamente."
                     : "El servicio cubre todo el día. No es necesario configurar horas."}
-                </span>
+                </Typography>
               )}
               {!ocultarDuracionYHoras && tipoDuracion === "fija" && (
                 <InputForm
@@ -725,15 +725,12 @@ function RouteComponent() {
             <FormSection
               title="Datos del servicio"
               description="Datos del servicio"
-              Icon={FileText}
+              Icon={DescriptionOutlinedIcon}
             >
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="codigo"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Código servicio (código referencia SIGO)*
-                </label>
+                <FormLabel htmlFor="codigo" required>
+                  Código servicio (código referencia SIGO)
+                </FormLabel>
 
                 <div className="flex flex-row items-center justify-center gap-2">
                   <InputForm
@@ -796,7 +793,8 @@ function RouteComponent() {
                 }
                 id="idTipoServicio"
                 required={true}
-                {...registerEditar("idTipoServicio")}
+                control={controlEditar}
+                name="idTipoServicio"
               />
               <InputSelect
                 label="Tipo de horario *"
@@ -809,21 +807,20 @@ function RouteComponent() {
                 }
                 id="idTipoHorarioDescripcion"
                 required={true}
-                {...registerEditar("idTipoHorarioDescripcion", {
-                  onChange: (e) => {
-                    const nombreSeleccionado =
-                      e.target.selectedOptions[0]?.text || null;
-                    setTipoHorarioNombre(nombreSeleccionado);
-                    setTipoDuracion(null);
-                    setValueEditar("idTipoTarifa", 0);
-                    if (
-                      nombreSeleccionado &&
-                      !HORARIOS_CON_DOMINICAL.includes(nombreSeleccionado)
-                    ) {
-                      setValueEditar("dominical", false);
-                    }
-                  },
-                })}
+                control={controlEditar}
+                name="idTipoHorarioDescripcion"
+                onOptionChange={(option) => {
+                  const nombreSeleccionado = option.descripcion;
+                  setTipoHorarioNombre(nombreSeleccionado);
+                  setTipoDuracion(null);
+                  setValueEditar("idTipoTarifa", 0);
+                  if (
+                    nombreSeleccionado &&
+                    !HORARIOS_CON_DOMINICAL.includes(nombreSeleccionado)
+                  ) {
+                    setValueEditar("dominical", false);
+                  }
+                }}
               />
               {!ocultarDuracionYHoras && (
                 <InputSelect
@@ -837,19 +834,19 @@ function RouteComponent() {
                   }
                   id="idTipoDuracion"
                   required={true}
-                  {...registerEditar("idTipoDuracion", {
-                    onChange: (e) => {
-                      const nuevaDuracion =
-                        tiposDuraciones?.data?.data?.find(
-                          (tipo) =>
-                            tipo.idTipoDuracion === Number(e.target.value),
-                        )?.descripcion === "flexible"
-                          ? "flexible"
-                          : "fija";
-                      setTipoDuracion(nuevaDuracion);
-                      setValueEditar("idTipoTarifa", 0);
-                    },
-                  })}
+                  control={controlEditar}
+                  name="idTipoDuracion"
+                  onOptionChange={(option) => {
+                    const nuevaDuracion =
+                      tiposDuraciones?.data?.data?.find(
+                        (tipo) =>
+                          tipo.idTipoDuracion === option.id,
+                      )?.descripcion === "flexible"
+                        ? "flexible"
+                        : "fija";
+                    setTipoDuracion(nuevaDuracion);
+                    setValueEditar("idTipoTarifa", 0);
+                  }}
                 />
               )}
               <InputSelect
@@ -866,13 +863,15 @@ function RouteComponent() {
                 id="idTipoTarifa"
                 required={true}
                 disabled={tipoTarifaOptions.length === 0}
-                {...registerEditar("idTipoTarifa")}
+                control={controlEditar}
+                name="idTipoTarifa"
               />
               <CheckboxForm
                 label="Dominical"
                 id="dominical"
                 disabled={!permiteDominical}
-                {...registerEditar("dominical")}
+                control={controlEditar}
+                name="dominical"
               />
               <InputSelectStateBoolean
                 label="Estado"
@@ -884,14 +883,14 @@ function RouteComponent() {
             <FormSection
               title="Configuración de horas"
               description="Configuración de horas"
-              Icon={Clock}
+              Icon={ScheduleOutlinedIcon}
             >
               {ocultarDuracionYHoras && (
-                <span className="text-sm text-gray-500">
+                <Typography variant="body2" color="text.secondary">
                   {esMixto
                     ? "El servicio es de horario mixto. La duración y las horas las calcula el sistema automáticamente."
                     : "El servicio cubre todo el día. No es necesario configurar horas."}
-                </span>
+                </Typography>
               )}
               {!ocultarDuracionYHoras && tipoDuracion === "fija" && (
                 <InputForm
@@ -934,145 +933,91 @@ function RouteComponent() {
         title="Ver Servicio"
         size="xl"
       >
-        <div className="space-y-4">
-          <div className="relative flex items-start gap-3 rounded-lg bg-gray-50 p-3">
-            <FileText className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-600" />
-            <div className="flex-1">
-              <div className="mb-1 text-sm font-medium text-gray-900">
-                {servicio?.data?.codigo}
-              </div>
-              <div className="text-sm text-gray-700">
-                {servicio?.data?.descripcion}
-              </div>
-            </div>
-
-            <div className="absolute top-3 right-3 flex items-center gap-2">
-              {servicio?.data?.idTipoServicio.requierePersonal ? (
-                <UserCheck className="h-4 w-4 text-green-500" />
-              ) : (
-                <UserX className="h-4 w-4 text-red-500" />
-              )}
-              <span className="text-sm text-gray-700">
-                {servicio?.data?.idTipoServicio.requierePersonal
-                  ? "Requiere personal"
-                  : "No requiere personal"}
-              </span>
-            </div>
-          </div>
+        <div className="flex flex-col gap-4">
+          <InfoTile
+            icon={<DescriptionOutlinedIcon />}
+            value={servicio?.data?.codigo}
+            label={servicio?.data?.descripcion}
+            action={
+              <Chip
+                size="small"
+                variant="outlined"
+                icon={
+                  servicio?.data?.idTipoServicio.requierePersonal ? (
+                    <HowToRegOutlinedIcon />
+                  ) : (
+                    <PersonOffOutlinedIcon />
+                  )
+                }
+                color={servicio?.data?.idTipoServicio.requierePersonal ? "success" : "error"}
+                label={
+                  servicio?.data?.idTipoServicio.requierePersonal
+                    ? "Requiere personal"
+                    : "No requiere personal"
+                }
+              />
+            }
+          />
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-              <Shield className="h-5 w-5 flex-shrink-0 text-purple-600" />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-900">
-                  {servicio?.data?.idTipoServicio.nombre}
-                </div>
-                <div className="text-xs text-gray-500">Tipo de Servicio</div>
-              </div>
-              {servicio?.data?.idTipoServicio.requierePersonal && (
-                <UserCheck className="h-4 w-4 text-blue-500" />
-              )}
-            </div>
-
-            {/* Estado */}
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-              <div
-                className={`h-5 w-5 flex-shrink-0 rounded-full ${servicio?.data?.estado ? "bg-green-500" : "bg-red-500"}`}
-              />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-900">
-                  {servicio?.data?.estado ? "Activo" : "Inactivo"}
-                </div>
-                <div className="text-xs text-gray-500">Estado</div>
-              </div>
-            </div>
-
-            {/* Duración */}
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-              <Calendar className="h-5 w-5 flex-shrink-0 text-orange-600" />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-900">
-                  {servicio?.data?.idTipoDuracion.descripcion}
-                </div>
-                <div className="text-xs text-gray-500">Tipo de Duración</div>
-              </div>
-            </div>
-
-            {/* Horario */}
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-              <Clock className="h-5 w-5 flex-shrink-0 text-indigo-600" />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-900">
-                  {servicio?.data?.idTipoHorarioDescripcion.descripcion}
-                </div>
-                <div className="text-xs text-gray-500">Tipo de Horario</div>
-              </div>
-            </div>
-
-            {/* Tipo de tarifa */}
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-              <DollarSign className="h-5 w-5 flex-shrink-0 text-teal-600" />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-900">
-                  {servicio?.data?.idTipoTarifa?.nombre}
-                </div>
-                <div className="text-xs text-gray-500">Tipo de Tarifa</div>
-              </div>
-            </div>
-
-            {/* Dominical */}
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-              <div
-                className={`h-5 w-5 flex-shrink-0 rounded-full ${servicio?.data?.dominical ? "bg-green-500" : "bg-gray-300"}`}
-              />
-              <div className="flex-1">
-                <div className="text-sm font-medium text-gray-900">
-                  {servicio?.data?.dominical ? "Sí" : "No"}
-                </div>
-                <div className="text-xs text-gray-500">Dominical</div>
-              </div>
-            </div>
+            <InfoTile
+              icon={<ShieldOutlinedIcon />}
+              value={servicio?.data?.idTipoServicio.nombre}
+              label="Tipo de Servicio"
+            />
+            <InfoTile
+              value={<StateLabel state={!!servicio?.data?.estado} />}
+              label="Estado"
+            />
+            <InfoTile
+              icon={<CalendarMonthOutlinedIcon />}
+              value={servicio?.data?.idTipoDuracion.descripcion}
+              label="Tipo de Duración"
+            />
+            <InfoTile
+              icon={<ScheduleOutlinedIcon />}
+              value={servicio?.data?.idTipoHorarioDescripcion.descripcion}
+              label="Tipo de Horario"
+            />
+            <InfoTile
+              icon={<AttachMoneyIcon />}
+              value={servicio?.data?.idTipoTarifa?.nombre}
+              label="Tipo de Tarifa"
+            />
+            <InfoTile
+              icon={<CalendarMonthOutlinedIcon />}
+              value={servicio?.data?.dominical ? "Sí" : "No"}
+              label="Dominical"
+            />
           </div>
 
           {/* Configuración de Horas */}
-          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">
-                Configuración de Horas
-              </span>
+          <Paper variant="outlined" className="p-4">
+            <Typography variant="h6" className="flex items-center gap-2" sx={{ mb: 2 }}>
+              <BarChartIcon fontSize="small" color="primary" />
+              Configuración de Horas
+            </Typography>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              {[
+                { label: "Mínimas", value: servicio?.data?.horasMinimas },
+                { label: "Fijas", value: servicio?.data?.horasFijas },
+                { label: "Máximas", value: servicio?.data?.horasMaximas },
+              ].map((item) => (
+                <div key={item.label}>
+                  <Typography variant="h4" component="p">
+                    {item.value}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {item.label}
+                  </Typography>
+                </div>
+              ))}
             </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-900">
-                  {servicio?.data?.horasMinimas}
-                </div>
-                <div className="text-xs text-gray-600">Mínimas</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-blue-600">
-                  {servicio?.data?.horasFijas}
-                </div>
-                <div className="text-xs font-medium text-blue-600">Fijas</div>
-              </div>
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-900">
-                  {servicio?.data?.horasMaximas}
-                </div>
-                <div className="text-xs text-gray-600">Máximas</div>
-              </div>
-            </div>
-          </div>
+          </Paper>
         </div>
 
-        <div className="mt-4 flex justify-end space-x-2">
-          <Button
-            onClick={() => {
-              setIsOpenViewModal(false);
-            }}
-            className="w-auto bg-gray-500 hover:bg-gray-600"
-          >
+        <div className="mt-4 flex justify-end">
+          <Button variant="secondary" onClick={() => setIsOpenViewModal(false)}>
             Cerrar
           </Button>
         </div>

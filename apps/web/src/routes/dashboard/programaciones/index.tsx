@@ -1,4 +1,14 @@
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import { createFileRoute } from "@tanstack/react-router";
+import { InfoTile } from "../../../components/ui/common/InfoTile";
 import { useProgramacionPersonal } from "../../../api/queryFunctions/programacion-personal";
 import { useMemo, useState } from "react";
 import {
@@ -11,14 +21,11 @@ import {
 import { addWeeks, subWeeks } from "date-fns";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import {
-  Users,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  Calendar,
-  Clock,
-} from "lucide-react";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import { useTipoPersonal } from "../../../api/queryFunctions/configuracion";
 import type { Event, PersonalAsignado } from "../../../api/types";
 import { safeParseDate } from "../../../utils/DateUtils";
@@ -33,28 +40,11 @@ export const Route = createFileRoute("/dashboard/programaciones/")({
 // (ver ProgramacionPersonalService.findAll en el backend), por lo que todos los eventos
 // vienen de novedades del personal; no hay un tipo "asignado".
 const eventTypes = {
-  permiso: {
-    label: "Permiso",
-    color: "bg-yellow-500",
-    textColor: "text-white",
-  },
-  vacaciones: {
-    label: "Vacaciones",
-    color: "bg-red-500",
-    textColor: "text-white",
-  },
-  incapacidad: {
-    label: "Incapacidad",
-    color: "bg-blue-500",
-    textColor: "text-white",
-  },
-  default: {
-    label: "Desconocido",
-    color: "bg-gray-500",
-    textColor: "text-white",
-  },
+  permiso: { label: "Permiso", color: "warning.main" },
+  vacaciones: { label: "Vacaciones", color: "error.main" },
+  incapacidad: { label: "Incapacidad", color: "primary.main" },
+  default: { label: "Desconocido", color: "secondary.main" },
 };
-
 function RouteComponent() {
   const { data: programacionPersonalQuery } = useProgramacionPersonal();
   const { data: tipoPersonalQuery } = useTipoPersonal();
@@ -136,146 +126,161 @@ function RouteComponent() {
     setSelectedEventDetails(event);
   };
 
+  const selectedType =
+    eventTypes[selectedEventDetails?.tipoEvento as keyof typeof eventTypes] ||
+    eventTypes.default;
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {/* Leyenda de colores */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <h3 className="mb-3 font-semibold text-gray-900">
+      <Paper variant="outlined" className="p-4">
+        <Typography variant="h6" component="h3" sx={{ mb: 1.5 }}>
           Tipos de Actividades del Equipo
-        </h3>
+        </Typography>
         <div className="flex flex-wrap gap-4">
           {Object.entries(eventTypes).map(([key, type]) => (
             <div key={key} className="flex items-center gap-2">
-              <div
-                className={`h-5 w-5 rounded-md ${type.color} shadow-sm`}
-              ></div>
-              <span className="text-sm font-medium text-gray-700">
+              <Box sx={{ width: 20, height: 20, borderRadius: 1, bgcolor: type.color }} />
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 {type.label}
-              </span>
+              </Typography>
             </div>
           ))}
         </div>
-      </div>
+      </Paper>
       {/* Controles superiores */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <Paper variant="outlined" className="p-4">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
-            <button
-              onClick={goToPreviousWeek}
-              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={goToNextWeek}
-              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-            <button
-              onClick={goToToday}
-              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
+            <Tooltip title="Semana anterior">
+              <IconButton onClick={goToPreviousWeek} sx={{ border: 1, borderColor: "divider" }}>
+                <ChevronLeftIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Semana siguiente">
+              <IconButton onClick={goToNextWeek} sx={{ border: 1, borderColor: "divider" }}>
+                <ChevronRightIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Button variant="outlined" color="secondary" onClick={goToToday}>
               Hoy
-            </button>
-            <div className="text-lg font-semibold">
+            </Button>
+            <Typography variant="h4" component="p" sx={{ ml: 1 }}>
               {format(weekStart, "dd MMM", { locale: es })} -{" "}
               {format(extendedEnd, "dd MMM yyyy", { locale: es })}
-            </div>
-            {/* <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-              <Users className="mr-1 h-3 w-3" />
-              {filteredPeople?.data?.length} personal
-            </span> */}
+            </Typography>
           </div>
 
-          <div className="flex gap-2">
-            <select
-              value={selectedTipoPersonal}
-              onChange={(e) => setSelectedTipoPersonal(Number(e.target.value))}
-              className="w-48 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            >
-              <option value="0">Todo el personal</option>
-              {tipoPersonalQuery?.data?.data?.map((tipo) => (
-                <option key={tipo.idTipoPersonal} value={tipo.idTipoPersonal}>
-                  {tipo.descripcion}
-                </option>
-              ))}
-            </select>
-          </div>
+          <TextField
+            select
+            value={selectedTipoPersonal}
+            onChange={(e) => setSelectedTipoPersonal(Number(e.target.value))}
+            fullWidth={false}
+            sx={{ width: 220 }}
+          >
+            <MenuItem value={0}>Todo el personal</MenuItem>
+            {tipoPersonalQuery?.data?.data?.map((tipo) => (
+              <MenuItem key={tipo.idTipoPersonal} value={tipo.idTipoPersonal}>
+                {tipo.descripcion}
+              </MenuItem>
+            ))}
+          </TextField>
         </div>
-      </div>
+      </Paper>
 
       {/* Calendario principal */}
-      <div className="overflow-hidden rounded-lg border border-gray-300 bg-white shadow-lg">
+      <Paper variant="outlined" sx={{ overflow: "hidden" }}>
         <div className="overflow-x-auto">
           <div className="min-w-[1200px] overflow-x-hidden">
             {/* Encabezado de días */}
-            <div className="grid grid-cols-[280px_1fr] border-b border-gray-300">
-              <div className="border-r border-gray-300 p-4">
-                <div className="flex items-center gap-2 font-semibold">
-                  <Users className="h-4 w-4" />
+            <Box
+              className="grid grid-cols-[280px_1fr]"
+              sx={{ borderBottom: 1, borderColor: "divider" }}
+            >
+              <Box
+                className="flex items-center gap-2 p-4"
+                sx={{ borderRight: 1, borderColor: "divider" }}
+              >
+                <GroupsOutlinedIcon fontSize="small" />
+                <Typography variant="h6" component="span">
                   Personal
-                </div>
-              </div>
+                </Typography>
+              </Box>
               <div className="grid grid-cols-14 gap-0">
                 {extendedDays.map((day, index) => {
                   const isToday =
                     format(day, "yyyy-MM-dd") ===
                     format(new Date(), "yyyy-MM-dd");
                   return (
-                    <div
+                    <Box
                       key={index}
-                      className={`border-r border-gray-300 p-3 text-center text-white last:border-r-0 ${isToday ? "bg-blue-600" : "bg-gray-50"
-                        }`}
+                      className="flex flex-col p-3 text-center"
+                      sx={{
+                        borderRight: 1,
+                        borderColor: "divider",
+                        "&:last-of-type": { borderRight: 0 },
+                        bgcolor: isToday ? "primary.main" : "background.default",
+                        color: isToday ? "primary.contrastText" : "text.primary",
+                      }}
                     >
-                      <div className="text-xs font-medium tracking-wide uppercase">
-                        {format(day, "EEE", { locale: es })}
-                      </div>
-                      <div
-                        className={`text-lg font-bold ${isToday ? "text-white" : "text-gray-900"}`}
+                      <Typography
+                        variant="caption"
+                        sx={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}
                       >
+                        {format(day, "EEE", { locale: es })}
+                      </Typography>
+                      <Typography variant="h4" component="span">
                         {format(day, "dd")}
-                      </div>
-                      <div className="text-xs text-gray-400">
+                      </Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.6 }}>
                         {format(day, "MM-yy")}
-                      </div>
-                    </div>
+                      </Typography>
+                    </Box>
                   );
                 })}
               </div>
-            </div>
+            </Box>
 
             {/* Filas de personas */}
-            {filteredPeople?.data?.map((person, personIndex) => (
-              <div
+            {filteredPeople?.data?.map((person) => (
+              <Box
                 key={person.idPersonal}
-                className={`grid grid-cols-[280px_1fr] border-b border-gray-200 hover:bg-gray-50 ${personIndex % 2 === 0 ? "bg-white" : "bg-gray-25"
-                  }`}
+                className="grid grid-cols-[280px_1fr]"
+                sx={{
+                  borderBottom: 1,
+                  borderColor: "divider",
+                  "&:hover": { bgcolor: "action.hover" },
+                }}
               >
-                <div className="border-r border-gray-200 p-4">
-                  <div className="text-sm font-semibold text-gray-900">
+                <Box className="p-4" sx={{ borderRight: 1, borderColor: "divider" }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {person.nombreCompleto}
+                  </Typography>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      {person.tipoPersonal}
+                    </Typography>
+                    <Chip size="small" variant="outlined" label={person.numeroIdentificacion} />
                   </div>
-                  <div className="mt-1 flex items-center justify-between text-xs text-gray-600">
-                    <span className="font-medium">{person.tipoPersonal}</span>
-                    <span className="inline-flex items-center rounded-md border bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
-                      {person.numeroIdentificacion}
-                    </span>
-                  </div>
-                </div>
+                </Box>
                 <div className="relative grid grid-cols-14 gap-0">
                   {extendedDays.map((day, dayIndex) => {
                     const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                     return (
-                      <div
+                      <Box
                         key={dayIndex}
-                        className={`relative min-h-[100px] border-r border-gray-200 pt-2 pr-2 *:space-y-2 last:border-r-0 ${isWeekend ? "bg-gray-50" : "bg-white"
-                          }`}
+                        className="relative min-h-[100px] pt-2 pr-2"
+                        sx={{
+                          borderRight: 1,
+                          borderColor: "divider",
+                          "&:last-of-type": { borderRight: 0 },
+                          bgcolor: isWeekend ? "background.default" : "transparent",
+                        }}
                         id={`day-${dayIndex}`}
                       >
                         {getUniqueEventsForPerson(
                           person.idPersonal,
-                        )?.eventos?.map((event, eventIndex) => {
+                        )?.eventos?.map((event) => {
                           const eventType =
                             eventTypes[
                             event.tipoEvento as keyof typeof eventTypes
@@ -304,11 +309,12 @@ function RouteComponent() {
                               differenceInDays(eventEndDate, weekStart),
                             );
                           return (
-                            <div
+                            <Box
                               key={event.idEvento}
-                              className={`${eventType.color} ${eventType.textColor} relative mb-1 cursor-pointer transition-all ${puesto.isMultiDay ? "font-medium" : ""
-                                }`}
-                              style={{
+                              className="relative mb-1 cursor-pointer"
+                              sx={{
+                                bgcolor: eventType.color,
+                                color: "common.white",
                                 width: puesto.isMultiDay
                                   ? `calc(${puesto.width * 100}% + ${(puesto.width - 1) * 11}px)`
                                   : "100%",
@@ -322,13 +328,11 @@ function RouteComponent() {
                                         ? "0 6px 6px 0"
                                         : "0"
                                   : "6px",
-                                height: "36px",
+                                height: 36,
                                 display: eventEndDate > day ? "flex" : "none",
                                 alignItems: "center",
-                                padding: "0 8px",
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                                border: "1px solid rgba(255,255,255,0.2)",
-                                // marginTop: `${eventIndex * 20}px`,
+                                px: 1,
+                                boxShadow: 1,
                               }}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -338,37 +342,45 @@ function RouteComponent() {
                             >
                               <div className="flex w-full items-center gap-1 truncate">
                                 {isFirstDay && puesto.isMultiDay && (
-                                  <Calendar className="h-3 w-3 flex-shrink-0" />
+                                  <CalendarMonthOutlinedIcon sx={{ fontSize: 14, flexShrink: 0 }} />
                                 )}
-                                <span className="truncate text-xs font-semibold">
+                                <Typography variant="caption" noWrap sx={{ fontWeight: 600 }}>
                                   {event.tituloEvento}
-                                </span>
+                                </Typography>
                                 {puesto.isMultiDay && isFirstDay && (
-                                  <span className="ml-auto flex-shrink-0 text-xs opacity-75">
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ ml: "auto", flexShrink: 0, opacity: 0.75 }}
+                                  >
                                     (
                                     {eventEndDate.getDate() -
                                       eventStartDate.getDate()}
                                     d)
-                                  </span>
+                                  </Typography>
                                 )}
                               </div>
                               {!puesto.isMultiDay && (
-                                <div className="absolute right-1 -bottom-1 left-1 truncate text-[10px] opacity-75">
+                                <Typography
+                                  variant="caption"
+                                  noWrap
+                                  className="absolute right-1 -bottom-1 left-1"
+                                  sx={{ fontSize: 10, opacity: 0.75 }}
+                                >
                                   {event.horaInicioEvento}-{event.horaFinEvento}
-                                </div>
+                                </Typography>
                               )}
-                            </div>
+                            </Box>
                           );
                         })}
-                      </div>
+                      </Box>
                     );
                   })}
                 </div>
-              </div>
+              </Box>
             ))}
           </div>
         </div>
-      </div>
+      </Paper>
 
       <SimpleModal
         isOpen={isOpenModal}
@@ -378,72 +390,43 @@ function RouteComponent() {
         }}
         title="Detalles del Evento"
       >
-        <div className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-4 w-4 rounded ${(eventTypes[selectedEventDetails?.tipoEvento as keyof typeof eventTypes] || eventTypes.default).color}`}
-              ></div>
-              <span className="text-lg font-semibold">
-                {selectedEventDetails?.tituloEvento}
-              </span>
-              <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                {
-                  (
-                    eventTypes[
-                    selectedEventDetails?.tipoEvento as keyof typeof eventTypes
-                    ] || eventTypes.default
-                  ).label
-                }
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="flex items-center gap-1 text-sm font-medium">
-                  <Clock className="h-4 w-4" />
-                  Fecha de Inicio
-                </label>
-                <div className="rounded bg-gray-50 p-2 text-sm">
-                  {format(
-                    safeParseDate(selectedEventDetails?.fechaInicioEvento),
-                    "EEEE, dd 'de' MMMM 'de' yyyy",
-                    { locale: es },
-                  )}
-                  <div className="mt-1 text-xs text-gray-500">
-                    Hora: {selectedEventDetails?.horaInicioEvento}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="flex items-center gap-1 text-sm font-medium">
-                  <Clock className="h-4 w-4" />
-                  Fecha de Fin
-                </label>
-                <div className="rounded bg-gray-50 p-2 text-sm">
-                  {format(
-                    safeParseDate(selectedEventDetails?.fechaFinEvento),
-                    "EEEE, dd 'de' MMMM 'de' yyyy",
-                    { locale: es },
-                  )}
-                  <div className="mt-1 text-xs text-gray-500">
-                    Hora: {selectedEventDetails?.horaFinEvento}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Duración</label>
-              <div className="rounded bg-gray-50 p-2 text-sm">
-                {differenceInDays(
-                  safeParseDate(selectedEventDetails?.fechaFinEvento),
-                  safeParseDate(selectedEventDetails?.fechaInicioEvento),
-                )}{" "}
-                día(s)
-              </div>
-            </div>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <Box sx={{ width: 16, height: 16, borderRadius: 0.5, bgcolor: selectedType.color }} />
+            <Typography variant="h4" component="p">
+              {selectedEventDetails?.tituloEvento}
+            </Typography>
+            <Chip size="small" label={selectedType.label} />
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <InfoTile
+              icon={<ScheduleOutlinedIcon fontSize="small" />}
+              value={format(
+                safeParseDate(selectedEventDetails?.fechaInicioEvento),
+                "EEEE, dd 'de' MMMM 'de' yyyy",
+                { locale: es },
+              )}
+              label={`Fecha de Inicio · Hora: ${selectedEventDetails?.horaInicioEvento ?? ""}`}
+            />
+            <InfoTile
+              icon={<ScheduleOutlinedIcon fontSize="small" />}
+              value={format(
+                safeParseDate(selectedEventDetails?.fechaFinEvento),
+                "EEEE, dd 'de' MMMM 'de' yyyy",
+                { locale: es },
+              )}
+              label={`Fecha de Fin · Hora: ${selectedEventDetails?.horaFinEvento ?? ""}`}
+            />
+          </div>
+
+          <InfoTile
+            value={`${differenceInDays(
+              safeParseDate(selectedEventDetails?.fechaFinEvento),
+              safeParseDate(selectedEventDetails?.fechaInicioEvento),
+            )} día(s)`}
+            label="Duración"
+          />
         </div>
       </SimpleModal>
     </div>

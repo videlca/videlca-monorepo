@@ -1,19 +1,31 @@
-import {
-  Calendar,
-  CheckSquareIcon,
-  ChevronRight,
-  DollarSign,
-  FileSpreadsheetIcon,
-  FileText,
-  HomeIcon,
-  LogOut,
-  Menu,
-  Settings,
-  Shield,
-  User2,
-  UserCog2,
-  Users,
-} from "lucide-react";
+import AttachMoneyOutlined from "@mui/icons-material/AttachMoneyOutlined";
+import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import FactCheckOutlined from "@mui/icons-material/FactCheckOutlined";
+import GroupsOutlined from "@mui/icons-material/GroupsOutlined";
+import HomeOutlined from "@mui/icons-material/HomeOutlined";
+import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
+import LogoutOutlined from "@mui/icons-material/LogoutOutlined";
+import ManageAccountsOutlined from "@mui/icons-material/ManageAccountsOutlined";
+import MenuIcon from "@mui/icons-material/Menu";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
+import ShieldOutlined from "@mui/icons-material/ShieldOutlined";
+import TableChartOutlined from "@mui/icons-material/TableChartOutlined";
+import Box from "@mui/material/Box";
+import Collapse from "@mui/material/Collapse";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
+import type { SvgIconComponent } from "@mui/icons-material";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { linksSideBar } from "../../../LinkPages";
 import { usePermissions } from "../../../context/PermissionsContext";
@@ -26,6 +38,51 @@ interface SidebarProps {
   onLogout: () => void;
 }
 
+const WIDTH = 256;
+const COLLAPSED_WIDTH = 64;
+
+const allNavigationItems: {
+  id: keyof typeof linksSideBar;
+  label: string;
+  icon: SvgIconComponent;
+}[] = [
+  { id: "dashboard", label: "Dashboard", icon: HomeOutlined },
+  { id: "usuarios", label: "Usuarios", icon: ManageAccountsOutlined },
+  { id: "permisos", label: "Permisos", icon: ShieldOutlined },
+  { id: "configuracion", label: "Configuración", icon: SettingsOutlined },
+  { id: "clientes", label: "Clientes", icon: GroupsOutlined },
+  { id: "personal", label: "Personal", icon: BadgeOutlined },
+  {
+    id: "programaciones",
+    label: "Programaciones",
+    icon: CalendarMonthOutlined,
+  },
+  { id: "servicios", label: "Servicios", icon: TableChartOutlined },
+  { id: "tarifas", label: "Tarifas", icon: AttachMoneyOutlined },
+  {
+    id: "ordenes-servicio",
+    label: "Ordenes de Servicio",
+    icon: DescriptionOutlined,
+  },
+  { id: "liquidaciones", label: "Liquidaciones", icon: AttachMoneyOutlined },
+  {
+    id: "aprobacion-liquidaciones-ordenes",
+    label: "Aprobación de Liquidaciones de Ordenes",
+    icon: FactCheckOutlined,
+  },
+  {
+    id: "exportaciones-base-facturacion",
+    label: "Exportaciones Base de Facturación",
+    icon: TableChartOutlined,
+  },
+];
+
+const itemSx = {
+  color: "inherit",
+  "&:hover": { bgcolor: alpha("#fff", 0.12) },
+  "&.Mui-selected, &.Mui-selected:hover": { bgcolor: alpha("#fff", 0.2) },
+};
+
 export function Sidebar({
   collapsed,
   onToggle,
@@ -34,211 +91,155 @@ export function Sidebar({
   onLogout,
 }: SidebarProps) {
   const navigate = useNavigate();
-  const pathname = useLocation();
+  const { pathname } = useLocation();
   const { hasPermission, isSuperAdmin } = usePermissions();
 
-  const allNavigationItems = [
-    {
-      id: "dashboard",
-      label: "Dashboard",
-      icon: HomeIcon,
-      subItems: linksSideBar.dashboard,
-      requiredPermission: "dashboard",
-    },
-    {
-      id: "usuarios",
-      label: "Usuarios",
-      icon: UserCog2,
-      subItems: linksSideBar.usuarios,
-      requiredPermission: "usuarios",
-    },
-    {
-      id: "permisos",
-      label: "Permisos",
-      icon: Shield,
-      subItems: linksSideBar.permisos,
-      requiredPermission: "permisos",
-    },
-    {
-      id: "configuracion",
-      label: "Configuración",
-      icon: Settings,
-      subItems: linksSideBar.configuracion,
-      requiredPermission: "configuracion",
-    },
-    {
-      id: "clientes",
-      label: "Clientes",
-      icon: Users,
-      subItems: linksSideBar.clientes,
-      requiredPermission: "clientes",
-    },
-    {
-      id: "personal",
-      label: "Personal",
-      icon: User2,
-      subItems: linksSideBar.personal,
-      requiredPermission: "personal",
-    },
-    {
-      id: "programaciones",
-      label: "Programaciones",
-      icon: Calendar,
-      subItems: linksSideBar.programaciones,
-      requiredPermission: "programaciones",
-    },
-    {
-      id: "servicios",
-      label: "Servicios",
-      icon: FileSpreadsheetIcon,
-      subItems: linksSideBar.servicios,
-      requiredPermission: "servicios",
-    },
-    {
-      id: "tarifas",
-      label: "Tarifas",
-      icon: DollarSign,
-      subItems: linksSideBar.tarifas,
-      requiredPermission: "tarifas",
-    },
-    {
-      id: "ordenes-servicio",
-      label: "Ordenes de Servicio",
-      icon: FileText,
-      subItems: linksSideBar["ordenes-servicio"],
-      requiredPermission: "ordenes-servicio",
-    },
-    {
-      id: "liquidaciones",
-      label: "Liquidaciones",
-      icon: DollarSign,
-      subItems: linksSideBar.liquidaciones,
-      requiredPermission: "liquidaciones",
-    },
-    {
-      id: "aprobacion-liquidaciones-ordenes",
-      label: "Aprobación de Liquidaciones de Ordenes",
-      icon: CheckSquareIcon,
-      subItems: linksSideBar["aprobacion-liquidaciones-ordenes"],
-      requiredPermission: "aprobacion-liquidaciones-ordenes",
-    },
-    {
-      id: "exportaciones-base-facturacion",
-      label: "Exportaciones Base de Facturación",
-      icon: FileSpreadsheetIcon,
-      subItems: linksSideBar["exportaciones-base-facturacion"],
-      requiredPermission: "exportaciones-base-facturacion",
-    },
-  ];
+  const navigationItems = allNavigationItems
+    .filter((item) => isSuperAdmin || hasPermission(item.id))
+    .map((item) => ({ ...item, subItems: linksSideBar[item.id] }));
 
-  // Filtrar los elementos de navegación basados en los permisos
-  const navigationItems = allNavigationItems.filter(
-    (item) => isSuperAdmin || hasPermission(item.requiredPermission || ""),
-  );
+  const isActive = (to: string) =>
+    pathname === to || (to !== "/dashboard" && pathname.startsWith(`${to}/`));
 
   return (
-    <aside
-      className={`${collapsed ? "w-16" : "w-64"} flex min-h-screen flex-col bg-blue-600 text-white transition-all duration-300 ease-in-out`}
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: collapsed ? COLLAPSED_WIDTH : WIDTH,
+        flexShrink: 0,
+        transition: (t) => t.transitions.create("width"),
+        "& .MuiDrawer-paper": {
+          position: "relative",
+          width: collapsed ? COLLAPSED_WIDTH : WIDTH,
+          overflowX: "hidden",
+          transition: (t) => t.transitions.create("width"),
+          bgcolor: "primary.main",
+          color: "primary.contrastText",
+          border: "none",
+        },
+      }}
     >
-      <div
-        className={`${collapsed ? "p-2" : "p-6"} flex min-h-[80px] items-center justify-between border-b border-blue-500`}
+      <Box
+        sx={{
+          minHeight: 80,
+          px: collapsed ? 1 : 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: collapsed ? "center" : "space-between",
+        }}
       >
-        <div className={`${collapsed ? "hidden" : "block"} flex-1`}>
-          <h1 className="text-xl font-bold">SOFIA</h1>
-          <p className="text-sm text-blue-200">Panel Administrativo</p>
-        </div>
-        <button
+        {!collapsed && (
+          <div>
+            <Typography variant="h3" component="p" sx={{ fontWeight: 700 }}>
+              SOFIA
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.75 }}>
+              Panel Administrativo
+            </Typography>
+          </div>
+        )}
+        <IconButton
           onClick={onToggle}
-          className={`flex-shrink-0 rounded p-2 transition-colors hover:bg-blue-500 ${collapsed ? "mx-auto" : ""}`}
+          color="inherit"
+          aria-label={collapsed ? "Expandir menú" : "Contraer menú"}
         >
-          <Menu className="h-5 w-5" />
-        </button>
-      </div>
+          {collapsed ? <MenuIcon /> : <MenuOpenIcon />}
+        </IconButton>
+      </Box>
+      <Divider sx={{ borderColor: alpha("#fff", 0.15) }} />
 
-      <nav className="scrollbar-thin scrollbar-track-blue-700 scrollbar-thumb-blue-400 hover:scrollbar-thumb-blue-300 flex-1 overflow-y-auto py-4">
-        <ul className="space-y-1">
-          {navigationItems.map((item) => (
-            <li
-              key={item.id}
-              className={`${
-                // TODO: Verificar modulos de personal, hay un bug donde marca el "tipo-personales" y "personal"
-                // pathname.pathname.includes(item.id) &&
-                item.subItems.length < 1 && item.id !== "dashboard"
-                  ? "bg-blue-500"
-                  : ""
-                }`}
-            >
-              <div>
-                <button
+      <List component="nav" sx={{ flex: 1, overflowY: "auto", py: 1 }}>
+        {navigationItems.map((item) => {
+          const hasSubmenu = item.subItems.length > 1;
+          const open = expandedMenus.includes(item.id) && !collapsed;
+          return (
+            <Box component="li" key={item.id} sx={{ listStyle: "none" }}>
+              <Tooltip title={collapsed ? item.label : ""} placement="right">
+                <ListItemButton
+                  sx={{ ...itemSx, px: collapsed ? 2.5 : 3 }}
+                  selected={
+                    !hasSubmenu && isActive(item.subItems[0].to as string)
+                  }
                   onClick={() => {
-                    if (item.subItems.length > 1) {
-                      onMenuToggle(item.id);
+                    if (!hasSubmenu) {
+                      navigate({ to: item.subItems[0].to });
+                    } else if (collapsed) {
+                      // Contraído no hay espacio para el submenú: expandir y abrirlo
+                      onToggle();
+                      if (!expandedMenus.includes(item.id))
+                        onMenuToggle(item.id);
                     } else {
-                      navigate({
-                        to: item.subItems[0].to,
-                      });
+                      onMenuToggle(item.id);
                     }
                   }}
-                  className={`flex w-full items-center justify-between px-6 py-3 text-left transition-colors hover:bg-blue-500`}
-                  title={collapsed ? item.label : undefined}
                 >
-                  <div className="flex items-center">
-                    <item.icon className="mr-3 h-5 w-5" />
-                    <span className={`${collapsed ? "hidden" : "block"}`}>
-                      {item.label}
-                    </span>
-                  </div>
-                  {item.subItems.length > 1 && !collapsed && (
-                    <ChevronRight
-                      className={`h-4 w-4 transition-transform ${expandedMenus.includes(item.id) ? "rotate-90" : ""}`}
+                  <ListItemIcon sx={{ color: "inherit", minWidth: 36 }}>
+                    <item.icon fontSize="small" />
+                  </ListItemIcon>
+                  {!collapsed && (
+                    <ListItemText
+                      primary={item.label}
+                      slotProps={{
+                        primary: { variant: "body2", sx: { fontWeight: 500 } },
+                      }}
                     />
                   )}
-                </button>
-
-                {item.subItems.length > 1 &&
-                  expandedMenus.includes(item.id) &&
-                  !collapsed && (
-                    <ul className="mt-1 ml-6 space-y-1">
-                      {item.subItems.map((subItem) => (
-                        <li
-                          key={subItem.to}
-                          className={` ${subItem.to === pathname.pathname
-                            ? "border-l-2 border-blue-300 bg-blue-500/40"
-                            : ""
-                            }`}
-                        >
-                          <button
-                            onClick={() =>
-                              navigate({
-                                to: subItem.to,
-                              })
-                            }
-                            className={`flex w-full items-center px-6 py-2 text-left text-sm transition-colors hover:bg-blue-500`}
-                          >
-                            <span className="ml-2">{subItem.label}</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                  {hasSubmenu && !collapsed && (
+                    <ExpandMore
+                      fontSize="small"
+                      sx={{
+                        transition: "transform .2s",
+                        transform: open ? "rotate(180deg)" : "none",
+                      }}
+                    />
                   )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </nav>
+                </ListItemButton>
+              </Tooltip>
+              {hasSubmenu && (
+                <Collapse in={open} unmountOnExit>
+                  <List disablePadding>
+                    {item.subItems.map((subItem) => (
+                      <ListItemButton
+                        key={subItem.to}
+                        selected={subItem.to === pathname}
+                        onClick={() => navigate({ to: subItem.to })}
+                        sx={{ ...itemSx, pl: 8.5, py: 0.75 }}
+                      >
+                        <ListItemText
+                          primary={subItem.label}
+                          slotProps={{ primary: { variant: "body2" } }}
+                        />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Collapse>
+              )}
+            </Box>
+          );
+        })}
+      </List>
 
-      <div className={`${collapsed ? "p-2" : "p-4"} border-t border-blue-500`}>
-        <button
-          onClick={onLogout}
-          className="flex w-full items-center rounded px-2 py-3 text-left transition-colors hover:bg-blue-500"
-          title={collapsed ? "Cerrar Sesión" : ""}
-        >
-          <LogOut className="mr-3 h-5 w-5" />
-          <span className={`${collapsed ? "hidden" : "block"}`}>
-            Cerrar Sesión
-          </span>
-        </button>
-      </div>
-    </aside>
+      <Divider sx={{ borderColor: alpha("#fff", 0.15) }} />
+      <List sx={{ py: 1 }}>
+        <Tooltip title={collapsed ? "Cerrar Sesión" : ""} placement="right">
+          <ListItemButton
+            onClick={onLogout}
+            sx={{ ...itemSx, px: collapsed ? 2.5 : 3 }}
+          >
+            <ListItemIcon sx={{ color: "inherit", minWidth: 36 }}>
+              <LogoutOutlined fontSize="small" />
+            </ListItemIcon>
+            {!collapsed && (
+              <ListItemText
+                primary="Cerrar Sesión"
+                slotProps={{
+                  primary: { variant: "body2", sx: { fontWeight: 500 } },
+                }}
+              />
+            )}
+          </ListItemButton>
+        </Tooltip>
+      </List>
+    </Drawer>
   );
 }

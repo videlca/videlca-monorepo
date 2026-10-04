@@ -4,7 +4,7 @@ import Table from "../../../components/common/Table";
 import { useCorreosDefault } from "../../../api/queryFunctions/configuracion/correos-defecto";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import { SimpleModal } from "../../../components/common/SimpleModal";
 import { useState } from "react";
 import { ConfiguracionCorreosDefault } from "../../../components/common/ConfiguracionCorreosDefault";
@@ -94,7 +94,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar/Editar correos por defecto"
             onClick={() => {
               handleAddCorreoDefault();

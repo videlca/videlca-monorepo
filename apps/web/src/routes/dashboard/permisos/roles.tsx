@@ -1,7 +1,11 @@
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 import { createFileRoute } from "@tanstack/react-router";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { CheckIcon, PencilIcon, PlusIcon, TrashIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import { useState } from "react";
 import Table from "../../../components/common/Table";
 import type { Rol } from "../../../types";
@@ -141,7 +145,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar rol"
             onClick={() => {
               setIsModalOpen(true);
@@ -185,12 +189,12 @@ function RouteComponent() {
               {...registerCrear("descripcion")}
             />
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-gray-900">
-                Agregue los módulos que desea asignar al rol.
-                <span className="text-xs text-gray-500">
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                Agregue los módulos que desea asignar al rol.{" "}
+                <Typography component="span" variant="caption" color="text.secondary">
                   (Se pueden seleccionar múltiples módulos)
-                </span>
-              </p>
+                </Typography>
+              </Typography>
               {modulos?.data?.data && (
                 <div className="grid grid-cols-2 gap-2">
                   {modulos.data.data.map((modulo) => {
@@ -207,39 +211,30 @@ function RouteComponent() {
                     };
 
                     return (
-                      <label
+                      <Paper
                         key={modulo.id}
-                        className={`relative max-h-20 min-h-14 cursor-pointer gap-2 rounded-md border p-4 transition-all duration-200 ${isSelected
-                            ? "border-blue-400 bg-blue-50"
-                            : "border-gray-200"
-                          }`}
-                        htmlFor={modulo.id.toString()}
-                        tabIndex={0}
-                        role="checkbox"
-                        aria-checked={isSelected}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            toggleSelection();
-                          }
+                        variant="outlined"
+                        sx={{
+                          px: 1,
+                          borderColor: isSelected ? "primary.main" : "divider",
+                          bgcolor: isSelected ? "action.selected" : "background.paper",
                         }}
                       >
-                        {isSelected && (
-                          <CheckIcon className="absolute top-2 right-2 h-4 w-4 text-blue-600" />
-                        )}
-
-                        <p className="text-sm font-medium text-gray-900 capitalize">
-                          {modulo.nombre}
-                        </p>
-
-                        <input
-                          type="checkbox"
-                          id={modulo.id.toString()}
-                          checked={isSelected}
-                          onChange={toggleSelection}
-                          className="hidden"
+                        <FormControlLabel
+                          sx={{ width: "100%", m: 0 }}
+                          control={
+                            <Checkbox
+                              size="small"
+                              id={modulo.id.toString()}
+                              checked={isSelected}
+                              onChange={toggleSelection}
+                            />
+                          }
+                          label={
+                            <span className="capitalize">{modulo.nombre}</span>
+                          }
                         />
-                      </label>
+                      </Paper>
                     );
                   })}
                 </div>

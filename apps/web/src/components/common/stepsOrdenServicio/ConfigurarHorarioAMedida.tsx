@@ -1,3 +1,7 @@
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import Paper from "@mui/material/Paper";
+import { StepHeader } from "../../ui/common/StepHeader";
 import { InputTime24H } from "../InputTime24H";
 
 // Paso de horario para ordenes "a la medida": un unico rango horario continuo para toda la orden (aplica el
@@ -10,19 +14,13 @@ export const ConfigurarHorarioAMedida = ({
   setHorarioAMedida: (horario: { horaInicio: string; horaFin: string }) => void;
 }) => {
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="text-center">
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          Configuración de Horario a la Medida
-        </h3>
-        <p className="text-sm text-gray-600">
-          Seleccione el horario del servicio para el primer y el último día de
-          la orden. Los días intermedios se calculan completos
-          automáticamente.
-        </p>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <StepHeader
+        title="Configuración de Horario a la Medida"
+        description="Seleccione el horario del servicio para el primer y el último día de la orden. Los días intermedios se calculan completos automáticamente."
+      />
 
-      <div className="rounded-lg border border-gray-200 p-4">
+      <Paper variant="outlined" className="p-4">
         <div className="grid grid-cols-2 gap-4">
           <InputTime24H
             label="Hora de Inicio"
@@ -49,15 +47,13 @@ export const ConfigurarHorarioAMedida = ({
             }
           />
         </div>
-      </div>
+      </Paper>
 
-      <div className="space-y-1 rounded-lg border border-yellow-500 bg-yellow-50 px-4 py-2 text-left">
-        <h4 className="text-base font-medium text-yellow-600">Nota:</h4>{" "}
-        <p className="text-xs text-yellow-600">
-          El precio de este servicio se calcula día por día según el horario
-          diurno/nocturno vigente y si el día es ordinario o dominical/festivo.
-        </p>
-      </div>
+      <Alert severity="warning">
+        <AlertTitle>Nota:</AlertTitle>
+        El precio de este servicio se calcula día por día según el horario
+        diurno/nocturno vigente y si el día es ordinario o dominical/festivo.
+      </Alert>
     </div>
   );
 };

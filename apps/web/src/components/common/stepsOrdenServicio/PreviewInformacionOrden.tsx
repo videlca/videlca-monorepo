@@ -1,14 +1,27 @@
-import {
-  Building2,
-  Calculator,
-  Calendar,
-  ChevronDown,
-  DollarSign,
-  FilePenIcon,
-  FileText,
-  // Users, // Se vuelve a necesitar cuando se reactive el bloque de Personal por servicio (ver mas abajo)
-} from "lucide-react";
+// Users, // Se vuelve a necesitar cuando se reactive el bloque de Personal por servicio (ver mas abajo)
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+import CalculateOutlinedIcon from "@mui/icons-material/CalculateOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import EditNoteOutlinedIcon from "@mui/icons-material/EditNoteOutlined";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Collapse from "@mui/material/Collapse";
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
 import { useState } from "react";
+import { DetailField, DetailSection } from "../../ui/common/DetailSection";
+import { StepHeader } from "../../ui/common/StepHeader";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { safeParseDate } from "../../../utils/DateUtils";
 import { textoCobroParcial, type CobroParcial } from "../../../utils/cobroParcial";
@@ -151,7 +164,7 @@ const renderServicioCard = (
       {/* Encabezado: codigo/descripcion + tipo de servicio, horario propio de este servicio (o del grupo) */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h5 className="text-sm font-semibold text-gray-900">
+          <Typography variant="body2" component="h5" sx={{ fontWeight: 600 }}>
             {servicio?.codigo ? `${servicio.codigo} — ` : ""}
             {servicio?.descripcion ||
               // Ordenes "a la medida": no hay servicio de catalogo, cada fila es un dia.
@@ -161,84 +174,69 @@ const renderServicioCard = (
                 ? safeParseDate(config.fecha.slice(0, 10)).toLocaleDateString()
                 : "Servicio no especificado")}
             {indices.length > 1 && (
-              <span className="ml-2 text-xs font-normal text-gray-500">
+              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
                 ({indices.length} unidades)
-              </span>
+              </Typography>
             )}
-          </h5>
-          <p className="text-xs text-gray-500">
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
             {servicio?.idTipoServicio?.descripcion || "Tipo no especificado"}
             {servicio?.idTipoDuracion &&
               (servicio.idTipoDuracion.descripcion?.toLowerCase() === "fija"
                 ? ` · Horas fijas: ${servicio.horasFijas ?? 0}h`
                 : ` · Horas: ${servicio.horasMinimas ?? 0}h - ${servicio.horasMaximas ?? 0}h`)}
-          </p>
+          </Typography>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-gray-700">
-          <Calendar className="h-3 w-3" />
-          {config.horaInicio || "--:--"} - {config.horaFin || "--:--"}
-        </span>
+        <Chip
+          size="small"
+          icon={<CalendarMonthOutlinedIcon />}
+          label={`${config.horaInicio || "--:--"} - ${config.horaFin || "--:--"}`}
+        />
       </div>
 
       {/* Personal: comentado a pedido del usuario, no se gestiona por servicio por ahora
           (se habilitara mas adelante). Se deja el bloque listo para reactivar. */}
       {/* {(!servicio || servicio.idTipoServicio?.requierePersonal) && (
-        <div className="mt-2 flex items-center gap-4 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5" />
-            Personal: {config.cantidadPersonal ?? 0} requeridos,{" "}
-            {("personal" in config && Array.isArray(config.personal)) ? config.personal.length : 0} asignado(s)
-          </span>
-        </div>
+        <Typography variant="caption" color="text.secondary" className="mt-2 flex items-center gap-1">
+          <Users fontSize="small" />
+          Personal: {config.cantidadPersonal ?? 0} requeridos,{" "}
+          {("personal" in config && Array.isArray(config.personal)) ? config.personal.length : 0} asignado(s)
+        </Typography>
       )} */}
 
       {/* Precio calculado de este servicio (sumado entre todas las unidades del grupo cuando aplica) */}
-      <div className="mt-3 border-t border-gray-100 pt-3">
+      <Box sx={{ mt: 1.5, pt: 1.5, borderTop: 1, borderColor: "divider" }}>
         {detallePrincipal?.message && (
-          <p className="mb-2 flex items-center gap-1.5 text-xs text-gray-500 italic">
-            <DollarSign className="h-3.5 w-3.5 shrink-0 text-green-600" />
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            className="flex items-center gap-1.5"
+            sx={{ mb: 1, fontStyle: "italic" }}
+          >
+            <AttachMoneyIcon color="success" sx={{ fontSize: 16 }} />
             {detallePrincipal.message}
-          </p>
+          </Typography>
         )}
-        <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 text-xs">
-          <p>
-            <span className="block text-gray-500">Costos Directos</span>
-            <span className="font-medium text-gray-800">
-              {costosDirectos != null ? priceFormat(costosDirectos) : "-"}
-            </span>
-          </p>
-          <p>
-            <span className="block text-gray-500">Seguro de Vida</span>
-            <span className="font-medium text-gray-800">
-              {seguroVida != null ? priceFormat(seguroVida) : "-"}
-            </span>
-          </p>
-          <p>
-            <span className="block text-gray-500">AUI</span>
-            <span className="font-medium text-gray-800">
-              {aui != null ? priceFormat(aui) : "-"}
-            </span>
-          </p>
-          <p>
-            <span className="block text-gray-500">Precio sin IVA</span>
-            <span className="font-medium text-gray-800">
-              {precioAntesIva != null ? priceFormat(precioAntesIva) : "-"}
-            </span>
-          </p>
-          <p>
-            <span className="block text-gray-500">IVA</span>
-            <span className="font-medium text-gray-800">
-              {iva != null ? priceFormat(iva) : "-"}
-            </span>
-          </p>
-          <p>
-            <span className="block text-gray-500">Precio Total</span>
-            <span className="font-semibold text-green-600">
-              {precioTotalGrupo != null
-                ? priceFormat(precioTotalGrupo)
-                : "No especificado"}
-            </span>
-          </p>
+        <div className="grid grid-cols-3 gap-x-3 gap-y-1.5">
+          <DetailField
+            label="Costos Directos"
+            value={costosDirectos != null ? priceFormat(costosDirectos) : "-"}
+          />
+          <DetailField
+            label="Seguro de Vida"
+            value={seguroVida != null ? priceFormat(seguroVida) : "-"}
+          />
+          <DetailField label="AUI" value={aui != null ? priceFormat(aui) : "-"} />
+          <DetailField
+            label="Precio sin IVA"
+            value={precioAntesIva != null ? priceFormat(precioAntesIva) : "-"}
+          />
+          <DetailField label="IVA" value={iva != null ? priceFormat(iva) : "-"} />
+          <DetailField
+            label="Precio Total"
+            value={precioTotalGrupo != null ? priceFormat(precioTotalGrupo) : "No especificado"}
+            price
+          />
         </div>
 
         {/* Desglose hora por hora: solo viene lleno para servicios de horario Mixto + Por hora, y solo aplica
@@ -248,7 +246,7 @@ const renderServicioCard = (
           detallePrincipal.costos_horas.length > 0 && (
             <DesgloseCostosHoras costosHoras={detallePrincipal.costos_horas} />
           )}
-      </div>
+      </Box>
     </div>
   );
 };
@@ -279,304 +277,209 @@ export const PreviewInformacionOrden = ({
   precioOrdenDetalle?: PrecioOrdenResponse | null;
   cobroParcial?: CobroParcial;
 }) => {
+  const fechaRegistro = isEditing
+    ? (formOrdenServicio as UpdateOrdenServicioDto).fechaActualizacion
+    : (formOrdenServicio as CreateOrdenServicioDto).fechaCreacion;
+
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="text-center">
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          Información de la orden de servicio
-        </h3>
-        <p className="text-sm text-gray-600">
-          Revisa los detalles de la orden de servicio y confirma la información
-        </p>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <StepHeader
+        title="Información de la orden de servicio"
+        description="Revisa los detalles de la orden de servicio y confirma la información"
+      />
 
-      <div className="space-y-6">
-        {/* Información del Cliente (Monitoreo de alarmas) o Cliente y Ubicación (Vigilancia y escolta): una
-            orden de Monitoreo va directa a un cliente, sin puesto/locacion asociado, por lo que no hay
-            informacion de ubicacion que mostrar (ver SeleccionarPuestoCliente) */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-            <Building2 className="h-6 w-6 text-blue-600" />
-            {selectedCliente ? "Cliente" : "Cliente y Ubicación"}
-          </h4>
-          {selectedCliente ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">Cliente:</span>{" "}
-                  <span className="text-gray-600">{selectedCliente.nombre}</span>
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">Identificación:</span>{" "}
-                  <span className="text-gray-600">
-                    {selectedCliente.numeroIdentificacion}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">Tipo de Cliente:</span>{" "}
-                  <span className="text-gray-600">
-                    {selectedCliente.idTipoCliente?.descripcion}
-                  </span>
-                </p>
-                {selectedCliente.idSubSegmentacion && (
-                  <p className="text-sm">
-                    <span className="font-medium text-gray-700">Subsegmentación:</span>{" "}
-                    <span className="text-gray-600">
-                      {selectedCliente.idSubSegmentacion.descripcion}
-                    </span>
-                  </p>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">Cliente:</span>{" "}
-                  <span className="text-gray-600">
-                    {selectedPuesto?.idCliente.nombre}
-                  </span>
-                </p>
-                {selectedPuesto?.idClienteFacturacion && (
-                  <p className="text-sm">
-                    <span className="font-medium text-gray-700">Cliente Facturación:</span>{" "}
-                    <span className="text-gray-600">
-                      {selectedPuesto.idClienteFacturacion.nombre}
-                    </span>
-                  </p>
-                )}
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">Ubicación:</span>{" "}
-                  <span className="text-gray-600">{selectedPuesto?.nombre}</span>
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">Dirección:</span>{" "}
-                  <span className="text-gray-600">
-                    {selectedPuesto?.direccion}
-                  </span>
-                </p>
-              </div>
-              <div>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">Ciudad:</span>{" "}
-                  <span className="text-gray-600">
-                    {selectedPuesto?.idCiudad.descripcion}
-                  </span>
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">Responsable:</span>{" "}
-                  <span className="text-gray-600">
-                    {selectedPuesto?.primerNombreResponsable}{" "}
-                    {selectedPuesto?.primerApellidoResponsable}
-                  </span>
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">Teléfono:</span>{" "}
-                  <span className="text-gray-600">
-                    {selectedPuesto?.telefono}
-                  </span>
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Fechas de la orden: son las mismas para todos los servicios, se muestran una sola vez.
-            La hora de cada servicio (que si varia por servicio) se muestra dentro de su propia fila */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-gray-200 px-4 py-3">
-          <span className="flex items-center gap-2 text-sm">
-            <Calendar className="h-4 w-4 text-purple-600" />
-            <span className="font-medium text-gray-700">Fecha de Inicio:</span>{" "}
-            <span className="text-gray-600">
-              {safeParseDate(formOrdenServicio.fechaInicio).toLocaleDateString()}
-            </span>
-          </span>
-          <span className="flex items-center gap-2 text-sm">
-            <span className="font-medium text-gray-700">Fecha de Fin:</span>{" "}
-            <span className="text-gray-600">
-              {isIndefinite
-                ? "Indefinida"
-                : formOrdenServicio.fechaFin
-                  ? safeParseDate(formOrdenServicio.fechaFin).toLocaleDateString()
-                  : "No especificada"}
-            </span>
-          </span>
-          {isIndefinite &&
-            cobroParcial?.activo &&
-            cobroParcial.diaInicio != null &&
-            cobroParcial.diaFin != null && (
-              <span className="flex w-full items-center gap-2 text-sm">
-                <span className="font-medium text-gray-700">Cobro parcial:</span>{" "}
-                <span className="text-gray-600">
-                  {textoCobroParcial(cobroParcial.diaInicio, cobroParcial.diaFin)}
-                </span>
-              </span>
+      {/* Información del Cliente (Monitoreo de alarmas) o Cliente y Ubicación (Vigilancia y escolta): una
+          orden de Monitoreo va directa a un cliente, sin puesto/locacion asociado, por lo que no hay
+          informacion de ubicacion que mostrar (ver SeleccionarPuestoCliente) */}
+      <DetailSection
+        icon={<BusinessOutlinedIcon />}
+        title={selectedCliente ? "Cliente" : "Cliente y Ubicación"}
+      >
+        {selectedCliente ? (
+          <>
+            <DetailField label="Cliente" value={selectedCliente.nombre} />
+            <DetailField label="Identificación" value={selectedCliente.numeroIdentificacion} />
+            <DetailField
+              label="Tipo de Cliente"
+              value={selectedCliente.idTipoCliente?.descripcion}
+            />
+            {selectedCliente.idSubSegmentacion && (
+              <DetailField
+                label="Subsegmentación"
+                value={selectedCliente.idSubSegmentacion.descripcion}
+              />
             )}
-        </div>
+          </>
+        ) : (
+          <>
+            <DetailField label="Cliente" value={selectedPuesto?.idCliente.nombre} />
+            {selectedPuesto?.idClienteFacturacion && (
+              <DetailField
+                label="Cliente Facturación"
+                value={selectedPuesto.idClienteFacturacion.nombre}
+              />
+            )}
+            <DetailField label="Ubicación" value={selectedPuesto?.nombre} />
+            <DetailField label="Dirección" value={selectedPuesto?.direccion} />
+            <DetailField label="Ciudad" value={selectedPuesto?.idCiudad.descripcion} />
+            <DetailField
+              label="Responsable"
+              value={`${selectedPuesto?.primerNombreResponsable ?? ""} ${selectedPuesto?.primerApellidoResponsable ?? ""}`}
+            />
+            <DetailField label="Teléfono" value={selectedPuesto?.telefono} />
+          </>
+        )}
+      </DetailSection>
 
-        {/* Servicios de la orden: una fila apilada por servicio (en vez de varias cajas sueltas por
-            servicio), asi la info de N servicios queda agrupada y en el mismo orden en que se seleccionaron.
-            Excepcion: cada servicio de tipo Monitoreo de Alarmas comparte un mismo horario entre todas sus
-            unidades (ver ConfigurarHorariosServicios) y se resume en una unica tarjeta con el precio sumado de
-            esas unidades, en vez de repetir la misma fila una vez por unidad */}
-        {configuracionServicioTarifa.length > 0 && (
-          <div className="rounded-lg border border-gray-200">
-            <h4 className="flex items-center gap-2 border-b border-gray-200 px-4 py-3 text-lg font-semibold text-gray-900">
-              <FileText className="h-6 w-6 text-green-600" />
-              Servicios ({configuracionServicioTarifa.length})
-            </h4>
-            <div className="divide-y divide-gray-100">
-              {agruparIndicesServicios(
+      {/* Fechas de la orden: son las mismas para todos los servicios, se muestran una sola vez.
+          La hora de cada servicio (que si varia por servicio) se muestra dentro de su propia fila */}
+      <DetailSection icon={<CalendarMonthOutlinedIcon />} title="Fechas">
+        <DetailField
+          label="Fecha de Inicio"
+          value={safeParseDate(formOrdenServicio.fechaInicio).toLocaleDateString()}
+        />
+        <DetailField
+          label="Fecha de Fin"
+          value={
+            isIndefinite
+              ? "Indefinida"
+              : formOrdenServicio.fechaFin
+                ? safeParseDate(formOrdenServicio.fechaFin).toLocaleDateString()
+                : "No especificada"
+          }
+        />
+        {isIndefinite &&
+          cobroParcial?.activo &&
+          cobroParcial.diaInicio != null &&
+          cobroParcial.diaFin != null && (
+            <DetailField
+              label="Cobro parcial"
+              value={textoCobroParcial(cobroParcial.diaInicio, cobroParcial.diaFin)}
+              fullWidth
+            />
+          )}
+      </DetailSection>
+
+      {/* Servicios de la orden: una fila apilada por servicio (en vez de varias cajas sueltas por
+          servicio), asi la info de N servicios queda agrupada y en el mismo orden en que se seleccionaron.
+          Excepcion: cada servicio de tipo Monitoreo de Alarmas comparte un mismo horario entre todas sus
+          unidades (ver ConfigurarHorariosServicios) y se resume en una unica tarjeta con el precio sumado de
+          esas unidades, en vez de repetir la misma fila una vez por unidad */}
+      {configuracionServicioTarifa.length > 0 && (
+        <Paper variant="outlined">
+          <Typography
+            variant="h5"
+            component="h4"
+            className="flex items-center gap-2 px-4 py-3"
+            sx={{ borderBottom: 1, borderColor: "divider", "& svg": { color: "primary.main", fontSize: 20 } }}
+          >
+            <DescriptionOutlinedIcon />
+            Servicios ({configuracionServicioTarifa.length})
+          </Typography>
+          <Box sx={{ "& > * + *": { borderTop: 1, borderColor: "divider" } }}>
+            {agruparIndicesServicios(
+              configuracionServicioTarifa,
+              selectedServices,
+            ).map((indices) =>
+              renderServicioCard(
+                indices,
                 configuracionServicioTarifa,
                 selectedServices,
-              ).map((indices) =>
-                renderServicioCard(
-                  indices,
-                  configuracionServicioTarifa,
-                  selectedServices,
-                  precioOrdenDetalle,
-                ),
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Información de Precio Calculado (total de la orden) */}
-        {configuracionServicioTarifa.length > 0 && (
-          <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-            <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-green-900">
-              <Calculator className="h-6 w-6 text-green-600" />
-              Precio Calculado
-            </h4>
-            <div className="space-y-2">
-              <p className="text-sm">
-                <span className="font-medium text-green-800 capitalize">
-                  Mensaje:
-                </span>{" "}
-                <span className="text-green-700">{mensajeRespuesta}</span>
-              </p>
-              {precioOrdenDetalle && (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-1 md:grid-cols-3">
-                  <p className="text-sm">
-                    <span className="font-medium text-green-800">
-                      Costos Directos:
-                    </span>{" "}
-                    <span className="text-green-700">
-                      {precioOrdenDetalle.costosDirectos != null
-                        ? priceFormat(precioOrdenDetalle.costosDirectos)
-                        : "-"}
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-green-800">
-                      Seguro de Vida:
-                    </span>{" "}
-                    <span className="text-green-700">
-                      {precioOrdenDetalle.seguroVida != null
-                        ? priceFormat(precioOrdenDetalle.seguroVida)
-                        : "-"}
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-green-800">AUI:</span>{" "}
-                    <span className="text-green-700">
-                      {precioOrdenDetalle.aui != null
-                        ? priceFormat(precioOrdenDetalle.aui)
-                        : "-"}
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-green-800">
-                      Precio sin IVA:
-                    </span>{" "}
-                    <span className="text-green-700">
-                      {precioOrdenDetalle.precioAntesIva != null
-                        ? priceFormat(precioOrdenDetalle.precioAntesIva)
-                        : "-"}
-                    </span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium text-green-800">IVA:</span>{" "}
-                    <span className="text-green-700">
-                      {precioOrdenDetalle.iva != null
-                        ? priceFormat(precioOrdenDetalle.iva)
-                        : "-"}
-                    </span>
-                  </p>
-                </div>
-              )}
-              <p className="text-sm">
-                <span className="font-medium text-green-800 capitalize">
-                  Precio Total:
-                </span>{" "}
-                <span className="text-lg font-semibold text-green-700">
-                  {/* Orden indefinida (sin fechaFin): el backend devuelve precio null, se calcula al liquidar/finalizar */}
-                  {precioOrdenDetalle && precioOrdenDetalle.precio == null
-                    ? "Pendiente (se calculará al finalizar la orden)"
-                    : priceFormat(Number(formOrdenServicio.precioTotal))}
-                </span>
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Información de Creación */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-            <FilePenIcon className="h-6 w-6 text-green-600" />
-            Información de Creación
-          </h4>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {isEditing ? (
-              <div>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">
-                    Fecha de Actualización:
-                  </span>{" "}
-                  <span className="text-gray-600">
-                    {(formOrdenServicio as UpdateOrdenServicioDto)
-                      .fechaActualizacion
-                      ? new Date(
-                          (
-                            formOrdenServicio as UpdateOrdenServicioDto
-                          ).fechaActualizacion,
-                        ).toLocaleString()
-                      : new Date().toLocaleString()}
-                  </span>
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700">
-                    Fecha de Creación:
-                  </span>{" "}
-                  <span className="text-gray-600">
-                    {(formOrdenServicio as CreateOrdenServicioDto).fechaCreacion
-                      ? new Date(
-                          (
-                            formOrdenServicio as CreateOrdenServicioDto
-                          ).fechaCreacion,
-                        ).toLocaleString()
-                      : new Date().toLocaleString()}
-                  </span>
-                </p>
-              </div>
+                precioOrdenDetalle,
+              ),
             )}
+          </Box>
+        </Paper>
+      )}
 
-            <div>
-              <p className="text-sm">
-                <span className="font-medium text-gray-700">
-                  Estado Inicial:
-                </span>{" "}
-                <span className="font-medium text-blue-600">Programada</span>
-              </p>
+      {/* Información de Precio Calculado (total de la orden) */}
+      {configuracionServicioTarifa.length > 0 && (
+        <Box
+          className="flex flex-col gap-2 rounded-lg p-4"
+          sx={{
+            border: 1,
+            borderColor: "success.light",
+            bgcolor: (t) => alpha(t.palette.success.main, 0.06),
+          }}
+        >
+          <Typography
+            variant="h5"
+            component="h4"
+            className="flex items-center gap-2"
+            sx={{ "& svg": { color: "success.main", fontSize: 20 } }}
+          >
+            <CalculateOutlinedIcon />
+            Precio Calculado
+          </Typography>
+          <Typography variant="body2">
+            <Box component="span" sx={{ fontWeight: 500 }}>
+              Mensaje:
+            </Box>{" "}
+            {mensajeRespuesta}
+          </Typography>
+          {precioOrdenDetalle && (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 md:grid-cols-3">
+              <DetailField
+                label="Costos Directos"
+                value={
+                  precioOrdenDetalle.costosDirectos != null
+                    ? priceFormat(precioOrdenDetalle.costosDirectos)
+                    : "-"
+                }
+              />
+              <DetailField
+                label="Seguro de Vida"
+                value={
+                  precioOrdenDetalle.seguroVida != null
+                    ? priceFormat(precioOrdenDetalle.seguroVida)
+                    : "-"
+                }
+              />
+              <DetailField
+                label="AUI"
+                value={precioOrdenDetalle.aui != null ? priceFormat(precioOrdenDetalle.aui) : "-"}
+              />
+              <DetailField
+                label="Precio sin IVA"
+                value={
+                  precioOrdenDetalle.precioAntesIva != null
+                    ? priceFormat(precioOrdenDetalle.precioAntesIva)
+                    : "-"
+                }
+              />
+              <DetailField
+                label="IVA"
+                value={precioOrdenDetalle.iva != null ? priceFormat(precioOrdenDetalle.iva) : "-"}
+              />
             </div>
-          </div>
-        </div>
-      </div>
+          )}
+          <Typography variant="body2" sx={{ pt: 1, borderTop: 1, borderColor: "success.light" }}>
+            <Box component="span" sx={{ fontWeight: 500 }}>
+              Precio Total:
+            </Box>{" "}
+            <Box component="span" sx={{ fontSize: "1.125rem", fontWeight: 600, color: "success.dark" }}>
+              {/* Orden indefinida (sin fechaFin): el backend devuelve precio null, se calcula al liquidar/finalizar */}
+              {precioOrdenDetalle && precioOrdenDetalle.precio == null
+                ? "Pendiente (se calculará al finalizar la orden)"
+                : priceFormat(Number(formOrdenServicio.precioTotal))}
+            </Box>
+          </Typography>
+        </Box>
+      )}
+
+      {/* Información de Creación */}
+      <DetailSection icon={<EditNoteOutlinedIcon />} title="Información de Creación">
+        <DetailField
+          label={isEditing ? "Fecha de Actualización" : "Fecha de Creación"}
+          value={
+            fechaRegistro ? new Date(fechaRegistro).toLocaleString() : new Date().toLocaleString()
+          }
+        />
+        <DetailField
+          label="Estado Inicial"
+          value={<Chip size="small" color="primary" variant="outlined" label="Programada" />}
+        />
+      </DetailSection>
     </div>
   );
 };
@@ -591,59 +494,53 @@ const DesgloseCostosHoras = ({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="mt-4 border-t border-gray-200 pt-3">
-      <button
-        type="button"
+    <Box sx={{ mt: 2, pt: 1.5, borderTop: 1, borderColor: "divider" }}>
+      <Button
+        size="small"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex cursor-pointer items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
+        startIcon={
+          <ExpandMoreIcon
+            sx={{ transition: "transform .2s", transform: isOpen ? "rotate(180deg)" : "none" }}
+          />
+        }
       >
-        <ChevronDown
-          className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-        />
         Ver desglose por horas ({costosHoras.length} tramo
         {costosHoras.length === 1 ? "" : "s"})
-      </button>
+      </Button>
 
-      {isOpen && (
-        <div className="mt-2 overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-gray-200 text-gray-500">
-                <th className="py-1 pr-2 font-medium">Fecha</th>
-                <th className="py-1 pr-2 font-medium">Horario</th>
-                <th className="py-1 pr-2 font-medium">Tipo</th>
-                <th className="py-1 pr-2 font-medium">Dominical</th>
-                <th className="py-1 pr-2 font-medium">Horas</th>
-                <th className="py-1 pr-2 font-medium">Costos Directos</th>
-                <th className="py-1 pr-2 font-medium">Seguro Vida</th>
-                <th className="py-1 font-medium">AUI</th>
-              </tr>
-            </thead>
-            <tbody>
+      <Collapse in={isOpen}>
+        <TableContainer sx={{ mt: 1 }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                {["Fecha", "Horario", "Tipo", "Dominical", "Horas", "Costos Directos", "Seguro Vida", "AUI"].map(
+                  (h) => (
+                    <TableCell key={h} sx={{ whiteSpace: "nowrap" }}>
+                      {h}
+                    </TableCell>
+                  ),
+                )}
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {costosHoras.map((tramo, index) => (
-                <tr key={index} className="border-b border-gray-100 text-gray-600">
-                  <td className="py-1 pr-2 whitespace-nowrap">{tramo.fecha}</td>
-                  <td className="py-1 pr-2 whitespace-nowrap">
+                <TableRow key={index}>
+                  <TableCell sx={{ whiteSpace: "nowrap" }}>{tramo.fecha}</TableCell>
+                  <TableCell sx={{ whiteSpace: "nowrap" }}>
                     {tramo.horaInicio} - {tramo.horaFin}
-                  </td>
-                  <td className="py-1 pr-2 capitalize">{tramo.tipoHorario}</td>
-                  <td className="py-1 pr-2">{tramo.dominical ? "Sí" : "No"}</td>
-                  <td className="py-1 pr-2">{tramo.horas}</td>
-                  <td className="py-1 pr-2 whitespace-nowrap">
-                    {priceFormat(tramo.costosDirectos)}
-                  </td>
-                  <td className="py-1 pr-2 whitespace-nowrap">
-                    {priceFormat(tramo.seguroVida)}
-                  </td>
-                  <td className="py-1 whitespace-nowrap">
-                    {priceFormat(tramo.aui)}
-                  </td>
-                </tr>
+                  </TableCell>
+                  <TableCell sx={{ textTransform: "capitalize" }}>{tramo.tipoHorario}</TableCell>
+                  <TableCell>{tramo.dominical ? "Sí" : "No"}</TableCell>
+                  <TableCell>{tramo.horas}</TableCell>
+                  <TableCell sx={{ whiteSpace: "nowrap" }}>{priceFormat(tramo.costosDirectos)}</TableCell>
+                  <TableCell sx={{ whiteSpace: "nowrap" }}>{priceFormat(tramo.seguroVida)}</TableCell>
+                  <TableCell sx={{ whiteSpace: "nowrap" }}>{priceFormat(tramo.aui)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Collapse>
+    </Box>
   );
 };

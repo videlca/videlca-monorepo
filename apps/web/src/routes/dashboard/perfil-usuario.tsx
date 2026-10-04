@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, Edit3, Loader2, X } from "lucide-react";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { InputForm } from "../../components/common/InputForm";
 import {
   useGetUsuarioByCookie,
@@ -27,7 +33,7 @@ function RouteComponent() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Form
-  const { register, handleSubmit, reset } = useForm<UpdateUserDto>({
+  const { register, control, handleSubmit, reset } = useForm<UpdateUserDto>({
     defaultValues: {
       email: "",
       numeroIdentificacion: "",
@@ -69,58 +75,55 @@ function RouteComponent() {
   // Mostrar loading mientras cargan los datos
   if (isLoadingUsuario) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Cargando perfil...</span>
+      <div className="flex h-64 items-center justify-center gap-2">
+        <CircularProgress size={28} />
+        <Typography color="text.secondary">Cargando perfil...</Typography>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {/* Header de la página */}
-      <div className="flex items-center justify-end">
-        <div className="flex space-x-2">
-          {!isEditing ? (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center space-x-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+      <div className="flex items-center justify-end gap-2">
+        {!isEditing ? (
+          <Button
+            variant="contained"
+            startIcon={<EditOutlinedIcon />}
+            onClick={() => setIsEditing(true)}
+          >
+            Editar Perfil
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="contained"
+              startIcon={<CheckIcon />}
+              loading={isUpdatingUsuario}
+              loadingPosition="start"
+              onClick={handleSubmit(onSubmit)}
             >
-              <Edit3 className="h-4 w-4" />
-              <span>Editar Perfil</span>
-            </button>
-          ) : (
-            <div className="flex space-x-2">
-              <button
-                onClick={handleSubmit(onSubmit)}
-                className="flex items-center space-x-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
-              >
-                {isUpdatingUsuario ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-                <span>{isUpdatingUsuario ? "Guardando..." : "Guardar"}</span>
-              </button>
-              <button
-                onClick={handleCancel}
-                className="flex items-center space-x-2 rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
-              >
-                <X className="h-4 w-4" />
-                <span>Cancelar</span>
-              </button>
-            </div>
-          )}
-        </div>
+              {isUpdatingUsuario ? "Guardando..." : "Guardar"}
+            </Button>
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<CloseIcon />}
+              onClick={handleCancel}
+            >
+              Cancelar
+            </Button>
+          </>
+        )}
       </div>
 
       <div className="flex justify-center">
         {/* Formulario de edición */}
-        <div className="w-3xl space-y-6">
-          <div className="rounded-lg border border-gray-200 bg-white p-6">
-            <h3 className="mb-6 text-lg font-semibold text-gray-900">
+        <div className="flex w-3xl flex-col gap-6">
+          <Paper variant="outlined" className="p-6">
+            <Typography variant="h4" component="h3" sx={{ mb: 3 }}>
               Información Personal
-            </h3>
+            </Typography>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <InputForm
@@ -184,7 +187,9 @@ function RouteComponent() {
                   })) || []
                 }
                 disabled={!isEditing}
-                {...register("idTipoIdentificacion", { valueAsNumber: true })}
+                control={control}
+                name="idTipoIdentificacion"
+                valueAsNumber
               />
 
               <div className="md:col-span-2">
@@ -199,46 +204,48 @@ function RouteComponent() {
                 />
               </div>
             </div>
-          </div>
+          </Paper>
 
           {/* Sección de cambio de contraseña */}
-          <div className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
+          <Paper variant="outlined" className="p-6">
+            <Typography variant="h4" component="h3" sx={{ mb: 1 }}>
               Cambiar Contraseña
-            </h3>
-            <p className="mb-4 text-sm text-gray-600">
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Por seguridad, se te pedirá confirmar tu contraseña actual antes
               de establecer una nueva.
-            </p>
-            <button
-              className="rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
+            </Typography>
+            <Button
+              variant="outlined"
+              color="secondary"
               onClick={() => {
                 // TODO: Implementar modal de cambio de contraseña
                 alert("Funcionalidad de cambio de contraseña próximamente");
               }}
             >
               Cambiar Contraseña
-            </button>
-          </div>
+            </Button>
+          </Paper>
 
-          <div className="mt-6 rounded-lg border border-gray-200 bg-white p-6">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
+          <Paper variant="outlined" className="p-6">
+            <Typography variant="h4" component="h3" sx={{ mb: 1 }}>
               Eliminar cuenta
-            </h3>
-            <p className="mb-4 text-sm text-gray-600">
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Si deseas eliminar tu cuenta, por favor contacta al administrador
               del sistema.
-            </p>
-            <button
-              className="rounded-lg bg-gray-600 px-4 py-2 text-white transition-colors hover:bg-gray-700"
+            </Typography>
+            <Button
+              variant="outlined"
+              color="error"
               onClick={() => {
                 // TODO: Implementar modal de eliminación de cuenta
                 alert("Funcionalidad de eliminación de cuenta próximamente");
               }}
             >
               Eliminar Cuenta
-            </button>
-          </div>
+            </Button>
+          </Paper>
         </div>
       </div>
     </div>

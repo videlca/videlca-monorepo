@@ -1,42 +1,90 @@
-import { Clock } from "lucide-react";
+import ShieldOutlined from "@mui/icons-material/ShieldOutlined";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-xl">
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Paper
+        elevation={8}
+        sx={{
+          width: "100%",
+          maxWidth: 896,
+          overflow: "hidden",
+          borderRadius: 4,
+        }}
+      >
         <div className="grid min-h-[600px] md:grid-cols-2">
-          <div className="relative flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 to-blue-700 p-8 text-white">
-            <div className="space-y-6 text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
-                <Clock className="h-10 w-10 text-white" />
-              </div>
-              <div className="space-y-2">
-                <h1 className="text-4xl font-bold tracking-wide">SOFIA</h1>
-                <p className="max-w-xs text-lg leading-relaxed text-blue-100">
-                  Sistema de Gestión de Vigilancia y Seguridad
-                </p>
-              </div>
-              <div className="pt-8">
-                <div className="rounded-lg border border-blue-400/30 bg-blue-500/30 px-6 py-3 backdrop-blur-sm">
-                  <span className="font-medium text-blue-100">
-                    Seguridad física y electrónica
-                  </span>
-                </div>
-              </div>
+          <Box
+            className="flex flex-col items-center justify-center gap-6 p-8 text-center"
+            sx={{
+              color: "primary.contrastText",
+              background: (t) =>
+                `linear-gradient(135deg, ${t.palette.primary.main}, ${t.palette.primary.dark})`,
+            }}
+          >
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                borderRadius: "50%",
+                bgcolor: "rgba(255,255,255,0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ShieldOutlined sx={{ fontSize: 40 }} />
+            </Box>
+            <div>
+              <Typography
+                variant="h1"
+                component="p"
+                sx={{ fontSize: "2.25rem", letterSpacing: "0.05em" }}
+              >
+                SOFIA
+              </Typography>
+              <Typography
+                sx={{
+                  mt: 1,
+                  maxWidth: 320,
+                  fontSize: "1.125rem",
+                  opacity: 0.85,
+                }}
+              >
+                Sistema de Gestión de Vigilancia y Seguridad
+              </Typography>
             </div>
-          </div>
+            <Box
+              sx={{
+                mt: 2,
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                bgcolor: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.25)",
+                fontWeight: 500,
+              }}
+            >
+              Seguridad física y electrónica
+            </Box>
+          </Box>
           <div className="flex flex-col justify-center p-8">
-            <div className="mx-auto w-full max-w-sm space-y-6">
+            <div className="mx-auto flex w-full max-w-sm flex-col gap-6">
               {children}
-              <div className="pt-6 text-center">
-                <p className="text-xs text-gray-500">
-                  © 2025 SOFIA. Todos los derechos reservados.
-                </p>
-              </div>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ pt: 3, textAlign: "center" }}
+              >
+                © {new Date().getFullYear()} SOFIA. Todos los derechos
+                reservados.
+              </Typography>
             </div>
           </div>
         </div>
-      </div>
+      </Paper>
     </div>
   );
 }

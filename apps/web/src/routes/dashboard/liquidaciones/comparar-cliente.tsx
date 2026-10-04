@@ -1,15 +1,24 @@
+import { DiferenciaChip } from "../../../components/ui/common/DiferenciaChip";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
 import { createFileRoute } from "@tanstack/react-router";
+import { EmptyState } from "../../../components/ui/common/EmptyState";
+import { SectionCard } from "../../../components/ui/common/SectionCard";
 import { getYear, subMonths, subYears } from "date-fns";
 import { useState } from "react";
-import {
-  AlertTriangle,
-  ArrowDownIcon,
-  ArrowUpIcon,
-  BarChart3,
-  MinusIcon,
-  RefreshCw,
-  Search,
-} from "lucide-react";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import SearchIcon from "@mui/icons-material/Search";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Section } from "../../../components/ui/dashboard/Section";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { ButtonAction } from "../../../components/common/ButtonAction";
@@ -19,7 +28,6 @@ import { useCompararLiquidacionesCliente } from "../../../api/queryFunctions/liq
 import type { CompararLiquidacionesClienteDto } from "../../../api/dtos/liquidaciones";
 import type {
   DiferenciaComparacion,
-  DiferenciaMetrica,
   PeriodoComparacion,
   TipoServicioFiltro,
 } from "../../../api/types/liquidaciones";
@@ -79,53 +87,21 @@ const metricas: {
   { clave: "totalConIva", label: "Total con IVA", esMoneda: true },
 ];
 
-const DiferenciaBadge = ({
-  metrica,
-  esMoneda,
-}: {
-  metrica: DiferenciaMetrica;
-  esMoneda: boolean;
-}) => {
-  const { valor } = metrica;
-  const texto = esMoneda ? priceFormat(valor) : String(valor);
-  if (valor > 0) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-        <ArrowUpIcon className="h-3 w-3" />+{texto}
-      </span>
-    );
-  }
-  if (valor < 0) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-        <ArrowDownIcon className="h-3 w-3" />
-        {texto}
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500">
-      <MinusIcon className="h-3 w-3" />
-      {texto}
-    </span>
-  );
-};
-
 const PorcentajeTexto = ({ porcentaje }: { porcentaje: number | null }) => {
   if (porcentaje === null) {
-    return <span className="text-xs font-medium text-gray-400">N/A</span>;
+    return (
+      <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 500 }}>
+        N/A
+      </Typography>
+    );
   }
   const color =
-    porcentaje > 0
-      ? "text-green-700"
-      : porcentaje < 0
-        ? "text-red-700"
-        : "text-gray-500";
+    porcentaje > 0 ? "success.main" : porcentaje < 0 ? "error.main" : "text.secondary";
   return (
-    <span className={`text-sm font-semibold ${color}`}>
+    <Typography variant="body2" sx={{ fontWeight: 600, color }}>
       {porcentaje > 0 ? "+" : ""}
       {porcentaje}%
-    </span>
+    </Typography>
   );
 };
 
@@ -136,103 +112,130 @@ const PeriodoCard = ({
 }: {
   titulo: string;
   periodo: PeriodoComparacion;
-  acento: "blue" | "purple";
-}) => {
-  const estilos =
-    acento === "blue"
-      ? "border-blue-200 bg-blue-50 text-blue-600"
-      : "border-purple-200 bg-purple-50 text-purple-600";
-  return (
-    <div className="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-      <div className={`border-b p-4 ${estilos}`}>
-        <p className="text-xs font-semibold tracking-wide uppercase">
-          {titulo}
-        </p>
-        <p className="mt-1 text-lg font-bold text-gray-900">
-          {nombreMes(periodo.mes)} {periodo.anio}
-        </p>
-      </div>
+  acento: "primary" | "info";
+}) => (
+  <Paper variant="outlined" className="flex flex-col overflow-hidden">
+    <Box
+      className="p-4"
+      sx={{
+        borderBottom: 1,
+        borderColor: "divider",
+        bgcolor: (t) => alpha(t.palette[acento].main, 0.08),
+        color: `${acento}.main`,
+      }}
+    >
+      <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+        {titulo}
+      </Typography>
+      <Typography variant="h4" component="p" color="text.primary">
+        {nombreMes(periodo.mes)} {periodo.anio}
+      </Typography>
+    </Box>
 
-      <div className="grid grid-cols-2 gap-3 p-4 text-sm">
-        <Dato label="Grupos (facturas)" valor={periodo.cantidadGrupos} />
-        <Dato label="Órdenes" valor={periodo.cantidadOrdenes} />
-        <Dato
-          label="Liquidaciones de órdenes"
-          valor={periodo.cantidadLiquidacionesOrdenes}
-        />
-        <Dato label="Adicionales" valor={periodo.cantidadAdicionales} />
-      </div>
-
-      <div className="space-y-1 border-t border-gray-100 px-4 py-3 text-sm">
-        <div className="flex justify-between text-gray-600">
-          <span>Total antes de IVA</span>
-          <span className="font-medium text-gray-800">
-            {priceFormat(periodo.totalAntesIva)}
-          </span>
-        </div>
-        <div className="flex justify-between text-gray-600">
-          <span>IVA</span>
-          <span className="font-medium text-gray-800">
-            {priceFormat(periodo.totalIva)}
-          </span>
-        </div>
-        <div className="flex justify-between text-gray-600">
-          <span>Total con IVA</span>
-          <span className="text-base font-semibold text-green-600">
-            {priceFormat(periodo.totalConIva)}
-          </span>
-        </div>
-      </div>
-
-      <div className="border-t border-gray-100 p-4">
-        <p className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-          Grupos de liquidación
-        </p>
-        {periodo.grupos.length === 0 ? (
-          <p className="rounded-md border border-dashed border-gray-300 py-4 text-center text-sm text-gray-400">
-            Sin grupos aprobados en este mes.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {periodo.grupos.map((grupo) => (
-              <li
-                key={grupo.idGrupoLiquidacion}
-                className="rounded-md border border-gray-200 p-3 text-sm"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium text-gray-900">
-                    {grupo.descripcion}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {new Date(grupo.fechaCreacion).toLocaleDateString("es-ES")}
-                  </span>
-                </div>
-                <div className="mt-1 text-xs text-gray-500">
-                  {grupo.cantidadOrdenes} órdenes ·{" "}
-                  {grupo.cantidadAdicionales} adicionales
-                </div>
-                <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs text-gray-600">
-                  <span>
-                    Antes de IVA: {priceFormat(grupo.totalAntesIva)}
-                  </span>
-                  <span>IVA: {priceFormat(grupo.totalIva)}</span>
-                  <span className="font-semibold text-green-600">
-                    Total: {priceFormat(grupo.totalConIva)}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+    <div className="grid grid-cols-2 gap-3 p-4">
+      <Dato label="Grupos (facturas)" valor={periodo.cantidadGrupos} />
+      <Dato label="Órdenes" valor={periodo.cantidadOrdenes} />
+      <Dato
+        label="Liquidaciones de órdenes"
+        valor={periodo.cantidadLiquidacionesOrdenes}
+      />
+      <Dato label="Adicionales" valor={periodo.cantidadAdicionales} />
     </div>
-  );
-};
+
+    <Box className="flex flex-col gap-1 px-4 py-3" sx={{ borderTop: 1, borderColor: "divider" }}>
+      <Fila label="Total antes de IVA" valor={priceFormat(periodo.totalAntesIva)} />
+      <Fila label="IVA" valor={priceFormat(periodo.totalIva)} />
+      <Fila label="Total con IVA" valor={priceFormat(periodo.totalConIva)} destacado />
+    </Box>
+
+    <Box className="p-4" sx={{ borderTop: 1, borderColor: "divider" }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        component="p"
+        sx={{ mb: 1, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}
+      >
+        Grupos de liquidación
+      </Typography>
+      {periodo.grupos.length === 0 ? (
+        <Box
+          sx={{
+            py: 2,
+            textAlign: "center",
+            border: 1,
+            borderStyle: "dashed",
+            borderColor: "divider",
+            borderRadius: 1,
+          }}
+        >
+          <Typography variant="body2" color="text.disabled">
+            Sin grupos aprobados en este mes.
+          </Typography>
+        </Box>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {periodo.grupos.map((grupo) => (
+            <Paper component="li" variant="outlined" key={grupo.idGrupoLiquidacion} className="p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {grupo.descripcion}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {new Date(grupo.fechaCreacion).toLocaleDateString("es-ES")}
+                </Typography>
+              </div>
+              <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.5 }}>
+                {grupo.cantidadOrdenes} órdenes · {grupo.cantidadAdicionales} adicionales
+              </Typography>
+              <div className="mt-2 flex flex-wrap justify-between gap-2">
+                <Typography variant="caption" color="text.secondary">
+                  Antes de IVA: {priceFormat(grupo.totalAntesIva)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  IVA: {priceFormat(grupo.totalIva)}
+                </Typography>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "success.main" }}>
+                  Total: {priceFormat(grupo.totalConIva)}
+                </Typography>
+              </div>
+            </Paper>
+          ))}
+        </ul>
+      )}
+    </Box>
+  </Paper>
+);
+
+const Fila = ({
+  label,
+  valor,
+  destacado = false,
+}: {
+  label: string;
+  valor: string;
+  destacado?: boolean;
+}) => (
+  <div className="flex justify-between">
+    <Typography variant="body2" color="text.secondary">
+      {label}
+    </Typography>
+    <Typography
+      variant="body2"
+      sx={destacado ? { fontSize: "1rem", fontWeight: 600, color: "success.main" } : { fontWeight: 500 }}
+    >
+      {valor}
+    </Typography>
+  </div>
+);
 
 const Dato = ({ label, valor }: { label: string; valor: number }) => (
   <div>
-    <p className="text-xs text-gray-500">{label}</p>
-    <p className="text-xl font-bold text-gray-900">{valor}</p>
+    <Typography variant="caption" color="text.secondary">
+      {label}
+    </Typography>
+    <Typography variant="h3" component="p">
+      {valor}
+    </Typography>
   </div>
 );
 
@@ -291,191 +294,173 @@ function RouteComponent() {
     });
   };
 
+  const periodoSelector = (
+    titulo: string,
+    color: "primary" | "info",
+    anio: string,
+    setAnio: (v: string) => void,
+    mes: string,
+    setMes: (v: string) => void,
+    sufijo: "A" | "B",
+  ) => (
+    <Paper variant="outlined" className="p-4" sx={{ borderColor: `${color}.light` }}>
+      <Typography variant="h6" component="p" sx={{ mb: 1.5, color: `${color}.main` }}>
+        {titulo}
+      </Typography>
+      <div className="flex flex-wrap gap-4">
+        <div className="min-w-40 flex-1">
+          <InputSelect
+            label="Año"
+            placeholder="Selecciona un año"
+            id={`anio${sufijo}`}
+            value={anio}
+            onChange={(e) => setAnio(e.target.value)}
+            options={yearsOptions}
+          />
+        </div>
+        <div className="min-w-40 flex-1">
+          <InputSelect
+            label="Mes"
+            placeholder="Selecciona un mes"
+            id={`mes${sufijo}`}
+            value={mes}
+            onChange={(e) => setMes(e.target.value)}
+            options={monthsOptions}
+          />
+        </div>
+      </div>
+    </Paper>
+  );
+
   return (
     <Section>
-      <div className="flex flex-col gap-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Comparar liquidaciones de un cliente
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Compara lo liquidado a un cliente entre dos meses. Solo se tienen
-            en cuenta los grupos aprobados.
-          </p>
-        </div>
+      <div className="flex flex-col gap-6">
+        <Typography variant="body2" color="text.secondary">
+          Compara lo liquidado a un cliente entre dos meses. Solo se tienen en cuenta los grupos aprobados.
+        </Typography>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-6">
-            <div className="max-w-xl">
-              <InputSelect
-                label="Cliente"
-                placeholder="Selecciona un cliente"
-                id="compararCliente"
-                value={cliente}
-                onChange={(e) => setCliente(e.target.value)}
-                options={clientesOptions}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div className="rounded-md border border-blue-200 p-4">
-                <p className="mb-3 text-sm font-semibold text-blue-600">
-                  Mes A (base)
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <div className="min-w-40 flex-1">
-                    <InputSelect
-                      label="Año"
-                      placeholder="Selecciona un año"
-                      id="anioA"
-                      value={anioA}
-                      onChange={(e) => setAnioA(e.target.value)}
-                      options={yearsOptions}
-                    />
-                  </div>
-                  <div className="min-w-40 flex-1">
-                    <InputSelect
-                      label="Mes"
-                      placeholder="Selecciona un mes"
-                      id="mesA"
-                      value={mesA}
-                      onChange={(e) => setMesA(e.target.value)}
-                      options={monthsOptions}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-md border border-purple-200 p-4">
-                <p className="mb-3 text-sm font-semibold text-purple-600">
-                  Mes B (comparar)
-                </p>
-                <div className="flex flex-wrap gap-4">
-                  <div className="min-w-40 flex-1">
-                    <InputSelect
-                      label="Año"
-                      placeholder="Selecciona un año"
-                      id="anioB"
-                      value={anioB}
-                      onChange={(e) => setAnioB(e.target.value)}
-                      options={yearsOptions}
-                    />
-                  </div>
-                  <div className="min-w-40 flex-1">
-                    <InputSelect
-                      label="Mes"
-                      placeholder="Selecciona un mes"
-                      id="mesB"
-                      value={mesB}
-                      onChange={(e) => setMesB(e.target.value)}
-                      options={monthsOptions}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {aDespuesDeB && (
-              <p className="flex items-center gap-2 text-sm font-medium text-amber-600">
-                <AlertTriangle className="h-4 w-4" />
-                El mes A es posterior al mes B. La diferencia siempre se
-                calcula como B − A.
-              </p>
-            )}
-
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <FiltroTiposServicio value={tipos} onChange={setTipos} />
-              <ButtonAction
-                type="button"
-                onClick={buscar}
-                disabled={!puedeBuscar || isFetching}
-                Icon={Search}
-                label={isFetching ? "Buscando..." : "Buscar"}
-              />
-            </div>
+        <SectionCard>
+          <div className="max-w-xl">
+            <InputSelect
+              label="Cliente"
+              placeholder="Selecciona un cliente"
+              id="compararCliente"
+              value={cliente}
+              onChange={(e) => setCliente(e.target.value)}
+              options={clientesOptions}
+            />
           </div>
-        </div>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {periodoSelector("Mes A (base)", "primary", anioA, setAnioA, mesA, setMesA, "A")}
+            {periodoSelector("Mes B (comparar)", "info", anioB, setAnioB, mesB, setMesB, "B")}
+          </div>
+
+          {aDespuesDeB && (
+            <Alert severity="warning" icon={<WarningAmberIcon fontSize="small" />}>
+              El mes A es posterior al mes B. La diferencia siempre se calcula
+              como B − A.
+            </Alert>
+          )}
+
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <FiltroTiposServicio value={tipos} onChange={setTipos} />
+            <ButtonAction
+              type="button"
+              onClick={buscar}
+              disabled={!puedeBuscar || isFetching}
+              Icon={SearchIcon}
+              label={isFetching ? "Buscando..." : "Buscar"}
+            />
+          </div>
+        </SectionCard>
 
         {isFetching && (
-          <div className="flex items-center justify-center gap-2 py-12 text-gray-500">
-            <RefreshCw className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Cargando comparación...</span>
+          <div className="flex items-center justify-center gap-2 py-12">
+            <CircularProgress size={20} />
+            <Typography variant="body2" color="text.secondary">
+              Cargando comparación...
+            </Typography>
           </div>
         )}
 
         {!isFetching && isError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <Alert severity="error">
             {error.message || "Error al comparar las liquidaciones del cliente"}
-          </div>
+          </Alert>
         )}
 
         {!isFetching && !isError && comparacion && (
           <>
-            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-              <p className="text-lg font-semibold text-gray-900">
+            <Paper variant="outlined" className="p-4">
+              <Typography variant="h4" component="p">
                 {comparacion.cliente.nombre}
-              </p>
-              <p className="text-sm text-gray-500">
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
                 NIT: {comparacion.cliente.numeroIdentificacion}
-              </p>
-            </div>
+              </Typography>
+            </Paper>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <PeriodoCard
                 titulo="Mes A"
                 periodo={comparacion.periodoA}
-                acento="blue"
+                acento="primary"
               />
               <PeriodoCard
                 titulo="Mes B"
                 periodo={comparacion.periodoB}
-                acento="purple"
+                acento="info"
               />
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-              <h2 className="border-b border-gray-200 p-4 text-lg font-semibold text-gray-900">
+            <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+              <Typography
+                variant="h4"
+                component="h2"
+                className="p-4"
+                sx={{ borderBottom: 1, borderColor: "divider" }}
+              >
                 Diferencia (B − A)
-              </h2>
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
-                  <tr>
-                    <th className="px-4 py-2">Métrica</th>
-                    <th className="px-4 py-2">Valor</th>
-                    <th className="px-4 py-2">Porcentaje</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metricas.map(({ clave, label, esMoneda }) => (
-                    <tr key={clave} className="border-t border-gray-100">
-                      <td className="px-4 py-2 font-medium text-gray-700">
-                        {label}
-                      </td>
-                      <td className="px-4 py-2">
-                        <DiferenciaBadge
-                          metrica={comparacion.diferencia[clave]}
-                          esMoneda={esMoneda}
-                        />
-                      </td>
-                      <td className="px-4 py-2">
-                        <PorcentajeTexto
-                          porcentaje={comparacion.diferencia[clave].porcentaje}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              </Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Métrica</TableCell>
+                      <TableCell>Valor</TableCell>
+                      <TableCell>Porcentaje</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {metricas.map(({ clave, label, esMoneda }) => (
+                      <TableRow key={clave}>
+                        <TableCell sx={{ fontWeight: 500 }}>{label}</TableCell>
+                        <TableCell>
+                          <DiferenciaChip
+                            value={comparacion.diferencia[clave].valor}
+                            format={esMoneda ? priceFormat : String}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <PorcentajeTexto
+                            porcentaje={comparacion.diferencia[clave].porcentaje}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
           </>
         )}
 
         {!consulta && (
-          <div className="flex flex-col items-center justify-center gap-3 py-16 text-gray-400">
-            <BarChart3 className="h-12 w-12" />
-            <p className="text-sm">
-              Selecciona un cliente y dos meses para ver la comparación.
-            </p>
-          </div>
+          <EmptyState
+            icon={<BarChartIcon />}
+            title="Selecciona un cliente y dos meses para ver la comparación."
+          />
         )}
       </div>
     </Section>

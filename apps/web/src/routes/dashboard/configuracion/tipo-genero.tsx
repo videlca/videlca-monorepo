@@ -3,7 +3,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import Table from "../../../components/common/Table";
 import type { TipoGenero } from "../../../types";
 import {
@@ -109,7 +109,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar tipo de género"
             onClick={() => {
               setIsModalOpen(true);
@@ -143,17 +143,17 @@ function RouteComponent() {
               type="text"
               {...register("descripcion")}
             />
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-2">
               <Button
                 onClick={() => {
                   setIsModalOpen(false);
                   reset();
                 }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
+                variant="secondary"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
+              <Button type="submit" loading={isLoading}>
                 {isLoading ? "Creando..." : "Agregar"}
               </Button>
             </div>
@@ -176,17 +176,17 @@ function RouteComponent() {
               id="estado"
               {...registerEditar("estado")}
             />
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-2">
               <Button
                 onClick={() => {
                   setIsModalOpenEditar(false);
                   resetEditar();
                 }}
-                className="w-auto bg-gray-500 hover:bg-gray-600"
+                variant="secondary"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading} className="w-auto">
+              <Button type="submit" loading={isLoading}>
                 {isLoading ? "Actualizando..." : "Actualizar"}
               </Button>
             </div>

@@ -1,12 +1,13 @@
+import { RouterLink } from "../components/ui/common/RouterLink";
+import LockOutlined from "@mui/icons-material/LockOutlined";
+import Typography from "@mui/material/Typography";
 import {
   createFileRoute,
-  Link,
   redirect,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
 import { AuthLayout } from "../components/layout/AuthLayout";
-import { Lock } from "lucide-react";
 import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import { useForm } from "react-hook-form";
@@ -54,20 +55,18 @@ function RouteComponent() {
 
   return (
     <AuthLayout>
-      <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">
-          Confirmar Cuenta
-        </h2>
-        <p className="text-gray-600">
+      <div className="text-center">
+        <Typography variant="h2">Confirmar Cuenta</Typography>
+        <Typography color="text.secondary" sx={{ mt: 1 }}>
           Ingrese su contraseña para confirmar su cuenta
-        </p>
+        </Typography>
       </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         <Input
           label="Contraseña"
           placeholder="Ingrese su contraseña"
-          icon={Lock}
+          icon={LockOutlined}
           type="password"
           id="clave"
           required
@@ -83,7 +82,7 @@ function RouteComponent() {
         <Input
           label="Confirmar Contraseña"
           placeholder="Confirme su contraseña"
-          icon={Lock}
+          icon={LockOutlined}
           type="password"
           id="confirmarClave"
           required
@@ -94,18 +93,25 @@ function RouteComponent() {
           })}
           error={errors.confirmarClave?.message}
         />
-        <Button type="submit">Confirmar Cuenta</Button>
+        <Button
+          type="submit"
+          loading={mutation.isPending}
+          fullWidth
+          size="large"
+        >
+          Confirmar Cuenta
+        </Button>
       </form>
 
       <div className="text-center">
-        <Link
+        <RouterLink
           to="/"
-          type="button"
           onClick={() => navigate({ to: "/", replace: true })}
-          className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+          variant="body2"
+          underline="hover"
         >
           Volver a Iniciar Sesión
-        </Link>
+        </RouterLink>
       </div>
     </AuthLayout>
   );

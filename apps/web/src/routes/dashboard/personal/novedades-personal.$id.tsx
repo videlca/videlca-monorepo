@@ -1,3 +1,4 @@
+import { PageHeader } from "../../../components/ui/common/PageHeader";
 import {
   createFileRoute,
   useNavigate,
@@ -7,7 +8,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { ArrowLeftIcon } from "lucide-react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import Table from "../../../components/common/Table";
 import type { Novedad } from "../../../api/types";
 import {
@@ -57,6 +58,7 @@ function RouteComponent() {
   // Formularios
   const {
     register,
+    control,
     handleSubmit,
     reset,
   } = useForm<UpdateNovedadDto>({
@@ -173,18 +175,20 @@ function RouteComponent() {
   return (
     <Section>
       <div className="flex flex-col gap-8">
-        <div className="flex justify-between">
-          <h1 className="text-2xl font-bold">Novedades del personal </h1>
-          <ButtonAction
-            Icon={ArrowLeftIcon}
-            label="Ir a personal"
-            onClick={() => {
-              navigate({
-                to: "/dashboard/personal",
-              });
-            }}
-          />
-        </div>
+        <PageHeader
+          title="Novedades del personal"
+          actions={
+            <ButtonAction
+              Icon={ArrowBackIcon}
+              label="Ir a personal"
+              onClick={() => {
+                navigate({
+                  to: "/dashboard/personal",
+                });
+              }}
+            />
+          }
+        />
         <Table
           data={novedades?.data || []}
           columns={columns}
@@ -222,7 +226,9 @@ function RouteComponent() {
                   descripcion: tipo.descripcion,
                 })) || []
               }
-              {...register("idTipoNovedad", { valueAsNumber: true })}
+              control={control}
+              name="idTipoNovedad"
+              valueAsNumber
             />
             <InputForm
               label="Descripción"

@@ -1,4 +1,6 @@
-import { CalendarDays } from "lucide-react";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
 export const getMesActualExportacion = (): string => {
   const hoy = new Date();
@@ -31,35 +33,26 @@ export function FiltroMesExportacion({
   const todosLosMeses = value === "";
 
   return (
-    <div className="mb-4 flex flex-wrap items-end gap-4">
-      <div className="flex min-w-48 flex-col gap-1">
-        <label
-          htmlFor="filtroMesExportacion"
-          className="text-sm font-medium text-gray-700"
-        >
-          Mes del grupo
-        </label>
-        <input
-          id="filtroMesExportacion"
-          type="month"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none"
-        />
-      </div>
-      <button
-        type="button"
+    <div className="mb-4 flex flex-wrap items-center gap-4">
+      <TextField
+        id="filtroMesExportacion"
+        label="Mes del grupo"
+        type="month"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        fullWidth={false}
+        sx={{ minWidth: 192 }}
+        slotProps={{ inputLabel: { shrink: true } }}
+      />
+      <Button
+        variant={todosLosMeses ? "contained" : "outlined"}
+        color={todosLosMeses ? "primary" : "secondary"}
         aria-pressed={todosLosMeses}
+        startIcon={<CalendarMonthOutlinedIcon />}
         onClick={() => onChange(todosLosMeses ? getMesActualExportacion() : "")}
-        className={`flex h-fit w-fit cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm whitespace-nowrap ${
-          todosLosMeses
-            ? "border-blue-300 bg-blue-100 text-blue-600 hover:bg-blue-200"
-            : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-        }`}
       >
-        <CalendarDays className="h-4 w-4" />
         Todos los meses
-      </button>
+      </Button>
     </div>
   );
 }

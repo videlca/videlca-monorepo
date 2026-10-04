@@ -3,7 +3,9 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import type { Personal } from "../../../api/types/personal";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StateLabel } from "../../../components/common/StateLabel";
-import { BriefcaseIcon, PlusIcon, UserIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
+import WorkOutlinedIcon from "@mui/icons-material/WorkOutlined";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import Table from "../../../components/common/Table";
 import {
@@ -91,6 +93,7 @@ function RouteComponent() {
   // Formularios con react-hook-form
   const {
     register: registerAdd,
+    control: controlAdd,
     handleSubmit: handleSubmitAdd,
     reset: resetAdd,
     watch: watchAdd,
@@ -121,6 +124,7 @@ function RouteComponent() {
 
   const {
     register: registerEditPersonal,
+    control: controlEditPersonal,
     handleSubmit: handleSubmitEditPersonal,
     reset: resetEditPersonal,
     watch: watchEdit,
@@ -152,6 +156,7 @@ function RouteComponent() {
 
   const {
     register: registerNovedad,
+    control: controlNovedad,
     handleSubmit: handleSubmitNovedad,
     reset: resetNovedad,
   } = useForm<CreateNovedadDto>({
@@ -297,7 +302,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Nuevo personal"
             onClick={() => setIsOpenAddModal(true)}
           />
@@ -377,7 +382,7 @@ function RouteComponent() {
             <FormSection
               title="Información personal"
               description="Información personal del personal"
-              Icon={UserIcon}
+              Icon={PersonOutlinedIcon}
             >
               <InputForm
                 label="Primer nombre"
@@ -422,7 +427,8 @@ function RouteComponent() {
                     descripcion: genero.descripcion,
                   })) || []
                 }
-                {...registerAdd("idTipoGenero")}
+                control={controlAdd}
+                name="idTipoGenero"
               />
               <InputSelect
                 label="Tipo de identificación"
@@ -435,7 +441,8 @@ function RouteComponent() {
                     descripcion: tipo.descripcion,
                   })) || []
                 }
-                {...registerAdd("idTipoIdentificacion")}
+                control={controlAdd}
+                name="idTipoIdentificacion"
               />
               <InputForm
                 label="Número de identificación"
@@ -472,7 +479,8 @@ function RouteComponent() {
                     descripcion: ciudad.descripcion,
                   })) || []
                 }
-                {...registerAdd("idCiudad")}
+                control={controlAdd}
+                name="idCiudad"
               />
               <InputForm
                 label="Dirección de residencia"
@@ -486,7 +494,7 @@ function RouteComponent() {
             <FormSection
               title="Información laboral"
               description="Información laboral del personal"
-              Icon={BriefcaseIcon}
+              Icon={WorkOutlinedIcon}
             >
               <InputSelect
                 label="Tipo de contrato"
@@ -499,15 +507,15 @@ function RouteComponent() {
                     descripcion: contrato.descripcion,
                   })) || []
                 }
-                {...registerAdd("idTipoContrato", {
-                  onChange: (e) => {
-                    if (e.target.selectedOptions[0].text.includes("Indefinido")) {
-                      setValueAdd("fechaFinContrato", null);
-                    } else {
-                      setValueAdd("fechaFinContrato", "");
-                    }
-                  },
-                })}
+                control={controlAdd}
+                name="idTipoContrato"
+                onOptionChange={(option) => {
+                  if (option.descripcion.includes("Indefinido")) {
+                    setValueAdd("fechaFinContrato", null);
+                  } else {
+                    setValueAdd("fechaFinContrato", "");
+                  }
+                }}
               />
               <InputForm
                 label="Fecha de inicio de contrato"
@@ -539,12 +547,14 @@ function RouteComponent() {
                     descripcion: personal.descripcion,
                   })) || []
                 }
-                {...registerAdd("idTipoPersonal")}
+                control={controlAdd}
+                name="idTipoPersonal"
               />
               <CheckboxForm
                 label="¿Tiene arma?"
                 id="arma"
-                {...registerAdd("arma")}
+                control={controlAdd}
+                name="arma"
               />
             </FormSection>
           </div>
@@ -596,7 +606,7 @@ function RouteComponent() {
             <FormSection
               title="Información personal"
               description="Información personal del personal"
-              Icon={UserIcon}
+              Icon={PersonOutlinedIcon}
             >
               <InputForm
                 label="Primer nombre"
@@ -641,7 +651,8 @@ function RouteComponent() {
                     descripcion: genero.descripcion,
                   })) || []
                 }
-                {...registerEditPersonal("idTipoGenero")}
+                control={controlEditPersonal}
+                name="idTipoGenero"
               />
               <InputSelect
                 label="Tipo de identificación"
@@ -654,7 +665,8 @@ function RouteComponent() {
                     descripcion: tipo.descripcion,
                   })) || []
                 }
-                {...registerEditPersonal("idTipoIdentificacion")}
+                control={controlEditPersonal}
+                name="idTipoIdentificacion"
               />
               <InputForm
                 label="Número de identificación"
@@ -691,7 +703,8 @@ function RouteComponent() {
                     descripcion: ciudad.descripcion,
                   })) || []
                 }
-                {...registerEditPersonal("idCiudad")}
+                control={controlEditPersonal}
+                name="idCiudad"
               />
               <InputForm
                 label="Dirección de residencia"
@@ -705,7 +718,7 @@ function RouteComponent() {
             <FormSection
               title="Información laboral"
               description="Información laboral del personal"
-              Icon={BriefcaseIcon}
+              Icon={WorkOutlinedIcon}
             >
               <InputSelect
                 label="Tipo de contrato"
@@ -718,15 +731,15 @@ function RouteComponent() {
                     descripcion: contrato.descripcion,
                   })) || []
                 }
-                {...registerEditPersonal("idTipoContrato", {
-                  onChange: (e) => {
-                    if (e.target.selectedOptions[0].text.includes("Indefinido")) {
-                      setValueEdit("fechaFinContrato", null);
-                    } else {
-                      setValueEdit("fechaFinContrato", "");
-                    }
-                  },
-                })}
+                control={controlEditPersonal}
+                name="idTipoContrato"
+                onOptionChange={(option) => {
+                  if (option.descripcion.includes("Indefinido")) {
+                    setValueEdit("fechaFinContrato", null);
+                  } else {
+                    setValueEdit("fechaFinContrato", "");
+                  }
+                }}
               />
               <InputForm
                 label="Fecha de inicio de contrato"
@@ -758,17 +771,20 @@ function RouteComponent() {
                     descripcion: personal.descripcion,
                   })) || []
                 }
-                {...registerEditPersonal("idTipoPersonal")}
+                control={controlEditPersonal}
+                name="idTipoPersonal"
               />
               <CheckboxForm
                 label="¿Tiene arma?"
                 id="arma"
-                {...registerEditPersonal("arma")}
+                control={controlEditPersonal}
+                name="arma"
               />
               <CheckboxForm
                 label="¿Está laborando?"
                 id="laborando"
-                {...registerEditPersonal("laborando")}
+                control={controlEditPersonal}
+                name="laborando"
               />
             </FormSection>
           </div>
@@ -822,7 +838,8 @@ function RouteComponent() {
                   descripcion: tipo.descripcion,
                 })) || []
               }
-              {...registerNovedad("idTipoNovedad")}
+              control={controlNovedad}
+              name="idTipoNovedad"
             />
             <InputForm
               label="Descripción"

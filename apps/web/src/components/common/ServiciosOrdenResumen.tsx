@@ -1,3 +1,5 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import type {
   OrdenServicio,
   OrdenServicioDetalle,
@@ -29,25 +31,29 @@ export const ServiciosOrdenResumen = ({ orden }: { orden: OrdenServicio }) => {
 
   if (servicios.length === 0) {
     return (
-      <p className="pl-4 text-left text-sm text-gray-500">
+      <Typography variant="body2" color="text.secondary" sx={{ pl: 2, textAlign: "left" }}>
         Esta orden no tiene servicios registrados.
-      </p>
+      </Typography>
     );
   }
 
   return (
-    <ul className="ml-4 space-y-1 border-l-2 border-gray-300 pl-4 text-left text-sm">
+    <Box
+      component="ul"
+      className="ml-4 flex flex-col gap-1 pl-4 text-left"
+      sx={{ borderLeft: 2, borderColor: "divider" }}
+    >
       {servicios.map(([key, detalle]) => (
         <li key={key} className="flex flex-wrap items-baseline gap-x-2">
-          <span className="font-medium text-gray-800">
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
             {detalle.idTarifa?.idServicio?.descripcion ??
               "Servicio sin tarifa"}
-          </span>
-          <span className="text-gray-500">
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             {formatHora(detalle.horaInicio)} - {formatHora(detalle.horaFin)}
-          </span>
+          </Typography>
         </li>
       ))}
-    </ul>
+    </Box>
   );
 };

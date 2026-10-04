@@ -1,20 +1,26 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { RouterLink } from "../components/ui/common/RouterLink";
 
 export const Route = createRootRoute({
   component: () => <Outlet />,
   notFoundComponent: () => (
-    <div className="flex h-full w-full items-center justify-center bg-blue-400">
-      <div className="flex w-full max-w-sm flex-col items-center justify-center gap-4 rounded-lg bg-white p-8">
-        <h1 className="mb-2 text-center text-2xl font-medium text-gray-700">
+    <div className="flex min-h-screen w-full items-center justify-center p-4">
+      <Paper
+        variant="outlined"
+        className="flex w-full max-w-sm flex-col items-center gap-4 p-8"
+      >
+        <Typography variant="h1" color="primary">
           404
-        </h1>
-        <p className="text-sm font-light text-gray-500">
+        </Typography>
+        <Typography color="text.secondary">
           La página que buscas no existe.
-        </p>
-        <Link to="/" className="text-blue-400">
+        </Typography>
+        <RouterLink to="/" underline="hover">
           Regresar al inicio
-        </Link>
-      </div>
+        </RouterLink>
+      </Paper>
     </div>
   ),
 });

@@ -1,11 +1,18 @@
+import { fieldLabel } from "./fieldLabel";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
 import React, { useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import { Eye, EyeOff } from "lucide-react";
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "size"
+> {
   label: string;
   placeholder: string;
-  icon: LucideIcon;
+  icon: React.ElementType;
   type: "text" | "password" | "email" | "number";
   error?: string;
 }
@@ -20,57 +27,72 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       id,
       required = false,
       disabled = false,
-      className = "",
+      className,
       error,
+      name,
+      value,
+      defaultValue,
+      onChange,
+      onBlur,
+      autoFocus,
       ...rest
     },
     ref,
   ) => {
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === "password";
-    const inputType = isPassword && showPassword ? "text" : type;
 
-    const togglePasswordVisibility = () => {
-      setShowPassword(!showPassword);
-    };
+    const fl = fieldLabel(label, required);
 
     return (
-      <div className="space-y-2">
-        <label htmlFor={id} className="block text-sm font-medium text-gray-700">
-          {label}
-          {required && <span className="ml-1 text-red-500">*</span>}
-        </label>
-        <div className="relative">
-          <Icon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
-          <input
-            ref={ref}
-            id={id}
-            type={inputType}
-            placeholder={placeholder}
-            required={required}
-            disabled={disabled}
-            className={`h-12 w-full rounded-lg border ${error ? "border-red-500" : "border-gray-300"} px-3 py-2 pl-10 placeholder-gray-400 shadow-sm transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-              isPassword ? "pr-12" : ""
-            } ${disabled ? "cursor-not-allowed bg-gray-100" : ""} ${className}`}
-            {...rest}
-          />
-          {isPassword && (
-            <button
-              type="button"
-              onClick={togglePasswordVisibility}
-              className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 transform text-gray-400 hover:text-gray-600 focus:text-gray-600 focus:outline-none"
-              disabled={disabled}
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
-          )}
-        </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
-      </div>
+      <TextField
+        inputRef={ref}
+        id={id}
+        name={name}
+        value={value}
+        defaultValue={defaultValue}
+        onChange={onChange}
+        onBlur={onBlur}
+        autoFocus={autoFocus}
+        type={isPassword && showPassword ? "text" : type}
+        label={fl.label}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        error={!!error}
+        helperText={error}
+        className={className}
+        size="medium"
+        slotProps={{
+          inputLabel: fl.inputLabel,
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <Icon style={{ width: 18, height: 18 }} />
+              </InputAdornment>
+            ),
+            endAdornment: isPassword ? (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label={
+                    showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  }
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={disabled}
+                  edge="end"
+                >
+                  {showPassword ? (
+                    <VisibilityOff fontSize="small" />
+                  ) : (
+                    <Visibility fontSize="small" />
+                  )}
+                </IconButton>
+              </InputAdornment>
+            ) : undefined,
+          },
+          htmlInput: rest,
+        }}
+      />
     );
   },
 );

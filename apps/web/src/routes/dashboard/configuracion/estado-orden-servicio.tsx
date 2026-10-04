@@ -28,14 +28,14 @@ function RouteComponent() {
       accessorKey: "nombre",
       header: "Nombre",
       cell: ({ row }) => (
-        <span className="font-medium capitalize">{row.getValue("nombre")}</span>
+        <span className="capitalize">{row.getValue("nombre")}</span>
       ),
     },
     {
       accessorKey: "descripcion",
       header: "Descripción",
       cell: ({ row }) => (
-        <span className="font-medium">{row.getValue("descripcion")}</span>
+        <>{row.getValue("descripcion")}</>
       ),
     },
   ];

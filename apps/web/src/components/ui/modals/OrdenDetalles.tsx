@@ -1,14 +1,20 @@
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { OrderStateLabel } from "../../common/OrderStateLabel";
+import { DetailField, DetailSection } from "../common/DetailSection";
 import { useState } from "react";
-import {
-  Building2,
-  Calendar,
-  CheckCircle2,
-  CircleDollarSign,
-  FileText,
-  MapPin,
-  Receipt,
-  User,
-} from "lucide-react";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
+import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
+import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { SimpleModal } from "../../common/SimpleModal";
 import type {
   OrdenServicio,
@@ -184,184 +190,79 @@ const renderTarjetaDetalle = (
   const iva = sumarCampoDetalle(indices, detalles, (d) => d.iva);
 
   return (
-    <div
-      key={indices.join("-")}
-      className="rounded-lg border border-gray-300 bg-white p-4"
-    >
-      <h4 className="mb-3 text-base font-semibold text-gray-900">
+    <Paper key={indices.join("-")} variant="outlined" className="p-4">
+      <Typography variant="body1" component="h4" sx={{ fontWeight: 600, mb: 1.5 }}>
         {servicio?.codigo
           ? `${servicio.codigo} — ${servicio.descripcion}`
           : `Detalle ${indicePrincipal + 1}`}
         {indices.length > 1 && (
-          <span className="ml-2 text-sm font-normal text-gray-500">
+          <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
             ({indices.length} unidades)
-          </span>
+          </Typography>
         )}
         {diasActivos(detalle) && (
-          <span className="ml-2 text-sm font-normal text-gray-500">
+          <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
             {diasActivos(detalle)}
-          </span>
+          </Typography>
         )}
-      </h4>
+      </Typography>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <div>
-          <p className="text-sm font-medium text-gray-600">Horario</p>
-          <p className="text-base text-gray-900">
-            {timeFormat(detalle.horaInicio)} - {timeFormat(detalle.horaFin)}
-          </p>
-        </div>
+        <DetailField
+          label="Horario"
+          value={`${timeFormat(detalle.horaInicio)} - ${timeFormat(detalle.horaFin)}`}
+        />
         {/* fecha/cantidadHoras solo traen valor en ordenes "a la medida": cada fila es un dia
             especifico del rango (en "catalogo" son null, no se muestran) */}
         {detalle.fecha && (
-          <div>
-            <p className="text-sm font-medium text-gray-600">Fecha</p>
-            <p className="text-base text-gray-900">
-              {safeParseDate(detalle.fecha.slice(0, 10)).toLocaleDateString()}
-            </p>
-          </div>
+          <DetailField
+            label="Fecha"
+            value={safeParseDate(detalle.fecha.slice(0, 10)).toLocaleDateString()}
+          />
         )}
         {detalle.cantidadHoras != null && (
-          <div>
-            <p className="text-sm font-medium text-gray-600">
-              Cantidad de Horas
-            </p>
-            <p className="text-base text-gray-900">{detalle.cantidadHoras}</p>
-          </div>
+          <DetailField label="Cantidad de Horas" value={detalle.cantidadHoras} />
         )}
-        <div>
-          <p className="text-sm font-medium text-gray-600">Precio</p>
-          <p className="text-base font-semibold text-green-700">
-            {priceOrNA(precioTotalGrupo)}
-          </p>
-        </div>
-
-        {/* Información del Servicio */}
-        {servicio && (
-          <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
-            <h5 className="mb-2 text-sm font-semibold text-gray-900">
-              Servicio
-            </h5>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <p className="text-xs font-medium text-gray-600">Código</p>
-                <p className="text-sm text-gray-900">{servicio.codigo}</p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-600">
-                  Descripción
-                </p>
-                <p className="text-sm text-gray-900">
-                  {servicio.descripcion}
-                </p>
-              </div>
-              {/* Cada campo solo se muestra si realmente trae valor: no tiene sentido pintar
-                  una etiqueta vacia cuando la relacion no vino cargada (ver findOrdenLiquidada
-                  en el backend) o simplemente no aplica para este servicio */}
-              {servicio.idTipoServicio?.nombre && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600">
-                    Tipo de Servicio
-                  </p>
-                  <p className="text-sm text-gray-900">
-                    {servicio.idTipoServicio.nombre}
-                  </p>
-                </div>
-              )}
-              {servicio.idTipoDuracion?.descripcion && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600">
-                    Duración
-                  </p>
-                  <p className="text-sm text-gray-900">
-                    {servicio.idTipoDuracion.descripcion}
-                  </p>
-                </div>
-              )}
-              {servicio.idTipoHorarioDescripcion?.nombre && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600">
-                    Horario
-                  </p>
-                  <p className="text-sm text-gray-900">
-                    {servicio.idTipoHorarioDescripcion.nombre}
-                  </p>
-                </div>
-              )}
-              <div>
-                <p className="text-xs font-medium text-gray-600">
-                  Horas Fijas
-                </p>
-                <p className="text-sm text-gray-900">{servicio.horasFijas}</p>
-              </div>
-              {servicio.idTipoTarifa?.nombre && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600">
-                    Tipo Tarifa
-                  </p>
-                  <p className="text-sm text-gray-900">
-                    {servicio.idTipoTarifa.nombre}
-                  </p>
-                </div>
-              )}
-              {servicio.idTipoTarifa?.cantidadTiempo != null && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600">
-                    Cantidad Tiempo
-                  </p>
-                  <p className="text-sm text-gray-900">
-                    {servicio.idTipoTarifa.cantidadTiempo}{" "}
-                    {servicio.idTipoTarifa.idTipoUnidadTiempo?.descripcion}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
-          <h5 className="mb-2 text-sm font-semibold text-gray-900">
-            Desglose de Costos
-          </h5>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <div>
-              <p className="text-xs font-medium text-gray-600">
-                Costos Directos
-              </p>
-              <p className="text-sm text-gray-900">{priceOrNA(costosDirectos)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">
-                Seguro de Vida
-              </p>
-              <p className="text-sm text-gray-900">{priceOrNA(seguroVida)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">AUI</p>
-              <p className="text-sm text-gray-900">{priceOrNA(aui)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">IVA</p>
-              <p className="text-sm text-gray-900">{priceOrNA(iva)}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">
-                Precio Antes IVA
-              </p>
-              <p className="text-sm text-gray-900">
-                {priceOrNA(precioAntesIva)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-600">
-                Precio Total
-              </p>
-              <p className="text-sm font-semibold text-green-700">
-                {priceOrNA(precioTotalGrupo)}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DetailField label="Precio" value={priceOrNA(precioTotalGrupo)} price />
       </div>
-    </div>
+
+      {/* Información del Servicio */}
+      {servicio && (
+        <DetailSection title="Servicio" columns={3} outlined={false}>
+          <DetailField label="Código" value={servicio.codigo} />
+          <DetailField label="Descripción" value={servicio.descripcion} />
+          {/* Cada campo solo se muestra si realmente trae valor: no tiene sentido pintar
+              una etiqueta vacia cuando la relacion no vino cargada (ver findOrdenLiquidada
+              en el backend) o simplemente no aplica para este servicio */}
+          {servicio.idTipoServicio?.nombre && (
+            <DetailField label="Tipo de Servicio" value={servicio.idTipoServicio.nombre} />
+          )}
+          {servicio.idTipoDuracion?.descripcion && (
+            <DetailField label="Duración" value={servicio.idTipoDuracion.descripcion} />
+          )}
+          {servicio.idTipoHorarioDescripcion?.nombre && (
+            <DetailField label="Horario" value={servicio.idTipoHorarioDescripcion.nombre} />
+          )}
+          <DetailField label="Horas Fijas" value={servicio.horasFijas} />
+          {servicio.idTipoTarifa?.nombre && (
+            <DetailField label="Tipo Tarifa" value={servicio.idTipoTarifa.nombre} />
+          )}
+          {servicio.idTipoTarifa?.cantidadTiempo != null && (
+            <DetailField
+              label="Cantidad Tiempo"
+              value={`${servicio.idTipoTarifa.cantidadTiempo} ${servicio.idTipoTarifa.idTipoUnidadTiempo?.descripcion ?? ""}`}
+            />
+          )}
+        </DetailSection>
+      )}
+      <DetailSection title="Desglose de Costos" columns={4} outlined={false}>
+        <DetailField label="Costos Directos" value={priceOrNA(costosDirectos)} />
+        <DetailField label="Seguro de Vida" value={priceOrNA(seguroVida)} />
+        <DetailField label="AUI" value={priceOrNA(aui)} />
+        <DetailField label="IVA" value={priceOrNA(iva)} />
+        <DetailField label="Precio Antes IVA" value={priceOrNA(precioAntesIva)} />
+        <DetailField label="Precio Total" value={priceOrNA(precioTotalGrupo)} price />
+      </DetailSection>
+    </Paper>
   );
 };
 
@@ -423,9 +324,7 @@ export const OrdenDetalles = ({
         title={`Adicional liquidado — ${formatAniomes(selectedOrderDetail.aniomes_liquidacion)}`}
         size="3xl"
       >
-        <div className="space-y-6 p-6">
-          <AdicionalLiquidadoDetalle detalle={selectedOrderDetail} />
-        </div>
+        <AdicionalLiquidadoDetalle detalle={selectedOrderDetail} />
       </SimpleModal>
     );
   }
@@ -452,413 +351,273 @@ export const OrdenDetalles = ({
       }
       size="3xl"
     >
-      <div className="space-y-6 p-6">
+      <div className="flex flex-col gap-4">
         {esSnapshotLiquidacion(selectedOrderDetail) && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+          <Alert severity="info">
             Mostrando lo realmente liquidado en{" "}
             <b>{formatAniomes(selectedOrderDetail.aniomes_liquidacion)}</b>{" "}
             (liquidación #{selectedOrderDetail.idLiquidacion}), no el total de
             toda la orden.
-          </div>
+          </Alert>
         )}
         {/* Puesto: solo aplica a ordenes de "Vigilancia y escolta" (idLocacion). Las de "Monitoreo de
             alarmas" van directo a un cliente, sin puesto/locacion asociado */}
         {selectedOrderDetail.idLocacion && (
-          <div className="rounded-lg border border-gray-200 p-4">
-            <div className="mb-3 flex items-center space-x-2">
-              <MapPin className="h-5 w-5 text-orange-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Puesto</h3>
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Nombre</p>
-                <p className="text-base text-gray-900">
-                  {selectedOrderDetail.idLocacion?.nombre || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Dirección</p>
-                <p className="text-base text-gray-900">
-                  {selectedOrderDetail.idLocacion?.direccion || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Responsable</p>
-                <p className="text-base text-gray-900">
-                  {selectedOrderDetail.idLocacion?.primerNombreResponsable}{" "}
-                  {selectedOrderDetail.idLocacion?.primerApellidoResponsable}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Teléfono</p>
-                <p className="text-base text-gray-900">
-                  {selectedOrderDetail.idLocacion?.telefono || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Coordenadas</p>
-                <p className="text-base text-gray-900">
-                  Lat: {selectedOrderDetail.idLocacion?.latitud}, Long:{" "}
-                  {selectedOrderDetail.idLocacion?.longitud}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Ciudad</p>
-                <p className="text-base text-gray-900">
-                  {selectedOrderDetail.idLocacion?.idCiudad?.descripcion},{" "}
-                  {
-                    selectedOrderDetail.idLocacion?.idCiudad?.departamento
-                      ?.descripcion
-                  }
-                  ,{" "}
-                  {
-                    selectedOrderDetail.idLocacion?.idCiudad?.departamento?.pais
-                      ?.descripcion
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
+          <DetailSection icon={<PlaceOutlinedIcon />} title="Puesto">
+            <DetailField label="Nombre" value={selectedOrderDetail.idLocacion?.nombre || "N/A"} />
+            <DetailField
+              label="Dirección"
+              value={selectedOrderDetail.idLocacion?.direccion || "N/A"}
+            />
+            <DetailField
+              label="Responsable"
+              value={`${selectedOrderDetail.idLocacion?.primerNombreResponsable ?? ""} ${selectedOrderDetail.idLocacion?.primerApellidoResponsable ?? ""}`}
+            />
+            <DetailField
+              label="Teléfono"
+              value={selectedOrderDetail.idLocacion?.telefono || "N/A"}
+            />
+            <DetailField
+              label="Coordenadas"
+              value={`Lat: ${selectedOrderDetail.idLocacion?.latitud ?? ""}, Long: ${selectedOrderDetail.idLocacion?.longitud ?? ""}`}
+            />
+            <DetailField
+              label="Ciudad"
+              value={[
+                selectedOrderDetail.idLocacion?.idCiudad?.descripcion,
+                selectedOrderDetail.idLocacion?.idCiudad?.departamento?.descripcion,
+                selectedOrderDetail.idLocacion?.idCiudad?.departamento?.pais?.descripcion,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            />
+          </DetailSection>
         )}
 
         {/* Cliente: para "Vigilancia y escolta" es el cliente del puesto, para "Monitoreo de alarmas" es el
             cliente asignado directo a la orden (ver "cliente" mas arriba) */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <div className="mb-3 flex items-center space-x-2">
-            <Building2 className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Información del Cliente
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Nombre</p>
-              <p className="text-base text-gray-900">
-                {cliente?.nombre || "N/A"}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Identificación
-              </p>
-              <p className="text-base text-gray-900">
-                {cliente?.idTipoIdentificacion?.descripcion}
-                {": "}
-                {cliente?.numeroIdentificacion}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Tipo de Cliente
-              </p>
-              <p className="text-base text-gray-900">
-                {cliente?.idTipoCliente?.descripcion || "N/A"}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Segmentación
-              </p>
-              <p className="text-base text-gray-900">
-                {cliente?.idSubSegmentacion?.segmentacion?.descripcion ||
-                  "N/A"}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DetailSection icon={<BusinessOutlinedIcon />} title="Información del Cliente">
+          <DetailField label="Nombre" value={cliente?.nombre || "N/A"} />
+          <DetailField
+            label="Identificación"
+            value={`${cliente?.idTipoIdentificacion?.descripcion ?? ""}: ${cliente?.numeroIdentificacion ?? ""}`}
+          />
+          <DetailField
+            label="Tipo de Cliente"
+            value={cliente?.idTipoCliente?.descripcion || "N/A"}
+          />
+          <DetailField
+            label="Segmentación"
+            value={cliente?.idSubSegmentacion?.segmentacion?.descripcion || "N/A"}
+          />
+        </DetailSection>
 
         {/* Información Básica de la Orden */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <div className="mb-3 flex items-center space-x-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Información de la Orden
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-600">ID Orden</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idOrdenServicio}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Descripción ID
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.ordenServicioId?.descripcionId || "N/A"}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Precio Total</p>
-              <p className="text-base font-semibold text-green-700">
-                {priceFormat(selectedOrderDetail.precioTotal)}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Fecha de Creación
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.fechaCreacion}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Fecha de Actualización
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.fechaActualizacion}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Anulado</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.ordenServicioId?.anulado ? "Sí" : "No"}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DetailSection icon={<DescriptionOutlinedIcon />} title="Información de la Orden">
+          <DetailField label="ID Orden" value={selectedOrderDetail.idOrdenServicio} />
+          <DetailField
+            label="Descripción ID"
+            value={selectedOrderDetail.ordenServicioId?.descripcionId || "N/A"}
+          />
+          <DetailField
+            label="Precio Total"
+            value={priceFormat(selectedOrderDetail.precioTotal)}
+            price
+          />
+          <DetailField label="Fecha de Creación" value={selectedOrderDetail.fechaCreacion} />
+          <DetailField
+            label="Fecha de Actualización"
+            value={selectedOrderDetail.fechaActualizacion}
+          />
+          <DetailField
+            label="Anulado"
+            value={selectedOrderDetail.ordenServicioId?.anulado ? "Sí" : "No"}
+          />
+        </DetailSection>
 
         {/* Usuario Creador */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <div className="mb-3 flex items-center space-x-2">
-            <User className="h-5 w-5 text-purple-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Usuario Creador
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Nombre Completo
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idUsuarioCreacion?.primerNombre}{" "}
-                {selectedOrderDetail.idUsuarioCreacion?.segundoNombre || ""}{" "}
-                {selectedOrderDetail.idUsuarioCreacion?.primerApellido}{" "}
-                {selectedOrderDetail.idUsuarioCreacion?.segundoApellido || ""}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Email</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idUsuarioCreacion?.email || "N/A"}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Identificación
-              </p>
-              <p className="text-base text-gray-900">
-                {
-                  selectedOrderDetail.idUsuarioCreacion?.idTipoIdentificacion
-                    ?.descripcion
-                }
-                : {selectedOrderDetail.idUsuarioCreacion?.numeroIdentificacion}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DetailSection icon={<PersonOutlinedIcon />} title="Usuario Creador">
+          <DetailField
+            label="Nombre Completo"
+            value={[
+              selectedOrderDetail.idUsuarioCreacion?.primerNombre,
+              selectedOrderDetail.idUsuarioCreacion?.segundoNombre,
+              selectedOrderDetail.idUsuarioCreacion?.primerApellido,
+              selectedOrderDetail.idUsuarioCreacion?.segundoApellido,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          />
+          <DetailField
+            label="Email"
+            value={selectedOrderDetail.idUsuarioCreacion?.email || "N/A"}
+          />
+          <DetailField
+            label="Identificación"
+            value={`${selectedOrderDetail.idUsuarioCreacion?.idTipoIdentificacion?.descripcion ?? ""}: ${selectedOrderDetail.idUsuarioCreacion?.numeroIdentificacion ?? ""}`}
+          />
+        </DetailSection>
 
         {/* Estado de la Orden */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <div className="mb-3 flex items-center space-x-2">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Estado de la Orden de Servicio
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Estado</p>
-              <span className="inline-block rounded-full border border-gray-300 px-3 py-1 text-sm font-medium text-green-800">
-                {selectedOrderDetail.idEstadoOrdenServicio?.nombre || "N/A"}
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Programable</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idEstadoOrdenServicio?.programable
-                  ? "Sí"
-                  : "No"}
-              </p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-sm font-medium text-gray-600">Descripción</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.idEstadoOrdenServicio?.descripcion ||
-                  "N/A"}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DetailSection icon={<CheckCircleOutlinedIcon />} title="Estado de la Orden de Servicio">
+          <DetailField
+            label="Estado"
+            value={
+              <OrderStateLabel state={selectedOrderDetail.idEstadoOrdenServicio?.nombre || "N/A"} />
+            }
+          />
+          <DetailField
+            label="Programable"
+            value={selectedOrderDetail.idEstadoOrdenServicio?.programable ? "Sí" : "No"}
+          />
+          <DetailField
+            label="Descripción"
+            value={selectedOrderDetail.idEstadoOrdenServicio?.descripcion || "N/A"}
+            fullWidth
+          />
+        </DetailSection>
 
         {/* Fechas de la Orden */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <div className="mb-3 flex items-center space-x-2">
-            <Calendar className="h-5 w-5 text-indigo-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Fecha Orden de Servicio
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Fecha de Inicio
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.fechaInicio}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">Fecha de Fin</p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.fechaFin}
-              </p>
-            </div>
-            {selectedOrderDetail.diaInicioCobro != null &&
-              selectedOrderDetail.diaFinCobro != null && (
-                <div className="md:col-span-2">
-                  <p className="text-sm font-medium text-gray-600">Cobro parcial</p>
-                  <p className="text-base text-gray-900">
-                    {textoCobroParcial(
-                      selectedOrderDetail.diaInicioCobro,
-                      selectedOrderDetail.diaFinCobro,
-                    )}
-                  </p>
-                </div>
-              )}
-            {/* Fecha Ordenes son las que se actualizan */}
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Fecha Inicio Orden (Actualizada)
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.fechaInicioOrden}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">
-                Fecha Fin Orden (Actualizada)
-              </p>
-              <p className="text-base text-gray-900">
-                {selectedOrderDetail.fechaFinOrden}
-              </p>
-            </div>
-          </div>
-        </div>
+        <DetailSection icon={<CalendarMonthOutlinedIcon />} title="Fecha Orden de Servicio">
+          <DetailField label="Fecha de Inicio" value={selectedOrderDetail.fechaInicio} />
+          <DetailField label="Fecha de Fin" value={selectedOrderDetail.fechaFin} />
+          {selectedOrderDetail.diaInicioCobro != null &&
+            selectedOrderDetail.diaFinCobro != null && (
+              <DetailField
+                label="Cobro parcial"
+                value={textoCobroParcial(
+                  selectedOrderDetail.diaInicioCobro,
+                  selectedOrderDetail.diaFinCobro,
+                )}
+                fullWidth
+              />
+            )}
+          {/* Fecha Ordenes son las que se actualizan */}
+          <DetailField
+            label="Fecha Inicio Orden (Actualizada)"
+            value={selectedOrderDetail.fechaInicioOrden}
+          />
+          <DetailField
+            label="Fecha Fin Orden (Actualizada)"
+            value={selectedOrderDetail.fechaFinOrden}
+          />
+        </DetailSection>
 
         {/* Tarifas: una tarjeta por unidad, salvo que la orden tenga varias unidades del mismo servicio de
             tipo Monitoreo de Alarmas, en cuyo caso se resumen en una unica tarjeta con el precio/costos
             sumados entre esas unidades (ver agruparIndicesDetalles) */}
-        <div className="rounded-lg border border-gray-200 p-4">
-          <div className="mb-3 flex items-center space-x-2">
-            <CircleDollarSign className="h-5 w-5 text-yellow-600" />
-            <h3 className="text-lg font-semibold text-gray-900">
-              Tarifas y Servicios
-            </h3>
-          </div>
-          <div className="space-y-4">
-            {agruparIndicesDetalles(selectedOrderDetail.detalles ?? []).map(
-              (indices) =>
-                renderTarjetaDetalle(indices, selectedOrderDetail.detalles ?? []),
-            )}
+        <Paper variant="outlined" className="flex flex-col gap-4 p-4">
+          <Typography
+            variant="h5"
+            component="h3"
+            className="flex items-center gap-2"
+            sx={{ "& svg": { color: "primary.main", fontSize: 20 } }}
+          >
+            <MonetizationOnOutlinedIcon />
+            Tarifas y Servicios
+          </Typography>
+          {agruparIndicesDetalles(selectedOrderDetail.detalles ?? []).map(
+            (indices) =>
+              renderTarjetaDetalle(indices, selectedOrderDetail.detalles ?? []),
+          )}
 
-            {(!selectedOrderDetail.detalles ||
-              selectedOrderDetail.detalles.length === 0) && (
-              <p className="text-center text-sm text-gray-500">
-                Esta orden no tiene servicios registrados
-              </p>
-            )}
-          </div>
-        </div>
+          {(!selectedOrderDetail.detalles ||
+            selectedOrderDetail.detalles.length === 0) && (
+            <Typography variant="body2" color="text.secondary" align="center">
+              Esta orden no tiene servicios registrados
+            </Typography>
+          )}
+        </Paper>
 
         {/* Historial de Liquidaciones: solo tiene sentido sobre la orden real, no dentro del snapshot de
             una liquidacion puntual (evita anidar "liquidaciones de esta liquidacion") */}
         {!esSnapshot && (
-          <div className="rounded-lg border border-gray-200 p-4">
-            <div className="mb-3 flex items-center space-x-2">
-              <Receipt className="h-5 w-5 text-teal-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Historial de Liquidaciones
-              </h3>
-            </div>
+          <Paper variant="outlined" className="p-4">
+            <Typography
+              variant="h5"
+              component="h3"
+              className="flex items-center gap-2"
+              sx={{ mb: 1.5, "& svg": { color: "primary.main", fontSize: 20 } }}
+            >
+              <ReceiptLongOutlinedIcon />
+              Historial de Liquidaciones
+            </Typography>
 
             {isLoadingLiquidacionesOrden ? (
-              <p className="text-sm text-gray-500">Cargando liquidaciones...</p>
+              <Typography variant="body2" color="text.secondary">
+                Cargando liquidaciones...
+              </Typography>
             ) : liquidacionesOrden?.data?.items &&
               liquidacionesOrden.data.items.length > 0 ? (
               <>
-                <div className="divide-y divide-gray-200 overflow-hidden rounded-md border border-gray-200">
-                  {liquidacionesOrden.data.items.map((liquidacion) => (
-                    <button
-                      key={liquidacion.idLiquidacion}
-                      type="button"
-                      disabled={isLoadingOrdenLiquidada}
-                      className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
-                      onClick={() =>
-                        getOrdenLiquidadaMutation(liquidacion.idLiquidacion, {
-                          onSuccess: (response) => {
-                            if (response.status === 200 || response.status === 201) {
-                              setIsOpenLiquidacionDetalle(true);
-                            }
-                          },
-                        })
-                      }
-                    >
-                      <span className="text-sm font-medium text-gray-900">
-                        {formatAniomes(liquidacion.aniomes_liquidacion)}
-                      </span>
-                      <span className="text-sm font-semibold text-green-700">
-                        {priceFormat(liquidacion.valor_liquidacion)}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <Paper variant="outlined">
+                  <List disablePadding>
+                    {liquidacionesOrden.data.items.map((liquidacion, i) => (
+                      <ListItemButton
+                        key={liquidacion.idLiquidacion}
+                        divider={i < (liquidacionesOrden.data?.items.length ?? 0) - 1}
+                        disabled={isLoadingOrdenLiquidada}
+                        onClick={() =>
+                          getOrdenLiquidadaMutation(liquidacion.idLiquidacion, {
+                            onSuccess: (response) => {
+                              if (response.status === 200 || response.status === 201) {
+                                setIsOpenLiquidacionDetalle(true);
+                              }
+                            },
+                          })
+                        }
+                        sx={{ justifyContent: "space-between" }}
+                      >
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {formatAniomes(liquidacion.aniomes_liquidacion)}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "success.dark" }}>
+                          {priceFormat(liquidacion.valor_liquidacion)}
+                        </Typography>
+                      </ListItemButton>
+                    ))}
+                  </List>
+                </Paper>
 
                 {liquidacionesOrden.data.total > LIMITE_LIQUIDACIONES && (
-                  <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-                    <button
-                      type="button"
+                  <div className="mt-2 flex items-center justify-between">
+                    <Button
+                      size="small"
+                      color="secondary"
                       disabled={paginaLiquidaciones <= 1}
-                      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                       onClick={() => setPaginaLiquidaciones((p) => p - 1)}
                     >
                       Anterior
-                    </button>
-                    <span>Página {paginaLiquidaciones}</span>
-                    <button
-                      type="button"
+                    </Button>
+                    <Typography variant="caption" color="text.secondary">
+                      Página {paginaLiquidaciones}
+                    </Typography>
+                    <Button
+                      size="small"
+                      color="secondary"
                       disabled={
                         paginaLiquidaciones * LIMITE_LIQUIDACIONES >=
                         liquidacionesOrden.data.total
                       }
-                      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                       onClick={() => setPaginaLiquidaciones((p) => p + 1)}
                     >
                       Siguiente
-                    </button>
+                    </Button>
                   </div>
                 )}
               </>
             ) : (
-              <p className="text-sm text-gray-500">
+              <Typography variant="body2" color="text.secondary">
                 Esta orden todavía no tiene liquidaciones registradas
-              </p>
+              </Typography>
             )}
-          </div>
+          </Paper>
         )}
       </div>
-      <div className="flex items-center justify-end border-t border-gray-200 px-6 pt-6 pb-4">
-        <button
-          type="button"
-          className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-          onClick={() => setIsOpenDetails(false)}
-        >
+      <div className="flex items-center justify-end pt-4">
+        <Button variant="outlined" color="secondary" onClick={() => setIsOpenDetails(false)}>
           Cerrar
-        </button>
+        </Button>
       </div>
     </SimpleModal>
 

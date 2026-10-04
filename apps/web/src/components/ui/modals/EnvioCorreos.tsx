@@ -1,3 +1,5 @@
+import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
+import Button from "@mui/material/Button";
 import { useState } from "react";
 import { EmailsInput } from "../../common/EmailsInput";
 import { SimpleModal } from "../../common/SimpleModal";
@@ -66,7 +68,7 @@ export const EnvioCorreos = ({
       title="Ingresar correos para enviar el documento"
       size="xl"
     >
-      <div className="space-y-6">
+      <div className="flex flex-col gap-6">
         <EmailsInput
           defaultEmails={correos}
           emails={emails.map((email) => email.email)}
@@ -77,26 +79,27 @@ export const EnvioCorreos = ({
         />
 
         <div className="flex justify-end gap-3 pt-4">
-          <button
-            type="button"
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+          <Button
+            variant="outlined"
+            color="secondary"
             onClick={() => {
               setIsOpen(false);
               setEmails([]);
             }}
           >
             Cancelar
-          </button>
-          <button
-            type="button"
-            disabled={emails.length === 0 || envioCorreoPending}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-300 disabled:hover:bg-gray-300"
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<SendOutlinedIcon />}
+            disabled={emails.length === 0}
+            loading={envioCorreoPending}
             onClick={() => {
               handleSendEmail();
             }}
           >
             Enviar
-          </button>
+          </Button>
         </div>
       </div>
     </SimpleModal>

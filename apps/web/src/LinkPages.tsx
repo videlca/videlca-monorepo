@@ -1,26 +1,24 @@
 import type { LinkProps } from "@tanstack/react-router";
-import {
-  BadgeDollarSignIcon,
-  CalendarIcon,
-  ChartColumn,
-  ClockIcon,
-  DollarSignIcon,
-  FileArchive,
-  FileCogIcon,
-  FileSpreadsheetIcon,
-  FileTextIcon,
-  HomeIcon,
-  IdCardIcon,
-  LucideCalendarClock,
-  LucideCircleUserRound,
-  LucideSlidersVertical,
-  MailIcon,
-  MapPinIcon,
-  ShieldCheckIcon,
-  UserIcon,
-  UserPenIcon,
-  UsersIcon,
-} from "lucide-react";
+import AccountCircleOutlined from "@mui/icons-material/AccountCircleOutlined";
+import AssignmentIndOutlined from "@mui/icons-material/AssignmentIndOutlined";
+import AttachMoneyOutlined from "@mui/icons-material/AttachMoneyOutlined";
+import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
+import BarChartOutlined from "@mui/icons-material/BarChartOutlined";
+import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
+import DescriptionOutlined from "@mui/icons-material/DescriptionOutlined";
+import EditCalendarOutlined from "@mui/icons-material/EditCalendarOutlined";
+import GroupsOutlined from "@mui/icons-material/GroupsOutlined";
+import HomeOutlined from "@mui/icons-material/HomeOutlined";
+import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
+import MailOutlined from "@mui/icons-material/MailOutlined";
+import PaidOutlined from "@mui/icons-material/PaidOutlined";
+import PersonOutlined from "@mui/icons-material/PersonOutlined";
+import PlaceOutlined from "@mui/icons-material/PlaceOutlined";
+import ScheduleOutlined from "@mui/icons-material/ScheduleOutlined";
+import SettingsApplicationsOutlined from "@mui/icons-material/SettingsApplicationsOutlined";
+import TableChartOutlined from "@mui/icons-material/TableChartOutlined";
+import TuneOutlined from "@mui/icons-material/TuneOutlined";
+import VerifiedUserOutlined from "@mui/icons-material/VerifiedUserOutlined";
 
 interface LinkSideBar {
   to: LinkProps["to"];
@@ -51,7 +49,7 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard",
       label: "Dashboard",
       description: "dashboard",
-      icon: <HomeIcon className="h-6 w-6" />,
+      icon: <HomeOutlined />,
     },
   ],
   configuracion: [
@@ -59,43 +57,43 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/configuracion/estado-orden-servicio",
       label: "Estado Orden de Servicio",
       description: "estado-orden-servicio",
-      icon: <FileCogIcon className="h-6 w-6" />,
+      icon: <SettingsApplicationsOutlined />,
     },
     {
       to: "/dashboard/configuracion/tipo-personales",
       label: "Tipo de Personal",
       description: "tipo-personal",
-      icon: <UserIcon className="h-6 w-6" />,
+      icon: <PersonOutlined />,
     },
     {
       to: "/dashboard/configuracion/tipo-cliente",
       label: "Tipo de Cliente",
       description: "tipo-cliente",
-      icon: <LucideCircleUserRound className="h-6 w-6" />,
+      icon: <AccountCircleOutlined />,
     },
     {
       to: "/dashboard/configuracion/tipo-id",
       label: "Tipo de Identificación",
       description: "tipo-id",
-      icon: <IdCardIcon className="h-6 w-6" />,
+      icon: <AssignmentIndOutlined />,
     },
     {
       to: "/dashboard/configuracion/ubicacion",
       label: "Ubicación",
       description: "ubicacion",
-      icon: <MapPinIcon className="h-6 w-6" />,
+      icon: <PlaceOutlined />,
     },
     {
       to: "/dashboard/configuracion/tipo-contrato",
       label: "Tipo de Contrato",
       description: "tipo-contrato",
-      icon: <FileTextIcon className="h-6 w-6" />,
+      icon: <DescriptionOutlined />,
     },
     {
       to: "/dashboard/configuracion/correos-default",
       label: "Correos de aplicación",
       description: "correos-por-defecto",
-      icon: <MailIcon className="h-6 w-6" />,
+      icon: <MailOutlined />,
     },
   ],
   clientes: [
@@ -103,7 +101,7 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/clientes",
       label: "Clientes",
       description: "clientes",
-      icon: <UsersIcon className="h-6 w-6" />,
+      icon: <GroupsOutlined />,
     },
   ],
   permisos: [
@@ -111,13 +109,13 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/permisos/roles",
       label: "Roles",
       description: "roles",
-      icon: <FileTextIcon className="h-6 w-6" />,
+      icon: <DescriptionOutlined />,
     },
     {
       to: "/dashboard/permisos/roles-permisos",
       label: "Roles y Permisos",
       description: "roles-permisos",
-      icon: <ShieldCheckIcon className="h-6 w-6" />,
+      icon: <VerifiedUserOutlined />,
     },
   ],
   personal: [
@@ -125,7 +123,7 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/personal",
       label: "Personal",
       description: "personal",
-      icon: <UserPenIcon className="h-6 w-6" />,
+      icon: <BadgeOutlined />,
     },
   ],
   usuarios: [
@@ -133,7 +131,7 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/usuarios",
       label: "Usuarios",
       description: "usuarios",
-      icon: <UserIcon className="h-6 w-6" />,
+      icon: <PersonOutlined />,
     },
   ],
   programaciones: [
@@ -141,7 +139,7 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/programaciones",
       label: "Programaciones",
       description: "programaciones",
-      icon: <CalendarIcon className="h-6 w-6" />,
+      icon: <CalendarMonthOutlined />,
     },
   ],
   tarifas: [
@@ -149,19 +147,19 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/tarifas/periodo",
       label: "Tarifa",
       description: "tarifa",
-      icon: <CalendarIcon className="h-6 w-6" />,
+      icon: <CalendarMonthOutlined />,
     },
     {
       to: "/dashboard/tarifas/tipo-tarifa",
       label: "Tipo de Tarifa",
       description: "tipo-tarifa",
-      icon: <DollarSignIcon className="h-6 w-6" />,
+      icon: <AttachMoneyOutlined />,
     },
     {
       to: "/dashboard/tarifas/comparativa-periodos",
       label: "Comparativa de Periodos",
       description: "comparativa-periodos",
-      icon: <ChartColumn className="h-6 w-6" />,
+      icon: <BarChartOutlined />,
     },
   ],
   "ordenes-servicio": [
@@ -169,19 +167,19 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/ordenes-servicio",
       label: "Ordenes de Servicio",
       description: "ordenes-de-servicio",
-      icon: <FileArchive className="h-6 w-6" />,
+      icon: <Inventory2Outlined />,
     },
     {
       to: "/dashboard/ordenes-servicio/identificadores-orden-servicio",
       label: "Identificadores de Orden de Servicio",
       description: "identificadores",
-      icon: <LucideSlidersVertical className="h-6 w-6" />,
+      icon: <TuneOutlined />,
     },
     {
       to: "/dashboard/ordenes-servicio/adicionales",
       label: "Adicionales",
       description: "adicionales",
-      icon: <BadgeDollarSignIcon className="h-6 w-6" />,
+      icon: <PaidOutlined />,
     },
   ],
   servicios: [
@@ -189,25 +187,25 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/servicios",
       label: "Servicios",
       description: "servicios",
-      icon: <FileSpreadsheetIcon className="h-6 w-6" />,
+      icon: <TableChartOutlined />,
     },
     {
       to: "/dashboard/servicios/configurar-horarios",
       label: "Configurar Horarios",
       description: "configurar-horarios",
-      icon: <LucideCalendarClock className="h-6 w-6" />,
+      icon: <EditCalendarOutlined />,
     },
     {
       to: "/dashboard/servicios/tipo-servicio",
       label: "Tipo de Servicio",
       description: "tipo-servicio",
-      icon: <FileSpreadsheetIcon className="h-6 w-6" />,
+      icon: <TableChartOutlined />,
     },
     {
       to: "/dashboard/servicios/tipo-horario",
       label: "Tipo de Horario",
       description: "tipo-horario",
-      icon: <ClockIcon className="h-6 w-6" />,
+      icon: <ScheduleOutlined />,
     },
   ],
   liquidaciones: [
@@ -215,19 +213,19 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/liquidaciones",
       label: "Liquidaciones",
       description: "liquidaciones",
-      icon: <DollarSignIcon className="h-6 w-6" />,
+      icon: <AttachMoneyOutlined />,
     },
     {
       to: "/dashboard/liquidaciones/historial",
       label: "Historial",
       description: "historial",
-      icon: <FileTextIcon className="h-6 w-6" />,
+      icon: <DescriptionOutlined />,
     },
     {
       to: "/dashboard/liquidaciones/comparar-cliente",
       label: "Comparar cliente",
       description: "comparar-cliente",
-      icon: <ChartColumn className="h-6 w-6" />,
+      icon: <BarChartOutlined />,
     },
   ],
   "aprobacion-liquidaciones-ordenes": [
@@ -235,7 +233,7 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/aprobacion-liquidaciones-ordenes",
       label: "Aprobación de Liquidaciones de Ordenes",
       description: "aprobacion-liquidaciones-ordenes",
-      icon: <FileTextIcon className="h-6 w-6" />,
+      icon: <DescriptionOutlined />,
     },
   ],
   "exportaciones-base-facturacion": [
@@ -243,19 +241,19 @@ export const linksSideBar: LinksSideBar = {
       to: "/dashboard/exportaciones-base-facturacion/consolidacion",
       label: "Consolidación",
       description: "consolidacion",
-      icon: <FileTextIcon className="h-6 w-6" />,
+      icon: <DescriptionOutlined />,
     },
     {
       to: "/dashboard/exportaciones-base-facturacion/archivos-interfase",
       label: "Archivos de Interfase",
       description: "archivos-interfase",
-      icon: <FileTextIcon className="h-6 w-6" />,
+      icon: <DescriptionOutlined />,
     },
     {
       to: "/dashboard/exportaciones-base-facturacion/anexo-facturacion",
       label: "Anexo de Facturación",
       description: "anexo-facturacion",
-      icon: <FileTextIcon className="h-6 w-6" />,
+      icon: <DescriptionOutlined />,
     },
   ],
 };

@@ -1,4 +1,13 @@
-import { type LucideIcon } from "lucide-react";
+import Button from "@mui/material/Button";
+import type { ElementType } from "react";
+
+const colorMap = {
+  blue: { variant: "contained", color: "primary" },
+  red: { variant: "contained", color: "error" },
+  "blue-light": { variant: "outlined", color: "primary" },
+  "green-light": { variant: "outlined", color: "success" },
+  "yellow-light": { variant: "outlined", color: "warning" },
+} as const;
 
 export function ButtonAction({
   Icon,
@@ -8,34 +17,23 @@ export function ButtonAction({
   disabled = false,
   type = "submit",
 }: {
-  Icon: LucideIcon;
+  Icon: ElementType;
   label: string;
   onClick: () => void;
-  color?: "blue" | "red" | "blue-light" | "green-light" | "yellow-light";
+  color?: keyof typeof colorMap;
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
 }) {
   return (
-    <button
-      className={`flex h-fit w-fit cursor-pointer items-center gap-2 rounded-md px-4 py-2 whitespace-nowrap ${
-        color === "blue"
-          ? "border border-blue-300 bg-blue-100 text-blue-600 hover:bg-blue-200"
-          : color === "red"
-            ? "border border-red-300 bg-red-100 text-red-600 hover:bg-red-200"
-            : color === "blue-light"
-              ? "border border-blue-300 bg-blue-100 text-blue-600 hover:bg-blue-200"
-              : color === "green-light"
-                ? "border border-green-300 bg-green-100 text-green-600 hover:bg-green-200"
-                : color === "yellow-light"
-                  ? "border border-yellow-300 bg-yellow-100 text-yellow-600 hover:bg-yellow-200/70"
-                  : "border border-blue-300 bg-blue-100 text-blue-600 hover:bg-blue-200"
-      } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+    <Button
+      {...colorMap[color]}
+      startIcon={<Icon style={{ width: 18, height: 18 }} />}
       onClick={onClick}
       disabled={disabled}
       type={type}
+      sx={{ flexShrink: 0 }}
     >
-      <Icon className="h-4 w-4" />
       {label}
-    </button>
+    </Button>
   );
 }

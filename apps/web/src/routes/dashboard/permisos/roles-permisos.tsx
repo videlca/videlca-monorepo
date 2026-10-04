@@ -1,6 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
 import { useEffect, useState } from "react";
-import { Check, Save, Shield, Users, X } from "lucide-react";
+import CheckIcon from "@mui/icons-material/Check";
+import CloseIcon from "@mui/icons-material/Close";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import {
   useGetRolesWithPermissions,
@@ -80,23 +99,24 @@ function RouteComponent() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
+    <div className="mx-auto max-w-6xl">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         <div className="lg:col-span-1">
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <h3 className="mb-4 flex items-center text-lg font-semibold text-gray-900">
-              <Users className="mr-2 h-5 w-5" />
+          <Paper variant="outlined" className="p-4">
+            <Typography variant="h5" component="h3" className="flex items-center gap-2" sx={{ mb: 2 }}>
+              <GroupsOutlinedIcon fontSize="small" />
               Roles del Sistema
-            </h3>
-            <div className="space-y-2">
+            </Typography>
+            <List disablePadding className="flex flex-col gap-2">
               {rolesData?.data?.data?.map((role) => {
                 const roleModuleCount =
                   selectedRole?.id === role.id
                     ? grantedModules.length
                     : role.permissions?.length || 0;
                 return (
-                  <button
+                  <ListItemButton
                     key={role.nombreRol}
+                    selected={selectedRole?.id === role.id}
                     onClick={() =>
                       setSelectedRole({
                         id: role.id,
@@ -106,153 +126,150 @@ function RouteComponent() {
                         permissions: role.permissions,
                       })
                     }
-                    className={`w-full rounded-lg border p-3 text-left transition-colors ${selectedRole?.id === role.id
-                      ? "border-blue-200 bg-blue-50 text-blue-900"
-                      : "border-gray-200 bg-gray-50 hover:bg-gray-100"
-                      }`}
+                    sx={{ border: 1, borderColor: "divider", borderRadius: 2 }}
                   >
-                    <div className="font-medium">{role.nombreRol}</div>
-                    <div className="mt-2 text-xs text-gray-500">
-                      {roleModuleCount} de {modulosData?.data?.data?.length} módulos
-                    </div>
-                  </button>
+                    <ListItemText
+                      primary={role.nombreRol}
+                      secondary={`${roleModuleCount} de ${modulosData?.data?.data?.length} módulos`}
+                      slotProps={{ primary: { sx: { fontWeight: 500 } } }}
+                    />
+                  </ListItemButton>
                 );
               })}
-            </div>
-          </div>
+            </List>
+          </Paper>
         </div>
 
         <div className="lg:col-span-3">
           {selectedRole && (
-            <div className="rounded-lg border border-gray-200 bg-white">
-              <div className="border-b border-gray-200 p-6">
-                <div className="mb-4 flex items-center justify-between">
+            <Paper variant="outlined">
+              <Box className="p-6" sx={{ borderBottom: 1, borderColor: "divider" }}>
+                <div className="mb-4 flex items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <Typography variant="h3" component="h2">
                       Acceso a Módulos: {selectedRole?.nombreRol}
-                    </h2>
-                    <p className="mt-2 text-sm text-gray-500">
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                       {grantedModules.length} de {modulosData?.data?.data?.length}{" "}
                       módulos
-                    </p>
+                    </Typography>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span
-                      className={`rounded-full px-3 py-1 text-sm font-medium ${hasChanges
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-green-100 text-green-800"
-                        }`}
-                    >
-                      {hasChanges ? "Cambios pendientes" : "Guardado"}
-                    </span>
-                  </div>
+                  <Chip
+                    label={hasChanges ? "Cambios pendientes" : "Guardado"}
+                    color={hasChanges ? "warning" : "success"}
+                    variant="outlined"
+                  />
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <button
+                  <Button
+                    variant="outlined"
+                    color="success"
+                    startIcon={<CheckIcon />}
                     onClick={grantAllModules}
-                    className="flex items-center space-x-2 rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700"
                   >
-                    <Check className="h-4 w-4" />
-                    <span>Otorgar Todos</span>
-                  </button>
-                  <button
+                    Otorgar Todos
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<CloseIcon />}
                     onClick={revokeAllModules}
-                    className="flex items-center space-x-2 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
                   >
-                    <X className="h-4 w-4" />
-                    <span>Revocar Todos</span>
-                  </button>
-                  <button
+                    Revocar Todos
+                  </Button>
+                  <Button
+                    variant="contained"
+                    startIcon={<SaveOutlinedIcon />}
                     onClick={() => setShowSaveConfirm(true)}
                     disabled={!hasChanges}
-                    className="ml-auto flex items-center space-x-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700 disabled:bg-blue-300"
+                    sx={{ ml: "auto" }}
                   >
-                    <Save className="h-4 w-4" />
-                    <span>Guardar Cambios</span>
-                  </button>
+                    Guardar Cambios
+                  </Button>
                 </div>
-              </div>
+              </Box>
 
-              <div className="p-6">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {modulosData?.data?.data?.map((module) => {
-                    const hasAccess = grantedModules.includes(
-                      module.id.toString(),
-                    );
+              <div className="grid grid-cols-1 gap-3 p-6 md:grid-cols-2 lg:grid-cols-3">
+                {modulosData?.data?.data?.map((module) => {
+                  const hasAccess = grantedModules.includes(
+                    module.id.toString(),
+                  );
 
-                    return (
-                      <div
-                        key={module.id}
-                        className={`cursor-pointer rounded-lg border-2 p-6 transition-all duration-200 hover:shadow-md ${hasAccess
-                          ? "border-green-300 bg-green-50 shadow-sm"
-                          : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
-                          }`}
-                        onClick={() => toggleModuleAccess(module.id.toString())}
-                      >
-                        <div
-                          className={`mb-2 flex h-6 w-6 items-center justify-center rounded-full border-2 ${hasAccess
-                            ? "border-green-500 bg-green-500"
-                            : "border-gray-300"
-                            }`}
-                        >
-                          {hasAccess && (
-                            <Check className="h-4 w-4 text-white" />
-                          )}
-                        </div>
-                        <h3
-                          className={`mb-2 text-lg font-semibold capitalize ${hasAccess ? `text-green-900` : `text-gray-900`}`}
-                        >
-                          {module.nombre}
-                        </h3>
-                      </div>
-                    );
-                  })}
-                </div>
+                  return (
+                    <Paper
+                      key={module.id}
+                      variant="outlined"
+                      sx={{
+                        px: 1,
+                        borderColor: hasAccess ? "success.main" : "divider",
+                        bgcolor: (t) =>
+                          hasAccess ? alpha(t.palette.success.main, 0.08) : "background.paper",
+                      }}
+                    >
+                      <FormControlLabel
+                        sx={{ width: "100%", m: 0, py: 0.5 }}
+                        control={
+                          <Checkbox
+                            color="success"
+                            checked={hasAccess}
+                            onChange={() => toggleModuleAccess(module.id.toString())}
+                          />
+                        }
+                        label={
+                          <Typography sx={{ fontWeight: 500, textTransform: "capitalize" }}>
+                            {module.nombre}
+                          </Typography>
+                        }
+                      />
+                    </Paper>
+                  );
+                })}
               </div>
-            </div>
+            </Paper>
           )}
           {!selectedRole && (
-            <div className="rounded-lg border border-gray-200 bg-white">
-              <div className="border-b border-gray-200 px-6 py-20 text-center">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Seleccione un rol para ver los permisos
-                </h2>
-              </div>
-            </div>
+            <Paper variant="outlined" sx={{ py: 10, textAlign: "center" }}>
+              <Typography variant="h4" component="h2" color="text.secondary">
+                Seleccione un rol para ver los permisos
+              </Typography>
+            </Paper>
           )}
         </div>
       </div>
 
-      {showSaveConfirm && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="mx-4 w-full max-w-md rounded-lg bg-white p-6">
-            <div className="mb-4 flex items-center space-x-3">
-              <Shield className="h-6 w-6 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Confirmar Cambios de Acceso
-              </h3>
-            </div>
-            <p className="mb-4 text-gray-600">
-              ¿Está seguro de que desea guardar los cambios de acceso a módulos
-              para el rol "{selectedRole?.nombreRol}"?
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowSaveConfirm(false)}
-                className="cursor-pointer rounded-lg border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <ButtonAction
-                label="Confirmar y Guardar"
-                onClick={handleSavePermissions}
-                Icon={Check}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog
+        open={showSaveConfirm}
+        onClose={() => setShowSaveConfirm(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle className="flex items-center gap-2">
+          <ShieldOutlinedIcon color="primary" />
+          Confirmar Cambios de Acceso
+        </DialogTitle>
+        <DialogContent>
+          <Typography color="text.secondary">
+            ¿Está seguro de que desea guardar los cambios de acceso a módulos
+            para el rol "{selectedRole?.nombreRol}"?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={() => setShowSaveConfirm(false)}
+          >
+            Cancelar
+          </Button>
+          <ButtonAction
+            label="Confirmar y Guardar"
+            onClick={handleSavePermissions}
+            Icon={CheckIcon}
+            type="button"
+          />
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

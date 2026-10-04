@@ -1,3 +1,15 @@
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import MuiTable from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
+import type { ReactNode } from "react";
+import { PageHeader } from "../../../components/ui/common/PageHeader";
+import { PeriodoFacturacionChip } from "../../../components/ui/dashboard/tarifas/PeriodoFacturacionChip";
 import {
   createFileRoute,
   useNavigate,
@@ -5,7 +17,9 @@ import {
 } from "@tanstack/react-router";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import { Section } from "../../../components/ui/dashboard/Section";
-import { ArrowLeftIcon, Clock, PlusIcon, UserCheck } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import { usePeriodoById } from "../../../api/queryFunctions/tarifas/periodo";
 import { useServiciosByPeriodo } from "../../../api/queryFunctions/servicios";
 import { InputPrice } from "../../../components/common/InputPrice";
@@ -449,7 +463,7 @@ function RouteComponent() {
             !requiereCostosDirectosManualDesdeElInicio(servicio) &&
             !meta.serviciosRequierenManual.has(servicio.idServicio)
           ) {
-            return <span className="text-gray-400">—</span>;
+            return <Typography color="text.disabled">—</Typography>;
           }
 
           return (
@@ -474,7 +488,7 @@ function RouteComponent() {
             const meta = table.options.meta as ServiciosTableMeta;
             const calculado = meta.preciosCalculados[row.original.idServicio];
 
-            if (!calculado) return <span className="text-gray-400">—</span>;
+            if (!calculado) return <Typography color="text.disabled">—</Typography>;
 
             // Todo el desglose calculado es editable a mano: costos directos, seguro de vida y aui
             // recalculan en cascada el resto (ver recalcularPrecioCalculado); costos directos + seguro
@@ -512,11 +526,11 @@ function RouteComponent() {
 
   // Renderiza una fila editable de la tabla de tarifa hora del periodo
   const renderTarifaHoraRow = (row: TarifaHoraFila) => (
-    <tr key={row.idTarifaHoraDescripcion}>
-      <td className="px-6 py-3 font-medium text-gray-900 capitalize">
+    <TableRow key={row.idTarifaHoraDescripcion}>
+      <TableCell sx={{ px: 3, fontWeight: 500, textTransform: "capitalize" }}>
         {row.nombre}
-      </td>
-      <td className="px-6 py-3">
+      </TableCell>
+      <TableCell sx={{ px: 3 }}>
         <InputPrice
           label=""
           size="md"
@@ -529,8 +543,8 @@ function RouteComponent() {
             )
           }
         />
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 
   // Actualiza el costo directo ingresado manualmente para un servicio. Se pasa a la tabla de servicios
@@ -571,143 +585,99 @@ function RouteComponent() {
 
   return (
     <Section>
-      <div className="flex items-center justify-between gap-8">
-        <div className="flex w-full flex-col gap-2">
-          <h1 className="flex flex-col gap-2 text-3xl font-bold lg:flex-row lg:items-center">
-            {" "}
-            Periodo {periodo?.data?.anioInicio}{" "}
-            <p
-              className={`ml-2 w-fit rounded-full px-3 py-1.5 text-sm font-semibold ${periodo?.data?.periodoActivoFacturacion
-                ? "bg-green-200 text-green-700"
-                : "bg-red-200 text-red-700"
-                }`}
-            >
-              {periodo?.data?.periodoActivoFacturacion
-                ? "Activo para facturación"
-                : "Inactivo para facturación"}
-            </p>
-          </h1>
-          <h1 className="text-base font-semibold text-gray-600">
-            {periodo?.data?.nombre}
-          </h1>
-        </div>
-        <div className="flex justify-end gap-2">
-          <ButtonAction
-            Icon={ArrowLeftIcon}
-            label="Volver"
-            onClick={() => {
-              navigate({
-                to: "/dashboard/tarifas/periodo",
-              });
-            }}
-          />
-          <ButtonAction
-            Icon={PlusIcon}
-            label="Guardar tarifa"
-            onClick={handleGuardarTarifas}
-            disabled={
-              isLoadingGuardarTarifas || Object.keys(preciosCalculados).length === 0
-            }
-          />
-        </div>
-      </div>
+      <PageHeader
+        title={
+          <>
+            Periodo {periodo?.data?.anioInicio}
+            <PeriodoFacturacionChip activo={!!periodo?.data?.periodoActivoFacturacion} />
+          </>
+        }
+        description={periodo?.data?.nombre}
+        actions={
+          <>
+            <ButtonAction
+              Icon={ArrowBackIcon}
+              label="Volver"
+              color="blue-light"
+              type="button"
+              onClick={() => {
+                navigate({
+                  to: "/dashboard/tarifas/periodo",
+                });
+              }}
+            />
+            <ButtonAction
+              Icon={AddIcon}
+              label="Guardar tarifa"
+              onClick={handleGuardarTarifas}
+              disabled={
+                isLoadingGuardarTarifas || Object.keys(preciosCalculados).length === 0
+              }
+            />
+          </>
+        }
+      />
 
       {/* Tarifa Hora del periodo */}
-      <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+      <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+        <Box
+          className="flex items-center justify-between gap-4 px-6 py-4"
+          sx={{ borderBottom: 1, borderColor: "divider" }}
+        >
           <div>
-            <h3 className="flex items-center gap-2 text-lg font-medium text-gray-900">
-              <Clock className="h-5 w-5 text-blue-600" />
+            <Typography variant="h5" component="h3" className="flex items-center gap-2">
+              <ScheduleOutlinedIcon color="primary" fontSize="small" />
               Valores para Servicio de Vigilancia y Escolta
-            </h3>
-            <p className="mt-1 text-sm text-gray-600">
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               Valor de la hora diurna, diurna dominical/festiva, nocturna,
               nocturna dominical/festiva y seguro de vida. Se usa para
               calcular automáticamente el precio de los servicios
               diurnos/nocturnos.
-            </p>
+            </Typography>
           </div>
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Guardar valores"
             onClick={handleGuardarTarifaHora}
             disabled={isLoadingGuardarTarifasHora || tarifaHoraRows.length === 0}
           />
-        </div>
+        </Box>
 
         {tarifaHoraRows.length === 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-left text-sm">
-              <colgroup>
-                <col className="w-2/5" />
-                <col />
-              </colgroup>
-              <thead className="bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
-                <tr>
-                  <th className="px-6 py-3">Tarifa Hora</th>
-                  <th className="px-6 py-3">Costos Directos *</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                <tr>
-                  <td colSpan={2} className="px-6 py-6 text-center text-gray-500">
-                    No hay tarifas por hora configuradas para este periodo
-                    todavía.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <TarifaHoraTabla encabezados={["Tarifa Hora", "Costos Directos *"]}>
+            <TableRow>
+              <TableCell colSpan={2} align="center" sx={{ py: 3, color: "text.secondary" }}>
+                No hay tarifas por hora configuradas para este periodo todavía.
+              </TableCell>
+            </TableRow>
+          </TarifaHoraTabla>
         ) : (
           <>
             {filaSeguroVida && (
-              <div className="overflow-x-auto border-b border-gray-200">
-                <table className="w-full table-fixed text-left text-sm">
-                  <colgroup>
-                    <col className="w-2/5" />
-                    <col />
-                  </colgroup>
-                  <thead className="bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
-                    <tr>
-                      <th className="px-6 py-3">Valor Seguro De Vida (Mensual)</th>
-                      <th className="px-6 py-3">Valor Mensual *</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {renderTarifaHoraRow(filaSeguroVida)}
-                  </tbody>
-                </table>
-              </div>
+              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                <TarifaHoraTabla
+                  encabezados={["Valor Seguro De Vida (Mensual)", "Valor Mensual *"]}
+                >
+                  {renderTarifaHoraRow(filaSeguroVida)}
+                </TarifaHoraTabla>
+              </Box>
             )}
 
-            <div className="overflow-x-auto">
-              <table className="w-full table-fixed text-left text-sm">
-                <colgroup>
-                  <col className="w-2/5" />
-                  <col />
-                </colgroup>
-                <thead className="bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
-                  <tr>
-                    <th className="px-6 py-3">Tarifa Hora</th>
-                    <th className="px-6 py-3">Costos Directos *</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filasHora.map((row) => renderTarifaHoraRow(row))}
-                </tbody>
-              </table>
-            </div>
+            <TarifaHoraTabla encabezados={["Tarifa Hora", "Costos Directos *"]}>
+              {filasHora.map((row) => renderTarifaHoraRow(row))}
+            </TarifaHoraTabla>
           </>
         )}
-      </div>
+      </Paper>
 
       {/* Servicios disponibles del periodo, agrupados por tipo de servicio (igual que /dashboard/servicios) */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-medium text-gray-900">
+          <Typography variant="h5" component="h3">
             Servicios Disponibles
-          </h3>
-          <p className="mt-1 text-sm text-gray-600">
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Los servicios de Monitoreo de Alarmas, el servicio "Recogida de
             dinero" y los servicios mensuales de 8 horas siempre requieren
             ingresar el costo directo manualmente antes de calcular. Para el
@@ -715,10 +685,10 @@ function RouteComponent() {
             automáticamente a partir de la tarifa hora configurada arriba; si
             algún servicio no se puede calcular solo, aparecerá su campo de
             costo directo para ingresarlo manualmente y volver a calcular.
-          </p>
+          </Typography>
         </div>
         <ButtonAction
-          Icon={PlusIcon}
+          Icon={AddIcon}
           label="Calcular precios"
           onClick={handleCalcularPrecios}
           disabled={isLoadingCalcularPrecios}
@@ -727,13 +697,10 @@ function RouteComponent() {
 
       <div className="flex flex-col gap-6">
         {Object.entries(serviciosPorTipo).map(([tipo, lista]) => (
-          <div
-            key={tipo}
-            className="rounded-lg border border-blue-200 bg-blue-100/70 pt-2"
-          >
-            <h2 className="mb-2 w-fit rounded-lg p-2 px-4 text-xl font-medium text-blue-600">
+          <div key={tipo} className="flex flex-col gap-2">
+            <Typography variant="h4" component="h2" color="primary">
               {tipo}
-            </h2>
+            </Typography>
             <Table
               columns={columnasServicios}
               data={lista}
@@ -745,11 +712,40 @@ function RouteComponent() {
         ))}
 
         {Object.keys(serviciosPorTipo).length === 0 && (
-          <div className="rounded-lg border border-gray-200 bg-white px-6 py-8 text-center text-gray-500 shadow-sm">
-            No hay servicios disponibles para este periodo.
-          </div>
+          <Paper variant="outlined" sx={{ px: 3, py: 4, textAlign: "center" }}>
+            <Typography color="text.secondary">
+              No hay servicios disponibles para este periodo.
+            </Typography>
+          </Paper>
         )}
       </div>
     </Section>
   );
 }
+
+const TarifaHoraTabla = ({
+  encabezados,
+  children,
+}: {
+  encabezados: [string, string];
+  children: ReactNode;
+}) => (
+  <TableContainer>
+    <MuiTable size="small" sx={{ tableLayout: "fixed" }}>
+      <colgroup>
+        <col style={{ width: "40%" }} />
+        <col />
+      </colgroup>
+      <TableHead>
+        <TableRow>
+          {encabezados.map((h) => (
+            <TableCell key={h} sx={{ px: 3 }}>
+              {h}
+            </TableCell>
+          ))}
+        </TableRow>
+      </TableHead>
+      <TableBody>{children}</TableBody>
+    </MuiTable>
+  </TableContainer>
+);

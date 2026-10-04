@@ -3,7 +3,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { StateLabel } from "../../../components/common/StateLabel";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import Table from "../../../components/common/Table";
 import type { TipoCliente } from "../../../types";
 import {
@@ -133,7 +133,7 @@ function RouteComponent() {
       <div className="flex flex-col gap-8">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar tipo de cliente"
             onClick={() => {
               setIsModalOpen(true);

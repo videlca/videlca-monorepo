@@ -1,4 +1,4 @@
-import { EditIcon, PlusIcon, TrashIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import { ButtonAction } from "../../../common/ButtonAction";
 import Table from "../../../common/Table";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -42,11 +42,12 @@ export const CiudadTab = () => {
   const { mutate: eliminarCiudad } = useEliminarCiudad();
 
   // Formularios
-  const { register: registerCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } = useForm<CreateCiudadDto>({
+  const { register: registerCrear, control: controlCrear, handleSubmit: handleSubmitCrear, reset: resetCrear } = useForm<CreateCiudadDto>({
     defaultValues: { descripcion: "", departamento: 0, codigoCiudad: "" },
   });
   const {
     register: registerEditar,
+    control: controlEditar,
     handleSubmit: handleSubmitEditar,
     reset: resetEditar,
   } = useForm<UpdateCiudadDto>({
@@ -144,10 +145,10 @@ export const CiudadTab = () => {
   );
   return (
     <>
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <div className="flex justify-end">
           <ButtonAction
-            Icon={PlusIcon}
+            Icon={AddIcon}
             label="Agregar ciudad"
             onClick={() => setIsModalOpen(true)}
           />
@@ -195,7 +196,9 @@ export const CiudadTab = () => {
                 id="departamento"
                 options={departamentosOptions || []}
                 required
-                {...registerCrear("departamento", { valueAsNumber: true })}
+                control={controlCrear}
+                name="departamento"
+                valueAsNumber
               />
               <InputForm
                 label="Código de ciudad"
@@ -241,7 +244,9 @@ export const CiudadTab = () => {
                 placeholder="Departamento"
                 id="departamento"
                 options={departamentosOptions || []}
-                {...registerEditar("departamento", { valueAsNumber: true })}
+                control={controlEditar}
+                name="departamento"
+                valueAsNumber
               />
               <InputForm
                 label="Código de ciudad"

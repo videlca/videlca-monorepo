@@ -1,4 +1,13 @@
-import { Building2, Check, IdCard, Search, Tag } from "lucide-react";
+import { StepHeader } from "../../ui/common/StepHeader";
+import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { SelectableCard } from "../../ui/common/SelectableCard";
+import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
+import SearchIcon from "@mui/icons-material/Search";
 import type { Cliente } from "../../../types";
 import { useFilterClientes } from "../../../api/queryFunctions/clientes";
 import { useEffect, useState } from "react";
@@ -61,110 +70,99 @@ export const SeleccionarClienteAdicional = ({
   }, [debouncedSearchText, searchColumn]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="text-center">
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          Seleccionar Cliente
-        </h3>
-        <p className="text-sm text-gray-600">
-          Busque y seleccione el cliente al que se le cobrará este adicional
-        </p>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <StepHeader
+          title="Seleccionar Cliente"
+          description="Busque y seleccione el cliente al que se le cobrará este adicional"
+        />
 
       {/* Buscador */}
       <div className="flex flex-row justify-between gap-2">
-        <div className="flex-1">
-          <select
-            id="search"
-            value={searchColumn}
-            onChange={(e) => {
-              setSearchColumn(e.target.value as ClienteFilterColumn);
-              setValue("idCliente", 0);
-            }}
-            className="w-full rounded-md border border-gray-300 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          >
-            <option value="" disabled>
-              Seleccionar columna
-            </option>
-            {Object.values(ClienteFilterColumn).map((column) => (
-              <option key={column} value={column}>
-                {CLIENTE_COLUMN_LABELS[column]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="relative flex-2">
-          <Search className="absolute top-3 left-3 h-4 w-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, identificación, tipo o subsegmentación del cliente..."
-            className="w-full rounded-md border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            value={searchText}
-            onChange={(e) => {
-              setSearchText(e.target.value);
-              setValue("idCliente", 0);
-            }}
-          />
-        </div>
+        <TextField
+          select
+          id="search"
+          label="Columna"
+          value={searchColumn}
+          onChange={(e) => {
+            setSearchColumn(e.target.value as ClienteFilterColumn);
+            setValue("idCliente", 0);
+          }}
+          sx={{ flex: 1 }}
+          slotProps={{ inputLabel: { shrink: true }, select: { displayEmpty: true } }}
+        >
+          <MenuItem value="" disabled>
+            Seleccionar columna
+          </MenuItem>
+          {Object.values(ClienteFilterColumn).map((column) => (
+            <MenuItem key={column} value={column}>
+              {CLIENTE_COLUMN_LABELS[column]}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          placeholder="Buscar por nombre, identificación, tipo o subsegmentación del cliente..."
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            setValue("idCliente", 0);
+          }}
+          sx={{ flex: 2 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
       </div>
 
-      <p className="text-sm text-gray-700">
+      <Typography variant="body2" sx={{ fontWeight: 500 }}>
         Clientes encontrados ({filteredClientes?.length || 0})
-      </p>
+      </Typography>
 
-      <div className="max-h-80 min-h-40 space-y-3 overflow-y-auto">
+      <div className="flex max-h-80 min-h-40 flex-col gap-3 overflow-y-auto">
         {filteredClientes?.map((cliente) => (
-          <div
+          <SelectableCard
             key={cliente.idCliente}
-            className={`cursor-pointer rounded-lg border p-4 transition-all duration-200 ${
-              idCliente === cliente.idCliente
-                ? "border-blue-500 bg-blue-50 shadow-sm"
-                : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-            }`}
+            selected={idCliente === cliente.idCliente}
             onClick={() => {
               setValue("idCliente", cliente.idCliente);
               setSelectedCliente(cliente);
             }}
           >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="mb-1 flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-blue-600" />
-                  <h4 className="font-medium text-gray-900">{cliente.nombre}</h4>
-                  {idCliente === cliente.idCliente && (
-                    <div className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-blue-600">
-                      <Check className="h-4 w-4 text-white" />
-                    </div>
-                  )}
-                </div>
-                <div className="mb-1 flex items-center gap-1 text-sm text-gray-600">
-                  <IdCard className="h-3 w-3" />
-                  <span>{cliente.numeroIdentificacion}</span>
-                </div>
-                {cliente.idTipoCliente && (
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <Tag className="h-3 w-3" />
-                      <span>{cliente.idTipoCliente.descripcion}</span>
-                    </div>
-                    {cliente.idSubSegmentacion && (
-                      <span>{cliente.idSubSegmentacion.descripcion}</span>
-                    )}
-                  </div>
+            <Typography variant="body1" className="flex items-center gap-2" sx={{ fontWeight: 500, mb: 0.5 }}>
+              <BusinessOutlinedIcon fontSize="small" color="primary" />
+              {cliente.nombre}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" className="flex items-center gap-1">
+              <BadgeOutlinedIcon sx={{ fontSize: 14 }} />
+              {cliente.numeroIdentificacion}
+            </Typography>
+            {cliente.idTipoCliente && (
+              <Typography variant="body2" color="text.secondary" className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <LocalOfferOutlinedIcon sx={{ fontSize: 14 }} />
+                  {cliente.idTipoCliente.descripcion}
+                </span>
+                {cliente.idSubSegmentacion && (
+                  <span>{cliente.idSubSegmentacion.descripcion}</span>
                 )}
-              </div>
-            </div>
-          </div>
+              </Typography>
+            )}
+          </SelectableCard>
         ))}
         {filteredClientes?.length === 0 && (
-          <p className="text-center text-sm text-gray-500">
+          <Typography variant="body2" color="text.secondary" align="center">
             No se encontraron clientes.
-          </p>
+          </Typography>
         )}
         {filteredClientes === undefined && (
-          <p className="text-center text-sm text-gray-500">
+          <Typography variant="body2" color="text.secondary" align="center">
             Seleccione una columna y un texto para buscar clientes.
-          </p>
+          </Typography>
         )}
       </div>
     </div>

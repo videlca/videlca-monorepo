@@ -1,17 +1,22 @@
-import { Check, Minus, Plus } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { tones } from "../../../theme/tones";
+import { StepHeader } from "../../ui/common/StepHeader";
+import RemoveIcon from "@mui/icons-material/Remove";
 import { priceFormat } from "../../../utils/PriceFormat";
 import type { Servicio, TipoServicio } from "../../../api/types/servicio";
 import type { Tarifa } from "../../../api/types/periodo";
 
 // Distingue visualmente los servicios por turno de los mensuales, sin llamar demasiado la atención
-const getServiceStyle = (descripcion: string) => {
-  if (descripcion.startsWith("Turno")) {
-    return { text: "text-[#F4A100]", border: "border-[#F4A100]" };
-  }
-  if (descripcion.startsWith("Mes")) {
-    return { text: "text-[#386641]", border: "border-[#A7C957]" };
-  }
-  return { text: "text-gray-900", border: "border-gray-200" };
+const getServiceTone = (descripcion: string) => {
+  if (descripcion.startsWith("Turno")) return tones.amber;
+  if (descripcion.startsWith("Mes")) return tones.green;
+  return null;
 };
 
 export const SeleccionarServicio = ({
@@ -30,107 +35,109 @@ export const SeleccionarServicio = ({
   handleSetCantidadServicio: (tarifa: Tarifa, cantidad: number) => void;
 }) => {
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="text-center">
-        <h3 className="mb-2 text-lg font-semibold text-gray-900">
-          Servicio a Prestar
-        </h3>
-        <p className="text-sm text-gray-600">
-          Seleccione el tipo de servicio que se prestará, y la cantidad de
-          unidades que necesita de cada uno
-        </p>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <StepHeader
+        title="Servicio a Prestar"
+        description="Seleccione el tipo de servicio que se prestará, y la cantidad de unidades que necesita de cada uno"
+      />
 
-      <div className="space-y-4">
-        <div>
-          <label className="mb-3 flex flex-row items-center justify-between text-sm font-medium text-gray-700">
-            <span className="font-bold">Servicios Disponibles.</span>
-            <span className="text-sm">
-              Unidades seleccionadas: {selectedServices.length}
-            </span>
-          </label>
-          <div className="grid grid-cols-2 gap-4">
-            {(tarifasPeriodoActivoByIdTipoServicioData || []).map((tarifa) => {
-              // Cantidad de unidades ya elegidas de este servicio (selectedServices trae una entrada por
-              // cada unidad seleccionada, no una por servicio distinto: ver handleIncrementarServicio)
-              const cantidad = selectedServices.filter(
-                (s) => s.idServicio === tarifa.idServicio.idServicio,
-              ).length;
-              const serviceStyle = getServiceStyle(
-                tarifa.idServicio.descripcion,
-              );
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+            Servicios Disponibles.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Unidades seleccionadas: {selectedServices.length}
+          </Typography>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          {(tarifasPeriodoActivoByIdTipoServicioData || []).map((tarifa) => {
+            // Cantidad de unidades ya elegidas de este servicio (selectedServices trae una entrada por
+            // cada unidad seleccionada, no una por servicio distinto: ver handleIncrementarServicio)
+            const cantidad = selectedServices.filter(
+              (s) => s.idServicio === tarifa.idServicio.idServicio,
+            ).length;
+            const tone = getServiceTone(tarifa.idServicio.descripcion);
 
-              return (
-                <div
-                  key={tarifa.idServicio.idServicio}
-                  className={`rounded-lg border p-4 transition-all duration-200 ${
-                    cantidad > 0
-                      ? "border-blue-500 bg-blue-50 shadow-sm"
-                      : `${serviceStyle.border} hover:shadow-sm`
-                  }`}
+            return (
+              <Paper
+                key={tarifa.idServicio.idServicio}
+                variant="outlined"
+                className="relative flex flex-col p-4"
+                sx={{
+                  borderColor: cantidad > 0 ? "primary.main" : (tone?.main ?? "divider"),
+                  bgcolor: cantidad > 0 ? "action.selected" : "background.paper",
+                }}
+              >
+                {cantidad > 0 && (
+                  <CheckCircleIcon
+                    color="primary"
+                    fontSize="small"
+                    sx={{ position: "absolute", top: 12, right: 12 }}
+                  />
+                )}
+                <Typography
+                  variant="h5"
+                  component="h4"
+                  sx={{ fontWeight: 500, mb: 1, pr: 3, color: tone?.main ?? "text.primary" }}
                 >
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <h4 className={`text-lg font-medium ${serviceStyle.text}`}>
-                      {tarifa.idServicio.descripcion}
-                    </h4>
-                    {cantidad > 0 && (
-                      <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600">
-                        <Check className="h-3 w-3 text-white" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-start justify-end gap-2 border-t border-gray-100 pt-2">
-                    <span className="text-right text-sm text-gray-500">
-                      Antes de IVA
-                      <br />
-                      <span className="text-base font-semibold text-blue-600">
-                        {priceFormat(tarifa.precioAntesIva)}
-                      </span>
-                    </span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-center gap-3 border-t border-gray-100 pt-3">
-                    <button
-                      type="button"
-                      disabled={cantidad === 0}
-                      onClick={() => handleDecrementarServicio(tarifa)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors duration-200 hover:border-gray-400 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:bg-transparent"
-                      aria-label={`Quitar una unidad de ${tarifa.idServicio.descripcion}`}
-                    >
-                      <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      value={cantidad}
-                      onChange={(e) =>
-                        handleSetCantidadServicio(
-                          tarifa,
-                          Number(e.target.value),
-                        )
-                      }
-                      className="w-14 rounded-md border border-gray-300 px-1 py-1 text-center text-sm font-semibold text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      aria-label={`Cantidad de unidades de ${tarifa.idServicio.descripcion}`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleIncrementarServicio(tarifa)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-blue-500 text-blue-600 transition-colors duration-200 hover:bg-blue-100"
-                      aria-label={`Agregar una unidad de ${tarifa.idServicio.descripcion}`}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  {tarifa.idServicio.descripcion}
+                </Typography>
+                <Box className="mt-auto pt-2 text-right" sx={{ borderTop: 1, borderColor: "divider" }}>
+                  <Typography variant="caption" color="text.secondary" component="p">
+                    Antes de IVA
+                  </Typography>
+                  <Typography sx={{ fontWeight: 600, color: "primary.main" }}>
+                    {priceFormat(tarifa.precioAntesIva)}
+                  </Typography>
+                </Box>
+                <Box
+                  className="mt-3 flex items-center justify-center gap-2 pt-3"
+                  sx={{ borderTop: 1, borderColor: "divider" }}
+                >
+                  <IconButton
+                    disabled={cantidad === 0}
+                    onClick={() => handleDecrementarServicio(tarifa)}
+                    sx={{ border: 1, borderColor: "divider" }}
+                    aria-label={`Quitar una unidad de ${tarifa.idServicio.descripcion}`}
+                  >
+                    <RemoveIcon fontSize="small" />
+                  </IconButton>
+                  <TextField
+                    type="number"
+                    value={cantidad}
+                    onChange={(e) =>
+                      handleSetCantidadServicio(tarifa, Number(e.target.value))
+                    }
+                    fullWidth={false}
+                    sx={{ width: 72 }}
+                    slotProps={{
+                      htmlInput: {
+                        min: 0,
+                        inputMode: "numeric",
+                        style: { textAlign: "center", fontWeight: 600 },
+                        "aria-label": `Cantidad de unidades de ${tarifa.idServicio.descripcion}`,
+                      },
+                    }}
+                  />
+                  <IconButton
+                    color="primary"
+                    onClick={() => handleIncrementarServicio(tarifa)}
+                    sx={{ border: 1, borderColor: "primary.main" }}
+                    aria-label={`Agregar una unidad de ${tarifa.idServicio.descripcion}`}
+                  >
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Paper>
+            );
+          })}
         </div>
 
         {(tarifasPeriodoActivoByIdTipoServicioData || []).length === 0 && (
-          <div className="py-8 text-center text-gray-500">
+          <Typography color="text.secondary" align="center" sx={{ py: 4 }}>
             No hay servicios disponibles para esta categoría
-          </div>
+          </Typography>
         )}
       </div>
     </div>

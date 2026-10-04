@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { TipoServicio } from "../../../api/types/servicio";
 import type { ColumnDef } from "@tanstack/react-table";
 import { ButtonAction } from "../../../components/common/ButtonAction";
-import { PlusIcon } from "lucide-react";
 import { Section } from "../../../components/ui/dashboard/Section";
 import Table, { type ServerFilterColumn } from "../../../components/common/Table";
 import {
@@ -61,6 +60,7 @@ function RouteComponent() {
   // Formularios
   const {
     register: registerCrear,
+    control: controlCrear,
     handleSubmit: handleSubmitCrear,
     reset: resetCrear,
   } = useForm<CreateTipoServicioDto>({
@@ -74,6 +74,7 @@ function RouteComponent() {
 
   const {
     register: registerEditar,
+    control: controlEditar,
     handleSubmit: handleSubmitEditar,
     reset: resetEditar,
   } = useForm<UpdateTipoServicioDto>({
@@ -155,7 +156,7 @@ function RouteComponent() {
     <Section>
       {/* <div className="flex justify-end">
         <ButtonAction
-          Icon={PlusIcon}
+          Icon={AddIcon}
           label="Agregar Tipo de Servicio"
           onClick={() => {
             setIsOpenAddTipoServicio(true);
@@ -257,7 +258,8 @@ function RouteComponent() {
               label="Requiere personal"
               id="requierePersonal"
               required={false}
-              {...registerCrear("requierePersonal")}
+              control={controlCrear}
+              name="requierePersonal"
             />
           </div>
         </FormsModal>
@@ -335,7 +337,8 @@ function RouteComponent() {
               label="Requiere personal"
               id="requierePersonal"
               required={false}
-              {...registerEditar("requierePersonal")}
+              control={controlEditar}
+              name="requierePersonal"
             />
           </div>
         </FormsModal>

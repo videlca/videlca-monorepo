@@ -1,15 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import {
-  Building2,
-  CheckCircle2,
-  FileText,
-  Loader2,
-  Wrench,
-  Calendar,
-  PieChart as PieChartIcon,
-  BarChart3,
-} from "lucide-react";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
+import { useState, type ReactNode } from "react";
+import BarChartIcon from "@mui/icons-material/BarChart";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
+import PieChartOutlinedIcon from "@mui/icons-material/PieChartOutlined";
 import {
   Bar,
   BarChart,
@@ -135,46 +140,52 @@ function RouteComponent() {
     totalOrdenes > 0 ? Math.round((ordenesTerminadas / totalOrdenes) * 100) : 0;
 
   return (
-    <div className="h-full space-y-6 overflow-y-auto p-6 bg-gray-50/50">
+    <div className="flex h-full flex-col gap-6 overflow-y-auto">
       {/* Page Header — Selector de período */}
-      <div className="flex flex-col space-y-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-        <div className="flex items-center space-x-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-            <Calendar size={20} />
-          </div>
+      <Paper variant="outlined" className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <IconBadge color="primary">
+            <CalendarMonthOutlinedIcon fontSize="small" />
+          </IconBadge>
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Período de Reporte</h2>
-            <p className="text-xs text-gray-500">Selecciona el rango para los indicadores</p>
+            <Typography variant="h5" component="h2">
+              Período de Reporte
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Selecciona el rango para los indicadores
+            </Typography>
           </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <select
+        <div className="flex items-center gap-4">
+          <TextField
+            select
             value={selectedPeriod}
             onChange={(e) =>
               setSelectedPeriod(Number(e.target.value) as MonthsAvailable)
             }
-            className="rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            fullWidth={false}
+            sx={{ minWidth: 160 }}
           >
             {MESES_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
+              <MenuItem key={opt.value} value={opt.value}>
                 {opt.label}
-              </option>
+              </MenuItem>
             ))}
-          </select>
+          </TextField>
           {data?.rango && (
-            <span className="hidden rounded-md bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-600 sm:inline-block">
-              {new Date(data.rango.from).toLocaleDateString("es-CO")} —{" "}
-              {new Date(data.rango.to).toLocaleDateString("es-CO")}
-            </span>
+            <Chip
+              className="hidden sm:inline-flex"
+              label={`${new Date(data.rango.from).toLocaleDateString("es-CO")} — ${new Date(data.rango.to).toLocaleDateString("es-CO")}`}
+            />
           )}
         </div>
-      </div>
+      </Paper>
 
       {/* Loading */}
       {isLoading && (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 size={36} className="animate-spin text-blue-600" />
-          <span className="ml-3 text-sm font-medium text-gray-500">Cargando reportes…</span>
+        <div className="flex items-center justify-center gap-3 py-24">
+          <CircularProgress />
+          <Typography color="text.secondary">Cargando reportes…</Typography>
         </div>
       )}
 
@@ -182,54 +193,34 @@ function RouteComponent() {
         <>
           {/* Métricas Principales */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {/* Total Órdenes */}
-            <div className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Total Órdenes</p>
-                  <p className="mt-1 text-3xl font-extrabold text-gray-900">
-                    {formatNumber(totalOrdenes)}
-                  </p>
-                </div>
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-blue-50 transition-colors group-hover:bg-blue-100">
-                  <FileText size={26} className="text-blue-600" />
-                </div>
-              </div>
-            </div>
-
-            {/* Órdenes Terminadas */}
-            <div className="group rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Órdenes Terminadas</p>
-                  <p className="mt-1 text-3xl font-extrabold text-gray-900">
-                    {formatNumber(ordenesTerminadas)}
-                  </p>
-                  <p className="mt-2 inline-flex items-center text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                    <CheckCircle2 size={13} className="mr-1" />
-                    {tasaCompletacion}% tasa de completación
-                  </p>
-                </div>
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-50 transition-colors group-hover:bg-emerald-100">
-                  <CheckCircle2 size={26} className="text-emerald-600" />
-                </div>
-              </div>
-            </div>
+            <KpiCard
+              label="Total Órdenes"
+              value={formatNumber(totalOrdenes)}
+              icon={<DescriptionOutlinedIcon />}
+              color="primary"
+            />
+            <KpiCard
+              label="Órdenes Terminadas"
+              value={formatNumber(ordenesTerminadas)}
+              icon={<CheckCircleOutlinedIcon />}
+              color="success"
+              footer={
+                <Chip
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  icon={<CheckCircleOutlinedIcon />}
+                  label={`${tasaCompletacion}% tasa de completación`}
+                />
+              }
+            />
           </div>
 
           {/* Gráficos Principales */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Gráfico de Órdenes por Mes — Stacked */}
             {dataBarras.length > 0 && (
-              <div className="flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-                <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3">
-                  <div className="flex items-center space-x-2">
-                    <BarChart3 size={20} className="text-blue-600" />
-                    <h3 className="text-base font-semibold text-gray-900">
-                      Órdenes por Mes
-                    </h3>
-                  </div>
-                </div>
+              <DashboardCard title="Órdenes por Mes" icon={<BarChartIcon color="primary" />}>
                 <div className="h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={dataBarras} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -251,13 +242,7 @@ function RouteComponent() {
                           formatNumber(value),
                           getLabelForEstado(name),
                         ]}
-                        contentStyle={{
-                          backgroundColor: '#FFFFFF',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                          border: '1px solid #E5E7EB',
-                          fontSize: '13px',
-                        }}
+                        contentStyle={CHART_TOOLTIP_STYLE}
                       />
                       <Legend
                         formatter={(value: string) => getLabelForEstado(value)}
@@ -276,20 +261,15 @@ function RouteComponent() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </div>
+              </DashboardCard>
             )}
 
             {/* Gráfico de Distribución por Estado — Dona */}
             {dataDona.length > 0 && (
-              <div className="flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-                <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3">
-                  <div className="flex items-center space-x-2">
-                    <PieChartIcon size={20} className="text-purple-600" />
-                    <h3 className="text-base font-semibold text-gray-900">
-                      Distribución por Estado
-                    </h3>
-                  </div>
-                </div>
+              <DashboardCard
+                title="Distribución por Estado"
+                icon={<PieChartOutlinedIcon color="primary" />}
+              >
                 <div className="h-[260px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -317,133 +297,45 @@ function RouteComponent() {
                           formatNumber(value as number),
                           "Órdenes",
                         ]}
-                        contentStyle={{
-                          backgroundColor: '#FFFFFF',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                          border: '1px solid #E5E7EB',
-                          fontSize: '13px',
-                        }}
+                        contentStyle={CHART_TOOLTIP_STYLE}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
                 {/* Leyenda manual */}
-                <div className="mt-3 flex flex-wrap justify-center gap-2.5">
+                <div className="mt-3 flex flex-wrap justify-center gap-2">
                   {dataDona.map((item, idx) => (
-                    <div
+                    <Chip
                       key={item.rawName}
-                      className="flex items-center space-x-2 rounded-lg bg-gray-50/80 px-3 py-1.5 border border-gray-100 shadow-2xs"
-                    >
-                      <div
-                        className="h-2.5 w-2.5 rounded-full shadow-xs"
-                        style={{
-                          backgroundColor: getColorForEstado(item.rawName, idx),
-                        }}
-                      />
-                      <span className="text-xs font-medium text-gray-700">
-                        {item.name} <span className="font-semibold text-gray-900">({item.value})</span>
-                      </span>
-                    </div>
+                      variant="outlined"
+                      size="small"
+                      icon={
+                        <Box
+                          component="span"
+                          sx={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: "50%",
+                            bgcolor: getColorForEstado(item.rawName, idx),
+                          }}
+                        />
+                      }
+                      label={`${item.name} (${item.value})`}
+                    />
                   ))}
                 </div>
-              </div>
+              </DashboardCard>
             )}
           </div>
 
           {/* Top Servicios y Top Clientes */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Top Servicios */}
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-              <div className="mb-4 flex items-center space-x-2 border-b border-gray-100 pb-3">
-                <Wrench size={20} className="text-blue-600" />
-                <h3 className="text-base font-semibold text-gray-900">
-                  Top Servicios
-                </h3>
-              </div>
-              <div className="space-y-3">
-                {data.topServicios.length === 0 && (
-                  <p className="text-sm text-gray-400 italic">Sin datos registrados</p>
-                )}
-                {data.topServicios.map((item, index) => {
-                  const maxTotal = data.topServicios[0]?.total || 1;
-                  const pct = Math.round((item.total / maxTotal) * 100);
-                  return (
-                    <div
-                      key={item.nombre}
-                      className="relative overflow-hidden rounded-lg border border-gray-100 bg-gray-50/60 p-3"
-                    >
-                      {/* Barra de progreso de fondo */}
-                      <div
-                        className="absolute inset-y-0 left-0 bg-blue-100/60 transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                      <div className="relative flex items-center justify-between">
-                        <div className="mr-4 min-w-0 flex-1">
-                          <h4 className="truncate text-sm font-medium text-gray-900">
-                            <span className="mr-1.5 font-bold text-blue-600">#{index + 1}</span> {item.nombre}
-                          </h4>
-                        </div>
-                        <div className="flex-shrink-0 text-right">
-                          <p className="text-sm font-bold text-gray-900">
-                            {item.total}
-                          </p>
-                          <p className="text-[11px] text-gray-500">órdenes</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Top Clientes */}
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-              <div className="mb-4 flex items-center space-x-2 border-b border-gray-100 pb-3">
-                <Building2 size={20} className="text-indigo-600" />
-                <h3 className="text-base font-semibold text-gray-900">
-                  Top Clientes
-                </h3>
-              </div>
-              <div className="space-y-3">
-                {data.topClientes.length === 0 && (
-                  <p className="text-sm text-gray-400 italic">Sin datos registrados</p>
-                )}
-                {data.topClientes.map((item, index) => {
-                  const maxTotal = data.topClientes[0]?.total || 1;
-                  const pct = Math.round((item.total / maxTotal) * 100);
-                  return (
-                    <div
-                      key={item.nombre}
-                      className="relative overflow-hidden rounded-lg border border-gray-100 bg-gray-50/60 p-3"
-                    >
-                      <div
-                        className="absolute inset-y-0 left-0 bg-indigo-100/60 transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                      <div className="relative flex items-center justify-between">
-                        <div className="mr-4 flex min-w-0 flex-1 items-center space-x-2.5">
-                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
-                            #{index + 1}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h4 className="truncate text-sm font-medium text-gray-900">
-                              {item.nombre}
-                            </h4>
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0 text-right">
-                          <p className="text-sm font-bold text-gray-900">
-                            {item.total}
-                          </p>
-                          <p className="text-[11px] text-gray-500">órdenes</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <DashboardCard title="Top Servicios" icon={<BuildOutlinedIcon color="primary" />}>
+              <RankingList items={data.topServicios} />
+            </DashboardCard>
+            <DashboardCard title="Top Clientes" icon={<BusinessOutlinedIcon color="primary" />}>
+              <RankingList items={data.topClientes} />
+            </DashboardCard>
           </div>
         </>
       )}
@@ -451,3 +343,142 @@ function RouteComponent() {
   );
 }
 
+const CHART_TOOLTIP_STYLE = {
+  backgroundColor: "#FFFFFF",
+  borderRadius: "8px",
+  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+  border: "1px solid #E5E7EB",
+  fontSize: "13px",
+};
+
+function IconBadge({
+  color,
+  size = 40,
+  children,
+}: {
+  color: "primary" | "success";
+  size?: number;
+  children: ReactNode;
+}) {
+  return (
+    <Box
+      sx={{
+        width: size,
+        height: size,
+        flexShrink: 0,
+        borderRadius: 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: `${color}.main`,
+        bgcolor: (t) => alpha(t.palette[color].main, 0.1),
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+function DashboardCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <Paper variant="outlined" className="flex flex-col p-6">
+      <Box
+        className="mb-4 flex items-center gap-2 pb-3"
+        sx={{ borderBottom: 1, borderColor: "divider" }}
+      >
+        {icon}
+        <Typography variant="h5" component="h3">
+          {title}
+        </Typography>
+      </Box>
+      {children}
+    </Paper>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  icon,
+  color,
+  footer,
+}: {
+  label: string;
+  value: string;
+  icon: ReactNode;
+  color: "primary" | "success";
+  footer?: ReactNode;
+}) {
+  return (
+    <Paper variant="outlined" className="flex items-center justify-between p-6">
+      <div className="flex flex-col items-start gap-1">
+        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+          {label}
+        </Typography>
+        <Typography variant="h1" component="p" sx={{ fontWeight: 800 }}>
+          {value}
+        </Typography>
+        {footer}
+      </div>
+      <IconBadge color={color} size={56}>
+        {icon}
+      </IconBadge>
+    </Paper>
+  );
+}
+
+function RankingList({ items }: { items: { nombre: string; total: number }[] }) {
+  if (items.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+        Sin datos registrados
+      </Typography>
+    );
+  }
+  const maxTotal = items[0]?.total || 1;
+  return (
+    <div className="flex flex-col gap-3">
+      {items.map((item, index) => (
+        <Box
+          key={item.nombre}
+          className="relative overflow-hidden rounded-lg p-3"
+          sx={{ border: 1, borderColor: "divider", bgcolor: "background.default" }}
+        >
+          {/* Barra de progreso de fondo */}
+          <Box
+            className="absolute inset-y-0 left-0"
+            sx={{
+              width: `${Math.round((item.total / maxTotal) * 100)}%`,
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
+              transition: "width .5s",
+            }}
+          />
+          <div className="relative flex items-center justify-between gap-4">
+            <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+              <Box component="span" sx={{ mr: 1, fontWeight: 700, color: "primary.main" }}>
+                #{index + 1}
+              </Box>
+              {item.nombre}
+            </Typography>
+            <div className="shrink-0 text-right">
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {item.total}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                órdenes
+              </Typography>
+            </div>
+          </div>
+        </Box>
+      ))}
+    </div>
+  );
+}

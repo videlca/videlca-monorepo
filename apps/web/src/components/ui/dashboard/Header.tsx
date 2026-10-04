@@ -1,67 +1,75 @@
-import { User, ChevronDown, UserCircle } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import AccountCircleOutlined from "@mui/icons-material/AccountCircleOutlined";
+import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
+import AppBar from "@mui/material/AppBar";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Toolbar from "@mui/material/Toolbar";
 import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { useGetUsuarioByCookie } from "../../../api/queryFunctions/usuarios";
 
 export function Header() {
   const { data: usuario } = useGetUsuarioByCookie();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const navigate = useNavigate();
-
-  // Cerrar el dropdown cuando se hace clic fuera
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  const nombre = usuario?.data?.primerNombre;
 
   const handleProfileClick = () => {
     navigate({ to: "/dashboard/perfil-usuario" });
-    setIsDropdownOpen(false);
+    setAnchorEl(null);
   };
 
   return (
-    <header className="border-b border-gray-200 bg-white px-6 py-4">
-      <div className="flex items-center justify-end">
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center space-x-2 rounded-lg px-3 py-2 text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
-          >
-            <span className="font-medium">{usuario?.data?.primerNombre}</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600">
-              <User className="h-4 w-4 text-white" />
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+    <AppBar
+      position="static"
+      color="inherit"
+      elevation={0}
+      sx={{ borderBottom: 1, borderColor: "divider" }}
+    >
+      <Toolbar sx={{ justifyContent: "flex-end" }}>
+        <Button
+          color="secondary"
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          endIcon={
+            <KeyboardArrowDown
+              sx={{
+                transition: "transform .2s",
+                transform: anchorEl ? "rotate(180deg)" : "none",
+              }}
             />
-          </button>
-
-          {/* Dropdown Menu */}
-          {isDropdownOpen && (
-            <div className="ring-opacity-5 absolute right-0 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black">
-              <button
-                onClick={handleProfileClick}
-                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <UserCircle className="mr-3 h-4 w-4" />
-                Perfil de Usuario
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </header>
+          }
+          sx={{ gap: 1 }}
+        >
+          {nombre}
+          <Avatar
+            sx={{
+              width: 32,
+              height: 32,
+              bgcolor: "primary.main",
+              fontSize: "0.875rem",
+            }}
+          >
+            {nombre?.charAt(0).toUpperCase()}
+          </Avatar>
+        </Button>
+        <Menu
+          anchorEl={anchorEl}
+          open={!!anchorEl}
+          onClose={() => setAnchorEl(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <MenuItem onClick={handleProfileClick}>
+            <ListItemIcon>
+              <AccountCircleOutlined fontSize="small" />
+            </ListItemIcon>
+            Perfil de Usuario
+          </MenuItem>
+        </Menu>
+      </Toolbar>
+    </AppBar>
   );
 }

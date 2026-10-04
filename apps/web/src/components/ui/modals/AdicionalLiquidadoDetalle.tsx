@@ -1,4 +1,10 @@
-import { Building2, CircleDollarSign, Receipt } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { alpha } from "@mui/material/styles";
+import { DetailField, DetailSection } from "../common/DetailSection";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+import MonetizationOnOutlinedIcon from "@mui/icons-material/MonetizationOnOutlined";
+import ReceiptLongOutlinedIcon from "@mui/icons-material/ReceiptLongOutlined";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { AdicionalLiquidado } from "../../../api/types/liquidaciones";
@@ -19,81 +25,71 @@ export const AdicionalLiquidadoDetalle = ({
   const vigenciaFin = detalle.mesFin ? formatMesAdicional(detalle.mesFin) : "Indefinido";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="rounded-lg border border-gray-200 p-4">
-        <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <Building2 className="h-6 w-6 text-blue-600" />
-          Cliente
-        </h4>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <p className="text-sm">
-            <span className="font-medium text-gray-700">Cliente:</span>{" "}
-            <span className="text-gray-600">{detalle.idCliente.nombre}</span>
-          </p>
-          <p className="text-sm">
-            <span className="font-medium text-gray-700">Identificación:</span>{" "}
-            <span className="text-gray-600">{detalle.idCliente.numeroIdentificacion}</span>
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <DetailSection icon={<BusinessOutlinedIcon />} title="Cliente">
+        <DetailField label="Cliente" value={detalle.idCliente.nombre} />
+        <DetailField label="Identificación" value={detalle.idCliente.numeroIdentificacion} />
+      </DetailSection>
 
-      <div className="rounded-lg border border-gray-200 p-4">
-        <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <Receipt className="h-6 w-6 text-green-600" />
-          Información del Adicional
-        </h4>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <p className="text-sm">
-            <span className="font-medium text-gray-700">Nombre:</span>{" "}
-            <span className="text-gray-600">{detalle.nombre}</span>
-          </p>
-          <p className="text-sm">
-            <span className="font-medium text-gray-700">Vigencia:</span>{" "}
-            <span className="text-gray-600 capitalize">
+      <DetailSection icon={<ReceiptLongOutlinedIcon />} title="Información del Adicional">
+        <DetailField label="Nombre" value={detalle.nombre} />
+        <DetailField
+          label="Vigencia"
+          value={
+            <span className="capitalize">
               {formatMesAdicional(detalle.mesInicio)} - {vigenciaFin}
             </span>
-          </p>
-        </div>
-      </div>
+          }
+        />
+      </DetailSection>
 
-      <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-        <h4 className="mb-3 flex items-center gap-2 text-lg font-semibold text-green-900">
-          <CircleDollarSign className="h-6 w-6 text-green-600" />
+      <Box
+        className="rounded-lg p-4"
+        sx={{
+          border: 1,
+          borderColor: "success.light",
+          bgcolor: (t) => alpha(t.palette.success.main, 0.06),
+        }}
+      >
+        <Typography
+          variant="h5"
+          component="h4"
+          className="flex items-center gap-2"
+          sx={{ mb: 1.5, "& svg": { color: "success.main", fontSize: 20 } }}
+        >
+          <MonetizationOnOutlinedIcon />
           Precio Calculado
-        </h4>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
-          <p>
-            <span className="block font-medium text-green-800">Costos Directos</span>
-            <span className="text-green-700">
-              {detalle.costosDirectos != null ? priceFormat(Number(detalle.costosDirectos)) : "-"}
-            </span>
-          </p>
-          <p>
-            <span className="block font-medium text-green-800">Seguro de Vida</span>
-            <span className="text-green-700">
-              {detalle.seguroVida != null ? priceFormat(Number(detalle.seguroVida)) : "-"}
-            </span>
-          </p>
-          <p>
-            <span className="block font-medium text-green-800">AUI</span>
-            <span className="text-green-700">
-              {detalle.aui != null ? priceFormat(Number(detalle.aui)) : "-"}
-            </span>
-          </p>
-          <p>
-            <span className="block font-medium text-green-800">Precio antes de IVA</span>
-            <span className="text-green-700">
-              {detalle.precioAntesIva != null ? priceFormat(Number(detalle.precioAntesIva)) : "-"}
-            </span>
-          </p>
+        </Typography>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <DetailField
+            label="Costos Directos"
+            value={detalle.costosDirectos != null ? priceFormat(Number(detalle.costosDirectos)) : "-"}
+          />
+          <DetailField
+            label="Seguro de Vida"
+            value={detalle.seguroVida != null ? priceFormat(Number(detalle.seguroVida)) : "-"}
+          />
+          <DetailField
+            label="AUI"
+            value={detalle.aui != null ? priceFormat(Number(detalle.aui)) : "-"}
+          />
+          <DetailField
+            label="Precio antes de IVA"
+            value={detalle.precioAntesIva != null ? priceFormat(Number(detalle.precioAntesIva)) : "-"}
+          />
         </div>
-        <p className="mt-3 border-t border-green-200 pt-3 text-sm">
-          <span className="font-medium text-green-800">Precio Total (cobro mensual):</span>{" "}
-          <span className="text-lg font-semibold text-green-700">
+        <Typography
+          variant="body2"
+          sx={{ mt: 1.5, pt: 1.5, borderTop: 1, borderColor: "success.light" }}
+        >
+          <Box component="span" sx={{ fontWeight: 500 }}>
+            Precio Total (cobro mensual):
+          </Box>{" "}
+          <Box component="span" sx={{ fontSize: "1.125rem", fontWeight: 600, color: "success.dark" }}>
             {priceFormat(Number(detalle.precioTotal))}
-          </span>
-        </p>
-      </div>
+          </Box>
+        </Typography>
+      </Box>
     </div>
   );
 };

@@ -1,3 +1,5 @@
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useGetUsuarioByCookie } from "../api/queryFunctions/usuarios";
@@ -149,9 +151,9 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
   if (isUserLoading || isPermissionsLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Cargando permisos...</p>
+        <div className="flex flex-col items-center gap-2">
+          <CircularProgress />
+          <Typography color="text.secondary">Cargando permisos...</Typography>
         </div>
       </div>
     );

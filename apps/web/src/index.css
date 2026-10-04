@@ -1,33 +1,35 @@
+@layer theme, base, mui, components, utilities;
 @import "tailwindcss";
 
-:root {
-  --primary-color: #1a1b2e;
-  --secondary-color: #1e1f33;
+@theme {
+  --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
 }
 
-body,
-#root {
-  margin: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;  
-}
+/* En @layer base para no pisar a MUI: el CSS sin capa gana sobre todas las capas */
+@layer base {
+  body,
+  #root {
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-* {
-  box-sizing: border-box;
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: rgb(204, 204, 204) transparent;
-}
+  * {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(204, 204, 204) transparent;
+  }
 
-::-webkit-scrollbar {
-  width: 8px;
-}
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
 
-::-webkit-scrollbar-track {
-  background: rgb(204, 204, 204);
-}
+  ::-webkit-scrollbar-track {
+    background: rgb(204, 204, 204);
+  }
 
-::-webkit-scrollbar-thumb {
-  background: rgb(204, 204, 204);
+  ::-webkit-scrollbar-thumb {
+    background: rgb(204, 204, 204);
+  }
 }

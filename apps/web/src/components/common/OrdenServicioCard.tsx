@@ -1,30 +1,26 @@
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import { tones, type Tone } from "../../theme/tones";
+import { OrderStateLabel } from "./OrderStateLabel";
 import { useState } from "react";
 import type {
   GruposLiquidaciones,
   Liquidaciones,
 } from "../../api/types/liquidaciones";
 import { priceFormat } from "../../utils/PriceFormat";
-import { getStatusColor } from "../../utils/StatusColor";
 import { OrdenDetalles } from "../ui/modals/OrdenDetalles";
 import { useGetOrdenLiquidada } from "../../api/queryFunctions/liquidaciones";
 import { toast } from "sonner";
 
 const estilosTipoServicio: Record<
   NonNullable<Liquidaciones["tipoServicio"]>,
-  { label: string; className: string }
+  { label: string; tone: Tone }
 > = {
-  monitoreo: {
-    label: "Monitoreo",
-    className: "border-sky-200 bg-sky-50 text-sky-700",
-  },
-  vigilancia: {
-    label: "Vigilancia",
-    className: "border-indigo-200 bg-indigo-50 text-indigo-700",
-  },
-  adicional: {
-    label: "Adicional",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
-  },
+  monitoreo: { label: "Monitoreo", tone: "blue" },
+  vigilancia: { label: "Vigilancia", tone: "purple" },
+  adicional: { label: "Adicional", tone: "amber" },
 };
 
 const TipoServicioBadge = ({
@@ -32,13 +28,14 @@ const TipoServicioBadge = ({
 }: {
   tipo: NonNullable<Liquidaciones["tipoServicio"]>;
 }) => {
-  const { label, className } = estilosTipoServicio[tipo];
+  const { label, tone } = estilosTipoServicio[tipo];
   return (
-    <span
-      className={`rounded-full border px-2 py-0.5 text-xs font-medium ${className}`}
-    >
-      {label}
-    </span>
+    <Chip
+      size="small"
+      variant="outlined"
+      label={label}
+      sx={{ color: tones[tone].main, borderColor: tones[tone].main, bgcolor: tones[tone].bg }}
+    />
   );
 };
 
@@ -75,11 +72,16 @@ export const OrdenServicioCard = ({
       <div className="p-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {grupoLiquidacion.liquidaciones.map((liquidacion) => (
-            <div
+            <Paper
               key={liquidacion.idLiquidacion}
-              className={`rounded-lg border border-gray-200 bg-white p-3 transition-shadow hover:shadow-md ${
-                isPending ? "cursor-wait opacity-50" : "cursor-pointer"
-              }`}
+              variant="outlined"
+              className="flex flex-col p-3"
+              sx={{
+                cursor: isPending ? "wait" : "pointer",
+                opacity: isPending ? 0.5 : 1,
+                transition: "box-shadow .2s",
+                "&:hover": { boxShadow: 2 },
+              }}
               onClick={() => {
                 if (isPending) return;
                 getOrdenLiquidadaMutation(liquidacion.idLiquidacion, {
@@ -99,90 +101,79 @@ export const OrdenServicioCard = ({
             >
               {liquidacion.ordenServicio ? (
                 <>
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-900">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <Typography variant="body2" component="h3" sx={{ fontWeight: 600 }}>
                       {liquidacion.ordenServicio.ordenServicioId.descripcionId}
-                    </h3>
-                    <span
-                      className={`rounded-full border px-2 py-1 text-xs font-medium ${getStatusColor(liquidacion.ordenServicio.idEstadoOrdenServicio?.nombre || "")}`}
-                    >
-                      {liquidacion.ordenServicio.idEstadoOrdenServicio?.nombre}
-                    </span>
+                    </Typography>
+                    <OrderStateLabel state={liquidacion.ordenServicio.idEstadoOrdenServicio?.nombre || ""} />
                   </div>
 
-                  <div className="space-y-1 text-xs text-gray-600">
+                  <div className="flex flex-col items-start gap-1">
                     {liquidacion.tipoServicio && (
-                      <div>
-                        <TipoServicioBadge tipo={liquidacion.tipoServicio} />
-                      </div>
+                      <TipoServicioBadge tipo={liquidacion.tipoServicio} />
                     )}
-                    <div>
-                      <span className="font-medium text-gray-900">
-                        {liquidacion.ordenServicio.idLocacion?.idCliente.nombre ||
-                          liquidacion.ordenServicio.idCliente?.nombre}
-                      </span>
-                    </div>
+                    <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                      {liquidacion.ordenServicio.idLocacion?.idCliente.nombre ||
+                        liquidacion.ordenServicio.idCliente?.nombre}
+                    </Typography>
                     {/* Monitoreo de alarmas no tiene puesto/locacion asociado (va directo a un cliente, ver
                         idCliente arriba), no hay nada que mostrar en esta linea */}
                     {liquidacion.ordenServicio.idLocacion && (
-                      <div className="text-gray-500">
+                      <Typography variant="caption" color="text.secondary">
                         {liquidacion.ordenServicio.idLocacion.nombre} -{" "}
                         {liquidacion.ordenServicio.idLocacion.direccion}
-                      </div>
+                      </Typography>
                     )}
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-900">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <Typography variant="body2" component="h3" sx={{ fontWeight: 600 }}>
                       {liquidacion.adicional?.nombre ?? `Adicional #${liquidacion.idAdicional}`}
-                    </h3>
+                    </Typography>
                     {liquidacion.tipoServicio ? (
                       <TipoServicioBadge tipo={liquidacion.tipoServicio} />
                     ) : (
-                      <span className="rounded-full border border-gray-300 bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
-                        Adicional
-                      </span>
+                      <Chip size="small" variant="outlined" label="Adicional" />
                     )}
                   </div>
 
-                  <div className="space-y-1 text-xs text-gray-600">
-                    <div>
-                      <span className="font-medium text-gray-900">
-                        {liquidacion.adicional?.idCliente?.nombre}
-                      </span>
-                    </div>
-                  </div>
+                  <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                    {liquidacion.adicional?.idCliente?.nombre}
+                  </Typography>
                 </>
               )}
 
               {/* Valores de esta orden puntual (ya vienen en el objeto, no requiere otra consulta) */}
-              <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">Antes de IVA</span>
-                  <span className="text-sm font-semibold text-green-600">
-                    {priceFormat(liquidacion.valorLiquidacionAntesIva)}
-                  </span>
-                </div>
-              </div>
-            </div>
+              <Box
+                className="mt-auto flex items-center justify-between pt-2"
+                sx={{ mt: 1, borderTop: 1, borderColor: "divider" }}
+              >
+                <Typography variant="caption" color="text.secondary">
+                  Antes de IVA
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: "success.main" }}>
+                  {priceFormat(liquidacion.valorLiquidacionAntesIva)}
+                </Typography>
+              </Box>
+            </Paper>
           ))}
         </div>
         {showTotal && (
           <div className="mt-4 flex items-baseline justify-end gap-6">
-            <span className="text-xs text-gray-600">
+            <Typography variant="caption" color="text.secondary">
               Liquidación Total:{" "}
-              <span className="font-medium text-gray-700">
+              <Box component="span" sx={{ fontWeight: 500, color: "text.primary" }}>
                 {priceFormat(totalGrupo)}
-              </span>
-            </span>
-            <span className="text-sm text-gray-600">
+              </Box>
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
               Total antes de IVA:{" "}
-              <span className="text-base font-semibold text-green-600">
+              <Box component="span" sx={{ fontSize: "1rem", fontWeight: 600, color: "success.main" }}>
                 {priceFormat(totalAntesIva)}
-              </span>
-            </span>
+              </Box>
+            </Typography>
           </div>
         )}
       </div>

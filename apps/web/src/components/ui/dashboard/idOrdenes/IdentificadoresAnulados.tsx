@@ -1,3 +1,7 @@
+import FormLabel from "@mui/material/FormLabel";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { muiRegister } from "../../../../utils/muiRegister";
 import type { OrdenServicioIdAnulados } from "../../../../api/types/orden-servicio";
 import { Section } from "../Section";
 import { useState } from "react";
@@ -5,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { useAnularIdOrdenServicio, useDeleteIdOrdenServicio, useGetIdsAnuladosOrdenServicio, useUpdateIdOrdenServicio } from "../../../../api/queryFunctions/orden-servicio/orden-servicio-id";
 import { MoreActionsButton } from "../../common/MoreActionsButton";
 import { ButtonAction } from "../../../common/ButtonAction";
-import { PlusIcon } from "lucide-react";
+import AddIcon from "@mui/icons-material/Add";
 import Table from "../../../common/Table";
 import { SimpleModal } from "../../../common/SimpleModal";
 import { FormsModal } from "../../modals/FormsModal";
@@ -73,9 +77,9 @@ export function IdentificadoresAnulados() {
             accessorKey: "descripcionId",
             cell: ({ row }) => {
                 return (
-                    <span className="font-medium whitespace-nowrap text-gray-700">
+                    <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: "nowrap" }}>
                         {row.original.descripcionId}
-                    </span>
+                    </Typography>
                 );
             },
         },
@@ -84,9 +88,9 @@ export function IdentificadoresAnulados() {
             accessorKey: "motivo",
             cell: ({ row }) => {
                 return (
-                    <span className="font-medium whitespace-nowrap text-gray-700">
+                    <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: "nowrap" }}>
                         {row.original.motivo}
-                    </span>
+                    </Typography>
                 );
             },
         },
@@ -95,9 +99,9 @@ export function IdentificadoresAnulados() {
             accessorKey: "fechaCreacion",
             cell: ({ row }) => {
                 return (
-                    <span className="text-sm whitespace-nowrap text-gray-500">
+                    <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
                         {row.original.fechaCreacion}
-                    </span>
+                    </Typography>
                 );
             },
         },
@@ -143,7 +147,7 @@ export function IdentificadoresAnulados() {
             <div className="flex flex-col gap-8">
                 <div className="flex justify-end">
                     <ButtonAction
-                        Icon={PlusIcon}
+                        Icon={AddIcon}
                         label="Anular identificador"
                         onClick={() => {
                             setIsOpenAdd(true);
@@ -199,16 +203,17 @@ export function IdentificadoresAnulados() {
                     updating={false}
                 >
                     <div className="flex flex-col gap-4">
-                        <div>
-                            <label className="text-sm font-medium text-gray-700" htmlFor="descripcionId">
+                        <div className="flex flex-col gap-1">
+                            <FormLabel htmlFor="descripcionId" required sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
                                 Identificador de orden de servicio a anular
-                            </label>
-                            <div className="mt-1 flex flex-row gap-2">
-                                <select
+                            </FormLabel>
+                            <div className="flex flex-row items-center gap-2">
+                                <TextField
+                                    select
                                     id="descripcionId"
                                     required
-                                    {...registerAdd("descripcionId")}
-                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    {...muiRegister(registerAdd("descripcionId"))}
+                                    slotProps={{ select: { native: true } }}
                                 >
                                     <option value="">Seleccione un prefijo</option>
                                     {prefijosQuery?.data?.data?.map((prefijo) => (
@@ -216,13 +221,12 @@ export function IdentificadoresAnulados() {
                                             {prefijo.prefijo}
                                         </option>
                                     )) || []}
-                                </select>
-                                <span className="flex items-center text-sm text-gray-700">-</span>
-                                <input
+                                </TextField>
+                                <Typography color="text.secondary">-</Typography>
+                                <TextField
                                     type="number"
                                     id="consecutivo"
-                                    {...registerAdd("consecutivo")}
-                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    {...muiRegister(registerAdd("consecutivo"))}
                                 />
                             </div>
                         </div>
@@ -265,16 +269,17 @@ export function IdentificadoresAnulados() {
                     updating={true}
                 >
                     <div className="flex flex-col gap-4">
-                        <div>
-                            <label className="text-sm font-medium text-gray-700" htmlFor="descripcionIdEdit">
+                        <div className="flex flex-col gap-1">
+                            <FormLabel htmlFor="descripcionIdEdit" required sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
                                 Identificador de orden de servicio
-                            </label>
-                            <div className="mt-1 flex flex-row gap-2">
-                                <select
+                            </FormLabel>
+                            <div className="flex flex-row items-center gap-2">
+                                <TextField
+                                    select
                                     id="descripcionIdEdit"
                                     required
-                                    {...registerEdit("descripcionId")}
-                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    {...muiRegister(registerEdit("descripcionId"))}
+                                    slotProps={{ select: { native: true } }}
                                 >
                                     <option value="">Seleccione un prefijo</option>
                                     {prefijosQuery?.data?.data?.map((prefijo) => (
@@ -282,13 +287,12 @@ export function IdentificadoresAnulados() {
                                             {prefijo.prefijo}
                                         </option>
                                     )) || []}
-                                </select>
-                                <span className="flex items-center text-sm text-gray-700">-</span>
-                                <input
+                                </TextField>
+                                <Typography color="text.secondary">-</Typography>
+                                <TextField
                                     type="number"
                                     id="consecutivoEdit"
-                                    {...registerEdit("consecutivo")}
-                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    {...muiRegister(registerEdit("consecutivo"))}
                                 />
                             </div>
                         </div>
