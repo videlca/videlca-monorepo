@@ -1,0 +1,40 @@
+services:
+  db:
+    image: mysql:8.0.39
+    container_name: videlca
+    restart: always
+    ports:
+      - '127.0.0.1:3306:3306'
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      # MYSQL_* above only apply when this folder is empty; existing data keeps its users
+      - ${MYSQL_DATA_DIR:-./mysql}:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  app:
+    build: .
+    image: videlca-app:${APP_VERSION:-latest}
+    container_name: videlca-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 3306
+      # The 06:00 order-state cron and date logic run on local time
+      TZ: ${TZ:-America/Bogota}
+    ports:
+      - '${APP_PORT:-80}:3000'
+    depends_on:
+      db:
+        condition: service_healthy
