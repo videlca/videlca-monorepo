@@ -1,0 +1,619 @@
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, QueryRunner, Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+
+import { TipoIdentificacionService, UbicacionService } from '../../common/services';
+import { NovedadService } from '../../novedad/services';
+
+import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
+
+import { Personal } from '../entities';
+import { TipoGeneroService, TipoPersonalService, TipoContratoService } from '.';
+
+import { CreatePersonalDto, UpdatePersonalDto, FilterPersonalDto, PersonalFilterColumn } from '../dto';
+
+@Injectable()
+export class PersonalService {
+
+  private readonly logger = new Logger('PersonalService');
+      
+  private defaultLimit: number; // valor de la cantidad por defecto que se va a retornar en una consulta 
+
+  constructor(
+    @InjectRepository(Personal)
+    private readonly personalRepository: Repository<Personal>,
+    @Inject(forwardRef(() => NovedadService))
+    private readonly novedadService: NovedadService,
+    private readonly tipoIdentificacionService: TipoIdentificacionService,
+    private readonly ubicacionService: UbicacionService,
+    @Inject(forwardRef(() => TipoGeneroService))
+    private readonly tipoGeneroService: TipoGeneroService,
+    @Inject(forwardRef(() => TipoPersonalService))
+    private readonly tipoPersonalService: TipoPersonalService,
+    @Inject(forwardRef(() => TipoContratoService))
+    private readonly tipoContratoService: TipoContratoService,
+    private readonly configService: ConfigService,
+    private readonly dataSource: DataSource
+  ) {
+      this.defaultLimit = this.configService.get<number>('defaultLimit');
+  }
+
+  async create(createPersonalDto: CreatePersonalDto) {
+    
+    const existUser = await this.personalRepository.findOneBy({numeroIdentificacion: createPersonalDto.numeroIdentificacion});
+
+    if(existUser){
+      throw new BadRequestException(`Personal con identificacion ${createPersonalDto.numeroIdentificacion} ya existe`);
+    }
+
+    // FECHA INICIO
+        
+    const fechaInicioContratoSplit = createPersonalDto.fechaInicioContrato.toISOString().split('T')[0];
+
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioContratoSplit.split('-').map(Number);
+    
+    const fechaInicioContrato = new Date(añoInicio, mesInicio - 1, diaInicio);
+
+    // FECHA VIGENCIA FIN CONTRATO
+
+    let fechaFinContrato = createPersonalDto.fechaFinContrato != null ? new Date(createPersonalDto.fechaFinContrato) : null;
+
+    // Validar que el período del contrato sea lógicamente correcto
+    if (createPersonalDto.fechaFinContrato != null) {
+        
+        // FECHA VIGENCIA FIN CONTRATO
+
+        const fechaFinContratoSplit = createPersonalDto.fechaFinContrato.toISOString().split('T')[0];
+    
+        const [añoFin, mesFin, diaFin] = fechaFinContratoSplit.split('-').map(Number);
+                
+        fechaFinContrato = new Date(añoFin, mesFin - 1, diaFin);
+
+        if (fechaInicioContrato >= fechaFinContrato){
+
+            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        
+        }
+
+    }
+
+    // FECHA NACIMIENTO
+    const fechaNacimientoSplit = createPersonalDto.fechaNacimiento.toISOString().split('T')[0];
+
+    const [añoNacimiento, mesNacimiento, diaNacimiento] = fechaNacimientoSplit.split('-').map(Number);
+    
+    const fechaNacimiento = new Date(añoNacimiento, mesNacimiento - 1, diaNacimiento);
+    
+    // FECHA NACIMIENTO
+    const fechaActualSplit = createPersonalDto.fechaActual.toISOString().split('T')[0];
+
+    const [añoActual, mesActual, diaActual] = fechaActualSplit.split('-').map(Number);
+
+    let edad = añoActual - añoNacimiento;
+
+    const cumpleañosPasado =  mesActual < mesNacimiento || (mesActual === mesNacimiento && diaActual < diaNacimiento)
+
+    if(!cumpleañosPasado){
+      edad--;
+    }
+
+    if(edad < 18){
+      throw new BadRequestException('El empleado debe ser mayor de edad');
+    }
+
+    // OBTENER TIPO DE ID
+    const tipoIdentificacion = await this.tipoIdentificacionService.findOne(createPersonalDto.idTipoIdentificacion);
+    
+    // OBTENER CIUDAD
+    const ciudad = await this.ubicacionService.findOneCiudad(createPersonalDto.idCiudad);
+    
+    // OBTENER TIPO DE GENERO
+    const tipoGenero = await this.tipoGeneroService.findOne(createPersonalDto.idTipoGenero);
+    
+    // OBTENER TIPO DE PERSONAL
+    const tipoPersonal = await this.tipoPersonalService.findOne(createPersonalDto.idTipoPersonal);
+    
+    // OBTENER TIPO DE CONTRATO
+    const tipoContrato = await this.tipoContratoService.findOne(createPersonalDto.idTipoContrato);
+
+    if (!tipoContrato.indefinido && createPersonalDto.fechaFinContrato == null) {
+      throw new BadRequestException(`El tipo de contrato ${tipoContrato.descripcion} requiere fecha de fin`);
+    }
+
+    const empleado = this.personalRepository.create({
+      ...createPersonalDto,
+      fechaInicioContrato,
+      fechaFinContrato: createPersonalDto.fechaFinContrato ? fechaFinContrato : null,
+      fechaNacimiento,
+      idTipoIdentificacion: tipoIdentificacion,
+      idCiudad: ciudad,
+      idTipoGenero: tipoGenero,
+      idTipoPersonal: tipoPersonal,
+      idTipoContrato: tipoContrato
+    });
+
+    try {
+      
+      await this.personalRepository.save(empleado);
+
+      return empleado;
+
+    } catch (error) {
+        
+      this.handleDbExceptions(error);
+
+    }
+
+
+  }
+
+  async findAll(paginationDto: PaginationDto) {
+    
+    if (paginationDto.pagination === PaginationOption.TRUE) {
+
+      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
+      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+      
+      // Se hace la consulta de manera paginada
+      const [empleados, total] = await this.personalRepository.findAndCount({
+          take: limit,
+          skip: offset,
+          order: {
+              primerApellido: 'ASC'
+          },
+          relations: {
+            idTipoPersonal: true,
+            novedades: true
+          }
+      });
+  
+      return {
+        data: empleados,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
+
+    }
+
+    const empleados = await this.personalRepository.find({
+      order: {
+        primerApellido: 'ASC'
+      },
+      relations: {
+        idTipoPersonal: true,
+        novedades: true
+      }
+    });
+
+    return {
+      data: empleados,
+      pagination: {
+        total: empleados.length,
+        limit: empleados.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+
+
+  }
+
+  // FILTRAR PERSONAL POR COLUMNA
+  async findFiltered(
+    filterPersonalDto: FilterPersonalDto
+  ) {
+    
+    const {
+      column,
+      query,
+      limit = this.defaultLimit,
+      offset = 0,
+    } = filterPersonalDto;
+  
+    const columnMap: Record<PersonalFilterColumn, string> = {
+      [PersonalFilterColumn.NUMERO_IDENTIFICACION]: 'personal.numeroIdentificacion',
+      [PersonalFilterColumn.NOMBRE]: 'personal.primerNombre',
+      [PersonalFilterColumn.TIPO_PERSONAL]: 'tipoPersonal.descripcion',
+      [PersonalFilterColumn.TIPO_CONTRATO]: 'tipoContrato.descripcion',
+    };
+  
+    const dbColumn = columnMap[column];
+  
+    if (!dbColumn) {
+      throw new BadRequestException('Columna de filtro no permitida');
+    }
+  
+    const qb = this.personalRepository
+      .createQueryBuilder('personal')
+      .leftJoinAndSelect('personal.idTipoIdentificacion', 'tipoIdentificacion')
+      .leftJoinAndSelect('personal.idTipoGenero', 'tipoGenero')
+      .leftJoinAndSelect('personal.idTipoPersonal', 'tipoPersonal')
+      .leftJoinAndSelect('personal.idTipoContrato', 'tipoContrato')
+      .leftJoinAndSelect('personal.idCiudad', 'ciudad')
+      .leftJoinAndSelect('personal.novedades', 'novedades')
+      .where(`${dbColumn} LIKE :query`, {
+        query: `%${query}%`,
+      })
+      .orderBy('personal.primerApellido', 'ASC');
+  
+    if (filterPersonalDto.pagination === PaginationOption.TRUE) {
+      qb.take(limit).skip(offset);
+
+      const [empleados, total] = await qb.getManyAndCount();
+
+      return {
+        data: empleados,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        },
+      };
+
+    }
+  
+    const empleados = await qb.getMany();
+
+    return {
+      data: empleados,
+      pagination: {
+        total: empleados.length,
+        limit: empleados.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    }
+
+  }
+
+  
+  async findAllActives(paginationDto: PaginationDto) {
+    
+    if (paginationDto.pagination === PaginationOption.TRUE) {
+
+      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
+      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+      
+      // Se hace la consulta de manera paginada
+      const [empleados, total] = await this.personalRepository.findAndCount({
+          take: limit,
+          skip: offset,
+          order: {
+              primerApellido: 'ASC'
+          },
+          where: {
+            laborando: true
+          },
+          relations: {
+            idTipoPersonal: true,
+            novedades: true
+          }
+      });
+  
+      return {
+        data: empleados,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0
+        }
+      };
+
+    }
+    
+    const empleados = await this.personalRepository.find({
+        order: {
+            primerApellido: 'ASC'
+        },
+        where: {
+            laborando: true
+        },
+        relations: {
+          idTipoPersonal: true,
+          novedades: true
+        }
+    });
+
+    return {
+      data: empleados,
+      pagination: {
+        total: empleados.length,
+        limit: empleados.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+
+  }
+
+  async findOne(id: number) {
+   
+    const empleado = await this.personalRepository.findOne({
+      where: {
+        idPersonal: id
+      },
+      relations: {
+        idTipoPersonal: true,
+        novedades: true
+      }
+    });
+    
+    if(!empleado) throw new NotFoundException(`Empleado con id "${id}" no se ha encontrado`);
+
+    return empleado;
+
+  }
+
+  async update(id: number, updatePersonalDto: UpdatePersonalDto) {
+
+    const {
+      laborando,
+      idTipoIdentificacion,
+      idTipoGenero,
+      idTipoPersonal,
+      idTipoContrato,
+      idCiudad, 
+      fechaInicioContrato,
+      fechaFinContrato,
+      fechaNacimiento,
+      ...toUpdate} = updatePersonalDto;
+
+    const empleado = await this.personalRepository.preload({idPersonal: id, ...toUpdate});
+
+    if(!empleado) throw new NotFoundException(`Empleado con id "${id}" no encontrado`);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction();
+
+    // FECHA INICIO
+
+    let fechaInicioContratoUpdate = new Date();
+
+    if (updatePersonalDto.fechaInicioContrato){
+    
+      const fechaInicioContratoSplit = updatePersonalDto.fechaInicioContrato.toISOString().split('T')[0];
+
+      const [añoInicio, mesInicio, diaInicio] = fechaInicioContratoSplit.split('-').map(Number);
+
+      fechaInicioContratoUpdate = new Date(añoInicio, mesInicio - 1, diaInicio);
+      
+      empleado.fechaInicioContrato = fechaInicioContratoUpdate;
+
+    }
+
+    // FECHA VIGENCIA FIN CONTRATO
+
+    let fechaFinContratoUpdate = updatePersonalDto.fechaFinContrato != null ? new Date(updatePersonalDto.fechaFinContrato) : null;;
+
+    // Validar que el período del contrato sea lógicamente correcto
+    if (updatePersonalDto.fechaFinContrato != null) {
+        
+        // FECHA VIGENCIA FIN CONTRATO
+
+        const fechaFinContratoSplit = updatePersonalDto.fechaFinContrato.toISOString().split('T')[0];
+    
+        const [añoFin, mesFin, diaFin] = fechaFinContratoSplit.split('-').map(Number);
+                
+        fechaFinContratoUpdate = new Date(añoFin, mesFin - 1, diaFin);
+
+        if (empleado.fechaInicioContrato >= fechaFinContratoUpdate){
+
+            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        
+        }
+
+        empleado.fechaFinContrato = fechaFinContratoUpdate;
+
+    }
+
+    // FECHA NACIMIENTO
+
+    if (updatePersonalDto.fechaNacimiento){
+
+      const fechaNacimientoSplit = updatePersonalDto.fechaNacimiento.toISOString().split('T')[0];
+  
+      const [añoNacimiento, mesNacimiento, diaNacimiento] = fechaNacimientoSplit.split('-').map(Number);
+
+      // FECHA NACIMIENTO
+      const fechaActualSplit = updatePersonalDto.fechaActual.toISOString().split('T')[0];
+  
+      const [añoActual, mesActual, diaActual] = fechaActualSplit.split('-').map(Number);
+  
+      let edad = añoActual - añoNacimiento;
+  
+      const cumpleañosPasado =  mesActual < mesNacimiento || (mesActual === mesNacimiento && diaActual < diaNacimiento)
+  
+      if(!cumpleañosPasado){
+        edad--;
+      }
+  
+      if(edad < 18){
+        throw new BadRequestException('El empleado debe ser mayor de edad');
+      }
+      
+      empleado.fechaNacimiento = new Date(añoNacimiento, mesNacimiento - 1, diaNacimiento);
+
+    }
+    
+    if (updatePersonalDto.idTipoIdentificacion){
+      
+      // OBTENER TIPO DE ID
+      const tipoIdentificacion = await this.tipoIdentificacionService.findOne(updatePersonalDto.idTipoIdentificacion);
+
+      empleado.idTipoIdentificacion = tipoIdentificacion;
+      
+    }
+
+    if (updatePersonalDto.idCiudad){
+
+      // OBTENER CIUDAD
+      const ciudad = await this.ubicacionService.findOneCiudad(updatePersonalDto.idCiudad);
+      
+      empleado.idCiudad = ciudad;
+
+    }
+
+    if (updatePersonalDto.idTipoGenero){
+
+      // OBTENER TIPO DE GENERO
+      const tipoGenero = await this.tipoGeneroService.findOne(updatePersonalDto.idTipoGenero);
+      
+      empleado.idTipoGenero = tipoGenero;
+
+    }
+
+    if (updatePersonalDto.idTipoPersonal){
+      
+      // OBTENER TIPO DE PERSONAL
+      const tipoPersonal = await this.tipoPersonalService.findOne(updatePersonalDto.idTipoPersonal);
+    
+      empleado.idTipoPersonal = tipoPersonal;
+
+    }
+    
+    if (updatePersonalDto.idTipoContrato){
+
+      // OBTENER TIPO DE CONTRATO
+      const tipoContrato = await this.tipoContratoService.findOne(updatePersonalDto.idTipoContrato);
+  
+      if (!tipoContrato.indefinido && updatePersonalDto.fechaFinContrato == null) {
+        throw new BadRequestException(`El tipo de contrato ${tipoContrato.descripcion} requiere fecha de fin`);
+      }
+    
+      empleado.idTipoContrato = tipoContrato;
+
+    }
+
+    if (updatePersonalDto.hasOwnProperty('laborando')) {
+
+      empleado.laborando = updatePersonalDto.laborando;
+    
+    }
+
+    try {
+
+      await queryRunner.manager.save(empleado);
+
+      if(updatePersonalDto.hasOwnProperty('laborando') && updatePersonalDto.laborando === false && updatePersonalDto.laborando != empleado.laborando){
+
+        await this.novedadService.createNovedadRetiro(empleado, queryRunner);
+
+      }
+      
+      if(updatePersonalDto.hasOwnProperty('laborando') && updatePersonalDto.laborando === true && updatePersonalDto.laborando != empleado.laborando){
+
+        await this.novedadService.removeNovedadRetiro(empleado, queryRunner);
+
+      }
+      
+      await queryRunner.commitTransaction();
+
+      await queryRunner.release();
+      
+      return this.findOne(id);
+
+    } catch (error) {
+
+      await queryRunner.rollbackTransaction();
+       
+      await queryRunner.release();
+
+      this.handleDbExceptions(error);
+      
+    }
+
+  }
+
+  async remove(id: number) {
+    
+    const empleado = await this.findOne(id);
+    
+    try {
+
+      await this.personalRepository.remove(empleado);
+      
+    } catch (error) {
+      
+      this.logger.error(error);
+
+      if(error.errno == 1451){
+        throw new BadRequestException(`El Empleado ${empleado.primerApellido} ${empleado.primerNombre} no se puede eliminar debido a que varias ordenes lo tienen asignado`); 
+      }
+        
+      throw new InternalServerErrorException(`Unexpected error, check server logs`);
+
+    }
+
+  }
+
+  async updateState(idPersonal: number, laborando: boolean, queryRunner: QueryRunner){
+
+    const empleado = await this.findOne(idPersonal);
+
+    empleado.laborando = laborando;
+
+    await queryRunner.manager.save(Personal, empleado);
+
+  }
+
+  // ELIMINAR TODOS LOS EMPLEADOS
+  // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA PERSONAL
+  async deleteAllPersonal(){
+  
+    const query = this.personalRepository.createQueryBuilder('personal');
+
+    try {
+      
+      return await query
+        .delete()
+        .where({})
+        .execute();
+
+    } catch (error) {
+      
+      this.handleDbExceptions(error);
+
+    }
+
+  }
+
+  private handleDbExceptions(error: any){
+    
+    if (error.errno === 1062)
+      throw new BadRequestException(`El registro que intenta crear ya existe, no puede crear duplicados`);
+
+    this.logger.error(error);
+
+    throw new InternalServerErrorException('Unexpected error, check server logs');
+
+  }
+}

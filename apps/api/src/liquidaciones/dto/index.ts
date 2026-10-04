@@ -1,0 +1,2 @@
+export { UpdateObservacionGrupoOrdenServicioDto } from "./update-observacion-grupo-orden-servicio.dto";
+export { CreateObservacionGrupoOrdenServicioDto } from "./create-observacion-grupo-orden-servicio.dto";

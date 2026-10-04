@@ -1,0 +1,1 @@
+export { UserPermissionsGuard } from "./user-permissions.guard";

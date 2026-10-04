@@ -1,0 +1,471 @@
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, QueryRunner, DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
+
+import { PersonalService } from '../../personal/services';
+import { TipoNovedadService } from '../services';
+
+import { Personal } from '../../personal/entities';
+import { PaginationDto } from '../../common/dto';
+import { PaginationOption } from '../../common/interfaces/pagination.interface';
+
+import { Novedad, TipoNovedad } from '../entities';
+import { TipoEstadoPersonal } from '../interfaces/tipo-estado.interface';
+import { CreateNovedadDto, UpdateNovedadDto } from '../dto';
+
+
+@Injectable()
+export class NovedadService {
+
+  private readonly logger = new Logger('NovedadService');
+    
+  private defaultLimit: number; // valor de la cantidad por defecto que se va a retornar en una consulta 
+
+  constructor(
+    @InjectRepository(Novedad)
+    private readonly novedadRepository: Repository<Novedad>,
+    @Inject(forwardRef(() => PersonalService))
+    private readonly personalService: PersonalService,   
+    @Inject(forwardRef(() => TipoNovedadService))
+    private readonly tipoNovedadService: TipoNovedadService,         
+    private readonly configService: ConfigService,
+    private readonly dataSource: DataSource
+  ) {
+      this.defaultLimit = this.configService.get<number>('defaultLimit');
+  }
+  
+  // CREAR NOVEDAD
+  async create(createNovedadDto: CreateNovedadDto, personalId: number){
+
+    const novedadesPersonal = await this.findAllByPersonal(personalId);
+
+    // Verificar si tiene alguna novedad de tipo retirado
+    const tieneNovedadRetirado = novedadesPersonal.some(novedad => 
+        novedad.idTipoNovedad?.retirado === true
+    );
+    
+    if (tieneNovedadRetirado) {
+        throw new BadRequestException('No se le pueden añadir mas novedades al personal ya que se encuentra retirado');
+    }
+
+    // OBTENER TIPO DE NOVEDAD
+    const tipoNovedad = await this.tipoNovedadService.findOne(createNovedadDto.idTipoNovedad);
+    
+    // OBTENER PERSONAL
+    const personal = await this.personalService.findOne(personalId);
+
+    if(tipoNovedad.retirado == false && !createNovedadDto.fechaFin && !createNovedadDto.horaFin){
+    
+      throw new BadRequestException(`Fecha fin y Hora fin son requeridos para este tipo de novedad`);
+
+    }
+
+    // FECHA INICIO NOVEDAD
+                
+    const fechaInicioSplit = createNovedadDto.fechaInicio.toISOString().split('T')[0];
+
+    const [añoInicio, mesInicio, diaInicio] = fechaInicioSplit.split('-').map(Number);
+    
+    const fechaInicioNovedad = new Date(añoInicio, mesInicio - 1, diaInicio);
+
+    // FECHA FIN NOVEDAD
+
+    let fechaFinNovedad = createNovedadDto.fechaFin != null ? new Date(createNovedadDto.fechaFin) : null;
+
+    // Validar que las fechas sean lógicamente correcto
+    if (createNovedadDto.fechaFin != null) {
+        
+        // FECHA FIN NOVEDAD
+
+        const fechaFinSplit = createNovedadDto.fechaFin.toISOString().split('T')[0];
+    
+        const [añoFin, mesFin, diaFin] = fechaFinSplit.split('-').map(Number);
+                
+        fechaFinNovedad = new Date(añoFin, mesFin - 1, diaFin);
+
+        if (fechaInicioNovedad >= fechaFinNovedad) {
+
+            throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+        
+        }
+
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction();
+
+    
+    try {
+        
+      const novedad = this.novedadRepository.create({
+        ...createNovedadDto,
+        fechaInicio: fechaInicioNovedad,
+        fechaFin: fechaFinNovedad,
+        idTipoNovedad: tipoNovedad,
+        idPersonal: personal
+      });
+      
+      await queryRunner.manager.save(novedad);
+
+      if(tipoNovedad.retirado == true){
+
+        // cambiar estado personal
+        await this.personalService.updateState(personal.idPersonal, false, queryRunner)
+
+      }
+
+      await queryRunner.commitTransaction();
+
+      await queryRunner.release();
+      
+      return novedad;
+      
+
+    } catch (error) {
+        
+      await queryRunner.rollbackTransaction();
+       
+      await queryRunner.release();
+
+      this.handleDbExceptions(error);
+
+    }
+
+  }
+
+  async findAllByPersonal(personalId: number){
+
+    return await this.novedadRepository
+      .createQueryBuilder('novedad')
+      .leftJoinAndSelect('novedad.idPersonal', 'personal')
+      .leftJoinAndSelect('novedad.idTipoNovedad', 'tipoNovedad')
+      .leftJoinAndSelect('personal.idTipoIdentificacion', 'tipoIdentificacion')
+      .leftJoinAndSelect('personal.idCiudad', 'ciudad')
+      .leftJoinAndSelect('ciudad.departamento', 'departamento')
+      .leftJoinAndSelect('departamento.pais', 'pais')
+      .leftJoinAndSelect('personal.idTipoGenero', 'tipoGenero')
+      .leftJoinAndSelect('personal.idTipoPersonal', 'tipoPersonal')
+      .where('personal.idPersonal = :personalId', { personalId })
+      .orderBy('novedad.fechaInicio', 'DESC')
+      .addOrderBy('novedad.horaInicio', 'DESC')
+      .getMany();
+  }
+  
+  // OBTENER UNA NOVEDAD
+  async findOne(id: number){
+  
+    const novedad = await this.novedadRepository.findOne({
+      where: { idNovedad: id }
+    });
+
+    if(!novedad) throw new NotFoundException(`Novedad con id "${id}" no se ha encontrado`);
+
+    return novedad;
+
+  }
+  
+  // OBTENER TODAS LAS NOVEDADES
+  async findAll(paginationDto: PaginationDto) {
+    
+    if (paginationDto.pagination === PaginationOption.TRUE) {
+
+      // Si la variable limit no se envia, entonces se tomara el valor de defaultLimit
+      const { limit = this.defaultLimit, offset = 0 } = paginationDto;
+      
+      // Se hace la consulta de manera paginada
+      const [novedades, total] = await this.novedadRepository.findAndCount({
+          take: limit,
+          skip: offset,
+          order: {
+            fechaInicio: 'DESC', 
+            horaInicio: 'DESC'
+          }
+      });
+
+      const groupedNovedades = this.groupByEmployee(novedades);
+
+      return {
+        data: groupedNovedades,
+        pagination: {
+          total,
+          limit,
+          offset,
+          page: Math.floor(offset / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+          hasNextPage: offset + limit < total,
+          hasPreviousPage: offset > 0,
+        }
+      };
+
+    }
+
+    const novedades = await this.novedadRepository.find({
+      order: {
+        fechaInicio: 'DESC', 
+        horaInicio: 'DESC'
+      }
+    });
+
+    const groupedNovedades = this.groupByEmployee(novedades);
+
+    return {
+      data: groupedNovedades,
+      pagination: {
+        total: groupedNovedades.length,
+        limit: groupedNovedades.length,
+        offset: 0,
+        page: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }
+    };
+
+  }
+
+  private groupByEmployee(novedades: Novedad[]) {
+    const grouped = {};
+    novedades.forEach(novedad => {
+      const personalId = novedad.idPersonal.idPersonal;
+      if (!grouped[personalId]) {
+        grouped[personalId] = {
+          personal: novedad.idPersonal,
+          novedades: []
+        };
+      }
+      grouped[personalId].novedades.push(novedad);
+    });
+    return Object.values(grouped);
+  }
+  
+
+  // EDITAR UNA NOVEDAD
+  async update(id: number, updateNovedadDto: UpdateNovedadDto) {
+
+    const {idTipoNovedad, ...toUpdate} = updateNovedadDto;
+    
+    // First, get the existing novedad with relations loaded
+    const existingNovedad = await this.findOne(id);
+    
+    // Apply the updates to the existing entity, preserving the idPersonal relation
+    const novedad = await this.novedadRepository.preload({
+      idNovedad: id, 
+      ...toUpdate,
+      // Always preserve the idPersonal relation (shouldn't change in updates)
+      idPersonal: existingNovedad.idPersonal
+    });
+
+    if (!novedad) throw new NotFoundException(`Novedad con id "${id}" no se ha encontrado`);
+
+    const novedadesPersonal = await this.findAllByPersonal(novedad.idPersonal.idPersonal);
+
+    // Verificar si tiene alguna novedad de tipo retirado
+    const tieneNovedadRetirado = novedadesPersonal.some(novedad => 
+        novedad.idTipoNovedad?.retirado === true
+    );
+
+    let tipoNovedad = null;
+
+    if(idTipoNovedad){
+
+      // OBTENER TIPO DE NOVEDAD
+      tipoNovedad = await this.tipoNovedadService.findOne(idTipoNovedad);
+
+    }
+    
+    if (idTipoNovedad && tieneNovedadRetirado && tipoNovedad.retirado == true) {
+      
+        throw new BadRequestException('No puede actualizar esta novedad, no se pueden tener 2 novedades en retirado');
+    }
+
+    if (idTipoNovedad && tipoNovedad.retirado === false && !updateNovedadDto.fechaFin && !updateNovedadDto.horaFin){
+    
+      throw new BadRequestException(`Fecha fin y Hora fin son requeridos para este tipo de novedad`);
+
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction();
+
+    try {
+      
+      // Update the idTipoNovedad if provided
+      if(idTipoNovedad && tipoNovedad){
+        novedad.idTipoNovedad = tipoNovedad;
+      }
+      
+      await queryRunner.manager.save(novedad);
+
+      if(tipoNovedad && tipoNovedad.retirado === true){
+
+        // cambiar estado personal
+        await this.personalService.updateState(novedad.idPersonal.idPersonal, false, queryRunner)
+
+      }
+
+      await queryRunner.commitTransaction();
+
+      await queryRunner.release();
+      
+      return novedad;
+
+    } catch (error) {
+      
+      await queryRunner.rollbackTransaction();
+       
+      await queryRunner.release();
+      
+      this.handleDbExceptions(error);
+
+    }
+
+  }
+
+  async remove(id: number) {
+    
+    const novedad = await this.findOne(id);
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+
+    await queryRunner.startTransaction();
+    
+    try {
+
+      await queryRunner.manager.remove(novedad);
+
+      if(novedad.idTipoNovedad.retirado == true){
+
+        // cambiar estado personal
+        await this.personalService.updateState(novedad.idPersonal.idPersonal, true, queryRunner)
+
+      }
+
+      await queryRunner.commitTransaction();
+
+      await queryRunner.release();
+      
+    } catch (error) {
+      
+      await queryRunner.rollbackTransaction();
+       
+      await queryRunner.release();
+
+      this.logger.error(error);
+        
+      throw new InternalServerErrorException(`Unexpected error, check server logs`);
+
+    }
+
+  }
+
+  async createNovedadRetiro(idPersonal: Personal, queryRunner: QueryRunner): Promise<Novedad> {
+
+    const novedadesPersonal = await this.findAllByPersonal(idPersonal.idPersonal);
+
+    // Verificar si tiene alguna novedad de tipo retirado
+    const tieneNovedadRetirado = novedadesPersonal.some(novedad => 
+        novedad.idTipoNovedad?.retirado === true
+    );
+    
+    if (tieneNovedadRetirado) {
+        throw new BadRequestException('No se le pueden añadir mas novedades al personal ya que se encuentra retirado');
+    }
+    
+    // Buscar el tipo de novedad RETIRADO usando el queryRunner
+    const tipoNovedad = await queryRunner.manager.findOneBy(TipoNovedad, {
+      retirado: true
+    });
+
+    if (!tipoNovedad) {
+      throw new NotFoundException('Tipo de novedad RETIRADO no encontrado');
+    }
+
+    // Preparar fechas y hora
+    const fechaActual = new Date();
+    const soloFecha = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), fechaActual.getDate());
+    
+    const hora = fechaActual.toLocaleTimeString('es-CO', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    // Crear la novedad
+    const nuevaNovedad = queryRunner.manager.create(Novedad, {
+      descripcion: `Empleado ${idPersonal.primerNombre} ${idPersonal.primerApellido} marcado como inactivo`,
+      fechaInicio: soloFecha,
+      horaInicio: hora,
+      idPersonal,
+      idTipoNovedad: tipoNovedad,
+    });
+
+    // Guardar usando el queryRunner
+    const novedadGuardada = await queryRunner.manager.save(Novedad, nuevaNovedad);
+
+    return novedadGuardada;
+  }
+  
+  async removeNovedadRetiro(idPersonal: Personal, queryRunner: QueryRunner){
+
+    // Buscar el tipo de novedad RETIRADO usando el queryRunner
+    const tipoNovedad = await queryRunner.manager.findOneBy(TipoNovedad, {
+      retirado: true
+    });
+
+    if (!tipoNovedad) {
+      throw new NotFoundException('Tipo de novedad RETIRADO no encontrado');
+    }
+
+    const novedad = await this.novedadRepository.findOneBy({
+      idPersonal: idPersonal,
+      idTipoNovedad: tipoNovedad
+    })
+
+    if(novedad){
+      await queryRunner.manager.remove(Novedad, novedad);
+    }
+
+  }
+  
+  // ELIMINAR TODOS LOS TIPOS NOVEDAD
+  // ESTA FUNCION ES UTILIZADA CUANDO SE EJECUTA EL SEED Y PODER LIMPIAR LA TABLA NOVEDAD
+  async deleteAllTiposNovedad(){
+  
+    const query = this.novedadRepository.createQueryBuilder('novedad');
+
+    try {
+      
+      return await query
+        .delete()
+        .where({})
+        .execute();
+
+    } catch (error) {
+      
+      this.handleDbExceptions(error);
+
+    }
+
+  }
+
+  private handleDbExceptions(error: any){
+  
+    if (error.errno === 1062)
+      throw new BadRequestException(`El registro que intenta crear ya existe, no puede crear duplicados`);
+
+    this.logger.error(error);
+
+    throw new InternalServerErrorException('Unexpected error, check server logs');
+
+  }
+
+}
