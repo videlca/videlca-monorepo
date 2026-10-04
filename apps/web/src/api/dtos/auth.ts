@@ -1,13 +1,1 @@
-export interface loginUserDto {
-  email: string
-  clave: string
-}
-
-export interface ReestablecerDatosDto {
-  nroIdentificacion: string
-}
-
-export interface NewPasswordDto {
-  clave: string
-  confirmarClave: string
-}
+export type { LoginUserDto, NewPasswordDto, ReestablecerDatosDto } from '@videlca/shared'

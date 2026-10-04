@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { ValidateJwtAuth } from '../auth/decorators';
 
 import { AuthService } from './auth.service';
+import { LoginResponse } from '@videlca/shared';
 import { LoginUserDto, NewPasswordDto, ReestablecerDatosDto, CredencialesDto } from './dto';
 
 
@@ -57,9 +58,8 @@ export class AuthController {
     });
 
     // Enviar respuesta al cliente sin incluir el token directamente en el body
-    return res.send({
-      user: loginResult.user, // Información del usuario
-    });
+    const body: LoginResponse = { user: loginResult.user };
+    return res.send(body);
 
   }
 

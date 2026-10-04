@@ -1,20 +1,15 @@
 import { axiosClient } from "../../config"
-import type { loginUserDto } from "../../dtos"
+import type { LoginResponse } from "@videlca/shared"
+import type { LoginUserDto } from "../../dtos"
 import type { ApiResponse } from "../../types/common"
 
 interface loginResponse {
   status?: number
   message?: string
-  data?: {
-    user: {
-      idUser: number
-      email: string
-      nombre: string
-    }
-  }
+  data?: LoginResponse
 }
 
-export const login = async (data: loginUserDto): Promise<loginResponse> => {
+export const login = async (data: LoginUserDto): Promise<loginResponse> => {
   const response = await axiosClient.post('/auth/login', data).then((res) => {
     return {
       status: res.status,

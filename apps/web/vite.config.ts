@@ -11,6 +11,7 @@ export default defineConfig({
     }),
     react()
   ],
+  // @videlca/shared is used with `import type` only, so Vite never bundles it
   server: {
     // In development the SPA runs on Vite (5173) and forwards API calls to NestJS
     proxy: {
@@ -21,10 +22,7 @@ export default defineConfig({
       }
     }
   },
-  // Needed because @videlca/shared is a linked CommonJS workspace package
-  optimizeDeps: { include: ['@videlca/shared'] },
   build: {
-    commonjsOptions: { include: [/shared/, /node_modules/] },
     rollupOptions: {
       onwarn(_warning, _warn) {
         return;

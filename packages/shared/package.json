@@ -1,0 +1,27 @@
+{
+  "name": "@videlca/shared",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
+  },
+  "peerDependencies": {
+    "@nestjs/swagger": "^11.2.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2"
+  },
+  "peerDependenciesMeta": {
+    "@nestjs/swagger": { "optional": true },
+    "class-transformer": { "optional": true },
+    "class-validator": { "optional": true }
+  },
+  "devDependencies": {
+    "@nestjs/swagger": "^11.2.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "typescript": "^5.6.0"
+  }
+}

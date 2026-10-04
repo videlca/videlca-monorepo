@@ -12,7 +12,7 @@ import {
   updatePassword,
   validateToken,
 } from "../../functions/auth";
-import type { loginUserDto } from "../../dtos";
+import type { LoginUserDto } from "../../dtos";
 import { useNavigate } from "@tanstack/react-router";
 import { queryClient } from "../../../App";
 import { useAuth } from "../../../context/AuthContext";
@@ -23,12 +23,12 @@ import { toast } from "sonner";
 export const useLogin = (): UseMutationResult<
   ApiResponse,
   Error,
-  loginUserDto
+  LoginUserDto
 > => {
   const { setIsAuthenticated } = useAuth();
   const navigate = useNavigate();
   return useMutation({
-    mutationFn: (data: loginUserDto) => login(data),
+    mutationFn: (data: LoginUserDto) => login(data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["login"] });
       setIsAuthenticated(true);
