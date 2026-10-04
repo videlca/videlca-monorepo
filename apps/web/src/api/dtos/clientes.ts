@@ -1,0 +1,101 @@
+import type { SubSegmentacion } from "../types";
+
+// Segmentación
+export interface CreateSegmentacionDto {
+  descripcion: string;
+  subSegmentaciones: SubSegmentacion[];
+}
+
+export interface UpdateSegmentacionDto {
+  estado?: boolean;
+  descripcion?: string;
+}
+
+
+export interface CreateSubSegmentacionDto {
+  descripcion: string;
+}
+
+export interface UpdateSubSegmentacionDto {
+  descripcion?: string;
+  estado?: boolean;
+}
+
+// Puestos
+export interface CreatePuestoDto {
+  nombre: string;
+  idCiudad: number;
+  direccion: string;
+  latitud: string;
+  longitud: string;
+  primerNombreResponsable: string;
+  primerApellidoResponsable: string;
+  telefono: string;
+  segundoTelefono?: string;
+  idClienteFacturacion?: number | null;
+  diasAnticipaticionNotificacion: number;
+  idCliente: number;
+  correos: CreateCorreoDto[];
+}
+
+export interface UpdatePuestoDto extends Partial<CreatePuestoDto> {
+  estado?: boolean;
+}
+
+export interface CreateCorreoDto {
+  nombre: string;
+  apellido: string;
+  email: string;
+  estados: number[];
+  // estadosApp?: string[];
+}
+
+// Clientes 
+export interface CreateClienteDto {
+  numeroIdentificacion: string;
+  idTipoIdentificacion: number;
+  nombre: string;
+  idTipoCliente: number;
+  idSubSegmentacion?: number;
+}
+
+export interface UpdateClienteDto {
+  numeroIdentificacion?: string;
+  idTipoIdentificacion?: number;
+  nombre?: string;
+  idTipoCliente?: number;
+  idSubSegmentacion?: number | null;
+  estado?: boolean;
+}
+
+// Filter
+export enum ClienteFilterColumn {
+  NUMERO_IDENTIFICACION = 'numeroIdentificacion',
+  NOMBRE = 'nombre',
+  TIPO_CLIENTE = 'tipoCliente',
+  SUBSEGMENTACION = 'subsegmentacion',
+}
+
+export interface FilterClienteDto {
+  column: ClienteFilterColumn;
+  query: string;
+  limit?: number;
+  offset?: number;
+  pagination?: boolean;
+}
+
+// Filter Locacion
+export enum LocacionFilterColumn {
+  NOMBRE = 'nombre',
+  DIRECCION = 'direccion',
+  CLIENTE = 'cliente',
+  CIUDAD = 'ciudad',
+}
+
+export interface FilterLocacionDto {
+  column: LocacionFilterColumn;
+  query: string;
+  limit?: number;
+  offset?: number;
+  pagination?: boolean;
+}

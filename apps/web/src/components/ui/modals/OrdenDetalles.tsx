@@ -1,0 +1,874 @@
+import { useState } from "react";
+import {
+  Building2,
+  Calendar,
+  CheckCircle2,
+  CircleDollarSign,
+  FileText,
+  MapPin,
+  Receipt,
+  User,
+} from "lucide-react";
+import { SimpleModal } from "../../common/SimpleModal";
+import type {
+  OrdenServicio,
+  OrdenServicioDetalle,
+} from "../../../api/types/orden-servicio";
+import type {
+  OrdenLiquidada,
+  LiquidacionOrdenDetalle,
+  AdicionalLiquidado,
+} from "../../../api/types/liquidaciones";
+import { useGetLiquidacionesByOrdenId } from "../../../api/queryFunctions/orden-servicio";
+import { useGetOrdenLiquidada } from "../../../api/queryFunctions/liquidaciones";
+import { AdicionalLiquidadoDetalle } from "./AdicionalLiquidadoDetalle";
+import { priceFormat } from "../../../utils/PriceFormat";
+import { timeFormat } from "../../../utils/TimeFormat";
+import { safeParseDate } from "../../../utils/DateUtils";
+import { textoCobroParcial } from "../../../utils/cobroParcial";
+import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "../../common/stepsOrdenServicio/tipoServicioConstantes";
+
+const priceOrNA = (value: number | null | undefined) =>
+  value === null || value === undefined ? "N/A" : priceFormat(value);
+
+// "202609" -> "Septiembre 2026". aniomes_liquidacion deberia venir siempre con este formato, pero algunos
+// registros historicos se guardaron sin cero a la izquierda en el mes (ej "20269" para septiembre/2026, ver
+// aniomes_liquidacion en liquidaciones.service.ts): se valida por contenido (año de 4 digitos + mes 1-12), no
+// por longitud fija, para no romper esos casos ni los realmente invalidos/nulos (ver bug de "Ver" orden en produccion)
+const formatAniomes = (aniomes: string | null | undefined) => {
+  if (!aniomes || aniomes.length < 5) return "N/A";
+  const anio = Number(aniomes.slice(0, 4));
+  const mes = Number(aniomes.slice(4));
+  if (!Number.isInteger(anio) || !Number.isInteger(mes) || mes < 1 || mes > 12) {
+    return "N/A";
+  }
+  const nombre = new Date(Date.UTC(anio, mes - 1, 1)).toLocaleDateString(
+    "es-ES",
+    { month: "long", timeZone: "UTC" },
+  );
+  return `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${anio}`;
+};
+
+// selectedOrderDetail acepta tanto una orden real (findOne) como el snapshot de una liquidacion especifica
+// (GET /liquidaciones/:idLiquidacion/orden), que trae la misma forma con los precios de ese mes. Se distinguen
+// por la presencia de idLiquidacion (ver esSnapshotLiquidacion)
+type DetalleOrdenOSnapshot = OrdenServicio | OrdenLiquidada;
+
+// Dias de la semana en que se presta un servicio de catalogo (ver OrdenServicioDetalle). El snapshot de una
+// liquidacion (LiquidacionOrdenDetalle) no trae estos campos, por eso quedan opcionales aca
+type DiaSemanaKey =
+  | "lunes"
+  | "martes"
+  | "miercoles"
+  | "jueves"
+  | "viernes"
+  | "sabado"
+  | "domingo";
+
+const DIAS_SEMANA_LABELS: Record<DiaSemanaKey, string> = {
+  lunes: "Lunes",
+  martes: "Martes",
+  miercoles: "Miércoles",
+  jueves: "Jueves",
+  viernes: "Viernes",
+  sabado: "Sábado",
+  domingo: "Domingo",
+};
+
+const DIAS_SEMANA_KEYS = Object.keys(DIAS_SEMANA_LABELS) as DiaSemanaKey[];
+
+const diasActivos = (detalle: Partial<Record<DiaSemanaKey, boolean>>) =>
+  DIAS_SEMANA_KEYS.filter((dia) => detalle[dia])
+    .map((dia) => DIAS_SEMANA_LABELS[dia])
+    .join(", ");
+
+// Distingue el snapshot de un adicional liquidado (tipo:'adicional') del snapshot de una orden liquidada,
+// ya que ambos comparten el campo idLiquidacion — ver esSnapshotLiquidacion mas abajo
+const esAdicionalLiquidado = (
+  orden: DetalleOrdenOSnapshot | AdicionalLiquidado,
+): orden is AdicionalLiquidado => "tipo" in orden && orden.tipo === "adicional";
+
+const esSnapshotLiquidacion = (
+  orden: DetalleOrdenOSnapshot | AdicionalLiquidado,
+): orden is OrdenLiquidada => "idLiquidacion" in orden && !esAdicionalLiquidado(orden);
+
+// Una fila de "detalles" de la orden real o del snapshot de una liquidacion: ambas formas traen
+// idTarifa.idServicio completo (ver findOneOrdenRelations en el backend), de ahi se lee el tipo de servicio
+type DetalleServicioOrden = OrdenServicioDetalle | LiquidacionOrdenDetalle;
+
+// Agrupa los indices de "detalles" en las tarjetas a renderizar: una tarjeta por unidad para el caso general.
+// Puede haber varios servicios distintos de tipo Monitoreo de Alarmas en la misma orden (cada uno con su propia
+// tarifa/precio y su propia cantidad de unidades, ver SeleccionarServicio), por eso se agrupan por idServicio
+// (mismo criterio que ConfigurarHorariosServicios/PreviewInformacionOrden en el wizard de creacion) y no todos
+// juntos: cada servicio de este tipo obtiene una unica tarjeta que resume todas sus unidades, ubicada en la
+// posicion de la primera de ellas para no alterar el orden del resto de servicios
+const agruparIndicesDetalles = (detalles: DetalleServicioOrden[]): number[][] => {
+  const idServicioMonitoreoPorIndice = detalles.map((detalle) => {
+    const servicio = detalle.idTarifa?.idServicio;
+    return servicio?.idTipoServicio?.nombre === TIPO_SERVICIO_MONITOREO_ALARMAS
+      ? servicio.idServicio
+      : null;
+  });
+
+  const indicesPorServicio = new Map<number, number[]>();
+  idServicioMonitoreoPorIndice.forEach((idServicio, index) => {
+    if (idServicio == null) return;
+    const grupo = indicesPorServicio.get(idServicio) ?? [];
+    grupo.push(index);
+    indicesPorServicio.set(idServicio, grupo);
+  });
+
+  const grupos: number[][] = [];
+  const serviciosYaAgregados = new Set<number>();
+  detalles.forEach((_, index) => {
+    const idServicio = idServicioMonitoreoPorIndice[index];
+    if (idServicio == null) {
+      grupos.push([index]);
+    } else if (!serviciosYaAgregados.has(idServicio)) {
+      grupos.push(indicesPorServicio.get(idServicio)!);
+      serviciosYaAgregados.add(idServicio);
+    }
+  });
+  return grupos;
+};
+
+// Suma un campo numerico opcional del desglose de precio a traves de todas las filas del grupo. Devuelve null
+// si ninguna fila tiene valor para ese campo, para distinguir "no vino" de "vino en cero". Los campos decimal
+// de la orden (costosDirectos, precio, etc.) llegan del backend como string (columnas "numeric" de TypeORM se
+// serializan asi), por eso se convierten con Number(...) antes de sumar: sumar strings con += concatena en vez
+// de sumar y termina en NaN al formatear (ver bug de "Ver" orden con "$ NaN" en varias unidades agrupadas)
+const sumarCampoDetalle = (
+  indices: number[],
+  detalles: DetalleServicioOrden[],
+  getter: (detalle: DetalleServicioOrden) => number | null | undefined,
+): number | null => {
+  let total = 0;
+  let algunValor = false;
+  indices.forEach((index) => {
+    const valor = getter(detalles[index]);
+    if (valor == null) return;
+    const numero = Number(valor);
+    if (Number.isNaN(numero)) return;
+    total += numero;
+    algunValor = true;
+  });
+  return algunValor ? total : null;
+};
+
+// Tarjeta de un servicio de la orden: representa una sola unidad para el caso general, o todas las unidades de
+// un mismo servicio de tipo Monitoreo de Alarmas a la vez (ver agruparIndicesDetalles). El horario/dias
+// mostrados se toman de la primera fila del grupo (todas comparten el mismo horario, ver
+// ConfigurarHorariosServicios en el wizard de creacion) y el precio/costos se suman entre todas las filas
+const renderTarjetaDetalle = (
+  indices: number[],
+  detalles: DetalleServicioOrden[],
+) => {
+  const indicePrincipal = indices[0];
+  const detalle = detalles[indicePrincipal];
+  // idTarifa siempre viene con su idServicio cargado (ver findOneOrdenRelations en el backend)
+  const servicio = detalle.idTarifa?.idServicio;
+
+  const precioTotalGrupo = sumarCampoDetalle(indices, detalles, (d) => d.precio);
+  const costosDirectos = sumarCampoDetalle(
+    indices,
+    detalles,
+    (d) => d.costosDirectos,
+  );
+  const seguroVida = sumarCampoDetalle(indices, detalles, (d) => d.seguroVida);
+  const aui = sumarCampoDetalle(indices, detalles, (d) => d.aui);
+  const precioAntesIva = sumarCampoDetalle(
+    indices,
+    detalles,
+    (d) => d.precioAntesIva,
+  );
+  const iva = sumarCampoDetalle(indices, detalles, (d) => d.iva);
+
+  return (
+    <div
+      key={indices.join("-")}
+      className="rounded-lg border border-gray-300 bg-white p-4"
+    >
+      <h4 className="mb-3 text-base font-semibold text-gray-900">
+        {servicio?.codigo
+          ? `${servicio.codigo} — ${servicio.descripcion}`
+          : `Detalle ${indicePrincipal + 1}`}
+        {indices.length > 1 && (
+          <span className="ml-2 text-sm font-normal text-gray-500">
+            ({indices.length} unidades)
+          </span>
+        )}
+        {diasActivos(detalle) && (
+          <span className="ml-2 text-sm font-normal text-gray-500">
+            {diasActivos(detalle)}
+          </span>
+        )}
+      </h4>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div>
+          <p className="text-sm font-medium text-gray-600">Horario</p>
+          <p className="text-base text-gray-900">
+            {timeFormat(detalle.horaInicio)} - {timeFormat(detalle.horaFin)}
+          </p>
+        </div>
+        {/* fecha/cantidadHoras solo traen valor en ordenes "a la medida": cada fila es un dia
+            especifico del rango (en "catalogo" son null, no se muestran) */}
+        {detalle.fecha && (
+          <div>
+            <p className="text-sm font-medium text-gray-600">Fecha</p>
+            <p className="text-base text-gray-900">
+              {safeParseDate(detalle.fecha.slice(0, 10)).toLocaleDateString()}
+            </p>
+          </div>
+        )}
+        {detalle.cantidadHoras != null && (
+          <div>
+            <p className="text-sm font-medium text-gray-600">
+              Cantidad de Horas
+            </p>
+            <p className="text-base text-gray-900">{detalle.cantidadHoras}</p>
+          </div>
+        )}
+        <div>
+          <p className="text-sm font-medium text-gray-600">Precio</p>
+          <p className="text-base font-semibold text-green-700">
+            {priceOrNA(precioTotalGrupo)}
+          </p>
+        </div>
+
+        {/* Información del Servicio */}
+        {servicio && (
+          <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
+            <h5 className="mb-2 text-sm font-semibold text-gray-900">
+              Servicio
+            </h5>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <p className="text-xs font-medium text-gray-600">Código</p>
+                <p className="text-sm text-gray-900">{servicio.codigo}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-600">
+                  Descripción
+                </p>
+                <p className="text-sm text-gray-900">
+                  {servicio.descripcion}
+                </p>
+              </div>
+              {/* Cada campo solo se muestra si realmente trae valor: no tiene sentido pintar
+                  una etiqueta vacia cuando la relacion no vino cargada (ver findOrdenLiquidada
+                  en el backend) o simplemente no aplica para este servicio */}
+              {servicio.idTipoServicio?.nombre && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Tipo de Servicio
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoServicio.nombre}
+                  </p>
+                </div>
+              )}
+              {servicio.idTipoDuracion?.descripcion && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Duración
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoDuracion.descripcion}
+                  </p>
+                </div>
+              )}
+              {servicio.idTipoHorarioDescripcion?.nombre && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Horario
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoHorarioDescripcion.nombre}
+                  </p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-medium text-gray-600">
+                  Horas Fijas
+                </p>
+                <p className="text-sm text-gray-900">{servicio.horasFijas}</p>
+              </div>
+              {servicio.idTipoTarifa?.nombre && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Tipo Tarifa
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoTarifa.nombre}
+                  </p>
+                </div>
+              )}
+              {servicio.idTipoTarifa?.cantidadTiempo != null && (
+                <div>
+                  <p className="text-xs font-medium text-gray-600">
+                    Cantidad Tiempo
+                  </p>
+                  <p className="text-sm text-gray-900">
+                    {servicio.idTipoTarifa.cantidadTiempo}{" "}
+                    {servicio.idTipoTarifa.idTipoUnidadTiempo?.descripcion}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="mt-2 border-t border-gray-200 pt-3 md:col-span-2 lg:col-span-3">
+          <h5 className="mb-2 text-sm font-semibold text-gray-900">
+            Desglose de Costos
+          </h5>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div>
+              <p className="text-xs font-medium text-gray-600">
+                Costos Directos
+              </p>
+              <p className="text-sm text-gray-900">{priceOrNA(costosDirectos)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">
+                Seguro de Vida
+              </p>
+              <p className="text-sm text-gray-900">{priceOrNA(seguroVida)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">AUI</p>
+              <p className="text-sm text-gray-900">{priceOrNA(aui)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">IVA</p>
+              <p className="text-sm text-gray-900">{priceOrNA(iva)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">
+                Precio Antes IVA
+              </p>
+              <p className="text-sm text-gray-900">
+                {priceOrNA(precioAntesIva)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-600">
+                Precio Total
+              </p>
+              <p className="text-sm font-semibold text-green-700">
+                {priceOrNA(precioTotalGrupo)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const OrdenDetalles = ({
+  isOpenDetails,
+  setIsOpenDetails,
+  selectedOrderDetail,
+  setSelectedOrderDetail,
+}: {
+  isOpenDetails: boolean;
+  setIsOpenDetails: (isOpen: boolean) => void;
+  selectedOrderDetail: DetalleOrdenOSnapshot | AdicionalLiquidado;
+  setSelectedOrderDetail?: (selectedOrderDetail: OrdenServicio | null) => void;
+}) => {
+  // Historial de liquidaciones de esta orden (una por mes ya liquidado). Solo aplica cuando se esta viendo la
+  // orden real, no tiene sentido mostrar "liquidaciones de esta liquidacion" dentro de ningun snapshot
+  // (ni de orden ni de adicional)
+  const esSnapshot =
+    esSnapshotLiquidacion(selectedOrderDetail) || esAdicionalLiquidado(selectedOrderDetail);
+
+  const [paginaLiquidaciones, setPaginaLiquidaciones] = useState(1);
+  const LIMITE_LIQUIDACIONES = 5;
+
+  // El hook debe llamarse siempre (reglas de hooks), aunque para un snapshot de adicional no aplique — por eso
+  // esta deshabilitado via esSnapshot (y ademas el propio hook se autodeshabilita con ordenId 0 via !!ordenId)
+  const idOrdenServicioParaHistorial = esAdicionalLiquidado(selectedOrderDetail)
+    ? 0
+    : selectedOrderDetail.idOrdenServicio;
+
+  const { data: liquidacionesOrden, isLoading: isLoadingLiquidacionesOrden } =
+    useGetLiquidacionesByOrdenId(
+      idOrdenServicioParaHistorial,
+      paginaLiquidaciones,
+      LIMITE_LIQUIDACIONES,
+      isOpenDetails && !esSnapshot,
+    );
+
+  const {
+    mutate: getOrdenLiquidadaMutation,
+    data: ordenLiquidadaData,
+    isPending: isLoadingOrdenLiquidada,
+  } = useGetOrdenLiquidada();
+
+  const [isOpenLiquidacionDetalle, setIsOpenLiquidacionDetalle] =
+    useState(false);
+
+  // A partir de aca selectedOrderDetail ya no puede ser un adicional liquidado (ver el return de abajo), por
+  // lo que el resto del componente puede seguir asumiendo la forma OrdenServicio/OrdenLiquidada de siempre
+  if (esAdicionalLiquidado(selectedOrderDetail)) {
+    return (
+      <SimpleModal
+        isOpen={isOpenDetails}
+        onClose={() => {
+          setIsOpenDetails(false);
+          if (setSelectedOrderDetail) {
+            setSelectedOrderDetail(null);
+          }
+        }}
+        title={`Adicional liquidado — ${formatAniomes(selectedOrderDetail.aniomes_liquidacion)}`}
+        size="3xl"
+      >
+        <div className="space-y-6 p-6">
+          <AdicionalLiquidadoDetalle detalle={selectedOrderDetail} />
+        </div>
+      </SimpleModal>
+    );
+  }
+
+  // Vigilancia y escolta: el cliente se lee de la locacion (idLocacion.idCliente). Monitoreo de alarmas: la
+  // orden no tiene locacion, el cliente viene asignado directo en idCliente (ver esOrdenMonitoreo en el
+  // wizard de creacion)
+  const cliente = selectedOrderDetail.idLocacion?.idCliente ?? selectedOrderDetail.idCliente;
+
+  return (
+    <>
+    <SimpleModal
+      isOpen={isOpenDetails}
+      onClose={() => {
+        setIsOpenDetails(false);
+        if (setSelectedOrderDetail) {
+          setSelectedOrderDetail(null);
+        }
+      }}
+      title={
+        esSnapshotLiquidacion(selectedOrderDetail)
+          ? `Detalle liquidado — ${formatAniomes(selectedOrderDetail.aniomes_liquidacion)}`
+          : "Detalles de la orden de servicio"
+      }
+      size="3xl"
+    >
+      <div className="space-y-6 p-6">
+        {esSnapshotLiquidacion(selectedOrderDetail) && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+            Mostrando lo realmente liquidado en{" "}
+            <b>{formatAniomes(selectedOrderDetail.aniomes_liquidacion)}</b>{" "}
+            (liquidación #{selectedOrderDetail.idLiquidacion}), no el total de
+            toda la orden.
+          </div>
+        )}
+        {/* Puesto: solo aplica a ordenes de "Vigilancia y escolta" (idLocacion). Las de "Monitoreo de
+            alarmas" van directo a un cliente, sin puesto/locacion asociado */}
+        {selectedOrderDetail.idLocacion && (
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="mb-3 flex items-center space-x-2">
+              <MapPin className="h-5 w-5 text-orange-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Puesto</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Nombre</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.nombre || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Dirección</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.direccion || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Responsable</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.primerNombreResponsable}{" "}
+                  {selectedOrderDetail.idLocacion?.primerApellidoResponsable}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Teléfono</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.telefono || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Coordenadas</p>
+                <p className="text-base text-gray-900">
+                  Lat: {selectedOrderDetail.idLocacion?.latitud}, Long:{" "}
+                  {selectedOrderDetail.idLocacion?.longitud}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Ciudad</p>
+                <p className="text-base text-gray-900">
+                  {selectedOrderDetail.idLocacion?.idCiudad?.descripcion},{" "}
+                  {
+                    selectedOrderDetail.idLocacion?.idCiudad?.departamento
+                      ?.descripcion
+                  }
+                  ,{" "}
+                  {
+                    selectedOrderDetail.idLocacion?.idCiudad?.departamento?.pais
+                      ?.descripcion
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cliente: para "Vigilancia y escolta" es el cliente del puesto, para "Monitoreo de alarmas" es el
+            cliente asignado directo a la orden (ver "cliente" mas arriba) */}
+        <div className="rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center space-x-2">
+            <Building2 className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Información del Cliente
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Nombre</p>
+              <p className="text-base text-gray-900">
+                {cliente?.nombre || "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Identificación
+              </p>
+              <p className="text-base text-gray-900">
+                {cliente?.idTipoIdentificacion?.descripcion}
+                {": "}
+                {cliente?.numeroIdentificacion}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Tipo de Cliente
+              </p>
+              <p className="text-base text-gray-900">
+                {cliente?.idTipoCliente?.descripcion || "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Segmentación
+              </p>
+              <p className="text-base text-gray-900">
+                {cliente?.idSubSegmentacion?.segmentacion?.descripcion ||
+                  "N/A"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Información Básica de la Orden */}
+        <div className="rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center space-x-2">
+            <FileText className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Información de la Orden
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-600">ID Orden</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idOrdenServicio}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Descripción ID
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.ordenServicioId?.descripcionId || "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Precio Total</p>
+              <p className="text-base font-semibold text-green-700">
+                {priceFormat(selectedOrderDetail.precioTotal)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Fecha de Creación
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.fechaCreacion}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Fecha de Actualización
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.fechaActualizacion}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Anulado</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.ordenServicioId?.anulado ? "Sí" : "No"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Usuario Creador */}
+        <div className="rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center space-x-2">
+            <User className="h-5 w-5 text-purple-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Usuario Creador
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Nombre Completo
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idUsuarioCreacion?.primerNombre}{" "}
+                {selectedOrderDetail.idUsuarioCreacion?.segundoNombre || ""}{" "}
+                {selectedOrderDetail.idUsuarioCreacion?.primerApellido}{" "}
+                {selectedOrderDetail.idUsuarioCreacion?.segundoApellido || ""}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Email</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idUsuarioCreacion?.email || "N/A"}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Identificación
+              </p>
+              <p className="text-base text-gray-900">
+                {
+                  selectedOrderDetail.idUsuarioCreacion?.idTipoIdentificacion
+                    ?.descripcion
+                }
+                : {selectedOrderDetail.idUsuarioCreacion?.numeroIdentificacion}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Estado de la Orden */}
+        <div className="rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center space-x-2">
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Estado de la Orden de Servicio
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Estado</p>
+              <span className="inline-block rounded-full border border-gray-300 px-3 py-1 text-sm font-medium text-green-800">
+                {selectedOrderDetail.idEstadoOrdenServicio?.nombre || "N/A"}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Programable</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idEstadoOrdenServicio?.programable
+                  ? "Sí"
+                  : "No"}
+              </p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-sm font-medium text-gray-600">Descripción</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.idEstadoOrdenServicio?.descripcion ||
+                  "N/A"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Fechas de la Orden */}
+        <div className="rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center space-x-2">
+            <Calendar className="h-5 w-5 text-indigo-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Fecha Orden de Servicio
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Fecha de Inicio
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.fechaInicio}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">Fecha de Fin</p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.fechaFin}
+              </p>
+            </div>
+            {selectedOrderDetail.diaInicioCobro != null &&
+              selectedOrderDetail.diaFinCobro != null && (
+                <div className="md:col-span-2">
+                  <p className="text-sm font-medium text-gray-600">Cobro parcial</p>
+                  <p className="text-base text-gray-900">
+                    {textoCobroParcial(
+                      selectedOrderDetail.diaInicioCobro,
+                      selectedOrderDetail.diaFinCobro,
+                    )}
+                  </p>
+                </div>
+              )}
+            {/* Fecha Ordenes son las que se actualizan */}
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Fecha Inicio Orden (Actualizada)
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.fechaInicioOrden}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600">
+                Fecha Fin Orden (Actualizada)
+              </p>
+              <p className="text-base text-gray-900">
+                {selectedOrderDetail.fechaFinOrden}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tarifas: una tarjeta por unidad, salvo que la orden tenga varias unidades del mismo servicio de
+            tipo Monitoreo de Alarmas, en cuyo caso se resumen en una unica tarjeta con el precio/costos
+            sumados entre esas unidades (ver agruparIndicesDetalles) */}
+        <div className="rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center space-x-2">
+            <CircleDollarSign className="h-5 w-5 text-yellow-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              Tarifas y Servicios
+            </h3>
+          </div>
+          <div className="space-y-4">
+            {agruparIndicesDetalles(selectedOrderDetail.detalles ?? []).map(
+              (indices) =>
+                renderTarjetaDetalle(indices, selectedOrderDetail.detalles ?? []),
+            )}
+
+            {(!selectedOrderDetail.detalles ||
+              selectedOrderDetail.detalles.length === 0) && (
+              <p className="text-center text-sm text-gray-500">
+                Esta orden no tiene servicios registrados
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Historial de Liquidaciones: solo tiene sentido sobre la orden real, no dentro del snapshot de
+            una liquidacion puntual (evita anidar "liquidaciones de esta liquidacion") */}
+        {!esSnapshot && (
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="mb-3 flex items-center space-x-2">
+              <Receipt className="h-5 w-5 text-teal-600" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Historial de Liquidaciones
+              </h3>
+            </div>
+
+            {isLoadingLiquidacionesOrden ? (
+              <p className="text-sm text-gray-500">Cargando liquidaciones...</p>
+            ) : liquidacionesOrden?.data?.items &&
+              liquidacionesOrden.data.items.length > 0 ? (
+              <>
+                <div className="divide-y divide-gray-200 overflow-hidden rounded-md border border-gray-200">
+                  {liquidacionesOrden.data.items.map((liquidacion) => (
+                    <button
+                      key={liquidacion.idLiquidacion}
+                      type="button"
+                      disabled={isLoadingOrdenLiquidada}
+                      className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
+                      onClick={() =>
+                        getOrdenLiquidadaMutation(liquidacion.idLiquidacion, {
+                          onSuccess: (response) => {
+                            if (response.status === 200 || response.status === 201) {
+                              setIsOpenLiquidacionDetalle(true);
+                            }
+                          },
+                        })
+                      }
+                    >
+                      <span className="text-sm font-medium text-gray-900">
+                        {formatAniomes(liquidacion.aniomes_liquidacion)}
+                      </span>
+                      <span className="text-sm font-semibold text-green-700">
+                        {priceFormat(liquidacion.valor_liquidacion)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {liquidacionesOrden.data.total > LIMITE_LIQUIDACIONES && (
+                  <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
+                    <button
+                      type="button"
+                      disabled={paginaLiquidaciones <= 1}
+                      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={() => setPaginaLiquidaciones((p) => p - 1)}
+                    >
+                      Anterior
+                    </button>
+                    <span>Página {paginaLiquidaciones}</span>
+                    <button
+                      type="button"
+                      disabled={
+                        paginaLiquidaciones * LIMITE_LIQUIDACIONES >=
+                        liquidacionesOrden.data.total
+                      }
+                      className="cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={() => setPaginaLiquidaciones((p) => p + 1)}
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Esta orden todavía no tiene liquidaciones registradas
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-end border-t border-gray-200 px-6 pt-6 pb-4">
+        <button
+          type="button"
+          className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+          onClick={() => setIsOpenDetails(false)}
+        >
+          Cerrar
+        </button>
+      </div>
+    </SimpleModal>
+
+    {ordenLiquidadaData?.data && (
+      <OrdenDetalles
+        isOpenDetails={isOpenLiquidacionDetalle}
+        setIsOpenDetails={setIsOpenLiquidacionDetalle}
+        selectedOrderDetail={ordenLiquidadaData.data}
+      />
+    )}
+    </>
+  );
+};

@@ -1,0 +1,499 @@
+import { Fragment, useState, useRef, useCallback } from "react";
+import type { ReactNode } from "react";
+import type {
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  VisibilityState,
+  ExpandedState,
+} from "@tanstack/react-table";
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  getSortedRowModel,
+  getPaginationRowModel,
+  getFilteredRowModel,
+} from "@tanstack/react-table";
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronsUpDown,
+  Search,
+  X,
+  Loader2,
+} from "lucide-react";
+
+export interface ServerFilterColumn {
+  label: string;
+  value: string;
+}
+
+interface TableProps<TData, TValues> {
+  data: TData[];
+  columns: ColumnDef<TData, TValues>[];
+  className?: string;
+  enableSorting?: boolean;
+  /**
+   * Datos/callbacks que las celdas leen en tiempo de render via context.table.options.meta, en vez de
+   * capturarlos por closure en `columns`. Permite que `columns` (y por lo tanto sus funciones `cell`)
+   * se mantengan memoizadas/estables aunque estos valores cambien en cada tecla: si `cell` cambiara de
+   * referencia en cada render, React la trata como un componente distinto (ver flexRender) y remonta el
+   * contenido de la celda, perdiendo el foco de cualquier input editable dentro de ella.
+   */
+  meta?: object;
+  enablePagination?: boolean;
+  enableFiltering?: boolean;
+  pageSize?: number;
+  showHeader?: boolean;
+  loading?: boolean;
+  emptyMessage?: string;
+  pageSizeOptions?: number[];
+  /** Custom filterable columns for server-side filtering */
+  filterColumns?: ServerFilterColumn[];
+  /** Callback triggered when a server-side filter is applied */
+  onServerFilter?: (column: string, query: string) => void;
+  /** Callback triggered when the server-side filter is cleared */
+  onServerFilterClear?: () => void;
+  /** Whether the server filter request is in progress */
+  serverFilterLoading?: boolean;
+  /** Server-side pagination: enables manual pagination controlled by the parent */
+  serverPagination?: boolean;
+  /** Server-side pagination: total number of rows in the backend */
+  totalRows?: number;
+  /** Server-side pagination: current page index (0-based) */
+  currentPage?: number;
+  /** Server-side pagination: callback when page changes */
+  onPageChange?: (page: number) => void;
+  /** Server-side pagination: callback when page size changes */
+  onPageSizeChange?: (size: number) => void;
+  /**
+   * Contenido de la fila desplegable bajo cada fila. Si se define, las celdas pueden alternarla con
+   * row.toggleExpanded() / leer su estado con row.getIsExpanded()
+   */
+  renderExpandedRow?: (row: TData) => ReactNode;
+  /**
+   * Id estable por fila. Recomendado junto con renderExpandedRow en paginacion por servidor: por defecto el id es
+   * el indice, y al cambiar de pagina las filas nuevas heredarian el estado desplegado de las anteriores
+   */
+  getRowId?: (row: TData) => string;
+}
+
+const Table = <TData, TValues>({
+  data,
+  columns,
+  className = "",
+  enableSorting = true,
+  meta,
+  enablePagination = true,
+  enableFiltering = false,
+  pageSize = 5,
+  showHeader = true,
+  loading = false,
+  emptyMessage = "No data available",
+  pageSizeOptions = [2, 5, 10, 15, 20],
+  filterColumns,
+  onServerFilter,
+  onServerFilterClear,
+  serverFilterLoading = false,
+  serverPagination = false,
+  totalRows = 0,
+  currentPage = 0,
+  onPageChange,
+  onPageSizeChange,
+  renderExpandedRow,
+  getRowId,
+}: TableProps<TData, TValues>) => {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [expanded, setExpanded] = useState<ExpandedState>({});
+  const [selectedFilterColumn, setSelectedFilterColumn] = useState<string>("");
+  const [filterValue, setFilterValue] = useState<string>("");
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const isServerFiltering = !!onServerFilter;
+
+  const debouncedServerFilter = useCallback(
+    (column: string, query: string) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        onServerFilter?.(column, query);
+      }, 400);
+    },
+    [onServerFilter],
+  );
+
+  const serverPageCount = serverPagination ? Math.ceil(totalRows / pageSize) : undefined;
+
+  const table = useReactTable({
+    data,
+    columns,
+    meta,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: serverPagination ? undefined : getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: setColumnVisibility,
+    onExpandedChange: setExpanded,
+    getRowCanExpand: () => !!renderExpandedRow,
+    getRowId,
+    state: {
+      expanded,
+      sorting,
+      columnFilters,
+      rowSelection,
+      columnVisibility,
+      ...(serverPagination ? { pagination: { pageIndex: currentPage, pageSize } } : {}),
+    },
+    initialState: {
+      pagination: {
+        pageSize,
+      },
+    },
+    enableSorting,
+    manualPagination: serverPagination || !enablePagination,
+    ...(serverPagination ? { pageCount: serverPageCount } : {}),
+    enableColumnFilters: enableFiltering,
+    enableMultiRowSelection: false,
+  });
+
+  const getSortIcon = (isSorted: false | "asc" | "desc") => {
+    if (isSorted === "asc") return <ChevronUp className="h-4 w-4" />;
+    if (isSorted === "desc") return <ChevronDown className="h-4 w-4" />;
+    return <ChevronsUpDown className="h-4 w-4" />;
+  };
+
+  const handleFilterChange = (value: string) => {
+    setFilterValue(value);
+    if (isServerFiltering) {
+      if (selectedFilterColumn && value) {
+        debouncedServerFilter(selectedFilterColumn, value);
+      } else if (!value && onServerFilterClear) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        onServerFilterClear();
+      }
+    } else {
+      if (selectedFilterColumn && value) {
+        table.getColumn(selectedFilterColumn)?.setFilterValue(value);
+      } else {
+        table.resetColumnFilters();
+      }
+    }
+  };
+
+  const handleColumnChange = (newColumn: string) => {
+    setSelectedFilterColumn(newColumn);
+    if (filterValue && newColumn) {
+      if (isServerFiltering) {
+        debouncedServerFilter(newColumn, filterValue);
+      } else {
+        table.resetColumnFilters();
+        table.getColumn(newColumn)?.setFilterValue(filterValue);
+      }
+    } else if (!newColumn) {
+      setFilterValue("");
+      if (isServerFiltering && onServerFilterClear) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        onServerFilterClear();
+      } else {
+        table.resetColumnFilters();
+      }
+    }
+  };
+
+  const clearFilter = () => {
+    setFilterValue("");
+    setSelectedFilterColumn("");
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    if (isServerFiltering && onServerFilterClear) {
+      onServerFilterClear();
+    } else {
+      table.resetColumnFilters();
+    }
+  };
+
+  const filterableColumns = columns.filter(
+    (column) =>
+      "accessorKey" in column &&
+      column.accessorKey &&
+      typeof column.accessorKey === "string",
+  );
+
+  // Use custom filterColumns if provided, otherwise derive from column defs
+  const displayFilterColumns: ServerFilterColumn[] = filterColumns
+    ? filterColumns
+    : filterableColumns.map((col) => ({
+        label:
+          typeof col.header === "string"
+            ? col.header
+            : ((col as any).accessorKey as string),
+        value: (col as any).accessorKey as string,
+      }));
+
+  if (loading) {
+    return (
+      <div className={`w-full ${className}`}>
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center justify-center p-8">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+            <span className="ml-2 text-gray-600">Loading...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const showFilterBar = enableFiltering && displayFilterColumns.length > 0;
+
+  return (
+    <div className={`w-full ${className} relative`}>
+      {showFilterBar && (
+        <div className="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Search className="h-4 w-4 text-gray-400" />
+            <span className="text-sm font-medium text-gray-700">
+              Filtrar por:
+            </span>
+          </div>
+
+          <select
+            value={selectedFilterColumn}
+            onChange={(e) => handleColumnChange(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="">Seleccionar columna</option>
+            {displayFilterColumns.map((col) => (
+              <option key={col.value} value={col.value}>
+                {col.label}
+              </option>
+            ))}
+          </select>
+
+          <div className="relative max-w-md flex-1">
+            <input
+              type="text"
+              value={filterValue}
+              onChange={(e) => handleFilterChange(e.target.value)}
+              placeholder={
+                selectedFilterColumn
+                  ? `Filtrar ${displayFilterColumns.find((c) => c.value === selectedFilterColumn)?.label ?? selectedFilterColumn}...`
+                  : "Seleccionar una columna primero"
+              }
+              disabled={!selectedFilterColumn}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100"
+            />
+            {filterValue && (
+              <button
+                onClick={clearFilter}
+                className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {serverFilterLoading && (
+            <div className="flex items-center gap-2 text-sm text-blue-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Buscando...</span>
+            </div>
+          )}
+
+          {filterValue && !serverFilterLoading && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>Filtrando:</span>
+              <span className="font-medium">
+                {displayFilterColumns.find((c) => c.value === selectedFilterColumn)?.label ?? selectedFilterColumn}
+              </span>
+              <span>=</span>
+              <span className="font-medium">"{filterValue}"</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+        <table className="relative w-full">
+          {showHeader && (
+            <thead className="bg-gray-50">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className={`px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase ${header.column.getCanSort() && enableSorting
+                        ? "cursor-pointer select-none hover:bg-gray-100"
+                        : ""
+                        }`}
+                      onClick={
+                        header.column.getCanSort() && enableSorting
+                          ? header.column.getToggleSortingHandler()
+                          : undefined
+                      }
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                        {header.column.getCanSort() && enableSorting && (
+                          <span className="text-gray-400">
+                            {getSortIcon(header.column.getIsSorted())}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+          )}
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row) => (
+                <Fragment key={row.id}>
+                <tr className="text-center transition-colors hover:bg-gray-50">
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={`w-fit px-6 py-4 text-center text-sm break-words ${cell.column.id === "actions"
+                        ? "relative overflow-visible"
+                        : ""
+                        }`}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </td>
+                  ))}
+                </tr>
+                {renderExpandedRow && row.getIsExpanded() && (
+                  <tr>
+                    <td
+                      colSpan={row.getVisibleCells().length}
+                      className="bg-gray-50 px-6 py-3"
+                    >
+                      {renderExpandedRow(row.original)}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="px-6 py-8 text-center text-sm text-gray-500"
+                >
+                  {emptyMessage}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {enablePagination && (
+        <div className="flex items-center justify-between rounded-b-lg border border-gray-200 bg-white px-6 py-3 shadow-sm">
+          <div className="flex items-center gap-2 text-sm text-gray-700">
+            <span>
+              Mostrando{" "}
+              {serverPagination
+                ? currentPage * pageSize + 1
+                : table.getState().pagination.pageIndex *
+                  table.getState().pagination.pageSize +
+                  1}{" "}
+              a{" "}
+              {serverPagination
+                ? Math.min((currentPage + 1) * pageSize, totalRows)
+                : Math.min(
+                    (table.getState().pagination.pageIndex + 1) *
+                    table.getState().pagination.pageSize,
+                    table.getFilteredRowModel().rows.length,
+                  )}{" "}
+              de{" "}
+              {serverPagination
+                ? totalRows
+                : table.getFilteredRowModel().rows.length}{" "}
+              resultados
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={serverPagination ? pageSize : table.getState().pagination.pageSize}
+              onChange={(e) => {
+                const newSize = Number(e.target.value);
+                if (serverPagination && onPageSizeChange) {
+                  onPageSizeChange(newSize);
+                } else {
+                  table.setPageSize(newSize);
+                }
+              }}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value={0} disabled>
+                Seleccionar
+              </option>
+              {pageSizeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => {
+                if (serverPagination && onPageChange) {
+                  onPageChange(currentPage - 1);
+                } else {
+                  table.previousPage();
+                }
+              }}
+              disabled={serverPagination ? currentPage <= 0 : !table.getCanPreviousPage()}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Anterior
+            </button>
+            <span className="text-sm text-gray-700">
+              Página{" "}
+              {serverPagination
+                ? currentPage + 1
+                : table.getState().pagination.pageIndex + 1}{" "}
+              de{" "}
+              {serverPagination
+                ? (serverPageCount || 1)
+                : table.getPageCount()}
+            </span>
+            <button
+              onClick={() => {
+                if (serverPagination && onPageChange) {
+                  onPageChange(currentPage + 1);
+                } else {
+                  table.nextPage();
+                }
+              }}
+              disabled={serverPagination ? currentPage >= (serverPageCount || 1) - 1 : !table.getCanNextPage()}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Table;
