@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 import { EnvConfiguration } from './config/env.config';
 import { JoiValidationSchema } from './config/joi.validation';
@@ -26,6 +28,8 @@ import { AdicionalesModule } from './adicionales/adicionales.module';
   imports: [
 
     ConfigModule.forRoot({
+      // apps/api/.env first, then the monorepo root .env
+      envFilePath: [ '.env', '../../.env' ],
       load: [ EnvConfiguration ],
       validationSchema: JoiValidationSchema
     }),
@@ -39,6 +43,12 @@ import { AdicionalesModule } from './adicionales/adicionales.module';
       password: process.env.DB_PASSWORD,
       autoLoadEntities: true,
       synchronize: process.env.ENV === 'dev',
+    }),
+
+    // apps/api/dist -> apps/web/dist (same layout locally and in Docker)
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'web', 'dist'),
+      exclude: [ '/api/{*path}' ],
     }),
 
     ScheduleModule.forRoot(),

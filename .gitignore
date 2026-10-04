@@ -1,6 +1,58 @@
+# Dependencies and build output
 node_modules
 dist
+distDev
+dist-ssr
+build
 .turbo
+.tanstack
+
+# Environment (commit only .env.example)
 .env
+.env.*
+!.env.example
+*.local
+
+# Docker data and database backups
 mysql
 backups
+
+# Logs
+logs
+*.log
+
+# Tests
+coverage
+.nyc_output
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Temp
+.temp
+.tmp
+
+# OS and editors
+.DS_Store
+.idea
+.cursor
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

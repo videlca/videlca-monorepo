@@ -12,15 +12,19 @@ export default defineConfig({
     react()
   ],
   server: {
+    // In development the SPA runs on Vite (5173) and forwards API calls to NestJS
     proxy: {
-      '/videlca/api/v1': {
-        target: 'http://localhost:4000',
+      '/api': {
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       }
     }
   },
+  // Needed because @videlca/shared is a linked CommonJS workspace package
+  optimizeDeps: { include: ['@videlca/shared'] },
   build: {
+    commonjsOptions: { include: [/shared/, /node_modules/] },
     rollupOptions: {
       onwarn(_warning, _warn) {
         return;

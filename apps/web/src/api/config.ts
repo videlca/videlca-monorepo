@@ -1,8 +1,8 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from "axios";
 import type { ApiResponse } from "./types";
 
-// Use proxy in development, direct URL in production
-export const API_URL = import.meta.env.VITE_API_URL;
+// Same origin: NestJS serves the SPA and /api; Vite proxies /api in development
+export const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 export enum HttpMethod {
   GET = "GET",

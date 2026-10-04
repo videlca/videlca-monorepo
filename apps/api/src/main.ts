@@ -9,7 +9,7 @@ import { AppModule } from './app.module';
 async function main() {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix('videlca/api/v1');
+  app.setGlobalPrefix('api');
 
   app.use(cookieParser());
 
@@ -49,7 +49,7 @@ async function main() {
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
   app.enableCors({
     origin: true,

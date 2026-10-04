@@ -296,7 +296,7 @@ export class ReporteOrdenServicioService extends ReportePdfVidelcaBase {
     const filas = detalles.map((detalle, index) => ([
       { text: `Día ${index + 1}`, fontSize: 7.5 },
       { text: `${detalle.horaInicio} - ${detalle.horaFin}`, fontSize: 7.5 },
-      { text: detalle.cantidadHoras != null ? detalle.cantidadHoras.toString() : '-', fontSize: 7.5, alignment: 'center' },
+      { text: detalle.cantidadHoras != null ? detalle.cantidadHoras.toString() : '-', fontSize: 7.5, alignment: 'center' as const },
       { text: this.formatearMoneda(detalle.costosDirectos), fontSize: 7.5 },
       { text: this.formatearMoneda(detalle.seguroVida), fontSize: 7.5 },
       { text: this.formatearMoneda(detalle.aui), fontSize: 7.5 },
