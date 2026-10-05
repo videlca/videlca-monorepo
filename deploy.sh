@@ -2,9 +2,14 @@
 set -e
 
 VERSION="$1"
+case "$2" in
+  "") SKIP_BACKUP=0 ;;
+  --skip-backup) SKIP_BACKUP=1 ;;
+  *) echo "Unknown option: $2"; VERSION="" ;;
+esac
 if [ -z "$VERSION" ]; then
-  echo "Usage: ./deploy.sh <tag>   e.g. ./deploy.sh v1.4.0"
-  echo "First install with an empty database: SKIP_BACKUP=1 ./deploy.sh <tag>"
+  echo "Usage: ./deploy.sh <tag> [--skip-backup]   e.g. ./deploy.sh v1.4.0"
+  echo "Use --skip-backup only on a first install with an empty database"
   exit 1
 fi
 
@@ -16,10 +21,10 @@ if ! git diff --quiet HEAD; then
 fi
 
 # Back up the database before changing anything
-if [ "$SKIP_BACKUP" != "1" ]; then
+if [ "$SKIP_BACKUP" = "0" ]; then
   if [ -z "$(docker compose ps -q --status running db)" ]; then
     echo "The db service of this compose project is not running, so no backup can be taken."
-    echo "Start it with 'docker compose up -d db', or back up manually and rerun with SKIP_BACKUP=1."
+    echo "Start it with 'docker compose up -d db', or back up manually and rerun with --skip-backup."
     exit 1
   fi
   mkdir -p backups
