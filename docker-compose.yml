@@ -1,8 +1,12 @@
 services:
   db:
-    image: mysql:8.0.39
+    # Debian variant: the default Oracle Linux image needs an x86-64-v2 CPU
+    image: mysql:8.0.39-debian
     container_name: videlca
     restart: always
+    # Silences "mbind: Operation not permitted"
+    cap_add:
+      - SYS_NICE
     ports:
       - '127.0.0.1:3306:3306'
     environment:
