@@ -117,7 +117,7 @@ export class ReporteInterfaseService {
       // Lista completa de columnas hasta AX:
       const headers = [
         'TIPO DE DOCUMENTO (OBLIGATORIO)',
-        'CÓDIGO DOCUMENTO (OBLIGATORIO)',
+        'CÓDIGO DOCUMENTO  (OBLIGATORIO)',
         'NÚMERO DE DOCUMENTO (OBLIGATORIO)',
         'AÑO DEL DOCUMENTO',
         'MES DEL DOCUMENTO',
@@ -251,7 +251,7 @@ export class ReporteInterfaseService {
 
           const row = worksheet.addRow([
             'Z',
-            5,
+            3,
             numeroCliente,
 
             // Fecha de creacion liquidacion
