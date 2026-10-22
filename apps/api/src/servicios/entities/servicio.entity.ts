@@ -16,8 +16,7 @@ export class Servicio {
     @Column({
         type: 'varchar',
         name: 'codigo',
-        length: 10,
-        unique: true 
+        length: 10
     })
     codigo: string;    
 
