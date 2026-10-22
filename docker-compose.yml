@@ -4,7 +4,7 @@ services:
     container_name: videlca
     restart: always
     ports:
-      - '192.168.16.244:3306:3306'
+      - '3306:3306'
     environment:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USERNAME}
