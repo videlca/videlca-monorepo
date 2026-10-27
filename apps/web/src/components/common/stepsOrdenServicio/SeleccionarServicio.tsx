@@ -12,10 +12,13 @@ import { priceFormat } from "../../../utils/PriceFormat";
 import type { Servicio, TipoServicio } from "../../../api/types/servicio";
 import type { Tarifa } from "../../../api/types/periodo";
 
-// Distingue visualmente los servicios por turno de los mensuales, sin llamar demasiado la atención
-const getServiceTone = (descripcion: string) => {
-  if (descripcion.startsWith("Turno")) return tones.amber;
-  if (descripcion.startsWith("Mes")) return tones.green;
+// Distingue visualmente los servicios por turno de los mensuales, sin llamar demasiado la atención.
+// Usa el nombre del tipo de tarifa (ver TipoTarifaInterface en el backend), no la descripción del servicio,
+// para que renombrar servicios no afecte el color
+const getServiceTone = (servicio: Servicio) => {
+  const tipoTarifa = servicio.idTipoTarifa?.nombre;
+  if (tipoTarifa === "por turno") return tones.amber;
+  if (tipoTarifa === "mensual") return tones.green;
   return null;
 };
 
@@ -57,7 +60,7 @@ export const SeleccionarServicio = ({
             const cantidad = selectedServices.filter(
               (s) => s.idServicio === tarifa.idServicio.idServicio,
             ).length;
-            const tone = getServiceTone(tarifa.idServicio.descripcion);
+            const tone = getServiceTone(tarifa.idServicio);
 
             return (
               <Paper
