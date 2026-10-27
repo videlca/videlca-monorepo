@@ -20,10 +20,11 @@ import { ClientesService } from '../../clientes/services';
 import { OrdenServicio } from '../../orden-servicio/entities';
 import { Adicional } from '../../adicionales/entities';
 import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion, NumeroPedido } from '../entities';
+import { Ciudad } from '../../common/entities';
 
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
 import { CrearGrupoMensualDto } from '../dto/crearGrupoMensual.dto';
-import { ClienteAgrupado } from '../interfaces/consolidacion.interface';
+import { ClienteAgrupado, CENTRO_COSTOS_MONITOREO } from '../interfaces/consolidacion.interface';
 import { LiquidacionClienteAgrupado, TipoServicioComparacion } from '../interfaces/liquidacion.interface';
 import { GrupoLiquidacionPdf, OrdenLiquidadaPdf, AdicionalLiquidadoPdf, ServicioLiquidadoPdf } from '../interfaces/grupo-liquidacion-pdf.interface';
 
@@ -1435,6 +1436,65 @@ export class LiquidacionesService {
     }));
   }
 
+  // CENTRO/SUBCENTRO DE COSTOS SIIGO DE UNA LIQUIDACION PARA LA INTERFASE:
+  // - Orden de monitoreo de alarmas: siempre el centro de costos fijo de monitoreo
+  // - Orden de vigilancia con puesto: el de la ciudad del puesto
+  // - Orden de vigilancia asignada directo a un cliente: el de la ciudad de la orden
+  // - Adicional: el de la ciudad del adicional
+  // Si falta la ciudad o la ciudad no tiene centro de costos configurado, se devuelve null con el motivo en error
+  private obtenerCentroCostos(liq: Liquidacione): { centroCostos: number | null; subCentroCostos: number | null; error: string | null } {
+
+    let ciudad: Ciudad | null;
+    let origen: string;
+
+    if (liq.idAdicional != null) {
+
+      ciudad = liq.adicional.idCiudad;
+      origen = `El adicional "${liq.adicional.idTipoAdicional.descripcion}" (#${liq.adicional.idAdicional}) del cliente "${liq.adicional.idCliente.nombre}"`;
+
+    } else {
+
+      const orden = liq.ordenServicio;
+      const tipoServicioOrden = liq.liquidacionServiciosOrdenServicio?.[0]?.idTarifa?.idServicio?.idTipoServicio?.nombre;
+
+      if (tipoServicioOrden === TipoServicioInterface.MONITOREO_ALARMAS) {
+        return { ...CENTRO_COSTOS_MONITOREO, error: null };
+      }
+
+      ciudad = orden.idLocacion ? orden.idLocacion.idCiudad : orden.idCiudad;
+      origen = `La orden ${orden.ordenServicioId?.descripcionId ?? `#${orden.idOrdenServicio}`}`;
+
+    }
+
+    if (!ciudad) {
+      return { centroCostos: null, subCentroCostos: null, error: `${origen} no tiene ciudad asignada` };
+    }
+
+    if (ciudad.centroCostos == null || ciudad.subCentroCostos == null) {
+      return { centroCostos: null, subCentroCostos: null, error: `${origen} es de la ciudad "${ciudad.descripcion}", que no tiene centro y subcentro de costos configurados` };
+    }
+
+    return { centroCostos: ciudad.centroCostos, subCentroCostos: ciudad.subCentroCostos, error: null };
+
+  }
+
+  // LA INTERFASE NO SE GENERA SI ALGUNA LINEA NO TIENE CENTRO DE COSTOS: se lista todo lo que falta configurar
+  private validarCentrosCostosInterfase(resultado: ClienteAgrupado[]) {
+
+    const errores = new Set<string>();
+
+    for (const cliente of resultado) {
+      for (const servicio of Object.values(cliente.servicios)) {
+        servicio.erroresCentroCostos.forEach(error => errores.add(error));
+      }
+    }
+
+    if (errores.size > 0) {
+      throw new BadRequestException(`No se puede generar la interfase porque falta el centro de costos: ${[...errores].join('; ')}`);
+    }
+
+  }
+
   async obtenerServiciosPorCliente(idGrupoLiquidacion: number) {
 
     const grupoId = Number(idGrupoLiquidacion);
@@ -1463,12 +1523,15 @@ export class LiquidacionesService {
       .leftJoinAndSelect('orden.ordenServicioId', 'ordenServicioId')
       .leftJoinAndSelect('orden.idEstadoOrdenServicio', 'estadoOrdenServicio')
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
+      .leftJoinAndSelect('locacion.idCiudad', 'locacionCiudad')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
       .leftJoinAndSelect('orden.idCliente', 'clienteDirecto')
+      .leftJoinAndSelect('orden.idCiudad', 'ordenCiudad')
       .leftJoinAndSelect('liq.adicional', 'adicional')
       .leftJoinAndSelect('adicional.idTipoAdicional', 'adicionalTipo')
       .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
+      .leftJoinAndSelect('adicional.idCiudad', 'adicionalCiudad')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
       .orderBy('cliente.nombre', 'ASC')
       .addOrderBy('orden.idOrdenServicio', 'ASC')
@@ -1499,6 +1562,11 @@ export class LiquidacionesService {
       const clienteNombre = cliente.nombre;
       const clienteNit = cliente.numeroIdentificacion;
 
+      // CENTRO DE COSTOS DE LA INTERFASE: hace parte de la clave de agrupacion, para que un mismo servicio/tipo de
+      // adicional de un cliente en ciudades con distinto centro de costos salga en lineas separadas
+      const centro = this.obtenerCentroCostos(liq);
+      const claveCentro = `${centro.centroCostos ?? '-'}|${centro.subCentroCostos ?? '-'}`;
+
       if (!agrupado[clienteId]) {
 
         agrupado[clienteId] = {
@@ -1519,9 +1587,9 @@ export class LiquidacionesService {
 
       if (esAdicional) {
 
-        // SE AGRUPA POR TIPO DE ADICIONAL (como los servicios por idServicio): una linea por codigo Siigo por cliente.
-        // CLAVE NEGATIVA PARA NO COLISIONAR CON idServicio DEL CATALOGO (siempre positivo)
-        const idAdicionalKey = -liq.adicional.idTipoAdicional.idTipoAdicional;
+        // SE AGRUPA POR TIPO DE ADICIONAL (como los servicios por idServicio) Y CENTRO DE COSTOS: una linea por codigo
+        // Siigo y centro de costos por cliente. PREFIJO "a" PARA NO COLISIONAR CON idServicio DEL CATALOGO
+        const idAdicionalKey = `a${liq.adicional.idTipoAdicional.idTipoAdicional}|${claveCentro}`;
 
         if (!agrupado[clienteId].servicios[idAdicionalKey]) {
 
@@ -1530,6 +1598,9 @@ export class LiquidacionesService {
             esAdicional: true,
             servicioAplicacion: liq.adicional.idTipoAdicional.descripcion,
             codigoServicioSiigo: liq.adicional.idTipoAdicional.codigo,
+            centroCostos: centro.centroCostos,
+            subCentroCostos: centro.subCentroCostos,
+            erroresCentroCostos: [],
             valorLiquidarAplicacion: 0,
             seguroVida: 0,
             aui: 0,
@@ -1540,6 +1611,8 @@ export class LiquidacionesService {
           };
 
         }
+
+        if (centro.error) agrupado[clienteId].servicios[idAdicionalKey].erroresCentroCostos.push(centro.error);
 
         const costosDirectos = Number(liq.costosDirectos ?? 0);
         const seguroVida = Number(liq.seguroVida ?? 0);
@@ -1558,7 +1631,7 @@ export class LiquidacionesService {
         for (const liquidacionServicioOrdenServicio of liq.liquidacionServiciosOrdenServicio) {
 
           const servicio = liquidacionServicioOrdenServicio.idTarifa.idServicio;
-          const idServicio = servicio.idServicio;
+          const idServicio = `${servicio.idServicio}|${claveCentro}`;
 
           if (!agrupado[clienteId].servicios[idServicio]) {
 
@@ -1567,6 +1640,9 @@ export class LiquidacionesService {
               esAdicional: false,
               servicioAplicacion: servicio.descripcion,
               codigoServicioSiigo: servicio.codigo,
+              centroCostos: centro.centroCostos,
+              subCentroCostos: centro.subCentroCostos,
+              erroresCentroCostos: [],
               valorLiquidarAplicacion: 0,
               seguroVida: 0,
               aui: 0,
@@ -1577,6 +1653,8 @@ export class LiquidacionesService {
             };
 
           }
+
+          if (centro.error) agrupado[clienteId].servicios[idServicio].erroresCentroCostos.push(centro.error);
 
           agrupado[clienteId].servicios[idServicio].cantidadOrdenes += 1;
 
@@ -1908,6 +1986,8 @@ export class LiquidacionesService {
   async downloadInterfaseExcel(idGrupoLiquidacion: number){
 
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    this.validarCentrosCostosInterfase(resultado);
 
     const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
       where: { idGrupoLiquidacion: idGrupoLiquidacion },
@@ -2430,6 +2510,8 @@ export class LiquidacionesService {
   async sendInterfaseExcel(idGrupoLiquidacion: number, enviarCorreoDto: EnviarCorreoDto){
 
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
+
+    this.validarCentrosCostosInterfase(resultado);
 
     const grupoLiquidacion =  await this.grupoLiquidacionrepo.findOne({
       where: { idGrupoLiquidacion: idGrupoLiquidacion },

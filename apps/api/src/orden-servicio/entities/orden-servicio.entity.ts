@@ -1,7 +1,7 @@
 import { Column, OneToOne, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { OrdenServicioId } from "./orden-servicio-id.entity";
 import { User } from "../../users/entities/user.entity";
-import { EstadoOrdenServicio } from "../../common/entities";
+import { EstadoOrdenServicio, Ciudad } from "../../common/entities";
 import { Locacion, Cliente } from "../../clientes/entities";
 import { OrdenServicioDetalle } from "./orden-servicio-detalle.entity";
 import { ObservacionOrdenServicio } from "./observaciones-orden.entity";
@@ -78,6 +78,19 @@ export class OrdenServicio {
     )
     @JoinColumn({name: 'idCliente'})
     idCliente: Cliente | null;
+
+    // Ciudad de la orden -> relacion. Solo aplica cuando la orden de "Vigilancia y escolta" se asigna directo a un
+    // cliente (sin puesto): ahi es obligatoria porque de ella sale el centro de costos de la interfase. Es null si la
+    // orden tiene puesto (se usa la ciudad del puesto) o si es "Monitoreo de alarmas" (centro de costos fijo)
+    @ManyToOne(
+        () => Ciudad,
+        {
+            nullable: true,
+            eager: true
+        }
+    )
+    @JoinColumn({name: 'idCiudad'})
+    idCiudad: Ciudad | null;
 
     @Column({
         type: 'enum',

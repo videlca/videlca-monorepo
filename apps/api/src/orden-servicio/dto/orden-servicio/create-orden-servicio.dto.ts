@@ -174,6 +174,15 @@ export class CreateOrdenServicioDto {
     @Min(1, {message: 'El valor del campo cliente debe ser minimo 1'})
     idCliente?: number;
 
+    // Requerido solo si la orden es de "Vigilancia y escolta" y se asigna directo a un cliente (idCliente, sin puesto):
+    // de esta ciudad sale el centro de costos de la interfase. Se ignora si hay idLocacion o si es "Monitoreo de alarmas"
+    @ApiProperty({ description: 'Id de ciudad. Requerido si el tipo de servicio es "Vigilancia y escolta" y se envia idCliente (sin locacion)', example: 1, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo ciudad debe ser un número'})
+    @IsPositive({message: 'El valor del campo ciudad debe ser un numero positivo'})
+    @Min(1, {message: 'El valor del campo ciudad debe ser minimo 1'})
+    idCiudad?: number;
+
     @ApiProperty({ description: 'Fecha de inicio de la orden de servicio', example: 'ISO String 2024-03-15T00:00:00.000Z', required: true})
     @Transform(({ value }) => new Date(value))
     @IsDate()

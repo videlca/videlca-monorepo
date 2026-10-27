@@ -10,10 +10,10 @@ import { PaginationOption } from '../../common/interfaces/pagination.interface';
 import { EstadoAppInterface } from '../../common/interfaces/estado-app.interface';
 
 import { User } from '../../users/entities/user.entity';
-import { EstadoOrdenServicio as EstadoOrdenEntity } from "../../common/entities";
+import { EstadoOrdenServicio as EstadoOrdenEntity, Ciudad } from "../../common/entities";
 import { SendMailOptions } from '../../common/services/email/email.service';
 
-import { EstadoOrdenServicioService, EmailService, CorreoDefaultService, FestivosService } from '../../common/services';
+import { EstadoOrdenServicioService, EmailService, CorreoDefaultService, FestivosService, UbicacionService } from '../../common/services';
 import { LocacionService, ClientesService } from '../../clientes/services';
 import { TarifasService, TarifaHoraService, TarifaHoraDescripcionService } from '../../tarifas/services';
 import { TipoHorarioService } from '../../servicios/services';
@@ -94,6 +94,7 @@ export class OrdenServicioService {
     private readonly ordenServicioDetalleRepository: Repository<OrdenServicioDetalle>,
     private readonly estadoOrdenService: EstadoOrdenServicioService,
     private readonly locacionService: LocacionService,
+    private readonly ubicacionService: UbicacionService,
     private readonly clientesService: ClientesService,
     private readonly tarifasService: TarifasService,
     private readonly tarifaHoraService: TarifaHoraService,
@@ -210,6 +211,7 @@ export class OrdenServicioService {
 
     let locacion: Locacion | null = null;
     let cliente: Cliente | null = null;
+    let ciudad: Ciudad | null = null;
 
     if (esOrdenMonitoreo) {
 
@@ -225,7 +227,14 @@ export class OrdenServicioService {
 
     } else if (createOrdenServicioDto.idCliente) {
 
+      // VIGILANCIA ASIGNADA DIRECTO A UN CLIENTE: no hay puesto del que sacar la ciudad (y con ella el centro de costos
+      // de la interfase), asi que se pide explicitamente
+      if (!createOrdenServicioDto.idCiudad) {
+        throw new BadRequestException('Debe seleccionar una ciudad para una orden de servicio de tipo "Vigilancia y escolta" asignada directamente a un cliente');
+      }
+
       cliente = await this.clientesService.findOne(createOrdenServicioDto.idCliente);
+      ciudad = await this.ubicacionService.findOneCiudad(createOrdenServicioDto.idCiudad);
 
     } else {
 
@@ -312,6 +321,7 @@ export class OrdenServicioService {
         idEstadoOrdenServicio: estadoOrdenServicio,
         idLocacion: locacion,
         idCliente: cliente,
+        idCiudad: ciudad,
         origenServicio: createOrdenServicioDto.origenServicio,
         fechaInicio: fechaInicioOrden,
         fechaInicioOrden: fechaInicioOrden,

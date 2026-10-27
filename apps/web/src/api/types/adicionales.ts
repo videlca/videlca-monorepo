@@ -1,4 +1,4 @@
-import type { Cliente, Usuario } from "../../types";
+import type { Ciudad, Cliente, Usuario } from "../../types";
 
 export interface TipoAdicional {
   idTipoAdicional: number;
@@ -12,6 +12,8 @@ export interface Adicional {
   // Su descripcion es lo que se muestra como nombre del adicional
   idTipoAdicional: TipoAdicional;
   idCliente: Cliente;
+  // null solo en adicionales creados antes de existir este campo
+  idCiudad: Ciudad | null;
   idUsuarioCreacion: Usuario;
   mesInicio: string;
   mesFin: string | null;

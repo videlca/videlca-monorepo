@@ -779,6 +779,8 @@ function RouteComponent() {
       ...(data.idCliente
         ? { idCliente: data.idCliente }
         : { idLocacion: data.idLocacion || 0 }),
+      // Vigilancia y escolta asignada directo a un cliente: la ciudad es obligatoria (centro de costos)
+      ...(data.idCliente && !esOrdenMonitoreo ? { idCiudad: data.idCiudad } : {}),
       fechaInicio: data.fechaInicio,
       fechaFin: isIndefinite ? null : data.fechaFin,
       ...(cobroParcial.activo &&
@@ -1246,6 +1248,7 @@ function RouteComponent() {
           <SeleccionarPuestoCliente
             idLocacion={watchCreate("idLocacion") || 0}
             idCliente={watchCreate("idCliente") || 0}
+            idCiudad={watchCreate("idCiudad") || 0}
             setValue={setValueCreate}
             setSelectedPuesto={setSelectedPuesto}
             setSelectedCliente={setSelectedCliente}
@@ -1496,6 +1499,10 @@ function RouteComponent() {
               (currentStep === 2 &&
                 !watchCreate("idCliente") &&
                 !watchCreate("idLocacion")) ||
+              (currentStep === 2 &&
+                !esOrdenMonitoreo &&
+                !!watchCreate("idCliente") &&
+                !watchCreate("idCiudad")) ||
               (currentStep === 3 && !watchCreate("fechaInicio")) ||
               (currentStep === 3 &&
                 cobroParcial.activo &&

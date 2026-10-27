@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '../auth/auth.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 import { ClientesModule } from '../clientes/clientes.module';
+import { CommonModule } from '../common/common.module';
 
 import { Adicional, TipoAdicional } from './entities';
 
@@ -21,6 +22,7 @@ import { AdicionalesController } from './controllers';
     AuthModule,
     PermissionsModule,
     ClientesModule,
+    CommonModule,
     ConfigModule,
 
   ],

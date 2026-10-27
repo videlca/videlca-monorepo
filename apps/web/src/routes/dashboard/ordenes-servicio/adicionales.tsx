@@ -93,6 +93,7 @@ function RouteComponent() {
   } = useForm<CreateAdicionalDto>({
     defaultValues: {
       idTipoAdicional: 0,
+      idCiudad: 0,
       idCliente: 0,
       mesInicio: "",
       mesFin: null,
@@ -115,6 +116,7 @@ function RouteComponent() {
   } = useForm<UpdateAdicionalDto>({
     defaultValues: {
       idTipoAdicional: 0,
+      idCiudad: 0,
       mesInicio: "",
       mesFin: null,
       costosDirectos: 0,
@@ -177,6 +179,11 @@ function RouteComponent() {
       return;
     }
 
+    if (currentStep === 1 && !values.idCiudad) {
+      toast.error("Debe seleccionar una ciudad");
+      return;
+    }
+
     if (currentStep === 2 && !values.idCliente) {
       toast.error("Debe seleccionar un cliente");
       return;
@@ -212,6 +219,7 @@ function RouteComponent() {
     crearAdicional(
       {
         idTipoAdicional: values.idTipoAdicional,
+        idCiudad: values.idCiudad,
         idCliente: values.idCliente,
         mesInicio: values.mesInicio,
         mesFin: isIndefinido ? null : values.mesFin,
@@ -271,6 +279,8 @@ function RouteComponent() {
 
     resetEdit({
       idTipoAdicional: adicional.idTipoAdicional?.idTipoAdicional,
+      // Los adicionales anteriores a este campo no tienen ciudad: queda vacia hasta que se elija una
+      idCiudad: adicional.idCiudad?.idCiudad ?? 0,
       mesInicio: adicional.mesInicio,
       mesFin: adicional.mesFin,
       costosDirectos,
@@ -306,6 +316,7 @@ function RouteComponent() {
         id: selectedAdicional.idAdicional,
         data: {
           idTipoAdicional: data.idTipoAdicional,
+          ...(data.idCiudad ? { idCiudad: data.idCiudad } : {}),
           mesInicio: data.mesInicio,
           mesFin: isIndefinido ? null : data.mesFin,
           costosDirectos,
@@ -355,6 +366,19 @@ function RouteComponent() {
       cell: ({ row }) => (
         <span className="whitespace-nowrap">{row.original.idCliente?.nombre}</span>
       ),
+    },
+    {
+      header: "Ciudad",
+      id: "ciudad",
+      accessorFn: (row) => row.idCiudad?.descripcion,
+      cell: ({ row }) =>
+        row.original.idCiudad ? (
+          <span className="whitespace-nowrap">{row.original.idCiudad.descripcion}</span>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+            Sin ciudad
+          </Typography>
+        ),
     },
     {
       header: "Mes Inicio",

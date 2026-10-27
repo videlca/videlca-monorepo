@@ -12,6 +12,8 @@ export interface CreateOrdenServicioDto {
   // Vigilancia y escolta envia idLocacion, Monitoreo de alarmas envia idCliente (nunca ambos)
   idLocacion?: number;
   idCliente?: number;
+  // Solo Vigilancia y escolta asignada directo a un cliente (sin puesto): de ella sale el centro de costos
+  idCiudad?: number;
   fechaInicio: string;
   fechaFin: string | null;
   // Cobro parcial mensual: solo ordenes indefinidas de catalogo; se envian los dos o ninguno

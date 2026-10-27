@@ -28,6 +28,23 @@ export class Ciudad {
     })
     codigoCiudad: string;
 
+    // CENTRO DE COSTOS SIIGO de las ordenes de vigilancia y adicionales de esta ciudad (columna CENTRO DE COSTO de la
+    // interfase). Las ordenes de monitoreo de alarmas no lo usan: van siempre al centro de costos fijo de monitoreo
+    @Column({
+        type: 'int',
+        name: 'centro_costos',
+        nullable: true
+    })
+    centroCostos: number | null;
+
+    // SUBCENTRO DE COSTOS SIIGO (columna SUBCENTRO DE COSTO de la interfase)
+    @Column({
+        type: 'int',
+        name: 'sub_centro_costos',
+        nullable: true
+    })
+    subCentroCostos: number | null;
+
     @Column({
         type: 'boolean',
         name: 'estado',

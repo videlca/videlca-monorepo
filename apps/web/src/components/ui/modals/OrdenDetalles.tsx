@@ -410,6 +410,10 @@ export const OrdenDetalles = ({
             label="Segmentación"
             value={cliente?.idSubSegmentacion?.segmentacion?.descripcion || "N/A"}
           />
+          {/* Vigilancia y escolta asignada directo al cliente (sin puesto): la ciudad va en la orden */}
+          {!selectedOrderDetail.idLocacion && selectedOrderDetail.idCiudad && (
+            <DetailField label="Ciudad" value={selectedOrderDetail.idCiudad.descripcion} />
+          )}
         </DetailSection>
 
         {/* Información Básica de la Orden */}

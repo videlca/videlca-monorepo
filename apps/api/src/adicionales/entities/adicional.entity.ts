@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Cliente } from "../../clientes/entities";
+import { Ciudad } from "../../common/entities";
 import { User } from "../../users/entities/user.entity";
 import { Liquidacione } from "../../liquidaciones/entities/liquidacione.entity";
 import { TipoAdicional } from "./tipo-adicional.entity";
@@ -30,6 +31,15 @@ export class Adicional {
     )
     @JoinColumn({ name: 'idCliente' })
     idCliente: Cliente;
+
+    // Ciudad del adicional -> relacion. De ella sale el centro de costos de la interfase. Obligatoria al crear; en BD
+    // es nullable solo por los adicionales creados antes de existir esta columna
+    @ManyToOne(
+        () => Ciudad,
+        { eager: true, nullable: true }
+    )
+    @JoinColumn({ name: 'idCiudad' })
+    idCiudad: Ciudad | null;
 
     // Usuario que creo el adicional -> relacion
     @ManyToOne(

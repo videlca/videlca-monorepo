@@ -243,10 +243,6 @@ export class ReporteInterfaseService {
 
           numeroPedido += 1;
 
-          // CODIGO SIIGO DEL TIPO DE SERVICIO: 10 = vigilancia (armado), 20 = monitoreo de alarmas. Los adicionales
-          // van como vigilancia (10), igual que en el filtro de tipos de servicio de liquidaciones
-          const tipoServicio = servicio.esMonitoreo ? 20 : 10;
-
           const codigoProducto = servicio.codigoServicioSiigo.split("-");
 
           const row = worksheet.addRow([
@@ -267,8 +263,10 @@ export class ReporteInterfaseService {
             1,
             0,
             numeroPedido,
-            tipoServicio,
-            10,
+            // CENTRO Y SUBCENTRO DE COSTO: de la ciudad del puesto/orden/adicional, o fijo para monitoreo
+            // (ver LiquidacionesService.obtenerCentroCostos)
+            servicio.centroCostos,
+            servicio.subCentroCostos,
             Number(numeroId), // 16
             0,
             servicio.servicioAplicacion,

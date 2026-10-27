@@ -22,6 +22,12 @@ export class CreateAdicionalDto {
     @Min(1, { message: 'El valor del campo cliente debe ser minimo 1' })
     idCliente: number;
 
+    @ApiProperty({ description: 'Id de la ciudad del adicional (de ella sale el centro de costos de la interfase)', example: 1, required: true })
+    @IsNumber({}, { message: 'El valor del campo ciudad debe ser un número' })
+    @IsPositive({ message: 'El valor del campo ciudad debe ser un numero positivo' })
+    @Min(1, { message: 'El valor del campo ciudad debe ser minimo 1' })
+    idCiudad: number;
+
     // SE NORMALIZA AL DIA 1 DEL MES AL GUARDAR, SIN IMPORTAR QUE DIA SE ENVIE
     @ApiProperty({ description: 'Mes desde el que empieza a cobrar el adicional', example: 'ISO String 2024-09-01T00:00:00.000Z', required: true })
     @Transform(({ value }) => new Date(value))

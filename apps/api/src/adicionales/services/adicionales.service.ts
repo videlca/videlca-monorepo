@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { PaginationOption } from '../../common/interfaces/pagination.interface';
 import { ClientesService } from '../../clientes/services';
+import { UbicacionService } from '../../common/services';
 import { User } from '../../users/entities/user.entity';
 
 import { Adicional, TipoAdicional } from '../entities';
@@ -23,6 +24,7 @@ export class AdicionalesService {
     @InjectRepository(TipoAdicional)
     private readonly tipoAdicionalRepository: Repository<TipoAdicional>,
     private readonly clientesService: ClientesService,
+    private readonly ubicacionService: UbicacionService,
     private readonly configService: ConfigService,
   ) {
     this.defaultLimit = this.configService.get<number>('defaultLimit');
@@ -33,6 +35,8 @@ export class AdicionalesService {
     const cliente = await this.clientesService.findOne(createAdicionalDto.idCliente);
 
     const tipoAdicional = await this.findTipoAdicional(createAdicionalDto.idTipoAdicional);
+
+    const ciudad = await this.ubicacionService.findOneCiudad(createAdicionalDto.idCiudad);
 
     const mesInicio = this.normalizarMes(createAdicionalDto.mesInicio);
     const mesFin = createAdicionalDto.mesFin ? this.normalizarMes(createAdicionalDto.mesFin) : null;
@@ -51,6 +55,7 @@ export class AdicionalesService {
     const adicional = this.adicionalRepository.create({
       idTipoAdicional: tipoAdicional,
       idCliente: cliente,
+      idCiudad: ciudad,
       idUsuarioCreacion: user,
       mesInicio,
       mesFin,
@@ -162,8 +167,13 @@ export class AdicionalesService {
       ? await this.findTipoAdicional(updateAdicionalDto.idTipoAdicional)
       : adicional.idTipoAdicional;
 
+    const ciudad = updateAdicionalDto.idCiudad
+      ? await this.ubicacionService.findOneCiudad(updateAdicionalDto.idCiudad)
+      : adicional.idCiudad;
+
     Object.assign(adicional, {
       idTipoAdicional: tipoAdicional,
+      idCiudad: ciudad,
       mesInicio,
       mesFin,
       costosDirectos,

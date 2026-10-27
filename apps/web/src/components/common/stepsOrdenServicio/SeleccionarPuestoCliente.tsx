@@ -17,6 +17,8 @@ import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import type { Cliente, Puesto } from "../../../types";
 import { useFilterPuestos, useFilterClientes } from "../../../api/queryFunctions/clientes";
+import { useCiudadActiva } from "../../../api/queryFunctions/configuracion/ubicaciones";
+import { InputSelect } from "../InputSelect";
 import { useEffect, useState } from "react";
 import { SimpleModal } from "../SimpleModal";
 import { ButtonAction } from "../ButtonAction";
@@ -38,6 +40,7 @@ const CLIENTE_COLUMN_LABELS: Record<ClienteFilterColumn, string> = {
 export const SeleccionarPuestoCliente = ({
   idLocacion,
   idCliente,
+  idCiudad,
   setValue,
   setSelectedPuesto,
   setSelectedCliente,
@@ -45,6 +48,7 @@ export const SeleccionarPuestoCliente = ({
 }: {
   idLocacion: number;
   idCliente: number;
+  idCiudad: number;
   setValue: UseFormSetValue<any>;
   setSelectedPuesto: (puesto: Puesto) => void;
   setSelectedCliente: (cliente: Cliente) => void;
@@ -71,6 +75,12 @@ export const SeleccionarPuestoCliente = ({
 
   const buscarPorCliente =
     esOrdenMonitoreo || (esVigilanciaYEscolta && modoBusqueda === "cliente");
+
+  // Vigilancia y escolta asignada directo a un cliente: no hay puesto del que sacar la ciudad (y con ella el
+  // centro de costos de la interfase), asi que se pide. Monitoreo no la necesita (centro de costos fijo)
+  const pedirCiudad = esVigilanciaYEscolta && modoBusqueda === "cliente";
+
+  const { data: ciudadesQuery } = useCiudadActiva();
 
   // Si el tipo de servicio deja de ser "Vigilancia y escolta" (el usuario volvio al paso 1 y cambio de tipo),
   // se reinicia el modo para que la proxima vez que vuelva a ser vigilancia y escolta arranque en "puesto"
@@ -99,6 +109,13 @@ export const SeleccionarPuestoCliente = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buscarPorCliente]);
+
+  useEffect(() => {
+    if (!pedirCiudad) {
+      setValue("idCiudad", 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedirCiudad]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -192,6 +209,20 @@ export const SeleccionarPuestoCliente = ({
             </ToggleButton>
           </ToggleButtonGroup>
         </div>
+      )}
+
+      {pedirCiudad && (
+        <InputSelect
+          label="Ciudad"
+          placeholder="Buscar la ciudad donde se prestará el servicio"
+          required
+          options={(ciudadesQuery?.data?.data ?? []).map((ciudad) => ({
+            id: ciudad.idCiudad,
+            descripcion: ciudad.descripcion,
+          }))}
+          value={idCiudad || null}
+          onChange={(e) => setValue("idCiudad", Number(e.target.value))}
+        />
       )}
 
       {/* Buscador */}

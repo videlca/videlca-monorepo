@@ -60,6 +60,9 @@ export interface Ciudad {
   idCiudad: number;
   descripcion: string;
   codigoCiudad: string;
+  // Centro/subcentro de costos Siigo de la interfase (null si no se ha configurado)
+  centroCostos?: number | null;
+  subCentroCostos?: number | null;
   estado: boolean;
   departamento: Departamento;
 }

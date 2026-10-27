@@ -3,6 +3,7 @@ import type { PaginationDto } from "./common";
 export interface CreateAdicionalDto {
   idTipoAdicional: number;
   idCliente: number;
+  idCiudad: number;
   mesInicio: string;
   mesFin?: string | null;
   costosDirectos?: number;
@@ -18,6 +19,7 @@ export interface CreateAdicionalDto {
 
 export interface UpdateAdicionalDto {
   idTipoAdicional?: number;
+  idCiudad?: number;
   mesInicio?: string;
   mesFin?: string | null;
   costosDirectos?: number;
