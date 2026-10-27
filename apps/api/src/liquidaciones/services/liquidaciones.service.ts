@@ -1519,8 +1519,9 @@ export class LiquidacionesService {
 
       if (esAdicional) {
 
+        // SE AGRUPA POR TIPO DE ADICIONAL (como los servicios por idServicio): una linea por codigo Siigo por cliente.
         // CLAVE NEGATIVA PARA NO COLISIONAR CON idServicio DEL CATALOGO (siempre positivo)
-        const idAdicionalKey = -liq.adicional.idAdicional;
+        const idAdicionalKey = -liq.adicional.idTipoAdicional.idTipoAdicional;
 
         if (!agrupado[clienteId].servicios[idAdicionalKey]) {
 
@@ -1528,7 +1529,7 @@ export class LiquidacionesService {
             esMonitoreo: false,
             esAdicional: true,
             servicioAplicacion: liq.adicional.idTipoAdicional.descripcion,
-            codigoServicioSiigo: '',
+            codigoServicioSiigo: liq.adicional.idTipoAdicional.codigo,
             valorLiquidarAplicacion: 0,
             seguroVida: 0,
             aui: 0,
@@ -1702,8 +1703,8 @@ export class LiquidacionesService {
 
       if (esAdicional) {
 
-        // UN ADICIONAL NO TIENE ORDEN/CIUDAD/PUESTO/CODIGO SIIGO/TIPO DE SERVICIO/HORARIO (esos campos quedan vacios),
-        // solo la descripcion de su tipo de adicional y el sector del cliente al que se le cobra
+        // UN ADICIONAL NO TIENE ORDEN/CIUDAD/PUESTO/TIPO DE SERVICIO/HORARIO (esos campos quedan vacios), solo la
+        // descripcion y el codigo Siigo de su tipo de adicional y el sector del cliente al que se le cobra
         const costosDirectos = Number(liq.costosDirectos ?? 0);
         const seguroVida = Number(liq.seguroVida ?? 0);
         const aui = Number(liq.aui ?? 0);
@@ -1715,7 +1716,7 @@ export class LiquidacionesService {
           puesto: '',
           descripcionServicio: liq.adicional.idTipoAdicional.descripcion,
           tipoServicio: '',
-          codigoServicioSiigo: '',
+          codigoServicioSiigo: liq.adicional.idTipoAdicional.codigo,
           horarioServicio: '',
 
           horasTotalesServicio: 0,

@@ -238,13 +238,13 @@ export class ReporteInterfaseService {
 
         let numeroPedido = 0;
 
-        // 🔹 Filas de servicios (los adicionales se excluyen: no tienen un codigo de producto Siigo real que
-        // mapear a las columnas de codigo contable que exige este formato de interfase)
-        for (const servicio of Object.values(servicios).filter(s => !s.esAdicional)) {
+        // 🔹 Filas de servicios y adicionales (el codigo Siigo de un adicional sale de su tipo de adicional)
+        for (const servicio of Object.values(servicios)) {
 
           numeroPedido += 1;
 
-          // CODIGO SIIGO DEL TIPO DE SERVICIO: 10 = vigilancia (armado), 20 = monitoreo de alarmas
+          // CODIGO SIIGO DEL TIPO DE SERVICIO: 10 = vigilancia (armado), 20 = monitoreo de alarmas. Los adicionales
+          // van como vigilancia (10), igual que en el filtro de tipos de servicio de liquidaciones
           const tipoServicio = servicio.esMonitoreo ? 20 : 10;
 
           const codigoProducto = servicio.codigoServicioSiigo.split("-");
