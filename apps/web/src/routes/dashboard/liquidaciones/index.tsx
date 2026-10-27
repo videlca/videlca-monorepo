@@ -690,7 +690,7 @@ function RouteComponent() {
                                 sx={{ fontWeight: 500 }}
                               >
                                 {renderCheckbox(seleccionado)}
-                                {adicional.nombre}
+                                {adicional.idTipoAdicional?.descripcion}
                               </Typography>
                               <Chip size="small" label="Adicional" />
                             </div>

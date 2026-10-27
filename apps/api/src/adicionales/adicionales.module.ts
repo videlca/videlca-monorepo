@@ -6,7 +6,7 @@ import { AuthModule } from '../auth/auth.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 import { ClientesModule } from '../clientes/clientes.module';
 
-import { Adicional } from './entities';
+import { Adicional, TipoAdicional } from './entities';
 
 import { AdicionalesService } from './services';
 import { AdicionalesController } from './controllers';
@@ -16,6 +16,7 @@ import { AdicionalesController } from './controllers';
 
     TypeOrmModule.forFeature([
       Adicional,
+      TipoAdicional,
     ]),
     AuthModule,
     PermissionsModule,

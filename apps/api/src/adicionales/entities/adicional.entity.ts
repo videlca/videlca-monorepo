@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, Pri
 import { Cliente } from "../../clientes/entities";
 import { User } from "../../users/entities/user.entity";
 import { Liquidacione } from "../../liquidaciones/entities/liquidacione.entity";
+import { TipoAdicional } from "./tipo-adicional.entity";
 
 @Entity({ name: 'adicional' })
 export class Adicional {
@@ -12,13 +13,14 @@ export class Adicional {
     })
     idAdicional: number;
 
-    // NOMBRE DEL ADICIONAL
-    @Column({
-        type: 'varchar',
-        name: 'nombre',
-        length: 150
-    })
-    nombre: string;
+    // TIPO DE ADICIONAL -> relacion. Su descripcion es lo que se muestra como nombre del adicional
+    @ManyToOne(
+        () => TipoAdicional,
+        (tipoAdicional) => tipoAdicional.adicionales,
+        { eager: true, nullable: false }
+    )
+    @JoinColumn({ name: 'idTipoAdicional' })
+    idTipoAdicional: TipoAdicional;
 
     // Cliente al que se le cobra el adicional -> relacion
     @ManyToOne(

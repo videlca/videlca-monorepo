@@ -7,13 +7,14 @@ import {
 import {
   getAdicionales,
   getAdicionalById,
+  getTiposAdicional,
   createAdicional,
   updateAdicional,
   cancelarAdicional,
   deleteAdicional,
 } from "../../functions/adicionales/adicionales";
 import type { ApiResponse, PaginatedResponse } from "../../types/common";
-import type { Adicional } from "../../types/adicionales";
+import type { Adicional, TipoAdicional } from "../../types/adicionales";
 import type {
   CreateAdicionalDto,
   UpdateAdicionalDto,
@@ -29,6 +30,14 @@ export const useAdicionales = (
   return useQuery({
     queryKey: ["adicionales", params],
     queryFn: () => getAdicionales(params),
+  });
+};
+
+// Tipos de adicional activos, para el dropdown al crear/editar un adicional
+export const useTiposAdicional = (): UseQueryResult<ApiResponse<TipoAdicional[]>, Error> => {
+  return useQuery({
+    queryKey: ["tipos-adicional"],
+    queryFn: () => getTiposAdicional(),
   });
 };
 

@@ -27,6 +27,12 @@ export class AdicionalesController {
     return this.adicionalesService.findAll(findAdicionalesDto);
   }
 
+  // DEBE IR ANTES DE @Get(':id') PARA QUE "tipos" NO SE INTERPRETE COMO UN ID
+  @Get('tipos')
+  findAllTiposAdicional() {
+    return this.adicionalesService.findAllTiposAdicional();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.adicionalesService.findOne(id);

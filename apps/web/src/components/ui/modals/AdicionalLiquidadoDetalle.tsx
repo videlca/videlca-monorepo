@@ -32,7 +32,7 @@ export const AdicionalLiquidadoDetalle = ({
       </DetailSection>
 
       <DetailSection icon={<ReceiptLongOutlinedIcon />} title="Información del Adicional">
-        <DetailField label="Nombre" value={detalle.nombre} />
+        <DetailField label="Tipo de adicional" value={detalle.idTipoAdicional?.descripcion} />
         <DetailField
           label="Vigencia"
           value={

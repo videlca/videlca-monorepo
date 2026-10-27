@@ -1,10 +1,13 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "../../config";
 import type { ApiResponse, PaginatedResponse } from "../../types/common";
-import type { Adicional } from "../../types/adicionales";
+import type { Adicional, TipoAdicional } from "../../types/adicionales";
 import type { CreateAdicionalDto, UpdateAdicionalDto, FindAdicionalesDto } from "../../dtos/adicionales";
 
 export const getAdicionales = async (params: FindAdicionalesDto): Promise<ApiResponse<PaginatedResponse<Adicional[]>>> =>
   apiGet<PaginatedResponse<Adicional[]>>("/adicionales", params);
+
+export const getTiposAdicional = async (): Promise<ApiResponse<TipoAdicional[]>> =>
+  apiGet<TipoAdicional[]>("/adicionales/tipos");
 
 export const getAdicionalById = async (id: number): Promise<ApiResponse<Adicional | null>> =>
   apiGet<Adicional>(`/adicionales/${id}`);

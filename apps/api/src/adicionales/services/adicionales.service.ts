@@ -7,7 +7,7 @@ import { PaginationOption } from '../../common/interfaces/pagination.interface';
 import { ClientesService } from '../../clientes/services';
 import { User } from '../../users/entities/user.entity';
 
-import { Adicional } from '../entities';
+import { Adicional, TipoAdicional } from '../entities';
 import { CreateAdicionalDto, UpdateAdicionalDto, FindAdicionalesDto } from '../dto';
 
 @Injectable()
@@ -20,6 +20,8 @@ export class AdicionalesService {
   constructor(
     @InjectRepository(Adicional)
     private readonly adicionalRepository: Repository<Adicional>,
+    @InjectRepository(TipoAdicional)
+    private readonly tipoAdicionalRepository: Repository<TipoAdicional>,
     private readonly clientesService: ClientesService,
     private readonly configService: ConfigService,
   ) {
@@ -29,6 +31,8 @@ export class AdicionalesService {
   async create(createAdicionalDto: CreateAdicionalDto, user: User) {
 
     const cliente = await this.clientesService.findOne(createAdicionalDto.idCliente);
+
+    const tipoAdicional = await this.findTipoAdicional(createAdicionalDto.idTipoAdicional);
 
     const mesInicio = this.normalizarMes(createAdicionalDto.mesInicio);
     const mesFin = createAdicionalDto.mesFin ? this.normalizarMes(createAdicionalDto.mesFin) : null;
@@ -45,7 +49,7 @@ export class AdicionalesService {
     const totales = this.calcularTotales(costosDirectos, seguroVida, aui);
 
     const adicional = this.adicionalRepository.create({
-      nombre: createAdicionalDto.nombre,
+      idTipoAdicional: tipoAdicional,
       idCliente: cliente,
       idUsuarioCreacion: user,
       mesInicio,
@@ -154,8 +158,12 @@ export class AdicionalesService {
 
     const totales = this.calcularTotales(costosDirectos, seguroVida, aui);
 
+    const tipoAdicional = updateAdicionalDto.idTipoAdicional
+      ? await this.findTipoAdicional(updateAdicionalDto.idTipoAdicional)
+      : adicional.idTipoAdicional;
+
     Object.assign(adicional, {
-      nombre: updateAdicionalDto.nombre ?? adicional.nombre,
+      idTipoAdicional: tipoAdicional,
       mesInicio,
       mesFin,
       costosDirectos,
@@ -210,12 +218,32 @@ export class AdicionalesService {
       this.logger.error(error);
 
       if (error.errno == 1451) {
-        throw new BadRequestException(`El adicional "${adicional.nombre}" no se puede eliminar debido a que se esta usando en el sistema`);
+        throw new BadRequestException(`El adicional "${adicional.idTipoAdicional.descripcion}" no se puede eliminar debido a que se esta usando en el sistema`);
       }
 
       throw new InternalServerErrorException(`Unexpected error, check server logs`);
 
     }
+
+  }
+
+  // TIPOS DE ADICIONAL ACTIVOS (para el dropdown al crear/editar un adicional)
+  async findAllTiposAdicional() {
+
+    return this.tipoAdicionalRepository.find({
+      where: { estado: true },
+      order: { codigo: 'ASC' },
+    });
+
+  }
+
+  private async findTipoAdicional(idTipoAdicional: number) {
+
+    const tipoAdicional = await this.tipoAdicionalRepository.findOneBy({ idTipoAdicional });
+
+    if (!tipoAdicional) throw new NotFoundException(`Tipo de adicional con id "${idTipoAdicional}" no se ha encontrado`);
+
+    return tipoAdicional;
 
   }
 

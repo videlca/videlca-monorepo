@@ -1,5 +1,5 @@
 import type { OrdenServicio, OrdenServicioDetalle } from "./orden-servicio";
-import type { Adicional } from "./adicionales";
+import type { Adicional, TipoAdicional } from "./adicionales";
 import type { Cliente, Usuario } from "../../types";
 
 
@@ -123,7 +123,7 @@ export interface AdicionalLiquidado {
   idLiquidacion: number;
   aniomes_liquidacion: string;
   idAdicional: number;
-  nombre: string;
+  idTipoAdicional: TipoAdicional;
   idCliente: Cliente;
   idUsuarioCreacion: Usuario;
   mesInicio: string;

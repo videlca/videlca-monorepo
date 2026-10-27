@@ -130,7 +130,7 @@ export const OrdenServicioCard = ({
                 <>
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <Typography variant="body2" component="h3" sx={{ fontWeight: 600 }}>
-                      {liquidacion.adicional?.nombre ?? `Adicional #${liquidacion.idAdicional}`}
+                      {liquidacion.adicional?.idTipoAdicional?.descripcion ?? `Adicional #${liquidacion.idAdicional}`}
                     </Typography>
                     {liquidacion.tipoServicio ? (
                       <TipoServicioBadge tipo={liquidacion.tipoServicio} />

@@ -19,7 +19,7 @@ import { FormsModal } from "../../../components/ui/modals/FormsModal";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
 
-import { NombreAdicional } from "../../../components/common/stepsAdicionales/NombreAdicional";
+import { TipoAdicionalStep } from "../../../components/common/stepsAdicionales/TipoAdicionalStep";
 import { SeleccionarClienteAdicional } from "../../../components/common/stepsAdicionales/SeleccionarClienteAdicional";
 import {
   VigenciaAdicional,
@@ -85,14 +85,14 @@ function RouteComponent() {
   );
 
   const {
-    register: registerCreate,
+    control: controlCreate,
     reset: resetCreate,
     setValue: setValueCreate,
     watch: watchCreate,
     getValues: getValuesCreate,
   } = useForm<CreateAdicionalDto>({
     defaultValues: {
-      nombre: "",
+      idTipoAdicional: 0,
       idCliente: 0,
       mesInicio: "",
       mesFin: null,
@@ -107,14 +107,14 @@ function RouteComponent() {
   });
 
   const {
-    register: registerEdit,
+    control: controlEdit,
     handleSubmit: handleSubmitEdit,
     reset: resetEdit,
     setValue: setValueEdit,
     watch: watchEdit,
   } = useForm<UpdateAdicionalDto>({
     defaultValues: {
-      nombre: "",
+      idTipoAdicional: 0,
       mesInicio: "",
       mesFin: null,
       costosDirectos: 0,
@@ -172,8 +172,8 @@ function RouteComponent() {
   const handleNext = () => {
     const values = getValuesCreate();
 
-    if (currentStep === 1 && !values.nombre?.trim()) {
-      toast.error("El nombre del adicional es requerido");
+    if (currentStep === 1 && !values.idTipoAdicional) {
+      toast.error("Debe seleccionar un tipo de adicional");
       return;
     }
 
@@ -211,7 +211,7 @@ function RouteComponent() {
 
     crearAdicional(
       {
-        nombre: values.nombre,
+        idTipoAdicional: values.idTipoAdicional,
         idCliente: values.idCliente,
         mesInicio: values.mesInicio,
         mesFin: isIndefinido ? null : values.mesFin,
@@ -270,7 +270,7 @@ function RouteComponent() {
     setCamposManualesEdit(manuales);
 
     resetEdit({
-      nombre: adicional.nombre,
+      idTipoAdicional: adicional.idTipoAdicional?.idTipoAdicional,
       mesInicio: adicional.mesInicio,
       mesFin: adicional.mesFin,
       costosDirectos,
@@ -305,7 +305,7 @@ function RouteComponent() {
       {
         id: selectedAdicional.idAdicional,
         data: {
-          nombre: data.nombre,
+          idTipoAdicional: data.idTipoAdicional,
           mesInicio: data.mesInicio,
           mesFin: isIndefinido ? null : data.mesFin,
           costosDirectos,
@@ -340,11 +340,12 @@ function RouteComponent() {
 
   const columns: ColumnDef<Adicional>[] = [
     {
-      header: "Nombre",
-      accessorKey: "nombre",
+      header: "Tipo de Adicional",
+      id: "tipoAdicional",
+      accessorFn: (row) => row.idTipoAdicional?.descripcion,
       cell: ({ row }) => (
         <Typography variant="body2" sx={{ fontWeight: 500, whiteSpace: "nowrap" }}>
-          {row.original.nombre}
+          {row.original.idTipoAdicional?.descripcion}
         </Typography>
       ),
     },
@@ -464,7 +465,7 @@ function RouteComponent() {
           <WizardStepper currentStep={currentStep} totalSteps={totalSteps} />
 
           <div className="flex-1 overflow-y-auto px-2 py-4">
-            {currentStep === 1 && <NombreAdicional register={registerCreate} />}
+            {currentStep === 1 && <TipoAdicionalStep control={controlCreate} />}
             {currentStep === 2 && (
               <SeleccionarClienteAdicional
                 idCliente={watchCreate("idCliente")}
@@ -532,7 +533,7 @@ function RouteComponent() {
               </Box>{" "}
               (no se puede cambiar)
             </Typography>
-            <NombreAdicional register={registerEdit} showHeader={false} />
+            <TipoAdicionalStep control={controlEdit} showHeader={false} />
             <VigenciaAdicional
               setValue={setValueEdit}
               vigencia={vigencia}
@@ -559,7 +560,7 @@ function RouteComponent() {
 
       <ConfirmarDelete
         isOpenDelete={isOpenCancelar}
-        text={`¿Estás seguro de querer cancelar el adicional "${selectedAdicional?.nombre}"? Dejará de cobrarse desde este momento, sin importar el mes de fin configurado.`}
+        text={`¿Estás seguro de querer cancelar el adicional "${selectedAdicional?.idTipoAdicional?.descripcion}"? Dejará de cobrarse desde este momento, sin importar el mes de fin configurado.`}
         actionLabel="Cancelar"
         onClose={() => setIsOpenCancelar(false)}
         onDelete={() => {
@@ -576,7 +577,7 @@ function RouteComponent() {
 
       <ConfirmarDelete
         isOpenDelete={isOpenDelete}
-        text={`¿Estás seguro de querer eliminar el adicional "${selectedAdicional?.nombre}"? Esta acción no se puede deshacer.`}
+        text={`¿Estás seguro de querer eliminar el adicional "${selectedAdicional?.idTipoAdicional?.descripcion}"? Esta acción no se puede deshacer.`}
         onClose={() => setIsOpenDelete(false)}
         onDelete={() => {
           if (!selectedAdicional) return;

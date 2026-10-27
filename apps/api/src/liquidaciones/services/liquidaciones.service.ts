@@ -62,6 +62,7 @@ export class LiquidacionesService {
       .createQueryBuilder('l')
       .leftJoinAndSelect('l.ordenServicio', 'os')
       .leftJoinAndSelect('l.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idTipoAdicional', 'adicionalTipo')
       .select([
         'l.idLiquidacion',
         'l.valor_liquidacion',
@@ -73,7 +74,9 @@ export class LiquidacionesService {
         'os.fechaFin',
         'os.precioTotal',
         'adicional.idAdicional',
-        'adicional.nombre',
+        'adicionalTipo.idTipoAdicional',
+        'adicionalTipo.codigo',
+        'adicionalTipo.descripcion',
 
       ])
       .orderBy('l.idLiquidacion', 'DESC')
@@ -139,6 +142,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('detalleServicio.idTipoTarifa', 'detalleServicioTipoTarifa')
       .leftJoinAndSelect('detalleServicio.idTipoHorarioDescripcion', 'detalleServicioTipoHorario')
       .leftJoinAndSelect('l.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idTipoAdicional', 'adicionalTipo')
       .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       .leftJoinAndSelect('adicionalCliente.idTipoCliente', 'adicionalClienteTipoCliente')
       .leftJoinAndSelect('adicionalCliente.idSubSegmentacion', 'adicionalClienteSubsegmentacion')
@@ -159,7 +163,7 @@ export class LiquidacionesService {
         idLiquidacion: liquidacion.idLiquidacion,
         aniomes_liquidacion: liquidacion.aniomes_liquidacion,
         idAdicional: liquidacion.adicional.idAdicional,
-        nombre: liquidacion.adicional.nombre,
+        idTipoAdicional: liquidacion.adicional.idTipoAdicional,
         idCliente: liquidacion.adicional.idCliente,
         idUsuarioCreacion: liquidacion.adicional.idUsuarioCreacion,
         mesInicio: liquidacion.adicional.mesInicio,
@@ -679,18 +683,18 @@ export class LiquidacionesService {
 
     if (!adicional) throw new BadRequestException('Adicional no encontrado');
 
-    if (!adicional.estado) throw new BadRequestException(`El adicional "${adicional.nombre}" esta cancelado`);
+    if (!adicional.estado) throw new BadRequestException(`El adicional "${adicional.idTipoAdicional.descripcion}" esta cancelado`);
 
     const aniomes = this.formatearAniomes(anio, mes);
 
-    await this.validarNoLiquidadoEnMes(queryRunner, { idAdicional: adicionalId }, aniomes, `El adicional "${adicional.nombre}"`);
+    await this.validarNoLiquidadoEnMes(queryRunner, { idAdicional: adicionalId }, aniomes, `El adicional "${adicional.idTipoAdicional.descripcion}"`);
 
     const mesConsultado = new Date(anio, mes - 1, 1);
     const mesInicioAdicional = this.normalizarMes(adicional.mesInicio);
     const mesFinAdicional = adicional.mesFin ? this.normalizarMes(adicional.mesFin) : null;
 
     if (mesConsultado < mesInicioAdicional || (mesFinAdicional && mesConsultado > mesFinAdicional)) {
-      throw new BadRequestException(`El adicional "${adicional.nombre}" no esta vigente en el mes solicitado`);
+      throw new BadRequestException(`El adicional "${adicional.idTipoAdicional.descripcion}" no esta vigente en el mes solicitado`);
     }
 
     const liquidacionAdicional = queryRunner.manager.create(Liquidacione, {
@@ -854,6 +858,7 @@ export class LiquidacionesService {
       .where('a.estado = :estado', { estado: true })
       .andWhere('a.mesInicio <= :mesConsultado AND (a.mesFin IS NULL OR a.mesFin >= :mesConsultado)', { mesConsultado })
       .leftJoinAndSelect('a.idCliente', 'cliente')
+      .leftJoinAndSelect('a.idTipoAdicional', 'tipoAdicional')
       .leftJoinAndSelect('a.idUsuarioCreacion', 'usuario')
 
       .leftJoin('liquidaciones', 'liq', `
@@ -906,6 +911,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('ordenServicio.idCliente', 'clienteDirecto')
       .leftJoinAndSelect('liquidaciones.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idTipoAdicional', 'adicionalTipo')
       .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
@@ -1334,6 +1340,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('ordenServicio.idCliente', 'clienteDirecto')
       .leftJoinAndSelect('liquidaciones.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idTipoAdicional', 'adicionalTipo')
       .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
@@ -1404,6 +1411,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('ordenServicio.idCliente', 'clienteDirecto')
       .leftJoinAndSelect('liquidaciones.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idTipoAdicional', 'adicionalTipo')
       .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       // valor_liquidacion ya es el total CON iva; el "antes de iva" no se guarda a nivel de liquidacion,
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
@@ -1459,6 +1467,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('locacion.idClienteFacturacion', 'clienteFacturacion')
       .leftJoinAndSelect('orden.idCliente', 'clienteDirecto')
       .leftJoinAndSelect('liq.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idTipoAdicional', 'adicionalTipo')
       .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
       .orderBy('cliente.nombre', 'ASC')
@@ -1518,7 +1527,7 @@ export class LiquidacionesService {
           agrupado[clienteId].servicios[idAdicionalKey] = {
             esMonitoreo: false,
             esAdicional: true,
-            servicioAplicacion: liq.adicional.nombre,
+            servicioAplicacion: liq.adicional.idTipoAdicional.descripcion,
             codigoServicioSiigo: '',
             valorLiquidarAplicacion: 0,
             seguroVida: 0,
@@ -1639,6 +1648,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('orden.idCliente', 'clienteDirecto')
       .leftJoinAndSelect('clienteDirecto.idSubSegmentacion', 'clienteDirectoSubsegmentacion')
       .leftJoinAndSelect('liq.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idTipoAdicional', 'adicionalTipo')
       .leftJoinAndSelect('adicional.idCliente', 'adicionalCliente')
       .leftJoinAndSelect('adicionalCliente.idSubSegmentacion', 'adicionalClienteSubsegmentacion')
       .where('liq.idGrupoLiquidacion = :id', { id: grupoId })
@@ -1693,7 +1703,7 @@ export class LiquidacionesService {
       if (esAdicional) {
 
         // UN ADICIONAL NO TIENE ORDEN/CIUDAD/PUESTO/CODIGO SIIGO/TIPO DE SERVICIO/HORARIO (esos campos quedan vacios),
-        // solo su nombre (como descripcion) y el sector del cliente al que se le cobra
+        // solo la descripcion de su tipo de adicional y el sector del cliente al que se le cobra
         const costosDirectos = Number(liq.costosDirectos ?? 0);
         const seguroVida = Number(liq.seguroVida ?? 0);
         const aui = Number(liq.aui ?? 0);
@@ -1703,7 +1713,7 @@ export class LiquidacionesService {
           sector: liq.adicional.idCliente.idSubSegmentacion?.descripcion ?? '',
           ciudad: '',
           puesto: '',
-          descripcionServicio: liq.adicional.nombre,
+          descripcionServicio: liq.adicional.idTipoAdicional.descripcion,
           tipoServicio: '',
           codigoServicioSiigo: '',
           horarioServicio: '',
@@ -1982,6 +1992,7 @@ export class LiquidacionesService {
       .leftJoinAndSelect('lsosServicio.idTipoServicio', 'lsosTipoServicio')
       .leftJoinAndSelect('lsosServicio.idTipoTarifa', 'lsosTipoTarifa')
       .leftJoinAndSelect('liq.adicional', 'adicional')
+      .leftJoinAndSelect('adicional.idTipoAdicional', 'adicionalTipo')
       .where('grupo.idGrupoLiquidacion = :idGrupoLiquidacion', { idGrupoLiquidacion })
       .orderBy('liq.idLiquidacion', 'ASC')
       .addOrderBy('detalle.idOrdenServicioDetalle', 'ASC')
@@ -2097,7 +2108,7 @@ export class LiquidacionesService {
     for (const liq of grupo.liquidaciones.filter(liq => liq.adicional)) {
 
       adicionales.push({
-        nombre: liq.adicional.nombre,
+        nombre: liq.adicional.idTipoAdicional.descripcion,
         mesLiquidado: mesLiquidado(liq.aniomes_liquidacion),
         ...precioDe(liq, liq.valor_liquidacion),
       });

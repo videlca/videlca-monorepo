@@ -1,8 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
 import {
-    IsString,
-    IsNotEmpty,
-    MaxLength,
     IsNumber,
     IsPositive,
     Min,
@@ -13,11 +10,11 @@ import { Transform } from 'class-transformer';
 
 export class CreateAdicionalDto {
 
-    @ApiProperty({ description: 'Nombre del adicional', example: 'Adicional cambio de tarjeta', required: true })
-    @IsString({ message: 'El campo nombre debe ser un string' })
-    @IsNotEmpty({ message: 'El campo nombre no puede estar vacío' })
-    @MaxLength(150, { message: 'El campo nombre no puede exceder los 150 caracteres' })
-    nombre: string;
+    @ApiProperty({ description: 'Id del tipo de adicional', example: 1, required: true })
+    @IsNumber({}, { message: 'El valor del campo tipo de adicional debe ser un número' })
+    @IsPositive({ message: 'El valor del campo tipo de adicional debe ser un numero positivo' })
+    @Min(1, { message: 'El valor del campo tipo de adicional debe ser minimo 1' })
+    idTipoAdicional: number;
 
     @ApiProperty({ description: 'Id del cliente al que se le cobra el adicional', example: 1, required: true })
     @IsNumber({}, { message: 'El valor del campo cliente debe ser un número' })
