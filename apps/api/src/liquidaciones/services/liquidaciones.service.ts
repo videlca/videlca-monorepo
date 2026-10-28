@@ -9,6 +9,7 @@ import { SendMailOptions } from '../../common/services/email/email.service';
 import { TipoServicioInterface } from '../../servicios/interfaces/tipo-servicio.interface';
 
 import { toUTCDateOnly, endOfMonth, minDate, maxDate, round2 } from '../../common/utils/date-helpers';
+import { nombreServicioReporte } from '../../common/utils/nombre-servicio-reporte';
 import { PrecioOrdenDto } from '../../orden-servicio/dto';
 import { OrigenServicioEnum } from '../../orden-servicio/interfaces/origen-servicio.interface';
 
@@ -1638,7 +1639,7 @@ export class LiquidacionesService {
             agrupado[clienteId].servicios[idServicio] = {
               esMonitoreo: servicio.idTipoServicio?.nombre === TipoServicioInterface.MONITOREO_ALARMAS,
               esAdicional: false,
-              servicioAplicacion: servicio.descripcion,
+              servicioAplicacion: nombreServicioReporte(servicio),
               codigoServicioSiigo: servicio.codigo,
               centroCostos: centro.centroCostos,
               subCentroCostos: centro.subCentroCostos,
@@ -1839,7 +1840,7 @@ export class LiquidacionesService {
           sector: sector ?? '',
           ciudad: liq.ordenServicio.idLocacion?.idCiudad.descripcion ?? '',
           puesto: liq.ordenServicio.idLocacion?.nombre ?? liq.ordenServicio.idCliente?.nombre ?? '',
-          descripcionServicio: servicio.descripcion,
+          descripcionServicio: nombreServicioReporte(servicio),
           // SEGUN EL TIPO DE SERVICIO (no el campo armado): monitoreo de alarmas -> "Monitoreo", vigilancia -> "Armado"
           tipoServicio: servicio.idTipoServicio?.nombre === TipoServicioInterface.MONITOREO_ALARMAS ? "Monitoreo" : "Armado",
           codigoServicioSiigo: servicio.codigo,
@@ -2143,7 +2144,7 @@ export class LiquidacionesService {
           const detalle = detallesPorTarifa.get(idTarifa)?.[posicion];
 
           return {
-            descripcion: servicio.descripcion,
+            descripcion: nombreServicioReporte(servicio),
             codigo: servicio.codigo,
             horario: detalle ? `${detalle.horaInicio} - ${detalle.horaFin}` : null,
             tipoTarifa: servicio.idTipoTarifa?.nombre ?? null,

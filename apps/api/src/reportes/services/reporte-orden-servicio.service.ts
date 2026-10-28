@@ -5,6 +5,7 @@ import { PrinterService } from '../../common/services';
 
 import { OrdenServicio, OrdenServicioDetalle } from '../../orden-servicio/entities';
 import { OrigenServicioEnum } from '../../orden-servicio/interfaces/origen-servicio.interface';
+import { nombreServicioReporte } from '../../common/utils/nombre-servicio-reporte';
 
 import { PALETTE, ReportePdfVidelcaBase } from './reporte-pdf-videlca.base';
 
@@ -205,7 +206,7 @@ export class ReporteOrdenServicioService extends ReportePdfVidelcaBase {
         const servicio = servicioOrden.idTarifa.idServicio;
 
         filas.push([
-          { text: `${index + 1}. ${servicio.descripcion}\n`, bold: true, fontSize: 9.5, color: PALETTE.textDark,
+          { text: `${index + 1}. ${nombreServicioReporte(servicio)}\n`, bold: true, fontSize: 9.5, color: PALETTE.textDark,
             margin: [0, 4, 0, 0],
           },
           { text: `${servicioOrden.horaInicio} - ${servicioOrden.horaFin}`, margin: [0, 4, 0, 0] },
@@ -356,7 +357,7 @@ export class ReporteOrdenServicioService extends ReportePdfVidelcaBase {
       for (const servicioOrden of ordenServicio.detalles) {
 
         contenido.push({
-          text: servicioOrden.idTarifa.idServicio.descripcion,
+          text: nombreServicioReporte(servicioOrden.idTarifa.idServicio),
           bold: true,
           fontSize: 10,
           color: PALETTE.textDark,
