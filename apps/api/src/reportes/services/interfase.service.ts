@@ -2,6 +2,17 @@ import { Injectable, Logger} from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 
 import { ClienteAgrupado } from '../../liquidaciones/interfaces/consolidacion.interface';
+
+// DATOS DE UN GRUPO DE LIQUIDACION PARA EL ARCHIVO DE INTERFASE
+export type GrupoInterfase = {
+  clientesAgrupados: ClienteAgrupado[];
+  mesLiq: string;
+  anioLiq: string;
+  mesCreacion: number;
+  diaCreacion: number;
+  anioCreacion: number;
+  numeroPedido: number;
+};
 import { TipoServicioInterface } from '../../servicios/interfaces/tipo-servicio.interface';
 
 const meses = {
@@ -26,6 +37,7 @@ export class ReporteInterfaseService {
           
   constructor() {}
 
+  // ARCHIVO DE INTERFASE DE UN SOLO GRUPO DE LIQUIDACION
   async generateExcel(clientesAgrupados: ClienteAgrupado[], 
     mesLiq: string = "1", 
     anioLiq: string = "2025", 
@@ -35,18 +47,32 @@ export class ReporteInterfaseService {
     numeroPedido: number = 0
   ) {
 
+    return this.generateExcelGrupos([
+      { clientesAgrupados, mesLiq, anioLiq, mesCreacion, diaCreacion, anioCreacion, numeroPedido },
+    ]);
+
+  }
+
+  // ARCHIVO DE INTERFASE CON VARIOS GRUPOS DE LIQUIDACION EN UNA SOLA HOJA (un bloque de filas por grupo, en el orden
+  // recibido). El rango "De: ... A: ..." del encabezado va del primer al ultimo mes liquidado de los grupos
+  async generateExcelGrupos(grupos: GrupoInterfase[]) {
+
     try {
 
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Exportación');
 
-      // --- VARIABLES DE FECHA (puedes cambiar luego) ---
+      const mesesLiquidados = grupos.map(g => Number(g.anioLiq) * 12 + (Number(g.mesLiq) - 1));
+      const primerMes = Math.min(...mesesLiquidados);
+      const ultimoMes = Math.max(...mesesLiquidados);
+
+      // --- VARIABLES DE FECHA ---
       const diaInicio = 1;
-      const mesInicio: string = meses[mesLiq];
-      const añoInicio = anioLiq;
-      const diaFin = new Date(Number(anioLiq), Number(mesLiq), 0).getDate();
-      const mesFin: string = meses[mesLiq];
-      const añoFin = anioLiq;
+      const mesInicio: string = meses[String(primerMes % 12 + 1)];
+      const añoInicio = String(Math.floor(primerMes / 12));
+      const diaFin = new Date(Math.floor(ultimoMes / 12), ultimoMes % 12 + 1, 0).getDate();
+      const mesFin: string = meses[String(ultimoMes % 12 + 1)];
+      const añoFin = String(Math.floor(ultimoMes / 12));
   
       // --- CONFIGURACIÓN GENERAL ---
       const lastColumn = 'AX';
@@ -217,122 +243,127 @@ export class ReporteInterfaseService {
       worksheet.getRow(3).height = 18;
       worksheet.getRow(5).height = 18;
 
-      let numeroCliente = numeroPedido - 1;
-      let currentRow = 6;
+      // UN BLOQUE POR GRUPO: cada grupo conserva su propio numero de pedido (NUMERO DE DOCUMENTO, consecutivo por
+      // cliente) y su fecha de creacion, asi sus filas quedan iguales a las de su archivo individual
+      for (const { clientesAgrupados, mesCreacion, diaCreacion, anioCreacion, numeroPedido } of grupos) {
 
-      for (const clienteData of clientesAgrupados) {
+        let numeroCliente = numeroPedido - 1;
 
-        numeroCliente += 1;
+        for (const clienteData of clientesAgrupados) {
 
-        const { 
-          cliente, 
-          numeroId, 
-          servicios, 
-          totalLiquidarAplicacion,
-          totalSeguroVida,
-          totalAui,
-          totalTarifaAntesIva,
-          totalIvaAui,
-          totalTarifaConIva 
-        } = clienteData;
+          numeroCliente += 1;
 
-        let numeroPedido = 0;
+          const { 
+            cliente, 
+            numeroId, 
+            servicios, 
+            totalLiquidarAplicacion,
+            totalSeguroVida,
+            totalAui,
+            totalTarifaAntesIva,
+            totalIvaAui,
+            totalTarifaConIva 
+          } = clienteData;
 
-        // 🔹 Filas de servicios y adicionales (el codigo Siigo de un adicional sale de su tipo de adicional)
-        for (const servicio of Object.values(servicios)) {
+          let numeroPedido = 0;
 
-          numeroPedido += 1;
+          // 🔹 Filas de servicios y adicionales (el codigo Siigo de un adicional sale de su tipo de adicional)
+          for (const servicio of Object.values(servicios)) {
 
-          const codigoProducto = servicio.codigoServicioSiigo.split("-");
+            numeroPedido += 1;
 
-          const row = worksheet.addRow([
-            'Z',
-            3,
-            numeroCliente,
+            const codigoProducto = servicio.codigoServicioSiigo.split("-");
 
-            // Fecha de creacion liquidacion
-            anioCreacion,
-            mesCreacion,
-            diaCreacion,
-            anioCreacion,
-            mesCreacion,
-            diaCreacion,
-            // Fecha de creacion liquidacion
+            const row = worksheet.addRow([
+              'Z',
+              3,
+              numeroCliente,
 
-            111,
-            1,
-            0,
-            numeroPedido,
-            // CENTRO Y SUBCENTRO DE COSTO: de la ciudad del puesto/orden/adicional, o fijo para monitoreo
-            // (ver LiquidacionesService.obtenerCentroCostos)
-            servicio.centroCostos,
-            servicio.subCentroCostos,
-            Number(numeroId), // 16
-            0,
-            servicio.servicioAplicacion,
-            '                    ',
-            0, //20
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            19, // Porcentaje cargo 3 // columna 34
-            servicio.auiIVa, // valor cargo 3
-            Number(codigoProducto[0]),
-            Number(codigoProducto[1]),
-            Number(codigoProducto[2]),
-            servicio.cantidadOrdenes, // 39 
-            servicio.tarifaAntesIva,
-            1,
-            0,
-            0, // 43
-            0,
-            0,
-            0,
-            0,
-            0, // 48
-            '',
-            ''
-          ]);
+              // Fecha de creacion liquidacion
+              anioCreacion,
+              mesCreacion,
+              diaCreacion,
+              anioCreacion,
+              mesCreacion,
+              diaCreacion,
+              // Fecha de creacion liquidacion
 
-          row.eachCell((cell, colNumber) => {
+              111,
+              1,
+              0,
+              numeroPedido,
+              // CENTRO Y SUBCENTRO DE COSTO: de la ciudad del puesto/orden/adicional, o fijo para monitoreo
+              // (ver LiquidacionesService.obtenerCentroCostos)
+              servicio.centroCostos,
+              servicio.subCentroCostos,
+              Number(numeroId), // 16
+              0,
+              servicio.servicioAplicacion,
+              '                    ',
+              0, //20
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              19, // Porcentaje cargo 3 // columna 34
+              servicio.auiIVa, // valor cargo 3
+              Number(codigoProducto[0]),
+              Number(codigoProducto[1]),
+              Number(codigoProducto[2]),
+              servicio.cantidadOrdenes, // 39 
+              servicio.tarifaAntesIva,
+              1,
+              0,
+              0, // 43
+              0,
+              0,
+              0,
+              0,
+              0, // 48
+              '',
+              ''
+            ]);
 
-            cell.border = defaultBorder;
+            row.eachCell((cell, colNumber) => {
 
-            // columnas con 2 decimales
-            const columnas2Dec = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 48];
+              cell.border = defaultBorder;
 
-            const columnas5Dec = [39, 43, 45, 46, 47];
+              // columnas con 2 decimales
+              const columnas2Dec = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 48];
 
-            const columnasTotales = [35, 40];
+              const columnas5Dec = [39, 43, 45, 46, 47];
 
-            const columnaId = [16];
+              const columnasTotales = [35, 40];
 
-            if (columnas2Dec.includes(colNumber)) {
-              cell.numFmt = '0.00';
-              cell.alignment = { horizontal: 'right', vertical: 'middle' };
-            } else if (columnas5Dec.includes(colNumber)) {
-              cell.numFmt = '0.00000';
-              cell.alignment = { horizontal: 'right', vertical: 'middle' };
-            } else if (columnasTotales.includes(colNumber)) {
-              cell.numFmt = '#,##0.00'; // separador de miles y dos decimales
-              cell.alignment = { horizontal: 'right', vertical: 'middle' };
-            }else if (columnaId.includes(colNumber)){
-              cell.numFmt = '#,##0';
-              cell.alignment = { horizontal: 'right', vertical: 'middle' };
-            }
+              const columnaId = [16];
 
-          });
+              if (columnas2Dec.includes(colNumber)) {
+                cell.numFmt = '0.00';
+                cell.alignment = { horizontal: 'right', vertical: 'middle' };
+              } else if (columnas5Dec.includes(colNumber)) {
+                cell.numFmt = '0.00000';
+                cell.alignment = { horizontal: 'right', vertical: 'middle' };
+              } else if (columnasTotales.includes(colNumber)) {
+                cell.numFmt = '#,##0.00'; // separador de miles y dos decimales
+                cell.alignment = { horizontal: 'right', vertical: 'middle' };
+              }else if (columnaId.includes(colNumber)){
+                cell.numFmt = '#,##0';
+                cell.alignment = { horizontal: 'right', vertical: 'middle' };
+              }
+
+            });
         
+          }
+
         }
 
       }

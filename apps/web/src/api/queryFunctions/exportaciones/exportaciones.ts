@@ -1,7 +1,7 @@
 import { useMutation, useQuery, type UseMutationResult } from "@tanstack/react-query";
 import type { ApiResponse } from "../../types/common";
 import type { GruposLiquidaciones } from "../../types";
-import { generarArchivoExcel, getGruposLiquidacionesExportaciones, enviarCorreoArchivo, type Exportacion } from "../../functions/exportaciones";
+import { generarArchivoExcel, generarArchivoInterfaseGrupos, getGruposLiquidacionesExportaciones, enviarCorreoArchivo, type Exportacion } from "../../functions/exportaciones";
 import type { FiltroGrupoLiquidacionDto } from "../../dtos/exportaciones";
 import { showErrorToast } from "../../utils/toastError";
 import { toast } from "sonner";
@@ -36,6 +36,32 @@ export const useGenerarReporteArchivo = (archivo: Exportacion): UseMutationResul
     },
     onError: (error) => {
       showErrorToast(error.message, "Error al generar el reporte consolidacion");
+    },
+  });
+};
+
+// Un solo archivo de interfase para todos los grupos de la lista: los que estaban en "Generar" pasan a "Archivos
+// generados" (por eso se invalida la lista), los ya generados quedan igual
+export const useGenerarInterfaseGrupos = (): UseMutationResult<{ blob: Blob; filename: string }, Error, number[]> => {
+  return useMutation({
+    mutationKey: ["generar-interfase-grupos"],
+    mutationFn: (idsGrupoLiquidacion) => generarArchivoInterfaseGrupos(idsGrupoLiquidacion),
+    onSuccess: ({ blob, filename }) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Archivo de interfase generado correctamente");
+      queryClient.invalidateQueries({
+        queryKey: ["grupos-liquidaciones-exportaciones"],
+      });
+    },
+    onError: (error) => {
+      showErrorToast(error.message, "Error al generar el archivo de interfase");
     },
   });
 };

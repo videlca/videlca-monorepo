@@ -15,6 +15,7 @@ import { OrigenServicioEnum } from '../../orden-servicio/interfaces/origen-servi
 
 import { EmailService, CorreoDefaultService } from '../../common/services';
 import { ReporteConsolidacionService, ReporteInterfaseService, ReporteLiquidacionService, ReporteAnexoFacturacionService, ReporteGrupoLiquidacionService } from '../../reportes/services';
+import { GrupoInterfase } from '../../reportes/services/interfase.service';
 import { OrdenServicioService } from '../../orden-servicio/services';
 import { ClientesService } from '../../clientes/services';
 
@@ -1984,7 +1985,9 @@ export class LiquidacionesService {
 
   }
   
-  async downloadInterfaseExcel(idGrupoLiquidacion: number){
+  // DATOS DE UN GRUPO PARA SU ARCHIVO DE INTERFASE (lo mismo que se usa para el archivo individual y el de todos los
+  // grupos). Falla si alguna linea del grupo no tiene centro de costos
+  private async prepararGrupoInterfase(idGrupoLiquidacion: number) {
 
     const resultado = await this.obtenerServiciosPorCliente(idGrupoLiquidacion);
 
@@ -2000,6 +2003,10 @@ export class LiquidacionesService {
       .orderBy('np.idNumeroPedido', 'ASC')
       .getMany();
 
+    if (numerosPedido.length === 0) {
+      throw new BadRequestException(`El grupo de liquidacion ${idGrupoLiquidacion} no tiene numero de pedido, genere primero su archivo de consolidacion`);
+    }
+
     // Tomar el primer número (suponiendo que tiene un campo 'numero')
     const numeroPedido = numerosPedido[0].idNumeroPedido;  
 
@@ -2009,28 +2016,86 @@ export class LiquidacionesService {
 
     const fechaCreacion = grupoLiquidacion.fechaCreacion;
 
-    const anioCreacion = fechaCreacion.getFullYear();       // Año completo (por ejemplo, 2025)
-    const mesCreacion = fechaCreacion.getMonth() + 1;       // Mes (0 = enero, por eso se suma 1)
-    const diaCreacion = fechaCreacion.getDate()
+    const grupoInterfase: GrupoInterfase = {
+      clientesAgrupados: resultado,
+      mesLiq: mes,
+      anioLiq: anio,
+      anioCreacion: fechaCreacion.getFullYear(),   // Año completo (por ejemplo, 2025)
+      mesCreacion: fechaCreacion.getMonth() + 1,   // Mes (0 = enero, por eso se suma 1)
+      diaCreacion: fechaCreacion.getDate(),
+      numeroPedido,
+    };
 
-    const excelBuffer = await this.reporteInterfaseService.generateExcel(resultado, mes, anio, mesCreacion, diaCreacion, anioCreacion, numeroPedido);
+    return { grupoLiquidacion, grupoInterfase, mes, anio };
 
-    if (grupoLiquidacion.generacion_interfase != true){
+  }
 
-      await this.notificarGeneracionInterfase(idGrupoLiquidacion, excelBuffer);
-      
-    }
+  // AL GENERAR LA INTERFASE DE UN GRUPO QUE AUN NO LA TENIA: se notifica por correo con su archivo individual y el
+  // grupo pasa a "archivos generados". Si ya estaba generada no se hace nada
+  private async marcarInterfaseGenerada(grupoLiquidacion: GrupoLiquidacion, excelBufferGrupo: Buffer) {
+
+    if (grupoLiquidacion.generacion_interfase == true) return;
+
+    await this.notificarGeneracionInterfase(grupoLiquidacion.idGrupoLiquidacion, excelBufferGrupo);
 
     // cambiar estado a TRUE
-    await this.actualizarCampoGrupoEstado(idGrupoLiquidacion, {
+    await this.actualizarCampoGrupoEstado(grupoLiquidacion.idGrupoLiquidacion, {
       campo: 'generacion_interfase',
       valor: 'true'      
     })
+
+  }
+
+  async downloadInterfaseExcel(idGrupoLiquidacion: number){
+
+    const { grupoLiquidacion, grupoInterfase, mes, anio } = await this.prepararGrupoInterfase(idGrupoLiquidacion);
+
+    const excelBuffer = await this.reporteInterfaseService.generateExcelGrupos([grupoInterfase]);
+
+    await this.marcarInterfaseGenerada(grupoLiquidacion, excelBuffer);
 
     return {
       excelBuffer: excelBuffer,
       title: `exportacion_grupo_${idGrupoLiquidacion}_mes_${mes}_anio_${anio}`
     };    
+
+  }
+
+  // UN SOLO ARCHIVO DE INTERFASE CON TODOS LOS GRUPOS INDICADOS (en orden de id). Si algun grupo no se puede generar
+  // (ej. le falta centro de costos) no se genera nada ni se cambia el estado de ningun grupo. Los grupos que aun no
+  // tenian la interfase generada se notifican (cada uno con su archivo individual) y pasan a "archivos generados",
+  // igual que al generarlos uno por uno
+  async downloadInterfaseExcelGrupos(idsGrupoLiquidacion: number[]){
+
+    const ids = [...new Set(idsGrupoLiquidacion)].sort((a, b) => a - b);
+
+    if (ids.length === 0) {
+      throw new BadRequestException('Debe indicar al menos un grupo de liquidacion');
+    }
+
+    const grupos = [];
+
+    for (const id of ids) {
+      grupos.push(await this.prepararGrupoInterfase(id));
+    }
+
+    const excelBuffer = await this.reporteInterfaseService.generateExcelGrupos(grupos.map(g => g.grupoInterfase));
+
+    for (const { grupoLiquidacion, grupoInterfase } of grupos) {
+
+      if (grupoLiquidacion.generacion_interfase == true) continue;
+
+      const excelBufferGrupo = await this.reporteInterfaseService.generateExcelGrupos([grupoInterfase]);
+
+      await this.marcarInterfaseGenerada(grupoLiquidacion, excelBufferGrupo);
+
+    }
+
+    return {
+      excelBuffer: excelBuffer,
+      // No corresponde a un solo grupo: se identifica con la fecha/hora de generacion
+      title: `exportacion_todos_los_grupos_${Date.now()}`
+    };
 
   }
   

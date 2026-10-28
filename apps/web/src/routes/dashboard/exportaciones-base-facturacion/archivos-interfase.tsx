@@ -11,9 +11,12 @@ import {
 } from "../../../components/ui/dashboard/exportaciones/FiltroMesExportacion";
 import {
   useEnviarCorreoExportacion,
+  useGenerarInterfaseGrupos,
   useGenerarReporteArchivo,
   useGetGruposLiquidacionesExportaciones,
 } from "../../../api/queryFunctions/exportaciones/exportaciones";
+import { ButtonAction } from "../../../components/common/ButtonAction";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 
 export const Route = createFileRoute(
   "/dashboard/exportaciones-base-facturacion/archivos-interfase",
@@ -50,6 +53,11 @@ function RouteComponent() {
     mutate: enviarCorreoExportacionInterfase,
     isPending: envioCorreoPending,
   } = useEnviarCorreoExportacion("enviar-excel-interfase");
+  const { mutate: generarInterfaseGrupos, isPending: generandoInterfaseGrupos } =
+    useGenerarInterfaseGrupos();
+
+  // Todos los grupos que se ven en el tab y mes actuales
+  const idsGrupos = (groups?.data ?? []).map((grupo) => grupo.idGrupoLiquidacion);
 
   // Handlers
   const handleGenerarReporteConsolidacion = (idGrupoLiquidacion: number) => {
@@ -58,6 +66,19 @@ function RouteComponent() {
 
   return (
     <Section>
+      <div className="flex justify-end">
+        <ButtonAction
+          Icon={FileDownloadOutlinedIcon}
+          label={
+            generandoInterfaseGrupos
+              ? "Generando..."
+              : "Generar archivo de interfase para todos los grupos"
+          }
+          type="button"
+          disabled={idsGrupos.length === 0 || generandoInterfaseGrupos}
+          onClick={() => generarInterfaseGrupos(idsGrupos)}
+        />
+      </div>
       <NavTabs
         tabs={tabs}
         activeTab={activeTab}

@@ -9,6 +9,7 @@ import { EnviarCorreoDto } from '../../common/dto';
 import { LiquidacionesService } from '../../liquidaciones/services/liquidaciones.service';
 import { FiltroGrupoLiquidacionDto } from '../dto/filtroGrupoLiquidacion.dto';
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
+import { GenerarInterfaseGruposDto } from '../dto/generarInterfaseGrupos.dto';
 
 @Controller('exportacion')
 @AppAuth(DescriptionRoutes.EXPORTACIONES) // RUTAS PROTEGIDAS EN ESTE CONTROLLER
@@ -68,6 +69,27 @@ export class ExportacionController {
   ) {
 
     const {excelBuffer, title} = await this.liquidacionesService.downloadInterfaseExcel(idGrupoLiquidacion);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=${title}.xlsx`,
+    );
+
+    res.end(excelBuffer);
+  }
+
+  // UN SOLO ARCHIVO DE INTERFASE CON TODOS LOS GRUPOS INDICADOS
+  @Post('generar-excel-interfase-grupos')
+  async generarReporteInterfaseGrupos(
+    @Body() generarInterfaseGruposDto: GenerarInterfaseGruposDto,
+    @Res() res: Response
+  ) {
+
+    const {excelBuffer, title} = await this.liquidacionesService.downloadInterfaseExcelGrupos(generarInterfaseGruposDto.idsGrupoLiquidacion);
 
     res.setHeader(
       'Content-Type',

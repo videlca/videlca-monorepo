@@ -22,20 +22,58 @@ export const getGruposLiquidacionesExportaciones = async (params: FiltroGrupoLiq
   });
 };
 
-export const generarArchivoExcel = async (idGrupoLiquidacion: number, archivo: Exportacion): Promise<{ blob: Blob; filename: string }> => {
-  const response = await axiosClient.get(`/exportacion/${idGrupoLiquidacion}/${archivo}`, {
-    responseType: 'blob',
-  });
-
-  const contentDisposition = response.headers['content-disposition'];
-  let filename = `exportacion-${archivo}-${idGrupoLiquidacion}.xlsx`;
+// Nombre del archivo que manda el backend en Content-Disposition, o el de respaldo si no viene
+const filenameDesdeHeader = (contentDisposition: string | undefined, porDefecto: string): string => {
   if (contentDisposition) {
     const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
     if (filenameMatch && filenameMatch[1]) {
-      filename = filenameMatch[1].replace(/['"]/g, '');
+      return filenameMatch[1].replace(/['"]/g, '');
     }
   }
+  return porDefecto;
+};
+
+// Con responseType 'blob' el cuerpo de un error (ej. el 400 de "falta el centro de costos") tambien llega como
+// Blob: se lee para que el toast muestre el mensaje real del backend y no solo el codigo HTTP
+const errorDesdeBlob = async (error: any): Promise<Error> => {
+  const data = error?.response?.data;
+  if (data instanceof Blob) {
+    try {
+      const { message } = JSON.parse(await data.text());
+      if (message) return new Error(Array.isArray(message) ? message.join(", ") : message);
+    } catch {
+      // cuerpo no JSON: se deja el error original
+    }
+  }
+  return error;
+};
+
+export const generarArchivoExcel = async (idGrupoLiquidacion: number, archivo: Exportacion): Promise<{ blob: Blob; filename: string }> => {
+  const response = await axiosClient.get(`/exportacion/${idGrupoLiquidacion}/${archivo}`, {
+    responseType: 'blob',
+  }).catch(async (error) => { throw await errorDesdeBlob(error); });
+
+  const filename = filenameDesdeHeader(
+    response.headers['content-disposition'],
+    `exportacion-${archivo}-${idGrupoLiquidacion}.xlsx`,
+  );
   
+  return { blob: response.data, filename };
+};
+
+// Un solo archivo de interfase con todos los grupos indicados (ver downloadInterfaseExcelGrupos en el backend)
+export const generarArchivoInterfaseGrupos = async (idsGrupoLiquidacion: number[]): Promise<{ blob: Blob; filename: string }> => {
+  const response = await axiosClient.post(
+    `/exportacion/generar-excel-interfase-grupos`,
+    { idsGrupoLiquidacion },
+    { responseType: 'blob' },
+  ).catch(async (error) => { throw await errorDesdeBlob(error); });
+
+  const filename = filenameDesdeHeader(
+    response.headers['content-disposition'],
+    `exportacion_todos_los_grupos_${Date.now()}.xlsx`,
+  );
+
   return { blob: response.data, filename };
 };
 
