@@ -531,6 +531,11 @@ export class TarifasService {
       .where('tarifa.idPeriodo = :id', { id: periodoActivoFacturacion.idPeriodo })
       .andWhere('tipoServicio.idTipoServicio = :idTipoServicio', { idTipoServicio })
       .andWhere('tarifa.estado = :estado', { estado: true })
+      // ORDEN DE LOS SERVICIOS AL CREAR UNA ORDEN: por display_order y luego por id (orden de creacion). Solo columnas
+      // reales: TypeORM no acepta expresiones en orderBy al paginar con joins. Los sin display_order (NULL, que MySQL
+      // pone primero) se pasan al final con ordenarPorDisplayOrder
+      .orderBy('servicio.displayOrder', 'ASC')
+      .addOrderBy('servicio.idServicio', 'ASC')
 
     if (paginationDto.pagination === PaginationOption.TRUE) {
       const { limit = this.defaultLimit, offset = 0 } = paginationDto;
@@ -553,7 +558,7 @@ export class TarifasService {
 
     }
 
-    const tarifas = await queryBuilder.getMany();
+    const tarifas = this.ordenarPorDisplayOrder(await queryBuilder.getMany());
 
     return {
       data: tarifas,
@@ -567,6 +572,18 @@ export class TarifasService {
         hasPreviousPage: false,
       }
     };
+
+  }
+
+  // PASA AL FINAL LAS TARIFAS CUYO SERVICIO NO TIENE display_order, CONSERVANDO EL ORDEN DEL RESTO (que ya viene
+  // ordenado de la consulta). Solo se aplica sin paginar (asi lo pide la creacion de ordenes): paginado, los sin
+  // display_order quedan primero, como los ordena MySQL
+  private ordenarPorDisplayOrder(tarifas: Tarifa[]): Tarifa[] {
+
+    return [
+      ...tarifas.filter(tarifa => tarifa.idServicio.displayOrder != null),
+      ...tarifas.filter(tarifa => tarifa.idServicio.displayOrder == null),
+    ];
 
   }
 

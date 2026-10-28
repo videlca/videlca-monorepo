@@ -14,6 +14,9 @@ export interface Servicio {
   horasMaximas: number;
   dominical: boolean;
   estado: boolean;
+  // Orden al crear una orden de servicio, relativo a su tipo de servicio (null = sin orden, va al final).
+  // El backend ya devuelve las tarifas ordenadas por este campo
+  displayOrder?: number | null;
   tarifas: Tarifa[];
 }
 

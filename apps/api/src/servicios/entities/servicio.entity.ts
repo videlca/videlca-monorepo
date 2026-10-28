@@ -102,6 +102,16 @@ export class Servicio {
         default: true
     })
     estado: boolean;
+
+    // ORDEN EN QUE SE MUESTRA EL SERVICIO AL CREAR UNA ORDEN (ascendente). Es relativo a su tipo de servicio: un
+    // servicio de monitoreo y uno de vigilancia pueden tener el mismo numero porque nunca se muestran juntos.
+    // null = sin orden definido, va al final
+    @Column({
+        type: 'int',
+        name: 'display_order',
+        nullable: true
+    })
+    displayOrder: number | null;
     
     @OneToMany(
         () => Tarifa, 
