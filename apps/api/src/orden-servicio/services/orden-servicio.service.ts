@@ -606,6 +606,7 @@ export class OrdenServicioService {
       .leftJoinAndSelect('orden.idLocacion', 'locacion')
       .leftJoinAndSelect('locacion.idCliente', 'cliente')
       .leftJoinAndSelect('orden.idCliente', 'clienteDirecto')
+      .leftJoinAndSelect('orden.idCiudad', 'ciudadOrden')
       .leftJoinAndSelect('orden.detalles', 'detalles')
       .leftJoinAndSelect('detalles.idTarifa', 'tarifa')
       .leftJoinAndSelect('tarifa.idServicio', 'servicio')

@@ -1096,12 +1096,17 @@ function RouteComponent() {
     {
       accessorKey: "idLocacion",
       header: "Puesto",
+      // Sin puesto (orden asignada directo a un cliente): se muestra la ciudad de la orden. Monitoreo no tiene
+      // ni puesto ni ciudad (centro de costos fijo), ahi queda "N/A"
       cell: ({ row }) => (
         <span className="flex flex-col gap-1 whitespace-nowrap capitalize">
           {row.original.idLocacion?.nombre ||
+            row.original.idCiudad?.descripcion ||
             (row.original.idCliente ? "N/A" : "No especificado")}
           <Typography variant="caption" color="text.secondary">
-            {row.original.idLocacion?.direccion}
+            {row.original.idLocacion
+              ? row.original.idLocacion.direccion
+              : row.original.idCiudad && "Ciudad (sin puesto)"}
           </Typography>
         </span>
       ),
