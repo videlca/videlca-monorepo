@@ -15,7 +15,10 @@ import type { Servicio } from "../../../api/types/servicio";
 import { timeFormat } from "../../../utils/TimeFormat";
 import { InputTime24H } from "../InputTime24H";
 import { CheckboxForm } from "../CheckboxForm";
-import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "./tipoServicioConstantes";
+import {
+  TIPO_SERVICIO_MONITOREO_ALARMAS,
+  TIPO_SERVICIO_VIGILANCIA_Y_ESCOLTA,
+} from "./tipoServicioConstantes";
 
 // Dias de la semana en que se presta un servicio de catalogo (ver PatronDiasSemanaDto). El orden en el que se
 // muestran los botones empieza en lunes, igual que el orden en que llegan los campos del backend
@@ -148,6 +151,12 @@ export const ConfigurarHorariosServicios = ({
     Record<number, boolean>
   >({});
 
+  // Tarjetas de servicios de 24 horas de vigilancia en las que el usuario marco "seleccionar hora de fin"
+  // (ver permiteHoraFin24), indexadas por los indices de la tarjeta
+  const [conHoraFin24PorTarjeta, setConHoraFin24] = useState<
+    Record<string, boolean>
+  >({});
+
   // Puede haber varios servicios distintos de tipo "Monitoreo de alarmas" seleccionados a la vez (cada uno con
   // su propia tarifa/precio y su propia cantidad de unidades, ver SeleccionarServicio), por eso se agrupan por
   // idServicio y no todos juntos: cada servicio de este tipo obtiene su propia tarjeta unica que cubre todas
@@ -208,13 +217,27 @@ export const ConfigurarHorariosServicios = ({
     const mostrarSelectorDias =
       !esMonitoreoAlarmas || !!personalizarDiasMonitoreo[service.idServicio];
 
+    // Los servicios de 24 horas de Vigilancia y escolta (por turno o mensual, no "por servicio") pueden prestarse
+    // menos horas (ej: 22 u 23) y se cobran proporcional a la tarifa de 24 horas (ver esServicioProporcionalPorHoras
+    // en el backend). Si ya trae una hora de fin distinta a la de inicio (el usuario volvio a este paso), el
+    // checkbox arranca marcado
+    const permiteHoraFin24 =
+      service.horasFijas === 24 &&
+      service.idTipoServicio?.nombre === TIPO_SERVICIO_VIGILANCIA_Y_ESCOLTA &&
+      service.idTipoTarifa?.nombre !== "por servicio";
+    const claveTarjeta = indices.join("-");
+    const conHoraFin24 =
+      permiteHoraFin24 &&
+      (conHoraFin24PorTarjeta[claveTarjeta] ??
+        (!!fila.horaFin && fila.horaFin !== fila.horaInicio));
+
     return (
       <Paper key={indices.join("-")} variant="outlined" className="p-4">
         <div className="flex flex-col gap-3">
           <Typography variant="body1" component="h4" sx={{ fontWeight: 600 }}>
             {titulo}
           </Typography>
-          {service.horasFijas === 24 ? (
+          {service.horasFijas === 24 && !conHoraFin24 ? (
             <>
               <Typography variant="body2" color="text.secondary">
                 Horario Fijo (Servicio de 24 horas) configurar la hora de
@@ -225,9 +248,10 @@ export const ConfigurarHorariosServicios = ({
                 placeholder="Selecciona una hora de inicio"
                 id="horaInicio"
                 name="horaInicio"
+                mediasHoras={!esMonitoreoAlarmas}
                 value={fila.horaInicio || ""}
                 onChange={(e) =>
-                  // Al ser servicio de 24 horas, se debe setear la hora de fin a 00:00:00
+                  // Al ser servicio de 24 horas, la hora de fin es la misma de inicio (inicio = fin se toma como 24 horas)
                   actualizarFilas({
                     horaInicio: timeFormat(e.target.value),
                     horaFin: timeFormat(e.target.value),
@@ -245,6 +269,7 @@ export const ConfigurarHorariosServicios = ({
                   label="Hora de Inicio"
                   id="horaInicio"
                   name="horaInicio"
+                  mediasHoras
                   value={fila.horaInicio || ""}
                   onChange={(e) =>
                     actualizarFilas({ horaInicio: timeFormat(e.target.value) })
@@ -254,6 +279,7 @@ export const ConfigurarHorariosServicios = ({
                   label="Hora de Fin"
                   id="horaFin"
                   name="horaFin"
+                  mediasHoras
                   value={fila.horaFin || ""}
                   onChange={(e) =>
                     actualizarFilas({ horaFin: timeFormat(e.target.value) })
@@ -261,6 +287,19 @@ export const ConfigurarHorariosServicios = ({
                 />
               </div>
             </div>
+          )}
+          {permiteHoraFin24 && (
+            <CheckboxForm
+              label="Seleccionar hora de fin (el servicio dura menos de 24 horas)"
+              id={`conHoraFin24-${indices.join("-")}`}
+              checked={conHoraFin24}
+              onChange={(e) => {
+                const marcado = e.target.checked;
+                setConHoraFin24((prev) => ({ ...prev, [claveTarjeta]: marcado }));
+                // Al desmarcar vuelve a ser un servicio de 24 horas completo (inicio = fin)
+                if (!marcado) actualizarFilas({ horaFin: fila.horaInicio });
+              }}
+            />
           )}
         </div>
 
@@ -300,6 +339,12 @@ export const ConfigurarHorariosServicios = ({
                 Tarifa de <b>12 horas</b>: puede elegir una duración de{" "}
                 <b>1 a 24 horas</b>, se cobra proporcional (horas / 12). Si la
                 hora de inicio es igual a la de fin se toma como 24 horas.
+              </>
+            ) : permiteHoraFin24 ? (
+              <>
+                Tarifa de <b>24 horas</b>: si el servicio dura menos, marque{" "}
+                <b>Seleccionar hora de fin</b>. Se cobra proporcional (horas /
+                24), se permiten medias horas.
               </>
             ) : service.idTipoDuracion.descripcion.toLowerCase() === "fija" ? (
               <>

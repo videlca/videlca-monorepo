@@ -9,11 +9,18 @@ interface InputTime24HProps extends Omit<
   label?: string;
   placeholder?: string;
   error?: string;
+  // Agrega las medias horas (00:30, 01:30, ..., 23:30) entre las horas en punto
+  mediasHoras?: boolean;
 }
 
 const hours = Array.from({ length: 24 }, (_, i) =>
   i.toString().padStart(2, "0"),
 );
+
+const opcionesHoras = (mediasHoras: boolean) =>
+  hours.flatMap((hour) =>
+    mediasHoras ? [`${hour}:00`, `${hour}:30`] : [`${hour}:00`],
+  );
 
 export const InputTime24H = React.forwardRef<
   HTMLSelectElement,
@@ -29,6 +36,7 @@ export const InputTime24H = React.forwardRef<
       placeholder = "Selecciona una hora",
       label = "",
       error,
+      mediasHoras = false,
       value,
       onChange,
       onBlur,
@@ -56,9 +64,9 @@ export const InputTime24H = React.forwardRef<
         <option value="" disabled>
           {placeholder}
         </option>
-        {hours.map((hour) => (
-          <option key={hour} value={`${hour}:00:00`}>
-            {hour}:00
+        {opcionesHoras(mediasHoras).map((hora) => (
+          <option key={hora} value={`${hora}:00`}>
+            {hora}
           </option>
         ))}
       </TextField>

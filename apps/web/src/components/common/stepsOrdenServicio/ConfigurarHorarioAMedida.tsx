@@ -26,6 +26,7 @@ export const ConfigurarHorarioAMedida = ({
             label="Hora de Inicio"
             id="horaInicioAMedida"
             name="horaInicioAMedida"
+            mediasHoras
             value={horarioAMedida.horaInicio}
             onChange={(e) =>
               setHorarioAMedida({
@@ -38,6 +39,7 @@ export const ConfigurarHorarioAMedida = ({
             label="Hora de Fin"
             id="horaFinAMedida"
             name="horaFinAMedida"
+            mediasHoras
             value={horarioAMedida.horaFin}
             onChange={(e) =>
               setHorarioAMedida({
