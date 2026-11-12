@@ -9,6 +9,7 @@ import { getYear, subYears } from "date-fns";
 import { useState } from "react";
 import {
   useDescargarPdfLiquidacion,
+  useEliminarGrupoLiquidacionAprobado,
   useEnviarCorreoArchivoLiquidacion,
   useEnviarPdfLiquidacion,
   useGenerarReporteArchivoLiquidacion,
@@ -18,6 +19,7 @@ import { Section } from "../../../components/ui/dashboard/Section";
 import { InputSelect } from "../../../components/common/InputSelect";
 import { ButtonAction } from "../../../components/common/ButtonAction";
 import CommentOutlinedIcon from "@mui/icons-material/CommentOutlined";
+import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import MailOutlinedIcon from "@mui/icons-material/MailOutlined";
@@ -25,6 +27,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
 import { priceFormat } from "../../../utils/PriceFormat";
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
+import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/ObservacionesGrupoOrdenes";
 import type {
   GruposLiquidaciones,
@@ -84,6 +87,8 @@ function RouteComponent() {
     null,
   );
   const [groupIdSelected, setGroupIdSelected] = useState<number | null>(null);
+  // Grupo aprobado que se va a eliminar (null = modal de confirmacion cerrado)
+  const [groupIdEliminar, setGroupIdEliminar] = useState<number | null>(null);
   const [isOpenObservacionesModal, setIsOpenObservacionesModal] =
     useState(false);
   const [groupLiquidacionSelected, setGroupLiquidacionSelected] =
@@ -136,6 +141,12 @@ function RouteComponent() {
     mutate: enviarPdfLiquidacion,
     isPending: enviarPdfLiquidacionPending,
   } = useEnviarPdfLiquidacion();
+  const {
+    mutate: eliminarGrupoAprobado,
+    isPending: eliminarGrupoAprobadoPending,
+  } = useEliminarGrupoLiquidacionAprobado();
+
+  const mesBuscado = `${monthsOptions.find((m) => m.id === Number(searchMonth))?.descripcion ?? ""} ${searchYear}`;
 
   const handleGenerarReporteLiquidacion = (groupId: number) => {
     generarReporteArchivoLiquidacion(groupId);
@@ -344,6 +355,13 @@ function RouteComponent() {
                     >
                       Enviar PDF
                     </ButtonOrdenes>
+                    <ButtonOrdenes
+                      onClick={() => setGroupIdEliminar(group.idGrupoLiquidacion)}
+                      color="red"
+                      icon={<DeleteOutlinedIcon />}
+                    >
+                      Eliminar grupo
+                    </ButtonOrdenes>
                   </>
                 }
               />
@@ -381,6 +399,19 @@ function RouteComponent() {
         id={groupIdPdfSelected as number}
         mutationEmail={enviarPdfLiquidacion}
         envioCorreoPending={enviarPdfLiquidacionPending}
+      />
+
+      <ConfirmarDelete
+        isOpenDelete={groupIdEliminar != null}
+        text={`¿Eliminar el grupo ${groupIdEliminar ?? ""}? Se borrará la información de liquidación de sus órdenes y adicionales para ${mesBuscado}, y quedarán disponibles para liquidar de nuevo.`}
+        actionLabel={eliminarGrupoAprobadoPending ? "Eliminando..." : "Eliminar grupo"}
+        onDelete={() => {
+          if (eliminarGrupoAprobadoPending || groupIdEliminar == null) return;
+          eliminarGrupoAprobado(groupIdEliminar, {
+            onSuccess: () => setGroupIdEliminar(null),
+          });
+        }}
+        onClose={() => setGroupIdEliminar(null)}
       />
     </Section>
   );

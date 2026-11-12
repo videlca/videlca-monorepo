@@ -21,7 +21,7 @@ import { ClientesService } from '../../clientes/services';
 
 import { OrdenServicio } from '../../orden-servicio/entities';
 import { Adicional } from '../../adicionales/entities';
-import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion, NumeroPedido } from '../entities';
+import { LiquidacionServicioOrdenServicio, Liquidacione, GrupoLiquidacion, NumeroPedido, ObservacionGrupoOrdenServicio } from '../entities';
 import { Ciudad } from '../../common/entities';
 
 import { UpdateGrupoLiquidacionEstadoDto } from '../dto/updateGrupoLiquidacionEstado.dto';
@@ -1247,29 +1247,8 @@ export class LiquidacionesService {
         throw new NotFoundException('Grupo de liquidación no encontrado');
       }
 
-      // Borrar primero el detalle (liquidacion_servicio_orden_servicio), ya que referencia a
-      // liquidaciones por FK y no tiene cascade, si no la eliminacion de liquidaciones falla
-      await queryRunner.manager
-        .createQueryBuilder()
-        .delete()
-        .from(LiquidacionServicioOrdenServicio)
-        .where('idLiquidacion IN (SELECT idLiquidacion FROM liquidaciones WHERE idGrupoLiquidacion = :id)', { id: idGrupoLiquidacion })
-        .execute();
+      await this.borrarGrupoYLiquidaciones(queryRunner, idGrupoLiquidacion);
 
-      await queryRunner.manager
-        .createQueryBuilder()
-        .delete()
-        .from(Liquidacione)
-        .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
-        .execute();
-  
-      await queryRunner.manager
-        .createQueryBuilder()
-        .delete()
-        .from(GrupoLiquidacion)
-        .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
-        .execute();
-  
       await this.notificarDesaprobacionLiquidacion(grupoLiquidacion.idGrupoLiquidacion);
 
       await queryRunner.commitTransaction();
@@ -1293,7 +1272,101 @@ export class LiquidacionesService {
     }
 
   }
-  
+
+  // ELIMINA UN GRUPO YA APROBADO DESDE EL HISTORIAL (ej: el gerente lo aprobo por error). Borra lo mismo que
+  // desintegrarGrupo: las liquidaciones de sus ordenes/adicionales para ese mes (que vuelven a quedar disponibles para
+  // liquidar), su detalle, los numeros de pedido que dejo la generacion de la consolidacion y sus observaciones.
+  // Los correos/archivos que ya se enviaron no se pueden deshacer
+  async eliminarGrupoAprobado(idGrupoLiquidacion: number) {
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+
+      const grupoLiquidacion = await queryRunner.manager.findOne(GrupoLiquidacion, {
+        where: { idGrupoLiquidacion },
+      });
+
+      if (!grupoLiquidacion) {
+        throw new NotFoundException('Grupo de liquidación no encontrado');
+      }
+
+      if (!grupoLiquidacion.estado) {
+        throw new BadRequestException('El grupo de liquidación no está aprobado, desintégrelo desde la pantalla de aprobación');
+      }
+
+      await this.borrarGrupoYLiquidaciones(queryRunner, idGrupoLiquidacion);
+
+      await this.notificarDesaprobacionLiquidacion(idGrupoLiquidacion, true);
+
+      await queryRunner.commitTransaction();
+
+      return {
+        ok: true,
+        grupoId: idGrupoLiquidacion,
+        mensaje: 'Grupo de liquidación aprobado y sus liquidaciones eliminadas correctamente',
+      };
+
+    } catch (error) {
+
+      await queryRunner.rollbackTransaction();
+
+      throw error;
+
+    } finally {
+
+      await queryRunner.release();
+
+    }
+
+  }
+
+  // BORRA UN GRUPO DE LIQUIDACION Y TODO LO QUE SE CREO A PARTIR DE EL, EN ORDEN PARA NO ROMPER LAS FK
+  private async borrarGrupoYLiquidaciones(queryRunner: QueryRunner, idGrupoLiquidacion: number) {
+
+    // Borrar primero el detalle (liquidacion_servicio_orden_servicio), ya que referencia a
+    // liquidaciones por FK y no tiene cascade, si no la eliminacion de liquidaciones falla
+    await queryRunner.manager
+      .createQueryBuilder()
+      .delete()
+      .from(LiquidacionServicioOrdenServicio)
+      .where('idLiquidacion IN (SELECT idLiquidacion FROM liquidaciones WHERE idGrupoLiquidacion = :id)', { id: idGrupoLiquidacion })
+      .execute();
+
+    await queryRunner.manager
+      .createQueryBuilder()
+      .delete()
+      .from(Liquidacione)
+      .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
+      .execute();
+
+    // Numeros de pedido que se crean al generar la consolidacion del grupo (ver downloadConsolidacionExcel)
+    await queryRunner.manager
+      .createQueryBuilder()
+      .delete()
+      .from(NumeroPedido)
+      .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
+      .execute();
+
+    await queryRunner.manager
+      .createQueryBuilder()
+      .delete()
+      .from(ObservacionGrupoOrdenServicio)
+      .where('idGrupoOrdenServicio = :id', { id: idGrupoLiquidacion })
+      .execute();
+
+    await queryRunner.manager
+      .createQueryBuilder()
+      .delete()
+      .from(GrupoLiquidacion)
+      .where('idGrupoLiquidacion = :id', { id: idGrupoLiquidacion })
+      .execute();
+
+  }
+
 
   async actualizarCampoGrupoEstado(id: number, dto: UpdateGrupoLiquidacionEstadoDto) {
 
@@ -3147,9 +3220,12 @@ export class LiquidacionesService {
   
   }
   
-  async notificarDesaprobacionLiquidacion(idGrupoLiquidacion: number){
-  
-    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): se ha desaprobado liquidacion para el grupo ${idGrupoLiquidacion} de ordenes de servicio`;
+  // eliminadoDelHistorial: el grupo ya estaba aprobado y se elimino desde el historial (ver eliminarGrupoAprobado)
+  async notificarDesaprobacionLiquidacion(idGrupoLiquidacion: number, eliminadoDelHistorial = false){
+
+    const accion = eliminadoDelHistorial ? 'eliminado (ya estaba aprobado)' : 'desaprobado';
+
+    const subject = `NOTIFICACIONES VIDELCA (GEVID 👮‍♂️): se ha ${eliminadoDelHistorial ? 'eliminado' : 'desaprobado'} liquidacion para el grupo ${idGrupoLiquidacion} de ordenes de servicio`;
   
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -3157,14 +3233,14 @@ export class LiquidacionesService {
           
           <!-- Encabezado -->
           <div style="background: linear-gradient(135deg, #003366, #0055a5); padding: 20px; text-align: center; color: #fff;">
-            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">DESAPROBACION GRUPO LIQUIDACION ${idGrupoLiquidacion}</h2>
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700;">${eliminadoDelHistorial ? 'ELIMINACION' : 'DESAPROBACION'} GRUPO LIQUIDACION ${idGrupoLiquidacion}</h2>
           </div>
-          
+
           <!-- Cuerpo -->
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
-              Buen día, se notifica desaprobacion de liquidacion para el grupo ${idGrupoLiquidacion} de ordenes de servicio. <br><br> 
-              Numero de grupo de liquidacion de ordenes de servicio desaprobado: <b>${idGrupoLiquidacion}</b>. <br><br>
+              Buen día, se notifica que el grupo de liquidacion ${idGrupoLiquidacion} de ordenes de servicio ha sido ${accion}. <br><br>
+              Numero de grupo de liquidacion de ordenes de servicio ${accion}: <b>${idGrupoLiquidacion}</b>. <br><br>
               Las ordenes de servicio de este grupo vuelven a estar disponibles para liquidar.
             </p>
             <p style="font-size: 15px; line-height: 1.6; color: #555;">

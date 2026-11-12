@@ -46,7 +46,12 @@ export const desintegrarGrupoLiquidacion = async (idGrupoLiquidacion: number): P
   return await apiDelete<GruposLiquidaciones>(`/aprobacion-liquidacion-orden-servicio/${idGrupoLiquidacion}/desintegrar-grupo`);
 };
 
-export const cambiarEstadoExportacion = async (idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto): Promise<ApiResponse<GruposLiquidaciones>> => {
+// Elimina un grupo ya aprobado desde el historial (borra sus liquidaciones de ese mes)
+export const eliminarGrupoLiquidacionAprobado = async (idGrupoLiquidacion: number): Promise<ApiResponse<GruposLiquidaciones>> => {
+  return await apiDelete<GruposLiquidaciones>(`/liquidaciones/${idGrupoLiquidacion}/eliminar-grupo`);
+};
+
+export const cambiarEstadoExportacion =async (idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto): Promise<ApiResponse<GruposLiquidaciones>> => {
   return await apiPatch<GruposLiquidaciones>(`/liquidaciones/${idGrupoLiquidacion}/cambiar-estado`, data);
 };
 

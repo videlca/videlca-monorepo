@@ -1,4 +1,4 @@
-import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, compararLiquidacionesCliente, crearLiquidacionMensual, descargarPdfLiquidacion, desintegrarGrupoLiquidacion, enviarCorreoArchivoLiquidacion, enviarPdfLiquidacion, generarArchivoExcelLiquidacion, getAdicionalesPorMes, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial, getOrdenLiquidada } from "../../functions/liquidaciones"
+import { aprobarGrupoLiquidacion, cambiarEstadoExportacion, compararLiquidacionesCliente, crearLiquidacionMensual, descargarPdfLiquidacion, desintegrarGrupoLiquidacion, eliminarGrupoLiquidacionAprobado, enviarCorreoArchivoLiquidacion, enviarPdfLiquidacion, generarArchivoExcelLiquidacion, getAdicionalesPorMes, getGruposLiquidaciones, getLiquidacionesPorMes, getLiquidacionesPorMesHistorial, getOrdenLiquidada } from "../../functions/liquidaciones"
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
 import type { ApiResponse , PaginatedResponse } from "../../types/common";
 import type { CompararLiquidacionesClienteDto, CrearGrupoMensualDto } from "../../dtos/liquidaciones";
@@ -121,7 +121,24 @@ export const useDesintegrarGrupoLiquidacion = (): UseMutationResult<ApiResponse<
   });
 };
 
-export const useCambiarEstadoExportacion = (): UseMutationResult<ApiResponse<GruposLiquidaciones>, Error, { idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto }> => {
+export const useEliminarGrupoLiquidacionAprobado = (): UseMutationResult<ApiResponse<GruposLiquidaciones>, Error, number> => {
+  return useMutation({
+    mutationFn: (idGrupoLiquidacion: number) => eliminarGrupoLiquidacionAprobado(idGrupoLiquidacion),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success("Grupo de liquidación eliminado correctamente");
+        queryClient.invalidateQueries({ queryKey: ["liquidaciones-por-mes-historial"] });
+      } else {
+        showErrorToast(data.message, "Error al eliminar el grupo de liquidación");
+      }
+    },
+    onError: (error) => {
+      showErrorToast(error.message, "Error al eliminar el grupo de liquidación");
+    },
+  });
+};
+
+export const useCambiarEstadoExportacion =(): UseMutationResult<ApiResponse<GruposLiquidaciones>, Error, { idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto }> => {
   return useMutation({
     mutationFn: ({ idGrupoLiquidacion, data }: { idGrupoLiquidacion: number, data: UpdateGrupoLiquidacionEstadoDto }) => cambiarEstadoExportacion(idGrupoLiquidacion, data),
     onSuccess: (data) => {

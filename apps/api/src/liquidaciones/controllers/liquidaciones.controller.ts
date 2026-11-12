@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, ParseIntPipe, DefaultValuePipe, Param, Res } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Query, ParseIntPipe, DefaultValuePipe, Param, Res } from '@nestjs/common';
 import { ApiTags, ApiQuery } from '@nestjs/swagger';
 import type { Response } from 'express';
 
@@ -73,6 +73,12 @@ export class LiquidacionesController {
     @Query('tiposServicio') tiposServicio?: string,
   ) {
     return this.service.findByMesLiquidacionesAprobadas(anio, mes, idCliente, tiposServicio?.split(','));
+  }
+
+  // ELIMINA UN GRUPO YA APROBADO DESDE EL HISTORIAL (sus ordenes/adicionales vuelven a quedar disponibles para liquidar)
+  @Delete(':idGrupoLiquidacion/eliminar-grupo')
+  async eliminarGrupoAprobado(@Param('idGrupoLiquidacion', ParseIntPipe) idGrupoLiquidacion: number) {
+    return this.service.eliminarGrupoAprobado(idGrupoLiquidacion);
   }
 
   // COMPARA LAS LIQUIDACIONES APROBADAS DE UN CLIENTE ENTRE DOS MESES (diferencia = B - A)
