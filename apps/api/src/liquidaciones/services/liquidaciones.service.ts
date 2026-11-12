@@ -8,7 +8,7 @@ import { SendMailOptions } from '../../common/services/email/email.service';
 
 import { TipoServicioInterface } from '../../servicios/interfaces/tipo-servicio.interface';
 
-import { toUTCDateOnly, endOfMonth, minDate, maxDate, round2 } from '../../common/utils/date-helpers';
+import { toUTCDateOnly, endOfMonth, minDate, maxDate, round2, fmtYMD } from '../../common/utils/date-helpers';
 import { nombreServicioReporte } from '../../common/utils/nombre-servicio-reporte';
 import { PrecioOrdenDto } from '../../orden-servicio/dto';
 import { OrigenServicioEnum } from '../../orden-servicio/interfaces/origen-servicio.interface';
@@ -181,30 +181,37 @@ export class LiquidacionesService {
 
     }
 
-    const { desde, hasta } = this.rangoLiquidadoEnMes(liquidacion.ordenServicio, liquidacion.aniomes_liquidacion);
+    const { desde, hasta } = this.rangoDeLiquidacion(liquidacion);
 
     const esCatalogo = liquidacion.ordenServicio.origenServicio === OrigenServicioEnum.CATALOGO;
 
-    const detallesOrden = liquidacion.ordenServicio.detalles ?? [];
+    const detallesOrden = [...(liquidacion.ordenServicio.detalles ?? [])]
+      .sort((a, b) => a.idOrdenServicioDetalle - b.idOrdenServicioDetalle);
+
+    const lineasLiquidadas = [...(liquidacion.liquidacionServiciosOrdenServicio ?? [])]
+      .sort((a, b) => a.idLiquidacionServicioOrdenServicio - b.idLiquidacionServicioOrdenServicio);
+
+    // A LA MEDIDA CON COPIA: cada linea liquidada ya trae su fecha y horario (liquidaciones creadas desde que existe
+    // la copia). Sin copia (liquidaciones anteriores) se filtran los detalles actuales de la orden por fecha
+    const aMedidaConCopia = !esCatalogo && lineasLiquidadas.length > 0 && lineasLiquidadas.every(lsos => lsos.fecha != null);
+
+    // CATALOGO: el detalle de la orden que le corresponde a cada linea se empareja POR POSICION dentro de cada
+    // idTarifa (una orden puede tener varias unidades del mismo servicio). Solo se usa como respaldo para lineas
+    // liquidadas antes de que existiera la copia del horario/dias
+    const posicionPorTarifa = new Map<number, number>();
+    const detalleOrdenDeLinea = (idTarifa: number) => {
+      const posicion = posicionPorTarifa.get(idTarifa) ?? 0;
+      posicionPorTarifa.set(idTarifa, posicion + 1);
+      return detallesOrden.filter(d => d.idTarifa.idTarifa === idTarifa)[posicion];
+    };
 
     const detalles = esCatalogo
-      ? liquidacion.liquidacionServiciosOrdenServicio.map(lsos => {
-          const detalleOrden = detallesOrden.find(d => d.idTarifa.idTarifa === lsos.idTarifa.idTarifa);
+      ? lineasLiquidadas.map(lsos => {
+          const detalleOrden = detalleOrdenDeLinea(lsos.idTarifa.idTarifa);
           return {
             idTarifa: lsos.idTarifa,
             fecha: null,
-            horaInicio: detalleOrden?.horaInicio ?? null,
-            horaFin: detalleOrden?.horaFin ?? null,
-            // Dias de la semana del detalle original de la orden (lsos no los tiene, es el snapshot de precio
-            // liquidado). Por defecto true igual que en la entidad, para filas anteriores a esta funcionalidad
-            lunes: detalleOrden?.lunes ?? true,
-            martes: detalleOrden?.martes ?? true,
-            miercoles: detalleOrden?.miercoles ?? true,
-            jueves: detalleOrden?.jueves ?? true,
-            viernes: detalleOrden?.viernes ?? true,
-            sabado: detalleOrden?.sabado ?? true,
-            domingo: detalleOrden?.domingo ?? true,
-            incluyeFestivos: detalleOrden?.incluyeFestivos ?? true,
+            ...this.horarioYDiasLiquidados(lsos, detalleOrden),
             costosDirectos: lsos.costosDirectos,
             seguroVida: lsos.seguroVida,
             costosDirectosSeguroVida: lsos.costosDirectosSeguroVida,
@@ -214,6 +221,21 @@ export class LiquidacionesService {
             precio: lsos.precioTotal,
           };
         })
+      : aMedidaConCopia
+      ? lineasLiquidadas
+          .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
+          .map(lsos => ({
+            idTarifa: lsos.idTarifa,
+            fecha: lsos.fecha,
+            ...this.horarioYDiasLiquidados(lsos, undefined),
+            costosDirectos: lsos.costosDirectos,
+            seguroVida: lsos.seguroVida,
+            costosDirectosSeguroVida: lsos.costosDirectosSeguroVida,
+            aui: lsos.aui,
+            precioAntesIva: lsos.precioAntesIva,
+            iva: lsos.iva,
+            precio: lsos.precioTotal,
+          }))
       : detallesOrden
           .filter(d => d.fecha && toUTCDateOnly(d.fecha) >= desde && toUTCDateOnly(d.fecha) <= hasta)
           .sort((a, b) => +new Date(a.fecha!) - +new Date(b.fecha!))
@@ -250,6 +272,42 @@ export class LiquidacionesService {
       detalles,
       idLiquidacion: liquidacion.idLiquidacion,
       aniomes_liquidacion: liquidacion.aniomes_liquidacion,
+    };
+
+  }
+
+  // TRAMO COBRADO EN UNA LIQUIDACION YA CREADA: el que se copio al liquidar (no cambia aunque luego se editen las
+  // fechas de la orden). Las liquidaciones anteriores a la copia lo recalculan con las fechas actuales de la orden
+  private rangoDeLiquidacion(liquidacion: Liquidacione) {
+
+    if (liquidacion.fechaDesdeLiquidada && liquidacion.fechaHastaLiquidada) {
+      return {
+        desde: toUTCDateOnly(liquidacion.fechaDesdeLiquidada),
+        hasta: toUTCDateOnly(liquidacion.fechaHastaLiquidada),
+      };
+    }
+
+    return this.rangoLiquidadoEnMes(liquidacion.ordenServicio, liquidacion.aniomes_liquidacion);
+
+  }
+
+  // HORARIO Y DIAS DE LA SEMANA CON QUE SE LIQUIDO UNA LINEA: la copia guardada en la linea; si no tiene (lineas
+  // anteriores a la copia) se toman del detalle actual de la orden, y si tampoco hay, "todos los dias" (default)
+  private horarioYDiasLiquidados(lsos: LiquidacionServicioOrdenServicio, detalleOrden?: { horaInicio: string; horaFin: string; lunes: boolean; martes: boolean; miercoles: boolean; jueves: boolean; viernes: boolean; sabado: boolean; domingo: boolean; incluyeFestivos: boolean }) {
+
+    const dia = (copia: boolean | null, actual: boolean | undefined) => copia ?? actual ?? true;
+
+    return {
+      horaInicio: lsos.horaInicio ?? detalleOrden?.horaInicio ?? null,
+      horaFin: lsos.horaFin ?? detalleOrden?.horaFin ?? null,
+      lunes: dia(lsos.lunes, detalleOrden?.lunes),
+      martes: dia(lsos.martes, detalleOrden?.martes),
+      miercoles: dia(lsos.miercoles, detalleOrden?.miercoles),
+      jueves: dia(lsos.jueves, detalleOrden?.jueves),
+      viernes: dia(lsos.viernes, detalleOrden?.viernes),
+      sabado: dia(lsos.sabado, detalleOrden?.sabado),
+      domingo: dia(lsos.domingo, detalleOrden?.domingo),
+      incluyeFestivos: dia(lsos.incluyeFestivos, detalleOrden?.incluyeFestivos),
     };
 
   }
@@ -583,7 +641,11 @@ export class LiquidacionesService {
       // Formato fijo "YYYYMM" (mes con cero a la izquierda): sin el padStart, meses 1-9 quedaban con 5
       // caracteres (ej "20269" para septiembre/2026) y rompian cualquier lectura que asuma ancho fijo
       // (ver formatAniomes en el front, mostraba "N/A")
-      aniomes_liquidacion: aniomes
+      aniomes_liquidacion: aniomes,
+      // Copia del tramo cobrado: se guarda como texto "YYYY-MM-DD" (desde/hasta son medianoche UTC; si se
+      // guardaran como Date, TypeORM los formatea con la hora local y quedarian un dia antes)
+      fechaDesdeLiquidada: fmtYMD(desde),
+      fechaHastaLiquidada: fmtYMD(hasta),
     })
 
     await queryRunner.manager.save(Liquidacione, liquidacionOrden);
@@ -648,6 +710,18 @@ export class LiquidacionesService {
       const liquidacionServicio = queryRunner.manager.create(LiquidacionServicioOrdenServicio, {
         idLiquidacion: liquidacionOrden,
         idTarifa: detalle.idTarifa,
+        // Copia del horario/dias con que se liquido (ver comentario en la entidad)
+        fecha: esCatalogo ? null : detalle.fecha,
+        horaInicio: detalle.horaInicio,
+        horaFin: detalle.horaFin,
+        lunes: detalle.lunes,
+        martes: detalle.martes,
+        miercoles: detalle.miercoles,
+        jueves: detalle.jueves,
+        viernes: detalle.viernes,
+        sabado: detalle.sabado,
+        domingo: detalle.domingo,
+        incluyeFestivos: detalle.incluyeFestivos,
         costosDirectos,
         seguroVida,
         costosDirectosSeguroVida,
@@ -2254,7 +2328,7 @@ export class LiquidacionesService {
 
       const orden = liq.ordenServicio;
       const lineas = liq.liquidacionServiciosOrdenServicio ?? [];
-      const { desde, hasta } = this.rangoLiquidadoEnMes(orden, liq.aniomes_liquidacion);
+      const { desde, hasta } = this.rangoDeLiquidacion(liq);
 
       let servicios: ServicioLiquidadoPdf[];
 
@@ -2281,10 +2355,14 @@ export class LiquidacionesService {
 
           const detalle = detallesPorTarifa.get(idTarifa)?.[posicion];
 
+          // Horario copiado al liquidar; las lineas anteriores a la copia lo toman del detalle actual de la orden
+          const horaInicio = lsos.horaInicio ?? detalle?.horaInicio;
+          const horaFin = lsos.horaFin ?? detalle?.horaFin;
+
           return {
             descripcion: nombreServicioReporte(servicio),
             codigo: servicio.codigo,
-            horario: detalle ? `${detalle.horaInicio} - ${detalle.horaFin}` : null,
+            horario: horaInicio && horaFin ? `${horaInicio} - ${horaFin}` : null,
             tipoTarifa: servicio.idTipoTarifa?.nombre ?? null,
             ...precioDe(lsos, lsos.precioTotal),
           };

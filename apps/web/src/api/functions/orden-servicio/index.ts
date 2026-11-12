@@ -1,7 +1,7 @@
 import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
 import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
 import type { ApiResponse, Personal , PaginatedResponse } from "../../types/common";
-import type { OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
+import type { MesesLiquidadosOrden, OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
 import type { LiquidacionesOrdenPage } from "../../types/liquidaciones";
 
 export const createOrdenServicio = async (data: CreateOrdenServicioDto): Promise<ApiResponse<OrdenServicio>> => {
@@ -22,6 +22,11 @@ export const getFilteredOrdenesServicio = async (filter: any): Promise<ApiRespon
 
 export const getOrdenServicioById = async (id: number): Promise<ApiResponse<OrdenServicio>> => {
   return await apiGet<OrdenServicio>(`/orden-servicio/${id}`);
+}
+
+// Meses ya liquidados de la orden (para advertir al editarla)
+export const getMesesLiquidadosOrden = async (id: number): Promise<ApiResponse<MesesLiquidadosOrden>> => {
+  return await apiGet<MesesLiquidadosOrden>(`/orden-servicio/${id}/meses-liquidados`);
 }
 
 export const deleteOrdenServicio = async (id: number): Promise<ApiResponse<any>> => {

@@ -79,8 +79,10 @@ export class ReporteOrdenServicioService extends ReportePdfVidelcaBase {
         body: [
           [
             stat('Fecha creación', this.formatearFechaCorta(ordenServicio.fechaCreacion)),
-            stat('Fecha inicio', this.formatearFechaCorta(ordenServicio.fechaInicioOrden)),
-            stat('Fecha fin', esIndefinida ? 'Indefinida' : this.formatearFechaCorta(ordenServicio.fechaFinOrden)),
+            // Fechas vigentes de la orden (fechaInicio/fechaFin), no las originales de creacion (fechaInicioOrden/
+            // fechaFinOrden): la orden se puede editar y el precio/detalle de este PDF ya corresponde a las vigentes
+            stat('Fecha inicio', this.formatearFechaCorta(ordenServicio.fechaInicio)),
+            stat('Fecha fin', esIndefinida ? 'Indefinida' : this.formatearFechaCorta(ordenServicio.fechaFin)),
             {
               stack: [
                 { text: 'ESTADO', fontSize: 8, bold: true, color: PALETTE.textMuted },

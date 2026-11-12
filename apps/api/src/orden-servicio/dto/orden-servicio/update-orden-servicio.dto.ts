@@ -1,11 +1,19 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional, IsDate, IsString, IsNotEmpty, MaxLength, Matches, IsArray, ValidateNested, IsNumber, IsPositive, Min } from 'class-validator';
+import { IsOptional, IsDate, IsString, IsNotEmpty, MaxLength, Matches, IsArray, ValidateNested, IsNumber, IsPositive, Min, IsBoolean } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 // SOLO SE USA CUANDO LA ORDEN ES DE ORIGEN "catalogo" Y LA NUEVA FECHA FIN NO ES NULL: EL HORARIO DE CADA SERVICIO
 // YA EXISTENTE EN LA ORDEN (NO SE PUEDEN AGREGAR/QUITAR SERVICIOS, SOLO REENVIAR SU HORARIO PARA RECALCULAR EL PRECIO
 // CON LAS NUEVAS FECHAS)
 export class UpdateOrdenServicioDetalleDto {
+
+    // Fila del desglose de la orden a la que corresponde este servicio. Si no se envia se empareja por posicion
+    // dentro de cada idTarifa. Necesario para distinguir varias unidades del mismo servicio con distintos dias
+    @ApiProperty({ description: 'Id de la fila del desglose de la orden (idOrdenServicioDetalle) a la que corresponde este servicio', example: 10, required: false})
+    @IsOptional()
+    @IsNumber({}, {message: 'El valor del campo idOrdenServicioDetalle debe ser un número'})
+    @IsPositive({message: 'El valor del campo idOrdenServicioDetalle debe ser un numero positivo'})
+    idOrdenServicioDetalle?: number;
 
     @ApiProperty({ description: 'Id de la tarifa de este servicio (debe ser uno de los que ya tiene la orden)', example: 1, required:true})
     @IsNumber({}, {message: 'El valor del campo tarifa debe ser un número'})
@@ -30,6 +38,48 @@ export class UpdateOrdenServicioDetalleDto {
         message: 'horaFin debe tener formato HH:mm:ss'
     })
     horaFin: string;
+
+    // DIAS DE LA SEMANA EN QUE SE PRESTA ESTE SERVICIO (solo catalogo). Opcionales: si no se envian se conservan los
+    // que ya tiene el servicio en la orden. El cambio solo afecta los meses que aun no se han liquidado
+    @ApiProperty({ description: 'Se presta el lunes', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo lunes debe ser boolean'})
+    lunes?: boolean;
+
+    @ApiProperty({ description: 'Se presta el martes', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo martes debe ser boolean'})
+    martes?: boolean;
+
+    @ApiProperty({ description: 'Se presta el miercoles', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo miercoles debe ser boolean'})
+    miercoles?: boolean;
+
+    @ApiProperty({ description: 'Se presta el jueves', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo jueves debe ser boolean'})
+    jueves?: boolean;
+
+    @ApiProperty({ description: 'Se presta el viernes', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo viernes debe ser boolean'})
+    viernes?: boolean;
+
+    @ApiProperty({ description: 'Se presta el sabado', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo sabado debe ser boolean'})
+    sabado?: boolean;
+
+    @ApiProperty({ description: 'Se presta el domingo', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo domingo debe ser boolean'})
+    domingo?: boolean;
+
+    @ApiProperty({ description: 'Ademas de los dias marcados, cuenta cualquier dia festivo', example: true, required: false})
+    @IsOptional()
+    @IsBoolean({message: 'El campo incluyeFestivos debe ser boolean'})
+    incluyeFestivos?: boolean;
 
 }
 

@@ -31,6 +31,7 @@ import {
   useValidateFechasOrdenServicio,
   useFilterOrdenesServicio,
   useValidarRangoHorarioPersonalOrdenServicio,
+  useGetMesesLiquidadosOrden,
 } from "../../../api/queryFunctions/orden-servicio";
 import {
   type CreateOrdenServicioDto,
@@ -38,6 +39,7 @@ import {
   type CreateOrdenServicioDetalleDto,
   type UpdateOrdenServicioDto,
   type UpdateOrdenServicioTarifaDto,
+  type PatronDiasSemanaDto,
   OrdenServicioFilterColumn,
   OrigenServicioEnum,
 } from "../../../api/dtos";
@@ -64,6 +66,12 @@ import { AsignacionPersonalServicio } from "../../../components/common/stepsOrde
 import { PreviewInformacionOrden } from "../../../components/common/stepsOrdenServicio/PreviewInformacionOrden";
 import { SeleccionarPuestoCliente } from "../../../components/common/stepsOrdenServicio/SeleccionarPuestoCliente";
 import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "../../../components/common/stepsOrdenServicio/tipoServicioConstantes";
+import {
+  AvisoEdicionOrden,
+  EditarDiasServiciosOrden,
+  ESTADOS_ORDEN_INICIADA,
+  ESTADOS_ORDEN_NO_EDITABLES,
+} from "../../../components/common/stepsOrdenServicio/EdicionOrdenServicio";
 import { ObservacionesOrdenServicio } from "../../../components/ui/modals/ObservacionesOrdenServicio";
 import { useGetObservacionesOrdenServicio } from "../../../api/queryFunctions/orden-servicio/observaciones";
 import { MoreActionsButton } from "../../../components/ui/common/MoreActionsButton";
@@ -85,6 +93,24 @@ interface UpdateOrdenServicioTarifaDtoInternal
   extends UpdateOrdenServicioTarifaDto {
   idServicio?: number;
 }
+
+// Patron de dias de un servicio como texto (ej "11111111"), para saber si se modifico en la edicion
+const firmaDias = (fila: PatronDiasSemanaDto) =>
+  [fila.lunes, fila.martes, fila.miercoles, fila.jueves, fila.viernes, fila.sabado, fila.domingo, fila.incluyeFestivos]
+    .map((dia) => ((dia ?? true) ? "1" : "0"))
+    .join("");
+
+// Dias de la semana de una fila de la edicion, tal cual se envian al backend
+const diasDeFila = (fila: PatronDiasSemanaDto) => ({
+  lunes: fila.lunes ?? true,
+  martes: fila.martes ?? true,
+  miercoles: fila.miercoles ?? true,
+  jueves: fila.jueves ?? true,
+  viernes: fila.viernes ?? true,
+  sabado: fila.sabado ?? true,
+  domingo: fila.domingo ?? true,
+  incluyeFestivos: fila.incluyeFestivos ?? true,
+});
 
 function RouteComponent() {
   const [isOpenAdd, setIsOpenAdd] = useState(false);
@@ -253,6 +279,16 @@ function RouteComponent() {
 
   const [configuracionServicioTarifaEdit, setConfiguracionServicioTarifaEdit] =
     useState<UpdateOrdenServicioTarifaDtoInternal[]>([]);
+
+  // Orden tal cual estaba al abrir la edicion (para comparar fechas/dias y saber su origen y estado)
+  const [ordenEnEdicion, setOrdenEnEdicion] = useState<OrdenServicio | null>(null);
+
+  // Meses ya liquidados de la orden en edicion (aviso + restricciones de fechas)
+  const { data: mesesLiquidadosQuery } = useGetMesesLiquidadosOrden(
+    ordenEnEdicion?.idOrdenServicio ?? 0,
+    isEditing,
+  );
+  const mesesLiquidadosEdit = mesesLiquidadosQuery?.data;
 
   // Sample data for order details modal
   const [selectedOrderDetail, setSelectedOrderDetail] =
@@ -602,6 +638,35 @@ function RouteComponent() {
     }
   };
 
+  // REGLAS DE LA EDICION (las mismas que valida el backend en validarEdicionOrden; aca solo guian al usuario)
+  const estadoOrdenEdit = (
+    ordenEnEdicion?.idEstadoOrdenServicio?.nombre ??
+    selectedOrderDetail?.idEstadoOrdenServicio?.nombre ??
+    ""
+  ).toLowerCase();
+  const fechaFinOriginalEdit = ordenEnEdicion?.fechaFin ? ordenEnEdicion.fechaFin.slice(0, 10) : null;
+  const ultimoDiaLiquidadoEdit = mesesLiquidadosEdit?.ultimoDiaLiquidado ?? null;
+  // No editable: estado terminado/cancelada/anulada, o todos sus meses ya fueron liquidados
+  const edicionBloqueada =
+    ESTADOS_ORDEN_NO_EDITABLES.includes(estadoOrdenEdit) ||
+    (fechaFinOriginalEdit != null &&
+      ultimoDiaLiquidadoEdit != null &&
+      fechaFinOriginalEdit <= ultimoDiaLiquidadoEdit);
+  const fechaInicioBloqueadaEdit =
+    ESTADOS_ORDEN_INICIADA.includes(estadoOrdenEdit) ||
+    (mesesLiquidadosEdit?.meses.length ?? 0) > 0 ||
+    edicionBloqueada;
+  // La fecha de fin no puede ser anterior a la de inicio, ni caer en un mes ya liquidado
+  const fechaInicioEdit = (watchEdit("fechaInicio") || "").slice(0, 10);
+  const fechaFinMinEdit =
+    [fechaInicioEdit, mesesLiquidadosEdit?.fechaFinMinima ?? ""].sort().pop() || undefined;
+  const hayCambioDiasEdit =
+    ordenEnEdicion?.origenServicio !== OrigenServicioEnum.A_MEDIDA &&
+    configuracionServicioTarifaEdit.some((fila, index) => {
+      const detalleOriginal = ordenEnEdicion?.detalles?.[index];
+      return detalleOriginal != null && firmaDias(fila) !== firmaDias(detalleOriginal);
+    });
+
   const handleNextEdit = async () => {
     if (currentStep === 1) {
       updateValidateFechasOrdenServicio(
@@ -611,6 +676,7 @@ function RouteComponent() {
             fechaInicio: watchEdit("fechaInicio"),
             fechaFin: isIndefinite ? null : watchEdit("fechaFin"),
             fechaActualizacion: new Date().toISOString(),
+            cambioDias: hayCambioDiasEdit,
           },
         },
         {
@@ -634,6 +700,8 @@ function RouteComponent() {
                   idTarifa: servicio.idTarifa || 0,
                   horaInicio: servicio.horaInicio,
                   horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+                  // Precio con los dias de la semana ya editados
+                  ...diasDeFila(servicio),
                 })),
               });
 
@@ -821,9 +889,11 @@ function RouteComponent() {
       fechaFin: isIndefinite ? null : data.fechaFin,
       fechaActualizacion: new Date().toISOString(),
       servicios: configuracionServicioTarifaEdit.map((servicio) => ({
+        idOrdenServicioDetalle: servicio.idOrdenServicioDetalle,
         idTarifa: servicio.idTarifa,
         horaInicio: servicio.horaInicio,
         horaFin: servicio.horaFin,
+        ...diasDeFila(servicio),
       })),
       // A la medida: cada fila de configuracionServicioTarifaEdit es UN DIA del rango, no el horario completo
       // de la orden (ver calcularPrecioAMedida en el backend) — solo el primer dia trae el horaInicio real de
@@ -878,6 +948,7 @@ function RouteComponent() {
     // reconstruir el horaInicio/horaFin real de la orden (ver ese comentario para el porque)
     setConfiguracionServicioTarifaEdit(
       ordenServicioById?.data?.detalles?.map((detalle) => ({
+        idOrdenServicioDetalle: detalle.idOrdenServicioDetalle,
         idTarifa: detalle.idTarifa?.idTarifa || 0,
         cantidadPersonal: 0,
         horaInicio: detalle.horaInicio,
@@ -886,8 +957,18 @@ function RouteComponent() {
         personal: [],
         idServicio: detalle.idTarifa?.idServicio?.idServicio,
         fecha: detalle.fecha,
+        lunes: detalle.lunes,
+        martes: detalle.martes,
+        miercoles: detalle.miercoles,
+        jueves: detalle.jueves,
+        viernes: detalle.viernes,
+        sabado: detalle.sabado,
+        domingo: detalle.domingo,
+        incluyeFestivos: detalle.incluyeFestivos,
       })) || [],
     );
+
+    setOrdenEnEdicion(ordenServicioById?.data ?? null);
 
     setSelectedServices(
       ordenServicioById?.data?.detalles?.map((detalle) => ({
@@ -1369,12 +1450,38 @@ function RouteComponent() {
     switch (currentStep) {
       case 1:
         return (
-          <ConfigurarFechaOrdenServicio
-            register={registerEdit}
-            setValue={setValueEdit}
-            isIndefinite={isIndefinite}
-            setIsIndefinite={setIsIndefinite}
-          />
+          <div className="flex flex-col gap-6">
+            <div className="mx-auto w-full max-w-2xl">
+              <AvisoEdicionOrden
+                estado={estadoOrdenEdit}
+                fechaFinActual={ordenEnEdicion?.fechaFin ?? null}
+                mesesLiquidados={mesesLiquidadosEdit}
+              />
+            </div>
+            <ConfigurarFechaOrdenServicio
+              register={registerEdit}
+              setValue={setValueEdit}
+              isIndefinite={isIndefinite}
+              setIsIndefinite={setIsIndefinite}
+              fechaInicioDisabled={fechaInicioBloqueadaEdit}
+              fechaInicioDisabledMotivo={
+                (mesesLiquidadosEdit?.meses.length ?? 0) > 0
+                  ? "La orden ya tiene meses liquidados"
+                  : "La orden ya inició"
+              }
+              fechaFinMin={fechaFinMinEdit}
+              indefinidaDisabled={!!ordenEnEdicion?.fechaFin}
+            />
+            {/* Dias de la semana: solo ordenes de catalogo (en "a la medida" cada fila es un dia especifico) */}
+            {ordenEnEdicion?.origenServicio !== OrigenServicioEnum.A_MEDIDA && (
+              <EditarDiasServiciosOrden
+                selectedServices={selectedServices}
+                configuracion={configuracionServicioTarifaEdit}
+                setConfiguracion={setConfiguracionServicioTarifaEdit}
+                disabled={edicionBloqueada}
+              />
+            )}
+          </div>
         );
 
       // case 2:
@@ -1553,7 +1660,9 @@ function RouteComponent() {
             onPrevious={handlePrevious}
             onNext={currentStep < 2 ? handleNextEdit : handleUpdateOrder}
             nextDisabled={
-              isValidateFechasOrdenServicioPending || isGetPrecioOrdenPending
+              isValidateFechasOrdenServicioPending ||
+              isGetPrecioOrdenPending ||
+              edicionBloqueada
             }
             loading={isActualizarOrdenServicioPending}
             finalLabel="Actualizar Orden"

@@ -117,6 +117,12 @@ export class OrdenServicioController {
     return this.ordenServicioService.removeOrdenServicio(id);
   }
 
+  // MESES YA LIQUIDADOS DE LA ORDEN (para advertir al editarla: la edicion solo aplica a los meses no liquidados)
+  @Get(':id/meses-liquidados')
+  findMesesLiquidados(@Param('id', ParseIntPipe) id: number) {
+    return this.ordenServicioService.findMesesLiquidados(id);
+  }
+
   @Get(':ordenId/liquidaciones')
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })

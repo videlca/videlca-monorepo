@@ -1,7 +1,7 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { anularOrdenServicio, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getLiquidacionesByOrdenId, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio, getFilteredOrdenesServicio } from "../../functions/orden-servicio";
+import { anularOrdenServicio, getMesesLiquidadosOrden, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getLiquidacionesByOrdenId, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio, getFilteredOrdenesServicio } from "../../functions/orden-servicio";
 import type { CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
-import type { OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
+import type { MesesLiquidadosOrden, OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
 import type { LiquidacionesOrdenPage } from "../../types/liquidaciones";
 import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import { showErrorToast } from "../../utils/toastError";
@@ -352,3 +352,13 @@ export const useImprimirPdf = (): UseMutationResult<ApiResponse<{ file: string, 
     },
   });
 }
+
+// Meses ya liquidados de una orden: se consulta al abrir la edicion para advertir que lo liquidado no cambia
+export const useGetMesesLiquidadosOrden = (idOrdenServicio: number, enabled: boolean): UseQueryResult<ApiResponse<MesesLiquidadosOrden>, Error> => {
+  return useQuery({
+    queryKey: ["orden-servicio-meses-liquidados", idOrdenServicio],
+    queryFn: () => getMesesLiquidadosOrden(idOrdenServicio),
+    enabled: !!idOrdenServicio && enabled,
+    staleTime: 0,
+  });
+};

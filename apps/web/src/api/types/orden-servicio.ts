@@ -13,6 +13,7 @@ export interface OrdenServicio {
   idCliente: Cliente | null;
   // Solo Vigilancia y escolta asignada directo a un cliente; si tiene puesto se usa la ciudad del puesto
   idCiudad: Ciudad | null;
+  origenServicio?: "catalogo" | "a_medida";
   fechaInicio: string;
   fechaFin: string;
   fechaInicioOrden: string;
@@ -166,4 +167,20 @@ export interface PrecioOrdenResponse {
   precioAntesIva: number | null;
   iva: number | null;
   servicios: PrecioServicioOrdenResponse[];
+}
+
+// Meses ya liquidados de una orden (GET /orden-servicio/:id/meses-liquidados). La edicion de la orden solo aplica a
+// los meses que aun no se han liquidado. Fechas en formato "YYYY-MM-DD"
+export interface MesesLiquidadosOrden {
+  meses: {
+    aniomes: string;
+    mes: string;
+    idGrupoLiquidacion: number;
+    descripcionGrupo: string | null;
+    grupoAprobado: boolean;
+  }[];
+  // Ultimo dia del ultimo mes liquidado (null si la orden no tiene liquidaciones)
+  ultimoDiaLiquidado: string | null;
+  // Fecha de fin mas temprana que se le puede poner a la orden (null si no tiene liquidaciones)
+  fechaFinMinima: string | null;
 }

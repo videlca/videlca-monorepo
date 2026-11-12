@@ -20,6 +20,10 @@ export const ConfigurarFechaOrdenServicio = ({
   setIsIndefinite,
   cobroParcial,
   setCobroParcial,
+  fechaInicioDisabled = false,
+  fechaInicioDisabledMotivo,
+  fechaFinMin,
+  indefinidaDisabled = false,
 }: {
   register: UseFormRegister<any>;
   setValue: UseFormSetValue<any>;
@@ -28,6 +32,13 @@ export const ConfigurarFechaOrdenServicio = ({
   // Solo el flujo de crear lo envia: la actualizacion de ordenes no maneja cobro parcial
   cobroParcial?: CobroParcial;
   setCobroParcial?: (cobroParcial: CobroParcial) => void;
+  // Solo la edicion los envia (ver validarEdicionOrden en el backend): la fecha de inicio no se puede cambiar si la
+  // orden ya inicio o ya tiene liquidaciones, la de fin no puede caer en un mes ya liquidado, y una orden que ya tiene
+  // fecha de fin no se puede volver indefinida
+  fechaInicioDisabled?: boolean;
+  fechaInicioDisabledMotivo?: string;
+  fechaFinMin?: string;
+  indefinidaDisabled?: boolean;
 }) => {
   const renderSelectDia = (
     value: number | null,
@@ -64,6 +75,8 @@ export const ConfigurarFechaOrdenServicio = ({
             type="date"
             label="Fecha de Inicio"
             {...muiRegister(register("fechaInicio"))}
+            disabled={fechaInicioDisabled}
+            helperText={fechaInicioDisabled ? fechaInicioDisabledMotivo : undefined}
             slotProps={{ inputLabel: { shrink: true, required: true } }}
           />
           <TextField
@@ -71,11 +84,15 @@ export const ConfigurarFechaOrdenServicio = ({
             label="Fecha de Fin"
             {...muiRegister(register("fechaFin"))}
             disabled={isIndefinite}
-            slotProps={{ inputLabel: { shrink: true } }}
+            slotProps={{
+              inputLabel: { shrink: true },
+              htmlInput: fechaFinMin ? { min: fechaFinMin } : undefined,
+            }}
           />
         </div>
 
         <FormControlLabel
+          disabled={indefinidaDisabled}
           control={
             <Checkbox
               id="indefinite"

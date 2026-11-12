@@ -40,20 +40,15 @@ const DIAS_SEMANA: { key: keyof PatronDiasSemanaDto; label: string }[] = [
 // "indices" son las posiciones en configuracionServicioTarifa que este selector controla: normalmente una sola
 // (una unidad = una fila con su propio horario/patron de dias), salvo para un servicio de tipo Monitoreo de
 // Alarmas, donde todas sus unidades se configuran juntas desde una unica tarjeta (ver renderTarjetaHorario)
-const SelectorDiasSemana = ({
+// Generico sobre el tipo de fila (cualquiera con patron de dias): tambien lo usa la edicion de ordenes
+export const SelectorDiasSemana = <T extends PatronDiasSemanaDto>({
   indices,
   configuracionServicioTarifa,
   setConfiguracionServicioTarifa,
 }: {
   indices: number[];
-  configuracionServicioTarifa: CreateOrdenServicioTarifaDto[];
-  setConfiguracionServicioTarifa: (
-    configuracionServicioTarifa:
-      | CreateOrdenServicioTarifaDto[]
-      | ((
-          prev: CreateOrdenServicioTarifaDto[],
-        ) => CreateOrdenServicioTarifaDto[]),
-  ) => void;
+  configuracionServicioTarifa: T[];
+  setConfiguracionServicioTarifa: (updater: (prev: T[]) => T[]) => void;
 }) => {
   // Todas las filas del grupo comparten siempre el mismo patron de dias (se escriben siempre juntas, ver
   // toggleDia/toggleIncluyeFestivos), asi que alcanza con leer la primera para reflejar el estado actual
@@ -71,7 +66,7 @@ const SelectorDiasSemana = ({
       return;
     }
 
-    setConfiguracionServicioTarifa((prev: CreateOrdenServicioTarifaDto[]) => {
+    setConfiguracionServicioTarifa((prev: T[]) => {
       const newArray = [...prev];
       indices.forEach((index) => {
         if (!newArray[index]) return;
@@ -85,7 +80,7 @@ const SelectorDiasSemana = ({
   };
 
   const toggleIncluyeFestivos = () => {
-    setConfiguracionServicioTarifa((prev: CreateOrdenServicioTarifaDto[]) => {
+    setConfiguracionServicioTarifa((prev: T[]) => {
       const newArray = [...prev];
       indices.forEach((index) => {
         if (!newArray[index]) return;

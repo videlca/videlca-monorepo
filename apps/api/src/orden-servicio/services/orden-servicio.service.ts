@@ -37,10 +37,12 @@ import {
   OrdenServicioIdAnulado,
   OrdenServicioDetalle,
 } from '../entities';
+import { Liquidacione } from '../../liquidaciones/entities/liquidacione.entity';
 
 import {
   CreateOrdenServicioDto,
   UpdateOrdenServicioDto,
+  UpdateOrdenServicioDetalleDto,
 
   // VALIDACIONES CREACION
   ValidarIdOrdenServicioDto,
@@ -76,6 +78,8 @@ interface PatronDiasSemana {
   domingo: boolean;
   incluyeFestivos: boolean;
 }
+
+const CAMPOS_PATRON_DIAS: (keyof PatronDiasSemana)[] = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', 'incluyeFestivos'];
 
 @Injectable()
 export class OrdenServicioService {
@@ -282,28 +286,12 @@ export class OrdenServicioService {
 
     }
 
-    // OBTENER ID ESTADO ORDEN SERVICIO
-    //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
-    let estadoOrdenServicio: EstadoOrdenEntity;
-
-    if (createOrdenServicioDto.fechaFin != null && fechaFinOrden < fechaCreacionOrden) {
-      // Caso 1: Ya terminó (fecha fin es anterior a fecha creación)
-      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.TERMINADO);
-
-    }
-
-    else if (fechaInicioOrden > fechaCreacionOrden) {
-      // Caso 2: Está programado para el futuro
-      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.PROGRAMADO);
-
-    }
-
-    else {
-      // Caso 3: Ya inició o debe iniciar (fechaInicio <= fechaCreacion)
-      // Esto incluye cuando fechaInicio == fechaCreacion 
-      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.INICIADO);
-
-    }
+    // ESTADO INICIAL DE LA ORDEN SEGUN SUS FECHAS (mismas reglas de la edicion y del proceso automatico diario,
+    // ver estadoSegunFechas). Ej: una orden creada con fecha de fin hoy o en el pasado queda TERMINADO
+    const estadoOrdenServicio = await this.calcularEstadoSegunFechas(
+      this.fechaYMD(fechaInicioOrden),
+      createOrdenServicioDto.fechaFin != null ? this.fechaYMD(fechaFinOrden) : null,
+    );
 
     try {
 
@@ -1564,143 +1552,277 @@ export class OrdenServicioService {
     return false;
   }
 
-  // VALIDA SI UN CAMBIO DE FECHAS ES VALIDO SEGUN EL ESTADO ACTUAL DE LA ORDEN.
-  // La usan tanto updateValidarFechasOrdenServicio (precheck informativo) como updateOrdenServicio (la que realmente persiste),
-  // para que la restriccion quede garantizada por el backend y no dependa de que el front haya llamado primero al precheck
-  private validarCambioFechasSegunEstado(
-    estadoActual: string,
-    cambioFechaInicio: boolean,
-    cambioFechaFin: boolean,
-    fechaFinAnteriorExiste: boolean,
-    fechaFinNuevaExiste: boolean,
+  // FECHA "YYYY-MM-DD" DE UN VALOR DE FECHA. TypeORM devuelve las columnas "date" como texto "YYYY-MM-DD" (se toma
+  // tal cual: un new Date() de ese texto es medianoche UTC y en hora de Colombia quedaria en el dia anterior); las
+  // fechas que llegan del DTO ya vienen normalizadas a medianoche local (normalizarFecha)
+  private fechaYMD(fecha: Date | string | null | undefined): string | null {
+
+    if (fecha == null) return null;
+
+    if (typeof fecha === 'string') return fecha.slice(0, 10);
+
+    return this.formatearFecha(fecha);
+
+  }
+
+  // DIAS ENTRE DOS FECHAS "YYYY-MM-DD" (a - b). Ambas se interpretan como medianoche UTC, asi la resta es exacta
+  private diasEntre(a: string, b: string): number {
+
+    return Math.round((Date.parse(a) - Date.parse(b)) / (1000 * 60 * 60 * 24));
+
+  }
+
+  private nombreMesLiquidado(aniomes: string): string {
+
+    const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    return `${MESES[Number(aniomes.slice(4)) - 1]} ${aniomes.slice(0, 4)}`;
+
+  }
+
+  // MESES YA LIQUIDADOS DE UNA ORDEN (en cualquier grupo, aprobado o pendiente), del mas antiguo al mas reciente.
+  // fechaFinMinima: la fecha de fin mas temprana que se le puede poner a la orden (el dia siguiente al ultimo dia del
+  // ultimo mes liquidado), o null si la orden no tiene liquidaciones
+  async findMesesLiquidados(idOrdenServicio: number) {
+
+    const liquidaciones = await this.dataSource.getRepository(Liquidacione).find({
+      where: { idOrdenServicio },
+      relations: { grupo: true },
+      order: { aniomes_liquidacion: 'ASC' },
+    });
+
+    const meses = liquidaciones.map(liquidacion => ({
+      aniomes: liquidacion.aniomes_liquidacion,
+      mes: this.nombreMesLiquidado(liquidacion.aniomes_liquidacion),
+      idGrupoLiquidacion: liquidacion.idGrupoLiquidacion,
+      descripcionGrupo: liquidacion.grupo?.descripcion ?? null,
+      grupoAprobado: !!liquidacion.grupo?.estado,
+    }));
+
+    const ultimo = meses[meses.length - 1];
+
+    let ultimoDiaLiquidado: string | null = null;
+    let fechaFinMinima: string | null = null;
+
+    if (ultimo) {
+      const anio = Number(ultimo.aniomes.slice(0, 4));
+      const mes = Number(ultimo.aniomes.slice(4));
+      // Date.UTC(anio, mes, 0) = ultimo dia del mes "mes" (1-12); Date.UTC(anio, mes, 1) = primer dia del siguiente
+      ultimoDiaLiquidado = new Date(Date.UTC(anio, mes, 0)).toISOString().slice(0, 10);
+      fechaFinMinima = new Date(Date.UTC(anio, mes, 1)).toISOString().slice(0, 10);
+    }
+
+    return { meses, ultimoDiaLiquidado, fechaFinMinima };
+
+  }
+
+  // VALIDA SI UNA EDICION DE LA ORDEN (fechas y/o dias de la semana) ES VALIDA SEGUN SU ESTADO ACTUAL Y SUS
+  // LIQUIDACIONES. La usan tanto updateValidarFechasOrdenServicio (precheck del front) como updateOrdenServicio (la
+  // que realmente persiste), para que las reglas queden garantizadas por el backend.
+  //
+  // LA EDICION SOLO APLICA A LOS MESES QUE AUN NO SE HAN LIQUIDADO: lo ya liquidado queda tal cual (el valor, el
+  // tramo de fechas y el horario/dias se copian en la liquidacion al liquidar). Para corregir un mes ya liquidado se
+  // debe eliminar su grupo de liquidacion, editar la orden y volver a liquidar
+  private async validarEdicionOrden(
+    ordenServicio: OrdenServicio,
+    cambio: {
+      fechaInicioNueva: string;
+      fechaFinNueva: string | null;
+      cambioDias: boolean;
+    },
   ) {
 
+    const estadoActual = ordenServicio.idEstadoOrdenServicio.nombre;
+
+    const fechaInicioAnterior = this.fechaYMD(ordenServicio.fechaInicio);
+    const fechaFinAnterior = this.fechaYMD(ordenServicio.fechaFin);
+
+    const cambioFechaInicio = cambio.fechaInicioNueva !== fechaInicioAnterior;
+    const cambioFechaFin = cambio.fechaFinNueva !== fechaFinAnterior;
+
+    if (!cambioFechaInicio && !cambioFechaFin && !cambio.cambioDias) {
+      return { hayCambios: false };
+    }
+
+    // UNA ORDEN CANCELADA, ANULADA O TERMINADA NO SE PUEDE EDITAR. Para continuar un servicio terminado se crea una
+    // nueva orden
+    if (
+      estadoActual == EstadoOrdenServicio.CANCELADA ||
+      estadoActual == EstadoOrdenServicio.ANULADA ||
+      estadoActual == EstadoOrdenServicio.TERMINADO
+    ) {
+
+      throw new BadRequestException(`La orden se encuentra en estado "${estadoActual}", no se puede modificar. Si el servicio continua, cree una nueva orden de servicio`);
+
+    }
+
     // NUNCA SE PUEDE QUITAR LA FECHA FIN DE UNA ORDEN QUE YA ERA DEFINIDA (volverla indefinida).
-    // Si se necesita continuar el servicio de forma indefinida, se debe cancelar/terminar esta orden y crear una nueva orden indefinida
-    if (fechaFinAnteriorExiste && !fechaFinNuevaExiste) {
+    // Si se necesita continuar el servicio de forma indefinida, se debe terminar esta orden y crear una nueva orden indefinida
+    if (fechaFinAnterior != null && cambio.fechaFinNueva == null) {
 
       throw new BadRequestException('No se puede quitar la fecha de fin de una orden que ya era definida. Si el servicio va a continuar de forma indefinida, cree una nueva orden de servicio a partir del dia siguiente en que termina esta');
 
     }
 
-    if (cambioFechaInicio) {
+    // LA FECHA DE INICIO SOLO SE PUEDE CAMBIAR SI LA ORDEN AUN NO HA INICIADO
+    if (cambioFechaInicio && (estadoActual == EstadoOrdenServicio.INICIADO || estadoActual == EstadoOrdenServicio.POR_TERMINAR)) {
 
-      if (estadoActual == EstadoOrdenServicio.INICIADO || estadoActual == EstadoOrdenServicio.POR_TERMINAR) {
+      throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden aun no ha iniciado');
 
-        throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden aun no ha iniciado');
+    }
+
+    // VALIDACIONES CONTRA LO YA LIQUIDADO
+    const { meses, ultimoDiaLiquidado } = await this.findMesesLiquidados(ordenServicio.idOrdenServicio);
+
+    if (meses.length > 0) {
+
+      const mesesTexto = meses.map(m => m.mes).join(', ');
+      const ultimoMes = meses[meses.length - 1].mes;
+
+      // La fecha de inicio define desde donde se cobro el primer mes liquidado: ya no se puede mover
+      if (cambioFechaInicio) {
+
+        throw new BadRequestException(`La orden ya tiene liquidaciones (${mesesTexto}), no se puede modificar la fecha de inicio. Si necesita corregirla, elimine los grupos de liquidacion de esos meses desde el historial y vuelva a liquidar`);
 
       }
 
-      if (estadoActual == EstadoOrdenServicio.CANCELADA || estadoActual == EstadoOrdenServicio.ANULADA) {
+      // Si la orden ya termina dentro de un mes liquidado, todo su tiempo ya se cobro: no queda nada por editar
+      if (fechaFinAnterior != null && fechaFinAnterior <= ultimoDiaLiquidado) {
 
-        throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden no ha sido cancelada o anulada');
+        throw new BadRequestException(`Todos los meses de esta orden ya fueron liquidados (${mesesTexto}), no se puede modificar. Si necesita corregirla, elimine el grupo de liquidacion de ${ultimoMes} desde el historial y vuelva a liquidar`);
 
       }
 
-      if (estadoActual == EstadoOrdenServicio.TERMINADO) {
+      // La nueva fecha de fin no puede caer dentro (ni antes) del ultimo mes ya liquidado: ese mes ya se cobro completo
+      if (cambioFechaFin && cambio.fechaFinNueva != null && cambio.fechaFinNueva <= ultimoDiaLiquidado) {
 
-        throw new BadRequestException('La fecha de inicio solo se puede modificar si la orden no ha terminado');
+        throw new BadRequestException(`La orden ya fue liquidada hasta ${ultimoMes}: la fecha de fin debe ser posterior al ${ultimoDiaLiquidado.split('-').reverse().join('/')}. Si necesita que termine en un mes ya liquidado, elimine el grupo de liquidacion de ese mes desde el historial y vuelva a liquidar`);
 
       }
 
     }
 
-    if (cambioFechaFin) {
+    // LA FECHA DE FIN DEBE SER IGUAL O POSTERIOR A LA DE INICIO (una orden de un solo dia es valida, igual que al crearla)
+    if (cambio.fechaFinNueva != null && cambio.fechaFinNueva < cambio.fechaInicioNueva) {
 
-      if (
-        estadoActual == EstadoOrdenServicio.CANCELADA ||
-        estadoActual == EstadoOrdenServicio.ANULADA ||
-        estadoActual == EstadoOrdenServicio.TERMINADO
-      ) {
-
-        throw new BadRequestException('La fecha de fin solo se puede modificar si la orden aun no ha sido cancelada, terminada o anulada');
-
-      }
+      throw new BadRequestException('La fecha de fin no puede ser anterior a la fecha de inicio');
 
     }
+
+    return { hayCambios: true };
 
   }
 
+  // ESTADO EN QUE QUEDA LA ORDEN SEGUN SUS FECHAS, CON LAS MISMAS REGLAS DEL PROCESO AUTOMATICO DIARIO
+  // (actualizarEstadosAutomaticamente): faltan mas de 2 dias para iniciar = PROGRAMADO, 1 o 2 dias = POR INICIAR,
+  // ya inicio = INICIADO, faltan 1 o 2 dias para terminar = POR TERMINAR, el dia de fin o despues = TERMINADO
+  private async calcularEstadoSegunFechas(fechaInicio: string, fechaFin: string | null): Promise<EstadoOrdenEntity> {
+
+    // Fecha de hoy del servidor (hora local, igual que el proceso automatico)
+    const hoy = this.formatearFecha(new Date());
+
+    return this.estadoOrdenService.findOneByName(this.estadoSegunFechas(fechaInicio, fechaFin, hoy));
+
+  }
+
+  // REGLA UNICA DEL ESTADO DE UNA ORDEN SEGUN SUS FECHAS ("YYYY-MM-DD"). La usan la creacion, la edicion y el proceso
+  // automatico diario, asi nunca se contradicen:
+  // - el dia de fin o despues                      -> TERMINADO
+  // - faltan mas de 2 dias para iniciar            -> PROGRAMADO
+  // - faltan 1 o 2 dias para iniciar               -> POR INICIAR
+  // - ya inicio y faltan 1 o 2 dias para terminar  -> POR TERMINAR
+  // - ya inicio (resto)                            -> INICIADO
+  private estadoSegunFechas(fechaInicio: string, fechaFin: string | null, hoy: string): EstadoOrdenServicio {
+
+    const diasParaIniciar = this.diasEntre(fechaInicio, hoy);
+    const diasParaTerminar = fechaFin != null ? this.diasEntre(fechaFin, hoy) : null;
+
+    if (diasParaTerminar != null && diasParaTerminar <= 0) return EstadoOrdenServicio.TERMINADO;
+    if (diasParaIniciar > 2) return EstadoOrdenServicio.PROGRAMADO;
+    if (diasParaIniciar > 0) return EstadoOrdenServicio.POR_INICIAR;
+    if (diasParaTerminar != null && diasParaTerminar <= 2) return EstadoOrdenServicio.POR_TERMINAR;
+    return EstadoOrdenServicio.INICIADO;
+
+  }
+
+  // PRECHECK DEL FRONT ANTES DE EDITAR: valida el cambio (mismas reglas que updateOrdenServicio) y devuelve el
+  // estado en que quedaria la orden
   async updateValidarFechasOrdenServicio(id: number, updateValidarFechaOrdenServicioDto: UpdateValidarFechaOrdenServicioDto) {
 
-    const { fechaInicio, fechaFin, fechaActualizacion } = updateValidarFechaOrdenServicioDto;
+    const { fechaInicio, fechaFin, cambioDias } = updateValidarFechaOrdenServicioDto;
 
-    // validar orden logico de las fechas
-    const fechaInicioOrden = this.normalizarFecha(fechaInicio);
+    const fechaInicioNueva = this.fechaYMD(this.normalizarFecha(fechaInicio));
+    const fechaFinNueva = fechaFin ? this.fechaYMD(this.normalizarFecha(fechaFin)) : null;
 
-    const fechaFinOrden = fechaFin ? this.normalizarFecha(fechaFin) : null;
-
-    if (fechaFinOrden != null && fechaInicioOrden >= fechaFinOrden) {
-
-      throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
-
-    }
-
-    // Obtener orden de servicio
     const ordenServicio = await this.findOne(id);
 
-    const fechaInicioOrdenString = this.formatearFecha(new Date(ordenServicio.fechaInicio));
-    const fechaFinOrdenString = ordenServicio.fechaFin ? this.formatearFecha(new Date(ordenServicio.fechaFin)) : null;
+    const { hayCambios } = await this.validarEdicionOrden(ordenServicio, {
+      fechaInicioNueva,
+      fechaFinNueva,
+      cambioDias: !!cambioDias,
+    });
 
-    const fechaInicioNuevaString = this.formatearFecha(fechaInicioOrden);
-    const fechaFinNuevaString = fechaFinOrden ? this.formatearFecha(fechaFinOrden) : null;
-
-    if (fechaInicioNuevaString == fechaInicioOrdenString && fechaFinNuevaString === fechaFinOrdenString) {
+    if (!hayCambios) {
       return {
-        message: 'Las fechas son iguales a las que ya tiene la orden de servicio, no se realizo ningun cambio'
+        message: 'No hay cambios respecto a lo que ya tiene la orden de servicio'
       }
     }
 
-    const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.nombre;
+    const estado = await this.calcularEstadoSegunFechas(fechaInicioNueva, fechaFinNueva);
 
-    // VALIDAR SI EL CAMBIO DE FECHAS ES VALIDO SEGUN EL ESTADO ACTUAL DE LA ORDEN
-    this.validarCambioFechasSegunEstado(
-      descripcionEstadoOrdenServicio,
-      fechaInicioNuevaString != fechaInicioOrdenString,
-      fechaFinNuevaString != fechaFinOrdenString,
-      fechaFinOrdenString != null,
-      fechaFinNuevaString != null,
-    );
-
-    // VALIDAR ESTADO DE LA ORDEN, TENER EN CUENTA SI LAS FECHAS SON IGUALES QUEDA COMO ESTA, SI CAMBIARON ENTONCES VALIDAR EN QUE ESTADO QUEDA
-    const fechaActualizacionOrden = this.normalizarFecha(fechaActualizacion);
-
-    // OBTENER ID ESTADO ORDEN SERVICIO
-    //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
-
-    if (fechaFinOrden != null && fechaFinOrden < fechaActualizacionOrden) {
-      // Caso 1: Ya terminó (fecha fin es anterior a fecha actualizacion)
-
-      return {
-        message: `Estado Orden servicio luego de la actualizacion ${EstadoOrdenServicio.TERMINADO}`
-      }
-
-    }
-
-    else if (fechaInicioOrden > fechaActualizacionOrden) {
-      // Caso 2: Está programado para el futuro
-
-      return {
-        message: `Estado Orden servicio luego de la actualizacion ${EstadoOrdenServicio.PROGRAMADO}`
-      }
-
-    }
-
-    else {
-      // Caso 3: Ya inició o debe iniciar (fechaInicio <= fechaActualizacionOrden)
-      // Esto incluye cuando fechaInicio == fechaActualizacionOrden
-
-      return {
-        message: `Estado Orden servicio luego de la actualizacion ${EstadoOrdenServicio.INICIADO}`
-      }
-
+    return {
+      message: `Estado Orden servicio luego de la actualizacion ${estado.nombre}`
     }
 
   }
 
-  // ACTUALIZAR UNA ORDEN DE SERVICIO: LO UNICO QUE EL USUARIO PUEDE MODIFICAR EN UNA ORDEN YA CREADA SON LAS FECHAS
-  // (fechaInicio/fechaFin), Y ES EL CAMBIO DE FECHAS LO QUE HACE QUE CAMBIE EL PRECIO. SI LAS FECHAS ENVIADAS SON
-  // IGUALES A LAS QUE YA TIENE LA ORDEN, NO SE HACE NINGUN CAMBIO
+  // EMPAREJA CADA SERVICIO ENVIADO EN LA EDICION (catalogo) CON SU FILA EXISTENTE DEL DESGLOSE DE LA ORDEN. Por
+  // idOrdenServicioDetalle si se envia; si no, por posicion dentro de cada idTarifa (la orden puede tener varias
+  // unidades del mismo servicio). No se pueden agregar ni quitar servicios al editar: deben ser exactamente los
+  // mismos, con la misma cantidad de unidades de cada uno. Cada pareja trae el patron de dias resultante (los dias
+  // que no se envian se conservan como estan en la fila)
+  private emparejarServiciosConDetalles(detalles: OrdenServicioDetalle[], itemsDto: UpdateOrdenServicioDetalleDto[]) {
+
+    const errorServicios = new BadRequestException('Debe enviar el horario de exactamente los mismos servicios (idTarifa), con la misma cantidad de unidades de cada uno, que ya tiene la orden; no se pueden agregar ni quitar servicios al actualizar');
+
+    if (itemsDto.length !== detalles.length) throw errorServicios;
+
+    const detallesOrdenados = [...detalles].sort((a, b) => a.idOrdenServicioDetalle - b.idOrdenServicioDetalle);
+    const usados = new Set<number>();
+
+    return itemsDto.map(item => {
+
+      const detalle = item.idOrdenServicioDetalle != null
+        ? detallesOrdenados.find(d => d.idOrdenServicioDetalle === item.idOrdenServicioDetalle)
+        : detallesOrdenados.find(d => d.idTarifa.idTarifa === item.idTarifa && !usados.has(d.idOrdenServicioDetalle));
+
+      if (!detalle || usados.has(detalle.idOrdenServicioDetalle) || detalle.idTarifa.idTarifa !== item.idTarifa) {
+        throw errorServicios;
+      }
+
+      usados.add(detalle.idOrdenServicioDetalle);
+
+      const patron = {} as PatronDiasSemana;
+      for (const campo of CAMPOS_PATRON_DIAS) {
+        patron[campo] = item[campo] ?? detalle[campo];
+      }
+
+      if (!this.patronTieneAlMenosUnDia(patron)) {
+        throw new BadRequestException('Debe seleccionar al menos un dia de la semana en que se presta el servicio');
+      }
+
+      const cambioDias = CAMPOS_PATRON_DIAS.some(campo => patron[campo] !== detalle[campo]);
+
+      return { item, detalle, patron, cambioDias };
+
+    });
+
+  }
+
+  // ACTUALIZAR UNA ORDEN DE SERVICIO: LO QUE EL USUARIO PUEDE MODIFICAR EN UNA ORDEN YA CREADA SON LAS FECHAS
+  // (fechaInicio/fechaFin) Y, EN ORDENES DE CATALOGO, LOS DIAS DE LA SEMANA DE CADA SERVICIO. Ver validarEdicionOrden
+  // para las reglas (estado de la orden y meses ya liquidados): la edicion solo afecta los meses aun no liquidados.
+  // SI NO HAY CAMBIOS RESPECTO A LO QUE YA TIENE LA ORDEN, NO SE HACE NADA
   async updateOrdenServicio(id: number, updateOrdenServicioDto: UpdateOrdenServicioDto) {
 
     const { fechaInicio, fechaFin, fechaActualizacion } = updateOrdenServicioDto;
@@ -1709,62 +1831,33 @@ export class OrdenServicioService {
 
     const fechaFinOrden = fechaFin ? this.normalizarFecha(fechaFin) : null;
 
-    if (fechaFinOrden != null && fechaInicioOrden >= fechaFinOrden) {
-
-      throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
-
-    }
+    const fechaInicioNueva = this.fechaYMD(fechaInicioOrden);
+    const fechaFinNueva = this.fechaYMD(fechaFinOrden);
 
     const fechaActualizacionOrden = this.normalizarFecha(fechaActualizacion);
 
     // OBTENER LA ORDEN CON SU DESGLOSE (detalles) ACTUAL
     const ordenServicio = await this.findOneOrdenRelations(id);
 
-    const fechaInicioOrdenString = this.formatearFecha(new Date(ordenServicio.fechaInicio));
-    const fechaFinOrdenString = ordenServicio.fechaFin ? this.formatearFecha(new Date(ordenServicio.fechaFin)) : null;
+    const esCatalogo = ordenServicio.origenServicio === OrigenServicioEnum.CATALOGO;
 
-    const fechaInicioNuevaString = this.formatearFecha(fechaInicioOrden);
-    const fechaFinNuevaString = fechaFinOrden ? this.formatearFecha(fechaFinOrden) : null;
+    // CATALOGO: servicios enviados emparejados con su fila del desglose (con el patron de dias resultante)
+    const itemsDto = esCatalogo ? (updateOrdenServicioDto.servicios ?? []) : [];
+    const parejas = itemsDto.length > 0 ? this.emparejarServiciosConDetalles(ordenServicio.detalles, itemsDto) : [];
 
-    // SI LAS FECHAS NO CAMBIAN, NO SE HACE NADA
-    if (fechaInicioNuevaString == fechaInicioOrdenString && fechaFinNuevaString === fechaFinOrdenString) {
+    const cambioDias = parejas.some(pareja => pareja.cambioDias);
+
+    // VALIDAR QUE LA EDICION SEA VALIDA SEGUN EL ESTADO ACTUAL Y LAS LIQUIDACIONES DE LA ORDEN
+    // (misma validacion de updateValidarFechasOrdenServicio, para que quede garantizada aunque no se haya llamado ese endpoint antes)
+    const { hayCambios } = await this.validarEdicionOrden(ordenServicio, { fechaInicioNueva, fechaFinNueva, cambioDias });
+
+    // SI NO HAY CAMBIOS, NO SE HACE NADA
+    if (!hayCambios) {
       return ordenServicio;
     }
 
-    const descripcionEstadoOrdenServicio = ordenServicio.idEstadoOrdenServicio.nombre;
-
-    // VALIDAR QUE EL CAMBIO DE FECHAS SEA VALIDO SEGUN EL ESTADO ACTUAL DE LA ORDEN
-    // (misma validacion de updateValidarFechasOrdenServicio, para que quede garantizada aunque no se haya llamado ese endpoint antes)
-    this.validarCambioFechasSegunEstado(
-      descripcionEstadoOrdenServicio,
-      fechaInicioNuevaString != fechaInicioOrdenString,
-      fechaFinNuevaString != fechaFinOrdenString,
-      fechaFinOrdenString != null,
-      fechaFinNuevaString != null,
-    );
-
-    // OBTENER ID ESTADO ORDEN SERVICIO
-    //! VALIDAR SEGUN LAS FECHAS DE INICIO Y CREACION DE LA ORDEN DE SERVICIO
-    let estadoOrdenServicio: EstadoOrdenEntity;
-
-    if (fechaFinOrden != null && fechaFinOrden < fechaActualizacionOrden) {
-      // Caso 1: Ya terminó (fecha fin es anterior a fecha actualizacion)
-      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.TERMINADO);
-
-    }
-
-    else if (fechaInicioOrden > fechaActualizacionOrden) {
-      // Caso 2: Está programado para el futuro
-      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.PROGRAMADO);
-
-    }
-
-    else {
-      // Caso 3: Ya inició o debe iniciar (fechaInicio <= fechaActualizacion)
-      // Esto incluye cuando fechaInicio == fechaActualizacion
-      estadoOrdenServicio = await this.estadoOrdenService.findOneByName(EstadoOrdenServicio.INICIADO);
-
-    }
+    // ESTADO EN QUE QUEDA LA ORDEN CON LAS NUEVAS FECHAS (mismas reglas del proceso automatico diario)
+    const estadoOrdenServicio = await this.calcularEstadoSegunFechas(fechaInicioNueva, fechaFinNueva);
 
     const cambioEstadoOrden = ordenServicio.idEstadoOrdenServicio.idEstadoOrdenServicio != estadoOrdenServicio.idEstadoOrdenServicio;
 
@@ -1786,8 +1879,12 @@ export class OrdenServicioService {
       if (fechaFinOrden == null) {
 
         // LA ORDEN QUEDA INDEFINIDA: TODOS LOS VALORES DE PRECIO DE CADA FILA DEL DESGLOSE QUEDAN EN NULL
-        // (se cobra mes a mes al liquidar/finalizar)
+        // (se cobra mes a mes al liquidar). Si se enviaron los servicios (catalogo), se guardan sus dias de la semana
         for (const detalleExistente of ordenServicio.detalles) {
+
+          const pareja = parejas.find(p => p.detalle === detalleExistente);
+
+          if (pareja) Object.assign(detalleExistente, pareja.patron);
 
           detalleExistente.cantidadHoras = null;
           detalleExistente.costosDirectos = null;
@@ -1804,71 +1901,43 @@ export class OrdenServicioService {
 
       }
 
-      else if (ordenServicio.origenServicio === OrigenServicioEnum.CATALOGO) {
+      else if (esCatalogo) {
 
-        const itemsDto = updateOrdenServicioDto.servicios;
-
-        if (!itemsDto || itemsDto.length === 0) {
+        if (parejas.length === 0) {
           throw new BadRequestException('Debe enviar el horario (horaInicio, horaFin) de cada servicio de la orden para poder recalcular el precio');
         }
 
-        // EL CATALOGO DE SERVICIOS DE LA ORDEN NO CAMBIA, SOLO SE REENVIA SU HORARIO: VALIDAR QUE SEAN EXACTAMENTE
-        // LOS MISMOS idTarifa YA EXISTENTES, CON LA MISMA CANTIDAD DE UNIDADES DE CADA UNO (LA ORDEN PUEDE TENER
-        // VARIAS FILAS CON EL MISMO idTarifa SI SE SELECCIONARON VARIAS UNIDADES DEL MISMO SERVICIO AL CREARLA, ASI
-        // QUE NO BASTA CON COMPARAR EL CONJUNTO DE IDs DISTINTOS, HAY QUE COMPARAR LA CANTIDAD POR CADA UNO)
-        const detallesExistentesPorTarifa = new Map<number, OrdenServicioDetalle[]>();
-        for (const detalle of ordenServicio.detalles) {
-          const idTarifa = detalle.idTarifa.idTarifa;
-          const grupo = detallesExistentesPorTarifa.get(idTarifa) ?? [];
-          grupo.push(detalle);
-          detallesExistentesPorTarifa.set(idTarifa, grupo);
-        }
-
-        const cantidadEnviadaPorTarifa = new Map<number, number>();
-        for (const item of itemsDto) {
-          cantidadEnviadaPorTarifa.set(item.idTarifa, (cantidadEnviadaPorTarifa.get(item.idTarifa) ?? 0) + 1);
-        }
-
-        const mismaCantidadPorServicio =
-          detallesExistentesPorTarifa.size === cantidadEnviadaPorTarifa.size &&
-          [...detallesExistentesPorTarifa.entries()].every(
-            ([idTarifa, detalles]) => cantidadEnviadaPorTarifa.get(idTarifa) === detalles.length,
-          );
-
-        if (!mismaCantidadPorServicio) {
-          throw new BadRequestException('Debe enviar el horario de exactamente los mismos servicios (idTarifa), con la misma cantidad de unidades de cada uno, que ya tiene la orden; no se pueden agregar ni quitar servicios al actualizar');
-        }
-
         // VALIDAR EL HORARIO DE CADA SERVICIO (misma validacion que al crear la orden)
-        for (const itemDto of itemsDto) {
+        for (const { item, patron } of parejas) {
           await this.validacionHorarios({
             origenServicio: OrigenServicioEnum.CATALOGO,
-            idTarifa: itemDto.idTarifa,
-            horaInicio: itemDto.horaInicio,
-            horaFin: itemDto.horaFin,
+            idTarifa: item.idTarifa,
+            horaInicio: item.horaInicio,
+            horaFin: item.horaFin,
+            ...patron,
           });
         }
 
-        const detallesCalculados = await this.calcularPrecioCatalogo(itemsDto, fechaInicioOrden, fechaFinOrden);
+        // PRECIO DE CADA SERVICIO CON LAS NUEVAS FECHAS Y SU PATRON DE DIAS. calcularPrecioCatalogo devuelve los
+        // resultados en el mismo orden en que se le envian, por eso se recorren en paralelo por indice
+        const detallesCalculados = await this.calcularPrecioCatalogo(
+          parejas.map(({ item, patron }) => ({
+            idTarifa: item.idTarifa,
+            horaInicio: item.horaInicio,
+            horaFin: item.horaFin,
+            ...patron,
+          })),
+          fechaInicioOrden,
+          fechaFinOrden,
+        );
 
-        // ACTUALIZAR CADA FILA EXISTENTE, SIN BORRAR/RECREAR (para no perder su identidad/referencias). Se
-        // empareja por POSICION dentro de cada grupo de idTarifa (no con un simple .find por idTarifa): con
-        // varias unidades del mismo servicio, un .find se quedaria siempre con la primera fila existente y
-        // dejaria las demas unidades sin repreciar (quedarian con su precio anterior, o en null si la orden
-        // paso por un estado indefinido). detallesCalculados preserva el mismo orden que itemsDto (ver
-        // calcularPrecioCatalogo), por eso se recorren en paralelo por indice
-        const indiceConsumidoPorTarifa = new Map<number, number>();
-
-        for (let i = 0; i < itemsDto.length; i++) {
+        // ACTUALIZAR CADA FILA EXISTENTE, SIN BORRAR/RECREAR (para no perder su identidad/referencias)
+        for (let i = 0; i < parejas.length; i++) {
 
           const detalleCalculado = detallesCalculados[i];
-          const idTarifa = itemsDto[i].idTarifa;
+          const { detalle: detalleExistente, patron } = parejas[i];
 
-          const grupoExistente = detallesExistentesPorTarifa.get(idTarifa) ?? [];
-          const indice = indiceConsumidoPorTarifa.get(idTarifa) ?? 0;
-          const detalleExistente = grupoExistente[indice];
-          indiceConsumidoPorTarifa.set(idTarifa, indice + 1);
-
+          Object.assign(detalleExistente, patron);
           detalleExistente.horaInicio = detalleCalculado.horaInicio;
           detalleExistente.horaFin = detalleCalculado.horaFin;
           detalleExistente.costosDirectos = detalleCalculado.costosDirectos;
@@ -2756,48 +2825,29 @@ export class OrdenServicioService {
 
   }
 
+  // PROCESO AUTOMATICO DIARIO: lleva cada orden activa al estado que le corresponde segun sus fechas (ver
+  // estadoSegunFechas). Se calcula el estado de destino directamente en vez de avanzar un paso por dia, asi una orden
+  // que se salto un paso (ej: se creo o se edito con fecha de fin hoy, o el servidor estuvo apagado ese dia) igual
+  // llega a su estado correcto en la siguiente ejecucion. Solo avanza, nunca devuelve una orden a un estado anterior
   async actualizarEstadosAutomaticamente() {
 
-    const now = new Date();
+    // Fecha de hoy del servidor (hora local)
+    const hoy = this.formatearFecha(new Date());
 
-    // =========================================================
-    // NORMALIZAR FECHA ACTUAL
-    // =========================================================
+    // Orden de avance de los estados automaticos
+    const ORDEN_ESTADOS: EstadoOrdenServicio[] = [
+      EstadoOrdenServicio.PROGRAMADO,
+      EstadoOrdenServicio.POR_INICIAR,
+      EstadoOrdenServicio.INICIADO,
+      EstadoOrdenServicio.POR_TERMINAR,
+      EstadoOrdenServicio.TERMINADO,
+    ];
 
-    const hoy = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
+    const estadosPorNombre = new Map<string, EstadoOrdenEntity>();
 
-    // =========================================================
-    // ESTADOS
-    // =========================================================
-
-    const estadoProgramado =
-      await this.estadoOrdenService.findOneByName(
-        EstadoOrdenServicio.PROGRAMADO
-      );
-
-    const estadoPorIniciar =
-      await this.estadoOrdenService.findOneByName(
-        EstadoOrdenServicio.POR_INICIAR
-      );
-
-    const estadoIniciado =
-      await this.estadoOrdenService.findOneByName(
-        EstadoOrdenServicio.INICIADO
-      );
-
-    const estadoPorTerminar =
-      await this.estadoOrdenService.findOneByName(
-        EstadoOrdenServicio.POR_TERMINAR
-      );
-
-    const estadoTerminado =
-      await this.estadoOrdenService.findOneByName(
-        EstadoOrdenServicio.TERMINADO
-      );
+    for (const nombre of ORDEN_ESTADOS) {
+      estadosPorNombre.set(nombre, await this.estadoOrdenService.findOneByName(nombre));
+    }
 
     // =========================================================
     // TRAER ORDENES ACTIVAS
@@ -2828,113 +2878,20 @@ export class OrdenServicioService {
 
     for (const orden of ordenes) {
 
-      let nuevoEstado = null;
+      let nuevoEstado: EstadoOrdenEntity | null = null;
 
       try {
 
-        const estadoActual = orden.idEstadoOrdenServicio.nombre;
+        const estadoActual = orden.idEstadoOrdenServicio.nombre as EstadoOrdenServicio;
 
-        // ============================================
-        // FECHAS NORMALIZADAS
-        // ============================================
-
-        const fechaInicio = new Date(orden.fechaInicio);
-        const fechaInicioNormalizada = new Date(
-          fechaInicio.getFullYear(),
-          fechaInicio.getMonth(),
-          fechaInicio.getDate()
+        const estadoDestino = this.estadoSegunFechas(
+          this.fechaYMD(orden.fechaInicio),
+          this.fechaYMD(orden.fechaFin),
+          hoy,
         );
 
-        let fechaFinNormalizada = null;
-
-        if (orden.fechaFin) {
-
-          const fechaFin = new Date(orden.fechaFin);
-
-          fechaFinNormalizada = new Date(
-            fechaFin.getFullYear(),
-            fechaFin.getMonth(),
-            fechaFin.getDate()
-          );
-
-        }
-
-        // ============================================
-        // DIAS RESTANTES
-        // ============================================
-
-        const diffInicio =
-          Math.ceil(
-            (fechaInicioNormalizada.getTime() - hoy.getTime())
-            / (1000 * 60 * 60 * 24)
-          );
-
-        let diffFin = null;
-
-        if (fechaFinNormalizada) {
-
-          diffFin =
-            Math.ceil(
-              (fechaFinNormalizada.getTime() - hoy.getTime())
-              / (1000 * 60 * 60 * 24)
-            );
-
-        }
-
-        // =====================================================
-        // PROGRAMADO -> POR INICIAR
-        // =====================================================
-
-        if (
-          estadoActual === EstadoOrdenServicio.PROGRAMADO &&
-          diffInicio <= 2 &&
-          diffInicio > 0
-        ) {
-
-          nuevoEstado = estadoPorIniciar;
-
-        }
-
-        // =====================================================
-        // POR INICIAR -> INICIADO
-        // =====================================================
-
-        if (
-          estadoActual === EstadoOrdenServicio.POR_INICIAR &&
-          diffInicio === 0
-        ) {
-
-          nuevoEstado = estadoIniciado;
-
-        }
-
-        // =====================================================
-        // INICIADO -> POR TERMINAR
-        // =====================================================
-
-        if (
-          estadoActual === EstadoOrdenServicio.INICIADO &&
-          fechaFinNormalizada &&
-          diffFin <= 2 &&
-          diffFin > 0
-        ) {
-
-          nuevoEstado = estadoPorTerminar;
-
-        }
-
-        // =====================================================
-        // POR TERMINAR -> TERMINADO
-        // =====================================================
-
-        if (
-          estadoActual === EstadoOrdenServicio.POR_TERMINAR &&
-          fechaFinNormalizada &&
-          diffFin === 0
-        ) {
-
-          nuevoEstado = estadoTerminado;
-
+        if (ORDEN_ESTADOS.indexOf(estadoDestino) > ORDEN_ESTADOS.indexOf(estadoActual)) {
+          nuevoEstado = estadosPorNombre.get(estadoDestino) ?? null;
         }
 
         // =====================================================
@@ -2987,7 +2944,7 @@ export class OrdenServicioService {
 
       } catch (error) {
 
-        this.logger.error(`Error actualizando estado de orden ${orden.idOrdenServicio} a ${nuevoEstado.nombre}:`, error);
+        this.logger.error(`Error actualizando estado de orden ${orden.idOrdenServicio} a ${nuevoEstado?.nombre}:`, error);
 
       }
 

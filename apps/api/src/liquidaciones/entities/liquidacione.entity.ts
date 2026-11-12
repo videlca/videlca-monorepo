@@ -90,6 +90,16 @@ export class Liquidacione {
   })
   aniomes_liquidacion: string;
 
+  // TRAMO DE FECHAS QUE SE COBRO EN ESTE MES (copia de rangoLiquidadoEnMes al momento de liquidar). Solo ordenes de
+  // servicio (en adicionales queda null). Se guarda porque las fechas de la orden se pueden editar despues y el
+  // detalle/PDF de un mes ya liquidado no debe cambiar. Null solo en liquidaciones anteriores a esta funcionalidad
+  // (en ese caso se recalcula con las fechas actuales de la orden)
+  @Column({ name: 'fechaDesdeLiquidada', type: 'date', nullable: true })
+  fechaDesdeLiquidada: Date | string | null;
+
+  @Column({ name: 'fechaHastaLiquidada', type: 'date', nullable: true })
+  fechaHastaLiquidada: Date | string | null;
+
   @Column({ 
     type: 'boolean', 
     default: false 

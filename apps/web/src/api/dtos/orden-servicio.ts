@@ -30,7 +30,10 @@ export interface CreateOrdenServicioDto {
 // origen "catalogo"): el catalogo de servicios de la orden no cambia al editar, solo se reenvia el horario ya
 // existente de cada uno para que el backend recalcule el precio con las nuevas fechas. idTarifa debe ser
 // exactamente el mismo conjunto que ya tiene la orden, o el backend rechaza la actualizacion
-export interface UpdateOrdenServicioDetalleDto {
+// Dias de la semana opcionales: si no se envian, el backend conserva los que ya tiene el servicio en la orden.
+// idOrdenServicioDetalle identifica la fila exacta (necesario con varias unidades del mismo servicio)
+export interface UpdateOrdenServicioDetalleDto extends PatronDiasSemanaDto {
+  idOrdenServicioDetalle?: number;
   idTarifa: number;
   horaInicio: string;
   horaFin: string;
@@ -91,7 +94,9 @@ export interface CreateOrdenServicioTarifaDto extends CreateOrdenServicioDetalle
   idServicio?: number;
 }
 
-export interface UpdateOrdenServicioTarifaDto {
+export interface UpdateOrdenServicioTarifaDto extends PatronDiasSemanaDto {
+  // Fila del desglose de la orden que se esta editando
+  idOrdenServicioDetalle?: number;
   idTarifa: number;
   cantidadPersonal: number;
   horaInicio: string;
@@ -122,6 +127,8 @@ export interface UpdateValidarFechaOrdenServicioDto {
   fechaActualizacion: string;
   fechaInicio: string;
   fechaFin: string | null;
+  // Si en la edicion tambien se cambiaron los dias de la semana de algun servicio
+  cambioDias?: boolean;
 }
 
 // Solo aplica (y es obligatorio) cuando origenServicio es "catalogo". En "a_medida" no se llama a este
