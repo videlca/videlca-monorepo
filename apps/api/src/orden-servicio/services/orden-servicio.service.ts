@@ -1656,11 +1656,11 @@ export class OrdenServicioService {
 
     }
 
-    // NUNCA SE PUEDE QUITAR LA FECHA FIN DE UNA ORDEN QUE YA ERA DEFINIDA (volverla indefinida).
-    // Si se necesita continuar el servicio de forma indefinida, se debe terminar esta orden y crear una nueva orden indefinida
-    if (fechaFinAnterior != null && cambio.fechaFinNueva == null) {
+    // QUITAR LA FECHA DE FIN (volver indefinida una orden que no ha terminado): solo ordenes de catalogo. La orden pasa
+    // a cobrarse mes a mes y deja de tener precio total. Las "a la medida" siempre requieren fecha de fin (igual que al crearlas)
+    if (fechaFinAnterior != null && cambio.fechaFinNueva == null && ordenServicio.origenServicio !== OrigenServicioEnum.CATALOGO) {
 
-      throw new BadRequestException('No se puede quitar la fecha de fin de una orden que ya era definida. Si el servicio va a continuar de forma indefinida, cree una nueva orden de servicio a partir del dia siguiente en que termina esta');
+      throw new BadRequestException('Una orden a la medida no puede ser indefinida, debe tener fecha de fin');
 
     }
 

@@ -1,3 +1,4 @@
+import Alert from "@mui/material/Alert";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Paper from "@mui/material/Paper";
@@ -24,6 +25,7 @@ export const ConfigurarFechaOrdenServicio = ({
   fechaInicioDisabledMotivo,
   fechaFinMin,
   indefinidaDisabled = false,
+  avisoIndefinida,
 }: {
   register: UseFormRegister<any>;
   setValue: UseFormSetValue<any>;
@@ -39,6 +41,8 @@ export const ConfigurarFechaOrdenServicio = ({
   fechaInicioDisabledMotivo?: string;
   fechaFinMin?: string;
   indefinidaDisabled?: boolean;
+  // Texto de advertencia que se muestra cuando la orden queda marcada como indefinida (ej: al quitarle la fecha de fin)
+  avisoIndefinida?: string;
 }) => {
   const renderSelectDia = (
     value: number | null,
@@ -110,6 +114,10 @@ export const ConfigurarFechaOrdenServicio = ({
           }
           label="Orden de servicio indefinida (sin fecha de finalización)"
         />
+
+        {isIndefinite && avisoIndefinida && (
+          <Alert severity="info">{avisoIndefinida}</Alert>
+        )}
 
         {cobroParcial && setCobroParcial && (
           <Paper variant="outlined" className="flex flex-col gap-2 p-4">

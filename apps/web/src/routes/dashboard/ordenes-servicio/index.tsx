@@ -1470,7 +1470,16 @@ function RouteComponent() {
                   : "La orden ya inició"
               }
               fechaFinMin={fechaFinMinEdit}
-              indefinidaDisabled={!!ordenEnEdicion?.fechaFin}
+              // Las ordenes "a la medida" siempre requieren fecha de fin
+              indefinidaDisabled={
+                ordenEnEdicion?.origenServicio === OrigenServicioEnum.A_MEDIDA ||
+                edicionBloqueada
+              }
+              avisoIndefinida={
+                ordenEnEdicion?.fechaFin
+                  ? "La orden pasará a cobrarse mes a mes y dejará de tener un precio total. Lo ya liquidado no cambia."
+                  : undefined
+              }
             />
             {/* Dias de la semana: solo ordenes de catalogo (en "a la medida" cada fila es un dia especifico) */}
             {ordenEnEdicion?.origenServicio !== OrigenServicioEnum.A_MEDIDA && (
