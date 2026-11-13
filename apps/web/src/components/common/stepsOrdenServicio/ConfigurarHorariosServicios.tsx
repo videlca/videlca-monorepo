@@ -328,12 +328,12 @@ export const ConfigurarHorariosServicios = ({
 
         <Alert severity="warning" sx={{ mt: 2 }}>
           <AlertTitle>Nota:</AlertTitle>
-            {service.idTipoDuracion.descripcion.toLowerCase() === "fija" &&
-            service.horasFijas === 12 ? (
+            {service.horasFijas === 8 || service.horasFijas === 12 ? (
               <>
-                Tarifa de <b>12 horas</b>: puede elegir una duración de{" "}
-                <b>1 a 24 horas</b>, se cobra proporcional (horas / 12). Si la
-                hora de inicio es igual a la de fin se toma como 24 horas.
+                Tarifa de <b>{service.horasFijas} horas</b>: puede elegir una
+                duración de <b>1 a 24 horas</b>, se cobra proporcional (horas /{" "}
+                {service.horasFijas}). Si la hora de inicio es igual a la de fin
+                se toma como 24 horas.
               </>
             ) : permiteHoraFin24 ? (
               <>

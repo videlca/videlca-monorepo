@@ -730,9 +730,9 @@ export class OrdenServicioService {
   // A LA MEDIDA: las horas solo se usan para calcular el precio (/obtener-precio), no hay un servicio del catalogo
   // contra el cual validar su duracion, por lo que no aplica ninguna validacion.
   // CATALOGO: Monitoreo de alarmas (mensual, 24 horas fijas) y los demas servicios de 24 horas que no son de
-  // Vigilancia y escolta no eligen horario, no aplica validar horas. Los de 12 horas y los de 24 horas de Vigilancia
-  // y escolta se cobran proporcional a las horas elegidas (ver esServicioProporcionalPorHoras). Los de 8 horas deben
-  // coincidir exactamente con sus horas fijas. Las horas pueden incluir medias horas (ej: 06:30:00).
+  // Vigilancia y escolta no eligen horario, no aplica validar horas. Los de 8 y 12 horas y los de 24 horas de
+  // Vigilancia y escolta se cobran proporcional a las horas elegidas (ver esServicioProporcionalPorHoras). Cualquier
+  // otra duracion fija debe coincidir exactamente. Las horas pueden incluir medias horas (ej: 06:30:00).
   async validacionHorarios(validarHorarioServicioDto: ValidarHorarioServicioDto) {
 
     const { origenServicio, idTarifa, horaInicio, horaFin } = validarHorarioServicioDto;
@@ -751,7 +751,7 @@ export class OrdenServicioService {
 
     const servicio = tarifa.idServicio;
 
-    // SERVICIOS DE 12 HORAS Y DE 24 HORAS DE VIGILANCIA (turno o mensual): la tarifa representa el valor de esas horas,
+    // SERVICIOS DE 8 Y 12 HORAS Y DE 24 HORAS DE VIGILANCIA (turno o mensual): la tarifa representa el valor de esas horas,
     // no una duracion obligatoria. Se puede contratar cualquier duracion entre 1 y 24 horas (ej: 4h, 14h, 22.5h), y se
     // cobra proporcional a las horas elegidas sobre las horas fijas de la tarifa (ver calcularPrecioCatalogo)
     if (this.esServicioProporcionalPorHoras(servicio)) {
@@ -804,12 +804,13 @@ export class OrdenServicioService {
 
   }
 
-  // SERVICIOS QUE SE COBRAN PROPORCIONAL A LAS HORAS ELEGIDAS: los de 12 horas (cualquier tipo, como hasta ahora) y
+  // SERVICIOS QUE SE COBRAN PROPORCIONAL A LAS HORAS ELEGIDAS: los de 8 y 12 horas (cualquier tipo) y
   // los de 24 horas de Vigilancia y escolta por turno o mensual (ej: un cliente con tarifa de 24 horas al que solo se
   // le prestan 22). Los de 24 horas de Monitoreo de alarmas y los "por servicio" (recogida de dinero) siguen sin horario
   private esServicioProporcionalPorHoras(servicio: Servicio): boolean {
 
-    if (servicio.horasFijas === 12) return true;
+    // 8 y 12 horas: se puede contratar cualquier duracion (ej: 7 horas con tarifa de 8 = 7/8 del valor)
+    if (servicio.horasFijas === 8 || servicio.horasFijas === 12) return true;
 
     return servicio.horasFijas === 24
       && servicio.idTipoServicio.nombre === TipoServicioInterface.VIGILANCIA_Y_ESCOLTA
@@ -985,9 +986,9 @@ export class OrdenServicioService {
       const patron = this.construirPatronDias(item);
       const todosLosDias = this.esPatronTodosLosDias(patron);
 
-      // SERVICIOS DE 12 HORAS Y DE 24 HORAS DE VIGILANCIA (turno o mensual): se puede contratar cualquier duracion
+      // SERVICIOS DE 8 Y 12 HORAS Y DE 24 HORAS DE VIGILANCIA (turno o mensual): se puede contratar cualquier duracion
       // (minimo 1, maximo 24 horas, ver validacionHorarios), y se cobra proporcional a las horas elegidas sobre las
-      // horas fijas de la tarifa (ej: 4h = 4/12, 14h = 14/12, 22.5h = 22.5/24). El seguro de vida NO se prorratea por
+      // horas fijas de la tarifa (ej: 7h = 7/8, 4h = 4/12, 14h = 14/12, 22.5h = 22.5/24). El seguro de vida NO se prorratea por
       // hora, se sigue cobrando como dia completo sin importar cuantas horas se elijan
       const duracionSeleccionada = this.esServicioProporcionalPorHoras(servicio)
         ? await this.calcularDuracionHorasProporcional(item.horaInicio, item.horaFin)
