@@ -94,8 +94,10 @@ export class UsersService {
 
     const {...userData} = createUserDto;
 
-    // Generar una clave temporal
-    const clave = Math.random().toString(36).slice(-8);
+    // CLAVE TEMPORAL: la que asigna el admin al crear el usuario (mientras el envio de correos de activacion esta
+    // deshabilitado, es la forma de que el usuario pueda entrar; luego la cambia desde su perfil). Si no se envia, se
+    // genera una aleatoria y el usuario la define con el enlace del correo de activacion
+    const clave = createUserDto.clave?.trim() || Math.random().toString(36).slice(-8);
 
     // OBTENER TIPO DE ID
     const tipoIdentificacion = await this.tipoIdentificacionService.findOne(createUserDto.idTipoIdentificacion);

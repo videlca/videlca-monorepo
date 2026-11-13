@@ -81,8 +81,10 @@ export const getUsuarioById = async (id: number): Promise<ApiResponse<Usuario>> 
 
 // Perfil de usuario
 
+// Eliminar un usuario por id (lo usa el admin en la pantalla de usuarios). /users/mi-perfil es otra ruta: la de
+// que cada usuario elimine su propio perfil, no recibe id
 export const deleteUsuario = async (id: number): Promise<ApiResponse> => {
-  const response = await axiosClient.delete(`/users/mi-perfil/${id}`).then((res) => {
+  const response = await axiosClient.delete(`/users/${id}`).then((res) => {
     return {
       status: res.status,
       data: res.data

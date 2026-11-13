@@ -303,8 +303,8 @@ function RouteComponent() {
               {...registerCrear("email")}
             />
             <InputForm
-              label="Contraseña"
-              placeholder="Contraseña"
+              label="Contraseña temporal"
+              placeholder="Mínimo 6 caracteres, con mayúscula, minúscula y número"
               type="password"
               id="clave"
               required
