@@ -1519,8 +1519,9 @@ function RouteComponent() {
         return (
           <PreviewInformacionOrden
             isEditing={isEditing}
-            selectedPuesto={selectedOrderDetail?.idLocacion || null}
-            selectedCliente={selectedOrderDetail?.idCliente || null}
+            // Orden completa cargada al abrir la edicion (la fila de la tabla puede no traer la ciudad del puesto)
+            selectedPuesto={ordenEnEdicion?.idLocacion || selectedOrderDetail?.idLocacion || null}
+            selectedCliente={ordenEnEdicion?.idCliente || selectedOrderDetail?.idCliente || null}
             formOrdenServicio={watchEdit()}
             configuracionServicioTarifa={configuracionServicioTarifaEdit}
             selectedServices={selectedServices}

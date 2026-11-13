@@ -312,16 +312,16 @@ export const PreviewInformacionOrden = ({
           </>
         ) : (
           <>
-            <DetailField label="Cliente" value={selectedPuesto?.idCliente.nombre} />
+            <DetailField label="Cliente" value={selectedPuesto?.idCliente?.nombre} />
             {selectedPuesto?.idClienteFacturacion && (
               <DetailField
                 label="Cliente Facturación"
-                value={selectedPuesto.idClienteFacturacion.nombre}
+                value={selectedPuesto.idClienteFacturacion?.nombre}
               />
             )}
             <DetailField label="Ubicación" value={selectedPuesto?.nombre} />
             <DetailField label="Dirección" value={selectedPuesto?.direccion} />
-            <DetailField label="Ciudad" value={selectedPuesto?.idCiudad.descripcion} />
+            <DetailField label="Ciudad" value={selectedPuesto?.idCiudad?.descripcion} />
             <DetailField
               label="Responsable"
               value={`${selectedPuesto?.primerNombreResponsable ?? ""} ${selectedPuesto?.primerApellidoResponsable ?? ""}`}
