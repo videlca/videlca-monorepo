@@ -47,35 +47,15 @@ export class AuthService {
         
         }
 
-        // Validar si el user tiene el rol de super-admin
-        if (user.idRol.nombreRol === Roles.SUPER_ADMIN) {
-
-            if(loginDto.clave !== user.clave){
-                throw new UnauthorizedException('Email o contraseña es incorrecto');
-            }
-            
-            const payload: JwtPayload = { email: user.email, id: user.idUser}
-
-            // Generar token de acceso
-            const token = await this.getJwtToken(payload);
-
-            // retornar token de acceso y data del user
-            return {
-                token,
-                user: {
-                    idUser: user.idUser,
-                    nombre: `${user.primerNombre} ${user.primerApellido}`,
-                    email: user.email,
-                    rol: user.idRol.nombreRol,
-                },
-                permisos
-            };
-
-        }
-        
-        // Validar si la contraseña coincide
-        if(!bcrypt.compareSync(loginDto.clave, user.clave)){
+        // Validar si la contraseña coincide (todos los usuarios, incluido el super-admin, con la clave cifrada).
+        // Una clave guardada sin cifrar (ej. un super-admin creado directo en BD) se acepta una sola vez y se cifra
+        // en ese mismo login, asi queda migrada sin tener que tocar la BD
+        if(!this.usersService.claveCoincide(loginDto.clave, user.clave)){
             throw new UnauthorizedException('Email o contraseña es incorrecto');
+        }
+
+        if(!this.usersService.esClaveCifrada(user.clave)){
+            await this.usersService.cifrarClaveGuardada(user.idUser, loginDto.clave);
         }
     
         const payload: JwtPayload = { email: user.email, id: user.idUser };

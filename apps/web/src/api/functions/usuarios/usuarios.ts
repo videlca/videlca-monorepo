@@ -1,6 +1,6 @@
 import type { Usuario } from "../../../types";
 import { axiosClient } from "../../config";
-import type { CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from "../../dtos";
+import type { CambiarClaveDto, CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from "../../dtos";
 import type { PaginationDto } from "../../dtos/common";
 import type { ApiResponse, PaginatedResponse } from "../../types/common";
 
@@ -115,6 +115,22 @@ export const getUsuarioByCookie = async (): Promise<ApiResponse<Usuario>> => {
 
 export const updateUsuarioPerfil = async (data: UpdateUserDto): Promise<ApiResponse> => {
   const response = await axiosClient.patch(`/users/mi-perfil`, data).then((res) => {
+    return {
+      status: res.status,
+      data: res.data
+    }
+  }).catch((error) => {
+    return {
+      status: error.response?.status,
+      message: error.response?.data?.message || 'Error de conexión',
+    }
+  })
+  return response
+}
+
+// Cambiar la contraseña del usuario logueado (pide la actual)
+export const cambiarClavePerfil = async (data: CambiarClaveDto): Promise<ApiResponse> => {
+  const response = await axiosClient.patch(`/users/mi-perfil/clave`, data).then((res) => {
     return {
       status: res.status,
       data: res.data

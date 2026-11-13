@@ -7,7 +7,7 @@ import { PaginationDto } from '../common/dto';
 
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
-import { CreateUserDto, UpdateUserDto, UpdateUserStateRolDto, FilterUserDto } from './dto';
+import { CreateUserDto, UpdateUserDto, UpdateUserStateRolDto, FilterUserDto, CambiarClaveDto } from './dto';
 
 @Controller('users')
 export class UsersController {
@@ -39,6 +39,16 @@ export class UsersController {
   ) 
   {
     return this.usersService.updatePerfil(updateUserDto, user);
+  }
+
+  // RUTA PROTEGIDA (solo un user logueado puede acceder): cambiar su propia contraseña confirmando la actual
+  @Patch('mi-perfil/clave')
+  @UserAuth()
+  cambiarClavePerfil(
+    @Body() cambiarClaveDto: CambiarClaveDto,
+    @GetUser() user: User
+  ) {
+    return this.usersService.cambiarClavePerfil(cambiarClaveDto, user);
   }
 
   // RUTA PROTEGIDA (solo el propio user o SUPERADMIN puede acceder): un usuario pueda eliminar su perfil

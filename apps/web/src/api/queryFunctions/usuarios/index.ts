@@ -1,8 +1,8 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { createUsuario, deleteUsuario, getUsuarioByCookie, getUsuarios, updateUsuario, updateUsuarioPerfil, getFilteredUsuarios } from "../../functions/usuarios";
+import { cambiarClavePerfil, createUsuario, deleteUsuario, getUsuarioByCookie, getUsuarios, updateUsuario, updateUsuarioPerfil, getFilteredUsuarios } from "../../functions/usuarios";
 import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import type { Usuario } from "../../../types";
-import type { CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from "../../dtos";
+import type { CambiarClaveDto, CreateUserDto, UpdateUserDto, UpdateUserStatusDto } from "../../dtos";
 import type { PaginationDto } from "../../dtos/common";
 import { queryClient } from "../../../App";
 import { showErrorToast } from "../../utils/toastError";
@@ -104,6 +104,23 @@ export const useUpdateUsuarioPerfil = (): UseMutationResult<ApiResponse, Error, 
     },
     onError: (error) => {
       showErrorToast(error.message, "Error al actualizar usuario");
+    }
+  })
+}
+
+// Cambiar la contraseña del usuario logueado desde su perfil
+export const useCambiarClavePerfil = (): UseMutationResult<ApiResponse, Error, CambiarClaveDto> => {
+  return useMutation({
+    mutationFn: (data: CambiarClaveDto) => cambiarClavePerfil(data),
+    onSuccess: (data) => {
+      if (data.status === 200 || data.status === 201) {
+        toast.success('Contraseña actualizada correctamente')
+      } else {
+        showErrorToast(data.message, "Error al cambiar la contraseña");
+      }
+    },
+    onError: (error) => {
+      showErrorToast(error.message, "Error al cambiar la contraseña");
     }
   })
 }

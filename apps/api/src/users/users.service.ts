@@ -21,7 +21,7 @@ import { EstadoAppInterface } from '../common/interfaces/estado-app.interface';
 
 import { User } from './entities/user.entity';
 
-import { CreateUserDto, UpdateUserDto, UpdateUserStateRolDto } from './dto';
+import { CreateUserDto, UpdateUserDto, UpdateUserStateRolDto, CambiarClaveDto } from './dto';
 import { Role } from '../permissions/entities/role.entity';
 
 @Injectable()
@@ -163,10 +163,62 @@ export class UsersService {
 
   }
 
-  // ACTUALIZAR DATA DE UN USER
+  // LAS CLAVES CIFRADAS CON BCRYPT EMPIEZAN POR "$2" (ej. "$2b$10$..."). Una clave sin ese prefijo quedo guardada en
+  // texto plano (ej. el super-admin creado directo en la BD)
+  esClaveCifrada(claveGuardada: string): boolean {
+
+    return /^\$2[aby]\$\d{2}\$/.test(claveGuardada ?? '');
+
+  }
+
+  // COMPARA UNA CLAVE ESCRITA POR EL USUARIO CONTRA LA GUARDADA (cifrada o, por compatibilidad, en texto plano)
+  claveCoincide(claveIngresada: string, claveGuardada: string): boolean {
+
+    if (!claveIngresada || !claveGuardada) return false;
+
+    return this.esClaveCifrada(claveGuardada)
+      ? bcrypt.compareSync(claveIngresada, claveGuardada)
+      : claveIngresada === claveGuardada;
+
+  }
+
+  // CIFRA Y GUARDA LA CLAVE DE UN USUARIO QUE LA TENIA EN TEXTO PLANO (se llama al iniciar sesion con ella)
+  async cifrarClaveGuardada(idUser: number, clave: string) {
+
+    await this.userRepository.update({ idUser }, { clave: bcrypt.hashSync(clave, 10) });
+
+  }
+
+  // CAMBIAR LA CONTRASEÑA DESDE EL PERFIL: se confirma la actual antes de guardar la nueva
+  async cambiarClavePerfil(cambiarClaveDto: CambiarClaveDto, user: User) {
+
+    const { claveActual, claveNueva, confirmarClaveNueva } = cambiarClaveDto;
+
+    if (claveNueva !== confirmarClaveNueva) {
+      throw new BadRequestException('La nueva contraseña y su confirmacion no coinciden');
+    }
+
+    // La clave no viene en el user del token (la columna esta oculta), se consulta aparte
+    const { user: userConClave } = await this.findOneByEmailWithPassword(user.email);
+
+    if (!this.claveCoincide(claveActual, userConClave.clave)) {
+      throw new BadRequestException('La contraseña actual no es correcta');
+    }
+
+    if (claveNueva === claveActual) {
+      throw new BadRequestException('La nueva contraseña debe ser diferente a la actual');
+    }
+
+    await this.userRepository.update({ idUser: user.idUser }, { clave: bcrypt.hashSync(claveNueva, 10) });
+
+    return { message: 'Contraseña actualizada correctamente' };
+
+  }
+
+  // ACTUALIZAR DATA DE UN USER (la contraseña NO se cambia aca: se usa cambiarClavePerfil, que exige la actual)
   async updatePerfil(updateUserDto: UpdateUserDto, user: User) {
 
-    const { idTipoIdentificacion, ...updateUserData } = updateUserDto;
+    const { idTipoIdentificacion, clave: _clave, ...updateUserData } = updateUserDto;
         
     // BUSCAR Y PRECARGAR USER A ACTUALIZAR 
     const existUser = await this.userRepository.preload({
@@ -179,12 +231,6 @@ export class UsersService {
     // SOLO PODRA ACTUALIZAR LA DATA EL MISMO USER
     if(existUser.numeroIdentificacion != user.numeroIdentificacion){
       throw new UnauthorizedException('No tienes permiso para editar este User');
-    }
-
-    if(updateUserDto.clave){
-
-      existUser.clave = bcrypt.hashSync(updateUserDto.clave, 10);
-
     }
 
     if(updateUserDto.idTipoIdentificacion){
@@ -1250,10 +1296,12 @@ export class UsersService {
 
       const user = this.userRepository.create({
         ...createUserData,
+        // Todas las claves se guardan cifradas, tambien las del seed (incluido el super-admin)
+        clave: bcrypt.hashSync(createUserData.clave, 10),
         idTipoIdentificacion: tipoId,
         idRol: rol
       });
-  
+
       await this.userRepository.save(user);
 
       return user;

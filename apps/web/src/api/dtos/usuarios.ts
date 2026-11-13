@@ -41,3 +41,10 @@ export interface FilterUserDto {
   offset?: number;
   pagination?: boolean;
 }
+
+// Cambio de contraseña desde el perfil: se confirma la actual y se escribe la nueva dos veces
+export interface CambiarClaveDto {
+  claveActual: string;
+  claveNueva: string;
+  confirmarClaveNueva: string;
+}

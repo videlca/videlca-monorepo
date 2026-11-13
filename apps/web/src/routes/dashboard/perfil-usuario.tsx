@@ -9,11 +9,12 @@ import CloseIcon from "@mui/icons-material/Close";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import { InputForm } from "../../components/common/InputForm";
 import {
+  useCambiarClavePerfil,
   useGetUsuarioByCookie,
   useUpdateUsuarioPerfil,
 } from "../../api/queryFunctions/usuarios";
 import { useForm } from "react-hook-form";
-import type { UpdateUserDto } from "../../api/dtos";
+import type { CambiarClaveDto, UpdateUserDto } from "../../api/dtos";
 import { InputSelect } from "../../components/common/InputSelect";
 import { useTipoIdentificacion } from "../../api/queryFunctions/configuracion";
 
@@ -29,8 +30,30 @@ function RouteComponent() {
   const { mutate: updateUsuarioPerfil, isPending: isUpdatingUsuario } =
     useUpdateUsuarioPerfil();
 
+  const { mutate: cambiarClave, isPending: isCambiandoClave } =
+    useCambiarClavePerfil();
+
   // States
   const [isEditing, setIsEditing] = useState(false);
+
+  // Formulario de cambio de contraseña: la actual y la nueva dos veces
+  const {
+    register: registerClave,
+    handleSubmit: handleSubmitClave,
+    reset: resetClave,
+    watch: watchClave,
+    formState: { errors: erroresClave },
+  } = useForm<CambiarClaveDto>({
+    defaultValues: { claveActual: "", claveNueva: "", confirmarClaveNueva: "" },
+  });
+
+  const onSubmitClave = (data: CambiarClaveDto) => {
+    cambiarClave(data, {
+      onSuccess: (response) => {
+        if (response.status === 200 || response.status === 201) resetClave();
+      },
+    });
+  };
 
   // Form
   const { register, control, handleSubmit, reset } = useForm<UpdateUserDto>({
@@ -212,19 +235,68 @@ function RouteComponent() {
               Cambiar Contraseña
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Por seguridad, se te pedirá confirmar tu contraseña actual antes
-              de establecer una nueva.
+              Por seguridad, confirma tu contraseña actual y escribe la nueva
+              dos veces. Debe tener mínimo 6 caracteres, con mayúscula,
+              minúscula y número.
             </Typography>
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={() => {
-                // TODO: Implementar modal de cambio de contraseña
-                alert("Funcionalidad de cambio de contraseña próximamente");
-              }}
+            <form
+              className="grid grid-cols-1 gap-6 md:grid-cols-2"
+              onSubmit={handleSubmitClave(onSubmitClave)}
             >
-              Cambiar Contraseña
-            </Button>
+              <div className="md:col-span-2">
+                <InputForm
+                  id="claveActual"
+                  placeholder="Tu contraseña actual"
+                  label="Contraseña actual"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  error={erroresClave.claveActual?.message}
+                  {...registerClave("claveActual", {
+                    required: "Ingresa tu contraseña actual",
+                  })}
+                />
+              </div>
+              <InputForm
+                id="claveNueva"
+                placeholder="Nueva contraseña"
+                label="Nueva contraseña"
+                type="password"
+                autoComplete="new-password"
+                required
+                error={erroresClave.claveNueva?.message}
+                {...registerClave("claveNueva", {
+                  required: "Ingresa la nueva contraseña",
+                  minLength: { value: 6, message: "Mínimo 6 caracteres" },
+                })}
+              />
+              <InputForm
+                id="confirmarClaveNueva"
+                placeholder="Repite la nueva contraseña"
+                label="Confirmar nueva contraseña"
+                type="password"
+                autoComplete="new-password"
+                required
+                error={erroresClave.confirmarClaveNueva?.message}
+                {...registerClave("confirmarClaveNueva", {
+                  required: "Confirma la nueva contraseña",
+                  validate: (valor) =>
+                    valor === watchClave("claveNueva") ||
+                    "Las contraseñas no coinciden",
+                })}
+              />
+              <div className="md:col-span-2">
+                <Button
+                  type="submit"
+                  variant="contained"
+                  loading={isCambiandoClave}
+                  loadingPosition="start"
+                  startIcon={<CheckIcon />}
+                >
+                  {isCambiandoClave ? "Guardando..." : "Guardar contraseña"}
+                </Button>
+              </div>
+            </form>
           </Paper>
 
           <Paper variant="outlined" className="p-6">
