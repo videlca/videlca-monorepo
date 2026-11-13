@@ -30,17 +30,18 @@ export class UserPermissionsGuard implements CanActivate {
 
     if(!permisos.length) throw new ForbiddenException("User no tiene permisos requeridos para ingresar a este recurso"); 
 
-    const handlerRoute = this.reflector.get<string>(META_ROUTES, context.getHandler());
+    // Permisos de la ruta (ver ProtectedRoute): uno o varios; basta con tener uno
+    const handlerRoutes = this.reflector.get<string[] | string>(META_ROUTES, context.getHandler());
 
     // Obtener metadata del controller
-    const controllerRoute = this.reflector.get<string>(META_ROUTES,context.getClass());
+    const controllerRoutes = this.reflector.get<string[] | string>(META_ROUTES,context.getClass());
 
     // Usar el metadata del handler si existe, si no, usar el del controller
-    const protectedRoute = handlerRoute || controllerRoute;
+    const protectedRoutes = [handlerRoutes ?? controllerRoutes].flat().filter(Boolean);
 
-    if(!protectedRoute) throw new ForbiddenException('No se encuentra el recurso al que se quiere acceder');
-    
-    if(permisos.includes(protectedRoute)){
+    if(!protectedRoutes.length) throw new ForbiddenException('No se encuentra el recurso al que se quiere acceder');
+
+    if(protectedRoutes.some(route => permisos.includes(route))){
       return true;
     }
 

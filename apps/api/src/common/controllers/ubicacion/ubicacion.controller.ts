@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 
-import { AppAuth, ValidateJwtAuth } from '../../../auth/decorators';
+import { AppAuth, ProtectedRoute, ValidateJwtAuth } from '../../../auth/decorators';
 import { DescriptionRoutes } from '../../../auth/interfaces';
 
 import { UbicacionService } from '../../services';
@@ -101,8 +101,11 @@ export class UbicacionController {
         return this.ubicacionService.findAllCiudades(paginationDto);
     }
 
-    // RUTA PROTEGIDA: Obtener todas las ciudades activas
+    // RUTA PROTEGIDA: Obtener todas las ciudades activas. Ademas de Configuracion, la necesitan Ordenes de servicio
+    // (ciudad de una orden de vigilancia asignada a un cliente, y adicionales) y Personal; con cualquiera de esos
+    // permisos se puede consultar (el resto de rutas de ubicacion siguen siendo solo de Configuracion)
     @Get('ciudad/activas')
+    @ProtectedRoute(DescriptionRoutes.CONFIGURACION, DescriptionRoutes.ORDENES_SERVICIO, DescriptionRoutes.PERSONAL)
     @ValidateJwtAuth()
     findAllCiudadesActivas(@Query() paginationDto: PaginationDto) {
         return this.ubicacionService.findAllCiudadesActivas(paginationDto);
