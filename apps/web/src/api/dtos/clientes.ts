@@ -57,6 +57,8 @@ export interface CreateClienteDto {
   nombre: string;
   idTipoCliente: number;
   idSubSegmentacion?: number;
+  // Contactos para las notificaciones de las ordenes asignadas directo al cliente
+  correos?: CreateCorreoDto[];
 }
 
 export interface UpdateClienteDto {
@@ -66,6 +68,8 @@ export interface UpdateClienteDto {
   idTipoCliente?: number;
   idSubSegmentacion?: number | null;
   estado?: boolean;
+  // Contactos para las notificaciones de las ordenes asignadas directo al cliente
+  correos?: CreateCorreoDto[];
 }
 
 // Filter

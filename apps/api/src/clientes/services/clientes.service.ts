@@ -1,6 +1,6 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { EnviarCorreoDto } from '../../common/dto';
@@ -12,10 +12,12 @@ import { PaginationOption } from '../../common/interfaces/pagination.interface';
 
 import { ReporteClientesPuestosService } from '../../reportes/services';
 
-import { Cliente } from '../entities';
+import { Cliente, Correo } from '../entities';
+import { EstadoOrdenServicio } from '../../common/entities';
 import { SubSegmentacionService } from './sub-segmentacion.service';
+import { enviarCorreoContactoVinculado } from './correo-contacto.helper';
 
-import { CreateClienteDto, UpdateClienteDto, FilterClienteDto, ClienteFilterColumn } from '../dto';
+import { CreateClienteDto, UpdateClienteDto, FilterClienteDto, ClienteFilterColumn, CreateCorreoDto } from '../dto';
 
 @Injectable()
 export class ClientesService {
@@ -27,6 +29,11 @@ export class ClientesService {
   constructor(
     @InjectRepository(Cliente)
     private readonly clienteRepository: Repository<Cliente>,
+    @InjectRepository(Correo)
+    private readonly correoRepository: Repository<Correo>,
+    @InjectRepository(EstadoOrdenServicio)
+    private readonly estadoOrdenServicioRepository: Repository<EstadoOrdenServicio>,
+    private readonly dataSource: DataSource,
     private readonly subSegmentacionService: SubSegmentacionService,
     private readonly tipoClienteService: TipoClienteService,
     private readonly tipoIdentificacionService: TipoIdentificacionService,
@@ -56,16 +63,27 @@ export class ClientesService {
 
     try {
 
-      const cliente = this.clienteRepository.create({
-        ...createClienteDto,
-        idTipoIdentificacion: tipoIdentificacion,
-        idTipoCliente: tipoCliente,
-        idSubSegmentacion: subSegmentacion
+      const { correos, ...clienteData } = createClienteDto;
+
+      // El cliente y sus contactos se guardan juntos (si falla un contacto no queda el cliente a medias)
+      return await this.dataSource.transaction(async (manager) => {
+
+        const cliente = manager.create(Cliente, {
+          ...clienteData,
+          idTipoIdentificacion: tipoIdentificacion,
+          idTipoCliente: tipoCliente,
+          idSubSegmentacion: subSegmentacion
+        });
+
+        await manager.save(Cliente, cliente);
+
+        if (correos?.length) {
+          await this.guardarCorreosCliente(manager, cliente, correos);
+        }
+
+        return cliente;
+
       });
-
-      await this.clienteRepository.save(cliente);
-
-      return cliente;
       
     } catch (error) {
 
@@ -197,6 +215,10 @@ export class ClientesService {
             estados: true
           },
           idCiudad: true
+        },
+        // Contactos del cliente (para sus ordenes asignadas directo, sin puesto)
+        correos: {
+          estados: true
         }
       }
     });
@@ -209,7 +231,7 @@ export class ClientesService {
 
   async update(id: number, updateClienteDto: UpdateClienteDto) {
     
-    const { idTipoIdentificacion, idTipoCliente, idSubSegmentacion, ...clienteData } = updateClienteDto;
+    const { idTipoIdentificacion, idTipoCliente, idSubSegmentacion, correos, ...clienteData } = updateClienteDto;
 
     const cliente = await this.clienteRepository.preload({idCliente: id, ...clienteData});
 
@@ -245,13 +267,93 @@ export class ClientesService {
 
     try {
       
-      await this.clienteRepository.save(cliente);
+      await this.dataSource.transaction(async (manager) => {
+
+        await manager.save(Cliente, cliente);
+
+        // Solo si se envian los contactos se reemplazan (sin enviarlos quedan como estan)
+        if (correos !== undefined) {
+          await this.guardarCorreosCliente(manager, cliente, correos);
+        }
+
+      });
 
     } catch (error) {
       
       this.handleDbExceptions(error);
 
     }
+
+  }
+
+  // REEMPLAZA LOS CONTACTOS DEL CLIENTE POR LOS ENVIADOS (mismas reglas que los contactos de un puesto: sin emails
+  // repetidos, cada uno con al menos un estado existente). Solo a los emails que no estaban antes se les envia el
+  // correo de bienvenida
+  private async guardarCorreosCliente(manager: EntityManager, cliente: Cliente, correos: CreateCorreoDto[]) {
+
+    // Sin emails repetidos (se conserva el primero)
+    const vistos = new Set<string>();
+    const correosUnicos = correos.filter(correo => {
+      const email = correo.email.toLowerCase().trim();
+      if (vistos.has(email)) return false;
+      vistos.add(email);
+      return true;
+    });
+
+    const existentes = await manager.find(Correo, { where: { cliente: { idCliente: cliente.idCliente } } });
+    const emailsExistentes = new Set(existentes.map(correo => correo.email.toLowerCase().trim()));
+
+    await manager.delete(Correo, { cliente: { idCliente: cliente.idCliente } });
+
+    for (const correoDto of correosUnicos) {
+
+      if (!correoDto.estados?.length) {
+        throw new BadRequestException(`Se debe enviar al menos un estado en cada correo`);
+      }
+
+      const estados = await this.estadoOrdenServicioRepository.findBy({
+        idEstadoOrdenServicio: In(correoDto.estados)
+      });
+
+      if (estados.length !== correoDto.estados.length) {
+
+        const encontrados = estados.map(estado => estado.idEstadoOrdenServicio);
+        const noEncontrados = correoDto.estados.filter(id => !encontrados.includes(id));
+
+        throw new BadRequestException(`Los siguientes estados no existen: ${noEncontrados.join(', ')}`);
+
+      }
+
+      await manager.save(Correo, manager.create(Correo, {
+        nombre: correoDto.nombre,
+        apellido: correoDto.apellido,
+        email: correoDto.email,
+        cliente,
+        locacion: null,
+        estados,
+      }));
+
+      if (!emailsExistentes.has(correoDto.email.toLowerCase().trim())) {
+        await enviarCorreoContactoVinculado(this.emailService, correoDto, `el cliente ${cliente.nombre}`);
+      }
+
+    }
+
+  }
+
+  // EMAILS DE LOS CONTACTOS DEL CLIENTE QUE QUIEREN AVISO DE ESE ESTADO DE LA ORDEN (para las ordenes asignadas
+  // directo al cliente; las de un puesto usan getEmailsByLocacionAndEstado)
+  async getEmailsByClienteAndEstado(idCliente: number, idEstadoOrden: number): Promise<string[]> {
+
+    const result = await this.correoRepository
+      .createQueryBuilder('correo')
+      .innerJoin('correo_estado', 'ce', 'ce.correo_id = correo.idCorreo')
+      .where('correo.idCliente = :idCliente', { idCliente })
+      .andWhere('ce.estado_id = :idEstadoOrden', { idEstadoOrden })
+      .select('correo.email')
+      .getMany();
+
+    return result.map(correo => correo.email);
 
   }
 
@@ -500,7 +602,10 @@ export class ClientesService {
   }
 
   private handleDbExceptions(error: any){
-      
+
+    // Errores ya con su mensaje (ej. validacion de los contactos): se devuelven tal cual
+    if (error instanceof HttpException) throw error;
+
     if (error.errno === 1062)
       throw new BadRequestException(`El registro que intenta crear ya existe, no puede crear duplicados`);
 

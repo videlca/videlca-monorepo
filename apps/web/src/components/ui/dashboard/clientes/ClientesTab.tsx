@@ -74,6 +74,8 @@ export function ClientesTab() {
   const [aplicaSegmentacionEdit, setAplicaSegmentacionEdit] = useState(true);
 
   const [correos, setCorreos] = useState<CreateCorreoDto[]>([]);
+  // Contactos del cliente (crear/editar cliente), aparte de los del puesto que se agrega desde esta pantalla
+  const [correosCliente, setCorreosCliente] = useState<CreateCorreoDto[]>([]);
   const [filteredClientes, setFilteredClientes] = useState<Cliente[] | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FilterClienteDto | undefined>(undefined);
 
@@ -198,10 +200,20 @@ export function ClientesTab() {
       estado: clienteRow.estado ?? true,
     });
 
+    setCorreosCliente([]);
+
     getClienteById(clienteRow.idCliente, {
       onSuccess: (data) => {
         if (data.data) {
           const cliente = data.data;
+          setCorreosCliente(
+            (cliente.correos ?? []).map((correo) => ({
+              nombre: correo.nombre,
+              apellido: correo.apellido,
+              email: correo.email,
+              estados: correo.estados.map((estado) => estado.idEstadoOrdenServicio),
+            })),
+          );
           setAplicaSegmentacionEdit(!!cliente.idSubSegmentacion);
           resetEdit({
             idTipoIdentificacion: cliente.idTipoIdentificacion?.idTipoIdentificacion || 0,
@@ -375,6 +387,7 @@ export function ClientesTab() {
         onClose={() => {
           setIsAddModalOpen(false);
           resetCreate();
+          setCorreosCliente([]);
         }}
         title="Agregar cliente"
         size="xl"
@@ -384,6 +397,7 @@ export function ClientesTab() {
           onCancel={() => {
             setIsAddModalOpen(false);
             resetCreate();
+            setCorreosCliente([]);
           }}
           updating={false}
           onSubmit={handleSubmitCreate((data) => {
@@ -392,6 +406,7 @@ export function ClientesTab() {
               ...submitData,
               idTipoIdentificacion: Number(data.idTipoIdentificacion),
               idTipoCliente: Number(data.idTipoCliente),
+              correos: correosCliente,
             };
 
             if (aplicaSegmentacionCreate) {
@@ -405,6 +420,7 @@ export function ClientesTab() {
                   if (resData.status === 200 || resData.status === 201) {
                     setIsAddModalOpen(false);
                     resetCreate();
+                    setCorreosCliente([]);
                     setAplicaSegmentacionCreate(true);
                   }
                 },
@@ -499,6 +515,22 @@ export function ClientesTab() {
               </>
             )}
           </div>
+          {/* Contactos que reciben los avisos de las ordenes asignadas directo a este cliente (sin puesto). Las
+              ordenes de un puesto avisan a los contactos del puesto */}
+          <div className="mt-6 flex flex-col gap-2">
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Correos para notificaciones ({correosCliente.length})
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Reciben los avisos de las órdenes asignadas directamente a este
+              cliente (sin puesto). Las órdenes de un puesto avisan a los
+              correos del puesto.
+            </Typography>
+            <ConfiguracionCorreo
+              correos={correosCliente}
+              onCorreosChange={setCorreosCliente}
+            />
+          </div>
         </FormsModal>
       </SimpleModal>
 
@@ -508,6 +540,7 @@ export function ClientesTab() {
         onClose={() => {
           setIsEditModalOpen(false);
           resetEdit();
+          setCorreosCliente([]);
         }}
         title="Editar cliente"
         size="xl"
@@ -517,6 +550,7 @@ export function ClientesTab() {
           onCancel={() => {
             setIsEditModalOpen(false);
             resetEdit();
+            setCorreosCliente([]);
           }}
           updating={true}
           onSubmit={handleSubmitEdit((data) => {
@@ -526,6 +560,7 @@ export function ClientesTab() {
               idTipoIdentificacion: Number(data.idTipoIdentificacion),
               idTipoCliente: Number(data.idTipoCliente),
               estado: String(data.estado) === "true",
+              correos: correosCliente,
             };
 
             if (aplicaSegmentacionEdit) {
@@ -544,6 +579,7 @@ export function ClientesTab() {
                   if (resData.status === 200 || resData.status === 201) {
                     setIsEditModalOpen(false);
                     resetEdit();
+                    setCorreosCliente([]);
                     setEditingCliente(null);
                     if (currentFilter) {
                       filterClientes(currentFilter, {
@@ -650,6 +686,22 @@ export function ClientesTab() {
               placeholder="Estado"
               id="estado"
               {...registerEdit("estado")}
+            />
+          </div>
+          {/* Contactos que reciben los avisos de las ordenes asignadas directo a este cliente (sin puesto). Las
+              ordenes de un puesto avisan a los contactos del puesto */}
+          <div className="mt-6 flex flex-col gap-2">
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              Correos para notificaciones ({correosCliente.length})
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Reciben los avisos de las órdenes asignadas directamente a este
+              cliente (sin puesto). Las órdenes de un puesto avisan a los
+              correos del puesto.
+            </Typography>
+            <ConfiguracionCorreo
+              correos={correosCliente}
+              onCorreosChange={setCorreosCliente}
             />
           </div>
         </FormsModal>

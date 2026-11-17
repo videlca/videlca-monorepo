@@ -374,13 +374,8 @@ export class OrdenServicioService {
 
       }
 
-      // envio de correos que se tengan registrados en la locacion (solo aplica si la orden tiene locacion, es decir, vigilancia y escolta)
-      const emailsLocacion = locacion
-        ? await this.locacionService.getEmailsByLocacionAndEstado(
-          locacion.idLocacion,
-          estadoOrdenServicio.idEstadoOrdenServicio
-        )
-        : [];
+      // contactos que quieren aviso de este estado: los del puesto, o los del cliente si la orden va directo a el
+      const emailsLocacion = await this.emailsContactosOrden(locacion?.idLocacion, cliente?.idCliente, estadoOrdenServicio.idEstadoOrdenServicio);
 
       const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoOrdenServicio.nombre);
 
@@ -2010,13 +2005,8 @@ export class OrdenServicioService {
 
       if (cambioEstadoOrden) {
 
-        // envio de correos que se tengan registrados en la locacion (solo aplica si la orden tiene locacion, es decir, vigilancia y escolta)
-        const emailsLocacion = ordenServicio.idLocacion
-          ? await this.locacionService.getEmailsByLocacionAndEstado(
-            ordenServicio.idLocacion.idLocacion,
-            estadoOrdenServicio.idEstadoOrdenServicio
-          )
-          : [];
+        // contactos que quieren aviso de este estado: los del puesto, o los del cliente si la orden va directo a el
+        const emailsLocacion = await this.emailsContactosOrden(ordenServicio.idLocacion?.idLocacion, ordenServicio.idCliente?.idCliente, estadoOrdenServicio.idEstadoOrdenServicio);
 
         const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoOrdenServicio.nombre);
 
@@ -2044,6 +2034,22 @@ export class OrdenServicioService {
       await queryRunner.release();
 
     }
+
+  }
+
+  // EMAILS DE LOS CONTACTOS QUE QUIEREN AVISO DE UN ESTADO DE LA ORDEN: los del puesto si la orden es de un puesto, o
+  // los del cliente si la orden va asignada directo al cliente (sin puesto). Sin contactos devuelve una lista vacia
+  private async emailsContactosOrden(
+    idLocacion: number | null | undefined,
+    idCliente: number | null | undefined,
+    idEstadoOrden: number,
+  ): Promise<string[]> {
+
+    if (idLocacion) return this.locacionService.getEmailsByLocacionAndEstado(idLocacion, idEstadoOrden);
+
+    if (idCliente) return this.clientesService.getEmailsByClienteAndEstado(idCliente, idEstadoOrden);
+
+    return [];
 
   }
 
@@ -2303,13 +2309,8 @@ export class OrdenServicioService {
 
       await queryRunner.manager.save(OrdenServicio, ordenServicio);
 
-      // envio de correos que se tengan registrados en la locacion (solo aplica si la orden tiene locacion, es decir, vigilancia y escolta)
-      const emailsLocacion = ordenServicio.idLocacion
-        ? await this.locacionService.getEmailsByLocacionAndEstado(
-          ordenServicio.idLocacion.idLocacion,
-          estadoCancelada.idEstadoOrdenServicio
-        )
-        : [];
+      // contactos que quieren aviso de este estado: los del puesto, o los del cliente si la orden va directo a el
+      const emailsLocacion = await this.emailsContactosOrden(ordenServicio.idLocacion?.idLocacion, ordenServicio.idCliente?.idCliente, estadoCancelada.idEstadoOrdenServicio);
 
       const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoCancelada.nombre);
 
@@ -2914,12 +2915,8 @@ export class OrdenServicioService {
               nuevoEstado.nombre
             );
 
-          const emailsLocacion = orden.idLocacion
-            ? await this.locacionService.getEmailsByLocacionAndEstado(
-              orden.idLocacion.idLocacion,
-              nuevoEstado.idEstadoOrdenServicio
-            )
-            : [];
+          // contactos que quieren aviso de este estado: los del puesto, o los del cliente si la orden va directo a el
+          const emailsLocacion = await this.emailsContactosOrden(orden.idLocacion?.idLocacion, orden.idCliente?.idCliente, nuevoEstado.idEstadoOrdenServicio);
 
           const emails = [...emailsApp, ...emailsLocacion];
 

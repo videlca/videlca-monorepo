@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 import { TipoIdentificacion, TipoCliente } from "../../common/entities";
 import { SubSegmentacion, Locacion } from ".";
+import { Correo } from "./correo.entity";
 import { NumeroPedido } from "../../liquidaciones/entities";
 import { OrdenServicio } from "../../orden-servicio/entities/orden-servicio.entity";
 import { Adicional } from "../../adicionales/entities/adicional.entity";
@@ -82,6 +83,17 @@ export class Cliente {
     )
     locaciones: Locacion[];
     
+    // CONTACTOS QUE RECIBEN LAS NOTIFICACIONES DE LAS ORDENES ASIGNADAS DIRECTO A ESTE CLIENTE (sin puesto), cada uno
+    // con los estados de la orden que le interesan. Las ordenes de un puesto usan los contactos del puesto
+    @OneToMany(
+        () => Correo,
+        (correo) => correo.cliente,
+        {
+            cascade: true,
+        }
+    )
+    correos: Correo[];
+
     // numeros pedido -> relacion
     @OneToMany(
         () => NumeroPedido,

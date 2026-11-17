@@ -88,6 +88,8 @@ export interface Cliente {
   idTipoIdentificacion: TipoIdentificacion;
   idTipoCliente: TipoCliente;
   idSubSegmentacion: SubSegmentacion;
+  // Contactos para las notificaciones de las ordenes asignadas directo al cliente (solo viene en el detalle)
+  correos?: Correo[];
 }
 
 

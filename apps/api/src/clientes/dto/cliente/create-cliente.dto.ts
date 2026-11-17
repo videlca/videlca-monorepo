@@ -1,5 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsNumberString, IsPositive, IsString, IsOptional, MaxLength, Min } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsNumberString, IsPositive, IsString, IsOptional, MaxLength, Min, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
+import { CreateCorreoDto } from "../locacion/create-locacion.dto";
 
 export class CreateClienteDto {
 
@@ -35,4 +37,15 @@ export class CreateClienteDto {
     @Min(1, {message: 'El valor del campo Sub Segmentacion no puede estar vacio'})
     idSubSegmentacion: number;
     
+
+    // CONTACTOS QUE RECIBEN LAS NOTIFICACIONES DE LAS ORDENES ASIGNADAS DIRECTO AL CLIENTE (mismos datos que los
+    // contactos de un puesto). Opcional: un cliente que solo tiene ordenes en sus puestos no los necesita. En la
+    // actualizacion, si se envia reemplaza la lista completa (una lista vacia los elimina todos)
+    @ApiProperty({ description: 'Contactos del cliente para las notificaciones de sus ordenes', type: [CreateCorreoDto], required: false })
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CreateCorreoDto)
+    correos?: CreateCorreoDto[];
+
 }

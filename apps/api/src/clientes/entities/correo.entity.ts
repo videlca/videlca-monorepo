@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { EstadoOrdenServicio } from "../../common/entities";
 import { Locacion } from "./locacion.entity";
+import { Cliente } from "./cliente.entity";
 
 
 @Entity({name: 'correo'})
@@ -35,16 +36,30 @@ export class Correo {
     })
     email: string;
 
+    // UN CONTACTO PERTENECE A UN PUESTO (ordenes asignadas a ese puesto) O A UN CLIENTE (ordenes asignadas directo
+    // al cliente, sin puesto). Exactamente uno de los dos tiene valor
     @ManyToOne(
         () => Locacion,
         (locacion) => locacion.correos,
         {
             onDelete: 'CASCADE',
-            eager: true
+            eager: true,
+            nullable: true
         }
     )
     @JoinColumn({name: 'idLocacion'})
-    locacion: Locacion;
+    locacion: Locacion | null;
+
+    @ManyToOne(
+        () => Cliente,
+        (cliente) => cliente.correos,
+        {
+            onDelete: 'CASCADE',
+            nullable: true
+        }
+    )
+    @JoinColumn({name: 'idCliente'})
+    cliente: Cliente | null;
 
     // Relación muchos a muchos con estados ordenes de servicio
     @ManyToMany(
