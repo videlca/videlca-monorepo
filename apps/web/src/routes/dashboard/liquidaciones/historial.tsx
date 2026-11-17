@@ -1,5 +1,3 @@
-import Box from "@mui/material/Box";
-import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { SectionCard } from "../../../components/ui/common/SectionCard";
 import { GrupoLiquidacionCard } from "../../../components/common/GrupoLiquidacionCard";
@@ -25,7 +23,7 @@ import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 import MailOutlinedIcon from "@mui/icons-material/MailOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 import SendOutlinedIcon from "@mui/icons-material/SendOutlined";
-import { priceFormat } from "../../../utils/PriceFormat";
+import { TotalAntesIvaGrupos } from "../../../components/common/TotalAntesIvaGrupos";
 import { EnvioCorreos } from "../../../components/ui/modals/EnvioCorreos";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import { ObservacionesGrupoOrdenes } from "../../../components/ui/modals/ObservacionesGrupoOrdenes";
@@ -167,29 +165,6 @@ function RouteComponent() {
     setGroupIdPdfSelected(groupId);
   };
 
-  // Totales facturados de TODOS los grupos encontrados para el mes filtrado (independiente de cuales grupos
-  // esten ocultos via hiddenGroups, que es solo un toggle visual). "Antes de IVA" no se guarda a nivel de
-  // grupo, solo por liquidacion (valorLiquidacionAntesIva), por eso se suma primero por grupo y luego entre
-  // todos los grupos; "Liquidación Total" ya viene calculado por grupo (group.total, CON iva)
-  const totalAntesIvaGeneral = liquidacionesData.reduce(
-    (acc, group) =>
-      acc +
-      Number(
-        group.totalAntesIvaFiltrado ??
-          (group.liquidaciones ?? []).reduce(
-            (accGrupo, liquidacion) =>
-              accGrupo + Number(liquidacion.valorLiquidacionAntesIva ?? 0),
-            0,
-          ),
-      ),
-    0,
-  );
-
-  const totalLiquidacionGeneral = liquidacionesData.reduce(
-    (acc, group) => acc + Number(group.totalFiltrado ?? group.total ?? 0),
-    0,
-  );
-
   return (
     <Section>
       <SectionCard
@@ -272,33 +247,8 @@ function RouteComponent() {
             Resultados ({liquidacionesData.length} grupos encontrados)
           </Typography>
 
-          <Paper
-            variant="outlined"
-            className="flex flex-wrap items-center justify-end gap-6 p-4"
-          >
-            <Typography variant="body2" color="text.secondary">
-              Total antes de IVA:{" "}
-              <Box
-                component="span"
-                sx={{ fontWeight: 500, color: "text.primary" }}
-              >
-                {priceFormat(totalAntesIvaGeneral)}
-              </Box>
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Liquidación Total:{" "}
-              <Box
-                component="span"
-                sx={{
-                  fontSize: "1rem",
-                  fontWeight: 600,
-                  color: "success.main",
-                }}
-              >
-                {priceFormat(totalLiquidacionGeneral)}
-              </Box>
-            </Typography>
-          </Paper>
+          {/* Total antes de IVA de todos los grupos encontrados (no depende de los grupos ocultos) */}
+          <TotalAntesIvaGrupos grupos={liquidacionesData} />
 
           <div className="flex flex-col gap-4">
             {liquidacionesData.map((group) => (

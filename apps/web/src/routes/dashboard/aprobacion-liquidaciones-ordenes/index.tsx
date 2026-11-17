@@ -1,5 +1,6 @@
 import Typography from "@mui/material/Typography";
 import { GrupoLiquidacionCard } from "../../../components/common/GrupoLiquidacionCard";
+import { TotalAntesIvaGrupos } from "../../../components/common/TotalAntesIvaGrupos";
 import { EmptyState } from "../../../components/ui/common/EmptyState";
 import { createFileRoute } from "@tanstack/react-router";
 import CheckIcon from "@mui/icons-material/Check";
@@ -111,6 +112,8 @@ function RouteComponent() {
           />
         ) : (
           <div className="flex flex-col gap-4">
+            {/* Total antes de IVA de todos los grupos pendientes por aprobar */}
+            {!!groups?.data?.length && <TotalAntesIvaGrupos grupos={groups.data} />}
             {groups?.data?.map((group) => (
               <GrupoLiquidacionCard
                 key={group.idGrupoLiquidacion}
