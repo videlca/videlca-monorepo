@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Res, ParseIntPipe } from '@nestjs/common';
 import type { Response } from 'express';
 
-import { AppAuth, ValidateJwtAuth } from '../../auth/decorators';
+import { AppAuth, ProtectedRoute, ValidateJwtAuth } from '../../auth/decorators';
 import { DescriptionRoutes } from '../../auth/interfaces';
 
 import { PaginationDto, EnviarCorreoDto } from '../../common/dto';
@@ -20,7 +20,11 @@ export class ClientesController {
     return this.clientesService.create(createClienteDto);
   }
 
+  // RUTA PROTEGIDA: listado de clientes. Ademas de Clientes, lo necesita Liquidaciones (filtros de cliente y tipo de
+  // cliente del historial y de comparar cliente); con cualquiera de los dos permisos se puede consultar
   @Get()
+  @ProtectedRoute(DescriptionRoutes.CLIENTE, DescriptionRoutes.LIQUIDACIONES)
+  @ValidateJwtAuth()
   findAll(@Query() paginationDto: PaginationDto) {
     console.log('paginationDto', paginationDto);
 

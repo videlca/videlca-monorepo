@@ -69,12 +69,16 @@ const currentMonth = (new Date().getMonth() + 1).toString();
 
 // "0" = sin filtro de cliente (InputSelect no permite limpiar la seleccion, asi que se ofrece como opcion)
 const TODOS_LOS_CLIENTES = "0";
+const TODOS_LOS_TIPOS_CLIENTE = "0";
 
 function RouteComponent() {
   const [searchMonth, setSearchMonth] = useState<string>(currentMonth);
   const [searchYear, setSearchYear] = useState<string>(currentYear);
   const [searchCliente, setSearchCliente] =
     useState<string>(TODOS_LOS_CLIENTES);
+  const [searchTipoCliente, setSearchTipoCliente] = useState<string>(
+    TODOS_LOS_TIPOS_CLIENTE,
+  );
   const [searchTipos, setSearchTipos] = useState<TipoServicioFiltro[]>(
     TIPOS_SERVICIO_FILTRO,
   );
@@ -98,12 +102,34 @@ function RouteComponent() {
   // Queries y mutaciones
   // Todos los clientes (no solo activos): el historial puede incluir clientes que ya fueron desactivados
   const { data: clientes } = useClientes();
+  // Con un tipo de cliente elegido, el selector de cliente solo muestra los clientes de ese tipo
+  const clientesDelTipo = (clientes?.data?.data ?? []).filter(
+    (cliente) =>
+      searchTipoCliente === TODOS_LOS_TIPOS_CLIENTE ||
+      cliente.idTipoCliente?.idTipoCliente === Number(searchTipoCliente),
+  );
   const clientesOptions = [
     { id: Number(TODOS_LOS_CLIENTES), descripcion: "Todos los clientes" },
-    ...(clientes?.data?.data?.map((cliente) => ({
+    ...clientesDelTipo.map((cliente) => ({
       id: cliente.idCliente,
       descripcion: cliente.nombre,
-    })) ?? []),
+    })),
+  ];
+
+  // Tipos de cliente que tienen los clientes (incluye tipos inactivos que aun aparecen en grupos viejos)
+  const tiposClienteOptions = [
+    { id: Number(TODOS_LOS_TIPOS_CLIENTE), descripcion: "Todos los tipos" },
+    ...Array.from(
+      new Map(
+        (clientes?.data?.data ?? [])
+          .filter((cliente) => cliente.idTipoCliente)
+          .map((cliente) => [
+            cliente.idTipoCliente.idTipoCliente,
+            cliente.idTipoCliente.descripcion,
+          ]),
+      ),
+      ([id, descripcion]) => ({ id, descripcion }),
+    ).sort((a, b) => a.descripcion.localeCompare(b.descripcion)),
   ];
 
   const {
@@ -116,6 +142,7 @@ function RouteComponent() {
     isSearching,
     Number(searchCliente) || undefined,
     serializarTiposServicio(searchTipos),
+    Number(searchTipoCliente) || undefined,
   );
 
   const liquidacionesData: GruposLiquidaciones[] = Array.isArray(
@@ -169,7 +196,7 @@ function RouteComponent() {
     <Section>
       <SectionCard
         title="Filtros de Búsqueda"
-        description="Para ver el historial de liquidaciones, selecciona el mes y año de la liquidación. Opcionalmente, filtra por cliente y tipo de servicio."
+        description="Para ver el historial de liquidaciones, selecciona el mes y año de la liquidación. Opcionalmente, filtra por tipo de cliente, cliente y tipo de servicio."
       >
         <div className="flex flex-wrap items-end gap-4">
           <div className="min-w-48 flex-1">
@@ -196,6 +223,31 @@ function RouteComponent() {
                 setIsSearching(false);
               }}
               options={monthsOptions}
+            />
+          </div>
+          <div className="min-w-48 flex-1">
+            <InputSelect
+              label="Tipo cliente"
+              placeholder="Selecciona un tipo de cliente"
+              id="searchTipoCliente"
+              value={searchTipoCliente}
+              onChange={(e) => {
+                const tipo = e.target.value;
+                setSearchTipoCliente(tipo);
+                // Si el cliente elegido no es de este tipo, se vuelve a "Todos los clientes"
+                const cliente = clientes?.data?.data?.find(
+                  (c) => c.idCliente === Number(searchCliente),
+                );
+                if (
+                  tipo !== TODOS_LOS_TIPOS_CLIENTE &&
+                  cliente &&
+                  cliente.idTipoCliente?.idTipoCliente !== Number(tipo)
+                ) {
+                  setSearchCliente(TODOS_LOS_CLIENTES);
+                }
+                setIsSearching(false);
+              }}
+              options={tiposClienteOptions}
             />
           </div>
           <div className="min-w-48 flex-1">

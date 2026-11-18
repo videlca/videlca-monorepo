@@ -1,13 +1,18 @@
 import type { OrdenServicio, OrdenServicioDetalle } from "./orden-servicio";
 import type { Adicional, TipoAdicional } from "./adicionales";
-import type { Cliente, Usuario } from "../../types";
+import type { Cliente, TipoCliente, Usuario } from "../../types";
 
 
 export interface GruposLiquidaciones {
   idGrupoLiquidacion: number;
   // Cliente al que pertenece el grupo. Null en grupos historicos creados antes de esta relacion (algunos de
   // esos mezclaban varios clientes en un mismo grupo); todo grupo nuevo siempre lo trae (ver CrearGrupoMensualDto)
-  idCliente: Pick<Cliente, "idCliente" | "nombre"> | null;
+  idCliente:
+    | (Pick<Cliente, "idCliente" | "nombre"> & {
+        // Solo lo trae la pantalla de aprobacion (para el filtro por tipo de cliente)
+        idTipoCliente?: Pick<TipoCliente, "idTipoCliente" | "descripcion"> | null;
+      })
+    | null;
   estado: boolean;
   total: number;
   descripcion: string;

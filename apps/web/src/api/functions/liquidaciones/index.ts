@@ -20,8 +20,8 @@ export const getOrdenLiquidada = async (idLiquidacion: number): Promise<ApiRespo
   return await apiGet<OrdenOAdicionalLiquidado>(`/liquidaciones/${idLiquidacion}/orden`);
 };
 
-export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number, idCliente?: number, tiposServicio?: string): Promise<ApiResponse<GruposLiquidaciones[]>> => {
-  return await apiGet<GruposLiquidaciones[]>(`/liquidaciones/historial-liquidaciones-aprobadas`, { anio, mes, ...(idCliente ? { idCliente } : {}), ...(tiposServicio ? { tiposServicio } : {}) });
+export const getLiquidacionesPorMesHistorial = async (anio: number, mes: number, idCliente?: number, tiposServicio?: string, idTipoCliente?: number): Promise<ApiResponse<GruposLiquidaciones[]>> => {
+  return await apiGet<GruposLiquidaciones[]>(`/liquidaciones/historial-liquidaciones-aprobadas`, { anio, mes, ...(idCliente ? { idCliente } : {}), ...(tiposServicio ? { tiposServicio } : {}), ...(idTipoCliente ? { idTipoCliente } : {}) });
 };
 
 export const compararLiquidacionesCliente = async (params: CompararLiquidacionesClienteDto): Promise<ApiResponse<ComparacionCliente>> => {

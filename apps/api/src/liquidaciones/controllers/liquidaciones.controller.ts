@@ -65,14 +65,16 @@ export class LiquidacionesController {
 
   @Get('historial-liquidaciones-aprobadas')
   @ApiQuery({ name: 'idCliente', required: false, example: 37, description: 'Filtra por el cliente del grupo de liquidación' })
+  @ApiQuery({ name: 'idTipoCliente', required: false, example: 2, description: 'Filtra por el tipo del cliente del grupo de liquidación' })
   @ApiQuery({ name: 'tiposServicio', required: false, example: 'monitoreo,vigilancia', description: 'Tipos de servicio separados por coma: "monitoreo" y/o "vigilancia" (vigilancia incluye los adicionales). Sin este parametro se devuelven los dos' })
   async findByMesLiquidacionesAprobadas(
     @Query('anio', ParseIntPipe) anio: number,
     @Query('mes', ParseIntPipe) mes: number,
     @Query('idCliente', new ParseIntPipe({ optional: true })) idCliente?: number,
     @Query('tiposServicio') tiposServicio?: string,
+    @Query('idTipoCliente', new ParseIntPipe({ optional: true })) idTipoCliente?: number,
   ) {
-    return this.service.findByMesLiquidacionesAprobadas(anio, mes, idCliente, tiposServicio?.split(','));
+    return this.service.findByMesLiquidacionesAprobadas(anio, mes, idCliente, tiposServicio?.split(','), idTipoCliente);
   }
 
   // ELIMINA UN GRUPO YA APROBADO DESDE EL HISTORIAL (sus ordenes/adicionales vuelven a quedar disponibles para liquidar)

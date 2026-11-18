@@ -963,7 +963,7 @@ export class LiquidacionesService {
   // tiposServicio: filtro opcional "monitoreo" y/o "vigilancia" (vigilancia incluye adicionales); sin el, se devuelve
   // todo (equivale a los dos). Una orden siempre es de un solo tipo de servicio (validado al crearla), asi que cada
   // liquidacion entra o sale completa del filtro; los grupos que quedan sin liquidaciones con el filtro no se devuelven
-  async findByMesLiquidacionesAprobadas(anio: number, mes1a12: number, idCliente?: number, tiposServicio?: string[]) {
+  async findByMesLiquidacionesAprobadas(anio: number, mes1a12: number, idCliente?: number, tiposServicio?: string[], idTipoCliente?: number) {
     if (!anio || !mes1a12 || mes1a12 < 1 || mes1a12 > 12) {
       throw new BadRequestException('Parámetros inválidos (anio, mes)');
     }
@@ -1014,6 +1014,11 @@ export class LiquidacionesService {
     // FILTRO OPCIONAL POR CLIENTE DEL GRUPO (grupo.idCliente); sin idCliente se devuelven todos los grupos del mes
     if (idCliente) {
       query.andWhere('grupoCliente.idCliente = :idCliente', { idCliente });
+    }
+
+    // FILTRO OPCIONAL POR TIPO DEL CLIENTE DEL GRUPO
+    if (idTipoCliente) {
+      query.andWhere('grupoCliente.idTipoCliente = :idTipoCliente', { idTipoCliente });
     }
 
     const grupos = await query.getMany();
@@ -1558,9 +1563,11 @@ export class LiquidacionesService {
       .createQueryBuilder('grupo')
       .where(`grupo.estado = :estado`, { estado: false })
       .orderBy('grupo.idGrupoLiquidacion', 'DESC')
-      // CLIENTE AL QUE PERTENECE EL GRUPO: solo se necesitan id/nombre para mostrarlo en el listado
+      // CLIENTE AL QUE PERTENECE EL GRUPO: id/nombre para mostrarlo y su tipo para el filtro por tipo de cliente
       .leftJoin('grupo.idCliente', 'grupoCliente')
       .addSelect(['grupoCliente.idCliente', 'grupoCliente.nombre'])
+      .leftJoin('grupoCliente.idTipoCliente', 'grupoTipoCliente')
+      .addSelect(['grupoTipoCliente.idTipoCliente', 'grupoTipoCliente.descripcion'])
       .leftJoinAndSelect('grupo.liquidaciones', 'liquidaciones')
       .leftJoinAndSelect('liquidaciones.ordenServicio', 'ordenServicio')
       .leftJoinAndSelect('ordenServicio.ordenServicioId', 'ordenServicioId')
@@ -1575,12 +1582,25 @@ export class LiquidacionesService {
       // solo por cada linea de servicio (lsos.precioAntesIva), asi que se suma aca para exponerlo junto al total
       .leftJoin('liquidaciones.liquidacionServiciosOrdenServicio', 'lsos')
       .addSelect(['lsos.idLiquidacionServicioOrdenServicio', 'lsos.precioAntesIva'])
+      // TIPO DE SERVICIO DE CADA LINEA, para el filtro por tipo de servicio de la pantalla de aprobacion
+      .leftJoin('lsos.idTarifa', 'lsosTarifa')
+      .addSelect('lsosTarifa.idTarifa')
+      .leftJoin('lsosTarifa.idServicio', 'lsosServicio')
+      .addSelect('lsosServicio.idServicio')
+      .leftJoin('lsosServicio.idTipoServicio', 'lsosTipoServicio')
+      .addSelect(['lsosTipoServicio.idTipoServicio', 'lsosTipoServicio.nombre'])
       .getMany();
 
     return grupos.map((grupo) => ({
       ...grupo,
       liquidaciones: grupo.liquidaciones.map(({ liquidacionServiciosOrdenServicio, ...liquidacion }) => ({
         ...liquidacion,
+        // Adicional, o el tipo de servicio de la orden (todas sus lineas son del mismo tipo)
+        tipoServicio: liquidacion.idAdicional != null
+          ? 'adicional'
+          : liquidacionServiciosOrdenServicio?.[0]?.idTarifa?.idServicio?.idTipoServicio?.nombre === TipoServicioInterface.MONITOREO_ALARMAS
+            ? TipoServicioComparacion.MONITOREO
+            : TipoServicioComparacion.VIGILANCIA,
         valorLiquidacionAntesIva: round2(
           liquidacion.idAdicional != null
             ? Number(liquidacion.precioAntesIva ?? 0)
