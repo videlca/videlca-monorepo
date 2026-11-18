@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
@@ -24,16 +25,19 @@ interface FiltroMesExportacionProps {
   /** "YYYY-MM", o "" para todos los meses */
   value: string;
   onChange: (value: string) => void;
+  /** Filtros adicionales que van en la misma fila (ej. tipo de cliente y cliente) */
+  children?: ReactNode;
 }
 
 export function FiltroMesExportacion({
   value,
   onChange,
+  children,
 }: FiltroMesExportacionProps) {
   const todosLosMeses = value === "";
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-4">
+    <div className="mb-4 flex flex-wrap items-end gap-4">
       <TextField
         id="filtroMesExportacion"
         label="Mes del grupo"
@@ -53,6 +57,7 @@ export function FiltroMesExportacion({
       >
         Todos los meses
       </Button>
+      {children}
     </div>
   );
 }

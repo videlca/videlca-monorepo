@@ -20,10 +20,11 @@ export class ClientesController {
     return this.clientesService.create(createClienteDto);
   }
 
-  // RUTA PROTEGIDA: listado de clientes. Ademas de Clientes, lo necesita Liquidaciones (filtros de cliente y tipo de
-  // cliente del historial y de comparar cliente); con cualquiera de los dos permisos se puede consultar
+  // RUTA PROTEGIDA: listado de clientes. Ademas de Clientes, lo necesitan Liquidaciones (filtros de cliente y tipo de
+  // cliente del historial y de comparar cliente) y Exportaciones (mismos filtros en las 3 pantallas de exportacion);
+  // con cualquiera de esos permisos se puede consultar
   @Get()
-  @ProtectedRoute(DescriptionRoutes.CLIENTE, DescriptionRoutes.LIQUIDACIONES)
+  @ProtectedRoute(DescriptionRoutes.CLIENTE, DescriptionRoutes.LIQUIDACIONES, DescriptionRoutes.EXPORTACIONES)
   @ValidateJwtAuth()
   findAll(@Query() paginationDto: PaginationDto) {
     console.log('paginationDto', paginationDto);

@@ -10,6 +10,10 @@ import {
   parseMesExportacion,
 } from "../../../components/ui/dashboard/exportaciones/FiltroMesExportacion";
 import {
+  FiltroClienteGrupos,
+  useFiltroClienteGrupos,
+} from "../../../components/ui/dashboard/exportaciones/FiltroClienteGrupos";
+import {
   useEnviarCorreoExportacion,
   useGenerarInterfaseGrupos,
   useGenerarReporteArchivo,
@@ -44,6 +48,10 @@ function RouteComponent() {
     ...parseMesExportacion(mesGrupo),
   });
 
+  // Filtro por tipo de cliente y cliente sobre los grupos del tab y mes actuales
+  const filtroCliente = useFiltroClienteGrupos();
+  const gruposVisibles = filtroCliente.filtrar(groups?.data ?? []);
+
   // TODO: Cambiar POR MUTACIONES CORRECTAS
   // Mutaciones
   const { mutate: generarReporteInterfase } = useGenerarReporteArchivo(
@@ -56,8 +64,8 @@ function RouteComponent() {
   const { mutate: generarInterfaseGrupos, isPending: generandoInterfaseGrupos } =
     useGenerarInterfaseGrupos();
 
-  // Todos los grupos que se ven en el tab y mes actuales
-  const idsGrupos = (groups?.data ?? []).map((grupo) => grupo.idGrupoLiquidacion);
+  // Todos los grupos que se ven en el tab, mes y filtro de cliente actuales
+  const idsGrupos = gruposVisibles.map((grupo) => grupo.idGrupoLiquidacion);
 
   // Handlers
   const handleGenerarReporteConsolidacion = (idGrupoLiquidacion: number) => {
@@ -84,11 +92,13 @@ function RouteComponent() {
         activeTab={activeTab}
         setActiveTab={(id) => setActiveTab(id as TabsExportaciones)}
       />
-      <FiltroMesExportacion value={mesGrupo} onChange={setMesGrupo} />
+      <FiltroMesExportacion value={mesGrupo} onChange={setMesGrupo}>
+        <FiltroClienteGrupos filtro={filtroCliente} />
+      </FiltroMesExportacion>
       {activeTab === "Generar" && (
         <OrdenesTab
           tipo="generacion_interfase"
-          data={groups?.data || []}
+          data={gruposVisibles}
           handleFileAction={handleGenerarReporteConsolidacion}
           mutationEmail={enviarCorreoExportacionInterfase}
           envioCorreoPending={envioCorreoPending}
@@ -97,7 +107,7 @@ function RouteComponent() {
       {activeTab === "Archivos generados" && (
         <OrdenesTab
           tipo="generacion_interfase"
-          data={groups?.data || []}
+          data={gruposVisibles}
           handleFileAction={handleGenerarReporteConsolidacion}
           mutationEmail={enviarCorreoExportacionInterfase}
           envioCorreoPending={envioCorreoPending}

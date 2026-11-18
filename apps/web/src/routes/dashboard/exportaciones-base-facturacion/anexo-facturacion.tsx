@@ -10,6 +10,10 @@ import {
   parseMesExportacion,
 } from "../../../components/ui/dashboard/exportaciones/FiltroMesExportacion";
 import {
+  FiltroClienteGrupos,
+  useFiltroClienteGrupos,
+} from "../../../components/ui/dashboard/exportaciones/FiltroClienteGrupos";
+import {
   useEnviarCorreoExportacion,
   useGenerarReporteArchivo,
   useGetGruposLiquidacionesExportaciones,
@@ -41,6 +45,10 @@ function RouteComponent() {
     ...parseMesExportacion(mesGrupo),
   });
 
+  // Filtro por tipo de cliente y cliente sobre los grupos del tab y mes actuales
+  const filtroCliente = useFiltroClienteGrupos();
+  const gruposVisibles = filtroCliente.filtrar(groups?.data ?? []);
+
   // TODO: Cambiar POR MUTACIONES CORRECTAS
 
   // Mutaciones
@@ -64,11 +72,13 @@ function RouteComponent() {
         activeTab={activeTab}
         setActiveTab={(id) => setActiveTab(id as TabsExportaciones)}
       />
-      <FiltroMesExportacion value={mesGrupo} onChange={setMesGrupo} />
+      <FiltroMesExportacion value={mesGrupo} onChange={setMesGrupo}>
+        <FiltroClienteGrupos filtro={filtroCliente} />
+      </FiltroMesExportacion>
       {activeTab === "Generar" && (
         <OrdenesTab
           tipo="generacion_anexo"
-          data={groups?.data || []}
+          data={gruposVisibles}
           handleFileAction={handlegenerarReporteAnexoFacturacion}
           mutationEmail={enviarCorreoExportacionAnexoFacturacion}
           envioCorreoPending={envioCorreoPending}
@@ -77,7 +87,7 @@ function RouteComponent() {
       {activeTab === "Archivos generados" && (
         <OrdenesTab
           tipo="generacion_anexo"
-          data={groups?.data || []}
+          data={gruposVisibles}
           handleFileAction={handlegenerarReporteAnexoFacturacion}
           mutationEmail={enviarCorreoExportacionAnexoFacturacion}
           envioCorreoPending={envioCorreoPending}
