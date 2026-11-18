@@ -92,7 +92,8 @@ const agruparServicios = (detalles: OrdenServicioDetalle[]) => {
     }
 
     const grupo = grupos.get(key)!;
-    grupo.cantidad += 1;
+    // Unidades de la fila (monitoreo: una fila con su cantidad; vigilancia y a la medida: 1 por fila)
+    grupo.cantidad += detalle.cantidad ?? 1;
     if (detalle.fecha) grupo.fechas.push(detalle.fecha.slice(0, 10));
     if (detalle.cantidadHoras != null) {
       grupo.totalHoras =

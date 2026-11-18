@@ -50,6 +50,8 @@ export interface OrdenServicioDetalle {
   sabado: boolean;
   domingo: boolean;
   incluyeFestivos: boolean;
+  // Unidades que representa la fila (Monitoreo de alarmas: un servicio con su cantidad; Vigilancia siempre 1)
+  cantidad?: number;
   costosDirectos: number | null;
   seguroVida: number | null;
   costosDirectosSeguroVida: number | null;
@@ -144,6 +146,8 @@ export interface PrecioServicioOrdenResponse {
   // Solo vienen con datos en modo "a_medida" (cada fila es un dia del rango); en modo "catalogo" son null
   cantidadHoras: number | null;
   fecha: string | null;
+  // Unidades de la fila (solo monitoreo; los precios ya son el total de esas unidades)
+  cantidad?: number;
   message: string;
   precio: number | null;
   costosDirectos: number | null;

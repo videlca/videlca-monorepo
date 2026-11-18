@@ -1,11 +1,13 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Paper from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type { PatronDiasSemanaDto } from "../../../api/dtos";
 import type { Servicio } from "../../../api/types/servicio";
 import type { MesesLiquidadosOrden } from "../../../api/types/orden-servicio";
 import { SelectorDiasSemana } from "./ConfigurarHorariosServicios";
+import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "./tipoServicioConstantes";
 
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -90,9 +92,10 @@ export const AvisoEdicionOrden = ({
   );
 };
 
-// DIAS DE LA SEMANA DE CADA SERVICIO DE UNA ORDEN DE CATALOGO, EN LA EDICION. Cada fila de "configuracion" es un
-// servicio de la orden (una unidad); selectedServices trae el servicio de cada fila en la misma posicion
-export const EditarDiasServiciosOrden = <T extends PatronDiasSemanaDto>({
+// DIAS DE LA SEMANA DE CADA SERVICIO DE UNA ORDEN DE CATALOGO, EN LA EDICION (y la cantidad de unidades si es de
+// Monitoreo de alarmas). Cada fila de "configuracion" es un servicio de la orden; selectedServices trae el servicio
+// de cada fila en la misma posicion
+export const EditarDiasServiciosOrden = <T extends PatronDiasSemanaDto & { cantidad?: number }>({
   selectedServices,
   configuracion,
   setConfiguracion,
@@ -109,7 +112,7 @@ export const EditarDiasServiciosOrden = <T extends PatronDiasSemanaDto>({
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
       <div>
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-          Días en que se presta cada servicio
+          Días y unidades de cada servicio
         </Typography>
         <Typography variant="caption" color="text.secondary">
           El cambio aplica a los meses que aún no se han liquidado.
@@ -125,6 +128,24 @@ export const EditarDiasServiciosOrden = <T extends PatronDiasSemanaDto>({
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             {selectedServices[index]?.descripcion ?? `Servicio ${index + 1}`}
           </Typography>
+          {/* Monitoreo de alarmas: un servicio con su cantidad de unidades (1 a 1000). El cambio aplica, igual
+              que los dias, a los meses que aun no se han liquidado */}
+          {selectedServices[index]?.idTipoServicio?.nombre === TIPO_SERVICIO_MONITOREO_ALARMAS && (
+            <TextField
+              type="number"
+              label="Cantidad de unidades"
+              value={configuracion[index]?.cantidad ?? 1}
+              onChange={(e) => {
+                const valor = Math.min(1000, Math.max(1, Math.floor(Number(e.target.value) || 1)));
+                setConfiguracion((prev) =>
+                  prev.map((fila, i) => (i === index ? { ...fila, cantidad: valor } : fila)),
+                );
+              }}
+              helperText="Mínimo 1, máximo 1000"
+              sx={{ maxWidth: 220 }}
+              slotProps={{ htmlInput: { min: 1, max: 1000, inputMode: "numeric" } }}
+            />
+          )}
           <SelectorDiasSemana
             indices={[index]}
             configuracionServicioTarifa={configuracion}

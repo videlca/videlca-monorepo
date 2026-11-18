@@ -207,8 +207,14 @@ export class ReporteOrdenServicioService extends ReportePdfVidelcaBase {
 
         const servicio = servicioOrden.idTarifa.idServicio;
 
+        // Monitoreo: una fila puede representar varias unidades (ver cantidad)
+        const cantidad = Number(servicioOrden.cantidad ?? 1);
+        const nombre = cantidad > 1
+          ? `${nombreServicioReporte(servicio)} x ${cantidad} unidades`
+          : nombreServicioReporte(servicio);
+
         filas.push([
-          { text: `${index + 1}. ${nombreServicioReporte(servicio)}\n`, bold: true, fontSize: 9.5, color: PALETTE.textDark,
+          { text: `${index + 1}. ${nombre}\n`, bold: true, fontSize: 9.5, color: PALETTE.textDark,
             margin: [0, 4, 0, 0],
           },
           { text: `${servicioOrden.horaInicio} - ${servicioOrden.horaFin}`, margin: [0, 4, 0, 0] },

@@ -134,6 +134,11 @@ const renderServicioCard = (
   // pueden compartir el mismo idTarifa
   const detallePrincipal = precioOrdenDetalle?.servicios[indicePrincipal];
 
+  const unidadesGrupo = indices.reduce(
+    (acc, index) => acc + (configuracionServicioTarifa[index]?.cantidad ?? 1),
+    0,
+  );
+
   const precioTotalGrupo = indices.reduce<number | null>((acc, index) => {
     const fila = configuracionServicioTarifa[index];
     const valor = fila.precio || precioOrdenDetalle?.servicios[index]?.precio;
@@ -173,9 +178,10 @@ const renderServicioCard = (
               (config.fecha
                 ? safeParseDate(config.fecha.slice(0, 10)).toLocaleDateString()
                 : "Servicio no especificado")}
-            {indices.length > 1 && (
+            {/* Unidades: suma la cantidad de cada fila (monitoreo: una fila con N unidades) */}
+            {unidadesGrupo > 1 && (
               <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                ({indices.length} unidades)
+                ({unidadesGrupo} unidades)
               </Typography>
             )}
           </Typography>

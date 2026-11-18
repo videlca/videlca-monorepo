@@ -11,6 +11,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import { priceFormat } from "../../../utils/PriceFormat";
 import type { Servicio, TipoServicio } from "../../../api/types/servicio";
 import type { Tarifa } from "../../../api/types/periodo";
+import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "./tipoServicioConstantes";
 
 // Distingue visualmente los servicios por turno de los mensuales, sin llamar demasiado la atención.
 // Usa el nombre del tipo de tarifa (ver TipoTarifaInterface en el backend), no la descripción del servicio,
@@ -29,6 +30,7 @@ export const SeleccionarServicio = ({
   handleIncrementarServicio,
   handleDecrementarServicio,
   handleSetCantidadServicio,
+  cantidadesPorServicio,
 }: {
   selectedServices: Servicio[];
   tarifasPeriodoActivoByIdTipoServicioData: Tarifa[];
@@ -36,7 +38,13 @@ export const SeleccionarServicio = ({
   handleIncrementarServicio: (tarifa: Tarifa) => void;
   handleDecrementarServicio: (tarifa: Tarifa) => void;
   handleSetCantidadServicio: (tarifa: Tarifa, cantidad: number) => void;
+  // Unidades elegidas por idServicio (monitoreo guarda sus unidades en una sola fila con cantidad)
+  cantidadesPorServicio?: Record<number, number>;
 }) => {
+  const totalUnidades = cantidadesPorServicio
+    ? Object.values(cantidadesPorServicio).reduce((acc, n) => acc + n, 0)
+    : selectedServices.length;
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <StepHeader
@@ -50,16 +58,18 @@ export const SeleccionarServicio = ({
             Servicios Disponibles.
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Unidades seleccionadas: {selectedServices.length}
+            Unidades seleccionadas: {totalUnidades}
           </Typography>
         </div>
         <div className="grid grid-cols-2 gap-4">
           {(tarifasPeriodoActivoByIdTipoServicioData || []).map((tarifa) => {
             // Cantidad de unidades ya elegidas de este servicio (selectedServices trae una entrada por
             // cada unidad seleccionada, no una por servicio distinto: ver handleIncrementarServicio)
-            const cantidad = selectedServices.filter(
-              (s) => s.idServicio === tarifa.idServicio.idServicio,
-            ).length;
+            const cantidad =
+              cantidadesPorServicio?.[tarifa.idServicio.idServicio] ??
+              selectedServices.filter(
+                (s) => s.idServicio === tarifa.idServicio.idServicio,
+              ).length;
             const tone = getServiceTone(tarifa.idServicio);
 
             return (
@@ -117,6 +127,8 @@ export const SeleccionarServicio = ({
                     slotProps={{
                       htmlInput: {
                         min: 0,
+                        // Monitoreo de alarmas: maximo 1000 unidades por orden
+                        ...(tarifa.idServicio.idTipoServicio?.nombre === TIPO_SERVICIO_MONITOREO_ALARMAS ? { max: 1000 } : {}),
                         inputMode: "numeric",
                         style: { textAlign: "center", fontWeight: 600 },
                         "aria-label": `Cantidad de unidades de ${tarifa.idServicio.descripcion}`,

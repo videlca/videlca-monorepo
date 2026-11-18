@@ -380,7 +380,14 @@ export const ConfigurarHorariosServicios = ({
             <>
               {selectedServices[indices[0]].descripcion}
               <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                ({indices.length} {indices.length > 1 ? "unidades" : "unidad"})
+                {/* Unidades: la fila de monitoreo guarda su cantidad (una sola fila con N unidades) */}
+                {(() => {
+                  const unidades = indices.reduce(
+                    (acc, i) => acc + (configuracionServicioTarifa[i]?.cantidad ?? 1),
+                    0,
+                  );
+                  return `(${unidades} ${unidades > 1 ? "unidades" : "unidad"})`;
+                })()}
               </Typography>
             </>,
           ),

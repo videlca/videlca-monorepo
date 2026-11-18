@@ -15,7 +15,9 @@ import {
     ArrayMinSize,
     ValidateNested,
     IsEnum,
-    ValidateIf
+    ValidateIf,
+    IsInt,
+    Max
 } from 'class-validator';
 import { OrigenServicioEnum } from "../../interfaces/origen-servicio.interface";
 
@@ -86,6 +88,16 @@ export class PrecioOrdenServicioItemDto {
     @IsOptional()
     @IsBoolean({message: 'El campo incluye festivos debe ser boolean'})
     incluyeFestivos?: boolean;
+
+    // CANTIDAD DE UNIDADES DE ESTE SERVICIO (solo Monitoreo de alarmas: una orden de monitoreo tiene un solo servicio
+    // con su cantidad, ej. 500 alarmas, en una sola fila). En Vigilancia y escolta cada unidad es su propia fila, asi
+    // que queda en 1. Los precios de la fila son el total de las unidades (precio de una unidad x cantidad)
+    @ApiProperty({ description: 'Cantidad de unidades de este servicio (solo monitoreo de alarmas, maximo 1000)', example: 1, required: false})
+    @IsOptional()
+    @IsInt({ message: 'La cantidad debe ser un numero entero' })
+    @Min(1, { message: 'La cantidad minima es 1' })
+    @Max(1000, { message: 'La cantidad maxima es 1000' })
+    cantidad?: number;
 
 }
 

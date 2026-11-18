@@ -195,11 +195,15 @@ const renderTarjetaDetalle = (
         {servicio?.codigo
           ? `${servicio.codigo} — ${servicio.descripcion}`
           : `Detalle ${indicePrincipal + 1}`}
-        {indices.length > 1 && (
-          <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-            ({indices.length} unidades)
-          </Typography>
-        )}
+        {/* Unidades: suma la cantidad de cada fila (monitoreo: una fila con N unidades) */}
+        {(() => {
+          const unidades = indices.reduce((acc, i) => acc + (detalles[i]?.cantidad ?? 1), 0);
+          return unidades > 1 ? (
+            <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+              ({unidades} unidades)
+            </Typography>
+          ) : null;
+        })()}
         {diasActivos(detalle) && (
           <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
             {diasActivos(detalle)}

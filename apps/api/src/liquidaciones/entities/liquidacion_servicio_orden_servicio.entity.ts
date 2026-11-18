@@ -73,6 +73,11 @@ export class LiquidacionServicioOrdenServicio {
     @Column({ type: 'boolean', name: 'incluyeFestivos', nullable: true })
     incluyeFestivos: boolean | null;
 
+    // CANTIDAD DE UNIDADES LIQUIDADAS EN ESTA LINEA (copia de la cantidad de la fila de la orden al liquidar). Los
+    // valores de la linea son el total de esas unidades. Los reportes cuentan unidades sumando este campo
+    @Column({ type: 'int', name: 'cantidad', default: 1 })
+    cantidad: number;
+
     // COSTOS DIRECTOS
     @Column({
         type: 'decimal',

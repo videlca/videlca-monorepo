@@ -210,6 +210,16 @@ export class OrdenServicioService {
 
     const esOrdenMonitoreo = tiposServicioOrden.has(TipoServicioInterface.MONITOREO_ALARMAS);
 
+    // MONITOREO DE ALARMAS: UN SOLO SERVICIO POR ORDEN, CON SU CANTIDAD (ej. 500 alarmas en una sola fila). Vigilancia y
+    // escolta sigue con una fila por unidad (cada una puede tener su propio horario y dias), siempre con cantidad 1
+    if (esOrdenMonitoreo && createOrdenServicioDto.servicios.length !== 1) {
+      throw new BadRequestException('Una orden de Monitoreo de alarmas debe tener un solo servicio; indique cuantas unidades en el campo cantidad');
+    }
+
+    if (!esOrdenMonitoreo && createOrdenServicioDto.servicios.some(servicio => (servicio.cantidad ?? 1) !== 1)) {
+      throw new BadRequestException('Solo los servicios de Monitoreo de alarmas pueden tener una cantidad mayor a 1; en Vigilancia y escolta cada unidad se agrega por separado');
+    }
+
     if (createOrdenServicioDto.idLocacion && createOrdenServicioDto.idCliente) {
       throw new BadRequestException('Debe seleccionar solo una locacion o un cliente para la orden, no ambos');
     }
@@ -349,6 +359,8 @@ export class OrdenServicioService {
           sabado: detalleDto.sabado ?? true,
           domingo: detalleDto.domingo ?? true,
           incluyeFestivos: detalleDto.incluyeFestivos ?? true,
+          // Unidades que representa la fila (solo monitoreo; los precios recibidos ya son el total de esas unidades)
+          cantidad: esOrdenMonitoreo ? (detalleDto.cantidad ?? 1) : 1,
           cantidadHoras: createOrdenServicioDto.fechaFin != null ? (detalleDto.cantidadHoras ?? null) : null,
           costosDirectos: createOrdenServicioDto.fechaFin != null ? (detalleDto.costosDirectos ?? null) : null,
           seguroVida: createOrdenServicioDto.fechaFin != null ? (detalleDto.seguroVida ?? null) : null,
@@ -848,6 +860,7 @@ export class OrdenServicioService {
             horaInicio: item.horaInicio,
             horaFin: item.horaFin,
             cantidadHoras: null,
+            cantidad: item.cantidad ?? 1,
             message: mensajeIndefinida,
             costosDirectos: null,
             seguroVida: null,
@@ -965,6 +978,7 @@ export class OrdenServicioService {
 
     const detalles: {
       idTarifa: number; horaInicio: string; horaFin: string; cantidadHoras: number | null; fecha: Date | null; message: string;
+      cantidad: number;
       costosDirectos: number; seguroVida: number; costosDirectosSeguroVida: number; aui: number;
       precioAntesIva: number; iva: number; precio: number;
     }[] = [];
@@ -1084,20 +1098,31 @@ export class OrdenServicioService {
 
       }
 
+      // CANTIDAD DE UNIDADES (solo Monitoreo de alarmas): el precio se calcula para una unidad y se multiplica, asi
+      // la fila guarda el total de sus unidades y da exactamente lo mismo que N filas de una unidad sumadas
+      const cantidad = item.cantidad ?? 1;
+
+      if (cantidad > 1 && tipoServicioNombre !== TipoServicioInterface.MONITOREO_ALARMAS) {
+        throw new BadRequestException('Solo los servicios de Monitoreo de alarmas pueden tener una cantidad mayor a 1; en Vigilancia y escolta cada unidad se agrega por separado');
+      }
+
+      const porCantidad = (valor: number) => Math.round(Number(valor) * cantidad * 100) / 100;
+
       detalles.push({
         idTarifa: tarifa.idTarifa,
         horaInicio: item.horaInicio,
         horaFin: item.horaFin,
         cantidadHoras: null,
         fecha: null,
-        message: mensaje,
-        costosDirectos: desglose.costosDirectos,
-        seguroVida: desglose.seguroVida,
-        costosDirectosSeguroVida: desglose.costosDirectosSeguroVida,
-        aui: desglose.aui,
-        precioAntesIva: desglose.precioAntesIva,
-        iva: desglose.iva,
-        precio: desglose.precioTotal,
+        cantidad,
+        message: cantidad > 1 ? `${mensaje} (x ${cantidad} unidades)` : mensaje,
+        costosDirectos: porCantidad(desglose.costosDirectos),
+        seguroVida: porCantidad(desglose.seguroVida),
+        costosDirectosSeguroVida: porCantidad(desglose.costosDirectosSeguroVida),
+        aui: porCantidad(desglose.aui),
+        precioAntesIva: porCantidad(desglose.precioAntesIva),
+        iva: porCantidad(desglose.iva),
+        precio: porCantidad(desglose.precioTotal),
       });
 
     }
@@ -1807,9 +1832,18 @@ export class OrdenServicioService {
         throw new BadRequestException('Debe seleccionar al menos un dia de la semana en que se presta el servicio');
       }
 
-      const cambioDias = CAMPOS_PATRON_DIAS.some(campo => patron[campo] !== detalle[campo]);
+      // CANTIDAD DE UNIDADES (solo monitoreo): si no se envia se conserva la que ya tiene la fila
+      const cantidad = item.cantidad ?? detalle.cantidad ?? 1;
 
-      return { item, detalle, patron, cambioDias };
+      if (cantidad !== 1 && detalle.idTarifa.idServicio?.idTipoServicio?.nombre !== TipoServicioInterface.MONITOREO_ALARMAS) {
+        throw new BadRequestException('Solo los servicios de Monitoreo de alarmas pueden tener una cantidad mayor a 1; en Vigilancia y escolta cada unidad se agrega por separado');
+      }
+
+      // Un cambio de dias o de cantidad se trata igual: solo aplica a los meses aun no liquidados
+      const cambioDias = CAMPOS_PATRON_DIAS.some(campo => patron[campo] !== detalle[campo])
+        || cantidad !== (detalle.cantidad ?? 1);
+
+      return { item, detalle, patron, cantidad, cambioDias };
 
     });
 
@@ -1880,7 +1914,10 @@ export class OrdenServicioService {
 
           const pareja = parejas.find(p => p.detalle === detalleExistente);
 
-          if (pareja) Object.assign(detalleExistente, pareja.patron);
+          if (pareja) {
+            Object.assign(detalleExistente, pareja.patron);
+            detalleExistente.cantidad = pareja.cantidad;
+          }
 
           detalleExistente.cantidadHoras = null;
           detalleExistente.costosDirectos = null;
@@ -1917,7 +1954,8 @@ export class OrdenServicioService {
         // PRECIO DE CADA SERVICIO CON LAS NUEVAS FECHAS Y SU PATRON DE DIAS. calcularPrecioCatalogo devuelve los
         // resultados en el mismo orden en que se le envian, por eso se recorren en paralelo por indice
         const detallesCalculados = await this.calcularPrecioCatalogo(
-          parejas.map(({ item, patron }) => ({
+          parejas.map(({ item, patron, cantidad }) => ({
+            cantidad,
             idTarifa: item.idTarifa,
             horaInicio: item.horaInicio,
             horaFin: item.horaFin,
@@ -1934,6 +1972,7 @@ export class OrdenServicioService {
           const { detalle: detalleExistente, patron } = parejas[i];
 
           Object.assign(detalleExistente, patron);
+          detalleExistente.cantidad = parejas[i].cantidad;
           detalleExistente.horaInicio = detalleCalculado.horaInicio;
           detalleExistente.horaFin = detalleCalculado.horaFin;
           detalleExistente.costosDirectos = detalleCalculado.costosDirectos;

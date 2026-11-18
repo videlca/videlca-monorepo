@@ -97,6 +97,12 @@ export class OrdenServicioDetalle {
     @Column({ type: 'boolean', name: 'incluyeFestivos', default: true })
     incluyeFestivos: boolean;
 
+    // CANTIDAD DE UNIDADES QUE REPRESENTA ESTA FILA (solo Monitoreo de alarmas: un servicio con su cantidad, ej. 500
+    // alarmas, en una sola fila; Vigilancia y escolta siempre 1, cada unidad es su propia fila). Los precios de la fila
+    // son el TOTAL de esas unidades (precio de una unidad x cantidad)
+    @Column({ type: 'int', name: 'cantidad', default: 1 })
+    cantidad: number;
+
     // DESGLOSE DEL PRECIO DEL SERVICIO. Todos nulos si la orden es indefinida (fechaFin null), ya que en ese caso
     // el precio se calcula mes a mes al momento de liquidar/finalizar, no se conoce de antemano
     @Column({

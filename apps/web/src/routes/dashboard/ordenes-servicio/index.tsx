@@ -504,6 +504,8 @@ function RouteComponent() {
               idTarifa: servicio.idTarifa || 0,
               horaInicio: servicio.horaInicio,
               horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
+              // Unidades (monitoreo): el backend devuelve el precio total de esas unidades
+              cantidad: servicio.cantidad ?? 1,
               lunes: servicio.lunes,
               martes: servicio.martes,
               miercoles: servicio.miercoles,
@@ -539,6 +541,7 @@ function RouteComponent() {
               return {
                 ...detalle,
                 idServicio: original?.idServicio,
+                cantidad: original?.cantidad ?? detalle.cantidad ?? 1,
                 lunes: original?.lunes,
                 martes: original?.martes,
                 miercoles: original?.miercoles,
@@ -664,7 +667,11 @@ function RouteComponent() {
     ordenEnEdicion?.origenServicio !== OrigenServicioEnum.A_MEDIDA &&
     configuracionServicioTarifaEdit.some((fila, index) => {
       const detalleOriginal = ordenEnEdicion?.detalles?.[index];
-      return detalleOriginal != null && firmaDias(fila) !== firmaDias(detalleOriginal);
+      return (
+        detalleOriginal != null &&
+        (firmaDias(fila) !== firmaDias(detalleOriginal) ||
+          (fila.cantidad ?? 1) !== (detalleOriginal.cantidad ?? 1))
+      );
     });
 
   const handleNextEdit = async () => {
@@ -700,8 +707,9 @@ function RouteComponent() {
                   idTarifa: servicio.idTarifa || 0,
                   horaInicio: servicio.horaInicio,
                   horaFin: servicio.horaFin === "" ? "00:00:00" : servicio.horaFin,
-                  // Precio con los dias de la semana ya editados
+                  // Precio con los dias de la semana y la cantidad ya editados
                   ...diasDeFila(servicio),
+                  cantidad: servicio.cantidad ?? 1,
                 })),
               });
 
@@ -819,6 +827,8 @@ function RouteComponent() {
       horaFin: servicio.horaFin,
       cantidadHoras: servicio.cantidadHoras,
       fecha: servicio.fecha,
+      // Unidades de la fila (monitoreo: un servicio con su cantidad; vigilancia siempre 1)
+      cantidad: servicio.cantidad ?? 1,
       // Dias de la semana tal cual se seleccionaron en el paso de horarios (solo tienen valor en modo
       // catalogo; en a_medida quedan undefined y el backend los ignora)
       lunes: servicio.lunes,
@@ -894,6 +904,7 @@ function RouteComponent() {
         horaInicio: servicio.horaInicio,
         horaFin: servicio.horaFin,
         ...diasDeFila(servicio),
+        cantidad: servicio.cantidad ?? 1,
       })),
       // A la medida: cada fila de configuracionServicioTarifaEdit es UN DIA del rango, no el horario completo
       // de la orden (ver calcularPrecioAMedida en el backend) — solo el primer dia trae el horaInicio real de
@@ -965,6 +976,7 @@ function RouteComponent() {
         sabado: detalle.sabado,
         domingo: detalle.domingo,
         incluyeFestivos: detalle.incluyeFestivos,
+        cantidad: detalle.cantidad ?? 1,
       })) || [],
     );
 
@@ -1036,7 +1048,85 @@ function RouteComponent() {
   // mantienen siempre del mismo largo y en el mismo orden (una entrada por cada unidad seleccionada, no una
   // por servicio distinto), asi la fila en configuracionServicioTarifa[i] siempre corresponde al servicio en
   // selectedServices[i] (mismo criterio que ya usa PreviewInformacionOrden para emparejar por posicion)
+  // UNIDADES ELEGIDAS DE CADA SERVICIO (por idServicio). Monitoreo de alarmas guarda sus unidades en el campo
+  // cantidad de una sola fila; vigilancia tiene una fila por unidad
+  const cantidadesPorServicio = configuracionServicioTarifa.reduce<Record<number, number>>(
+    (acc, fila) => {
+      if (fila.idServicio != null) {
+        acc[fila.idServicio] = (acc[fila.idServicio] ?? 0) + (fila.cantidad ?? 1);
+      }
+      return acc;
+    },
+    {},
+  );
+
+  const esTarifaMonitoreo = (tarifa: Tarifa) =>
+    tarifa.idServicio.idTipoServicio?.nombre === TIPO_SERVICIO_MONITOREO_ALARMAS;
+
+  // MONITOREO DE ALARMAS: un solo servicio por orden, en UNA fila con su cantidad (maximo 1000), en vez de una fila
+  // por unidad (con cientos de unidades la peticion era demasiado grande). En 0 se quita el servicio
+  const MAX_UNIDADES_MONITOREO = 1000;
+  const setCantidadMonitoreo = (tarifa: Tarifa, cantidad: number) => {
+    const idServicio = tarifa.idServicio.idServicio;
+    let cantidadObjetivo = Number.isFinite(cantidad) ? Math.max(0, Math.floor(cantidad)) : 0;
+
+    if (cantidadObjetivo > MAX_UNIDADES_MONITOREO) {
+      toast.error(`La cantidad máxima por orden es ${MAX_UNIDADES_MONITOREO}`);
+      cantidadObjetivo = MAX_UNIDADES_MONITOREO;
+    }
+
+    const otroServicio = configuracionServicioTarifa.some(
+      (fila) => fila.idServicio != null && fila.idServicio !== idServicio,
+    );
+    if (cantidadObjetivo > 0 && otroServicio) {
+      toast.error(
+        "Una orden de monitoreo tiene un solo servicio. Quite el otro servicio para elegir este",
+      );
+      return;
+    }
+
+    const existe = configuracionServicioTarifa.some((fila) => fila.idServicio === idServicio);
+
+    if (cantidadObjetivo === 0) {
+      setSelectedServices((prev) => prev.filter((s) => s.idServicio !== idServicio));
+      setConfiguracionServicioTarifa((prev) => prev.filter((fila) => fila.idServicio !== idServicio));
+      return;
+    }
+
+    if (existe) {
+      setConfiguracionServicioTarifa((prev) =>
+        prev.map((fila) => (fila.idServicio === idServicio ? { ...fila, cantidad: cantidadObjetivo } : fila)),
+      );
+      return;
+    }
+
+    setSelectedServices((prev) => [...prev, tarifa.idServicio]);
+    setConfiguracionServicioTarifa((prev) => [
+      ...prev,
+      {
+        idTarifa: tarifa.idTarifa,
+        idServicio,
+        horaInicio: "",
+        horaFin: "",
+        precio: 0,
+        cantidad: cantidadObjetivo,
+        lunes: true,
+        martes: true,
+        miercoles: true,
+        jueves: true,
+        viernes: true,
+        sabado: true,
+        domingo: true,
+        incluyeFestivos: true,
+      },
+    ]);
+  };
+
   const handleIncrementarServicio = (tarifa: Tarifa) => {
+    if (esTarifaMonitoreo(tarifa)) {
+      setCantidadMonitoreo(tarifa, (cantidadesPorServicio[tarifa.idServicio.idServicio] ?? 0) + 1);
+      return;
+    }
     setSelectedServices((prev) => [...prev, tarifa.idServicio]);
     setConfiguracionServicioTarifa((prev) => [
       ...prev,
@@ -1063,6 +1153,10 @@ function RouteComponent() {
   // Quita la ultima unidad agregada de este servicio (LIFO), tanto de selectedServices como de
   // configuracionServicioTarifa, para conservar el emparejamiento por posicion entre ambos arreglos
   const handleDecrementarServicio = (tarifa: Tarifa) => {
+    if (esTarifaMonitoreo(tarifa)) {
+      setCantidadMonitoreo(tarifa, (cantidadesPorServicio[tarifa.idServicio.idServicio] ?? 0) - 1);
+      return;
+    }
     let ultimoIndice = -1;
     for (let i = selectedServices.length - 1; i >= 0; i--) {
       if (selectedServices[i].idServicio === tarifa.idServicio.idServicio) {
@@ -1082,6 +1176,10 @@ function RouteComponent() {
   // en el input, agregando o quitando unidades hasta alcanzarlo (misma logica de emparejamiento por
   // posicion entre selectedServices y configuracionServicioTarifa que handleIncrementar/DecrementarServicio)
   const handleSetCantidadServicio = (tarifa: Tarifa, cantidad: number) => {
+    if (esTarifaMonitoreo(tarifa)) {
+      setCantidadMonitoreo(tarifa, cantidad);
+      return;
+    }
     const cantidadObjetivo = Number.isFinite(cantidad)
       ? Math.max(0, Math.floor(cantidad))
       : 0;
@@ -1381,6 +1479,7 @@ function RouteComponent() {
             handleIncrementarServicio={handleIncrementarServicio}
             handleDecrementarServicio={handleDecrementarServicio}
             handleSetCantidadServicio={handleSetCantidadServicio}
+            cantidadesPorServicio={cantidadesPorServicio}
           />
         );
 

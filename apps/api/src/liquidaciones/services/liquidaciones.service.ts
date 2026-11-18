@@ -211,6 +211,7 @@ export class LiquidacionesService {
           return {
             idTarifa: lsos.idTarifa,
             fecha: null,
+            cantidad: Number(lsos.cantidad ?? 1),
             ...this.horarioYDiasLiquidados(lsos, detalleOrden),
             costosDirectos: lsos.costosDirectos,
             seguroVida: lsos.seguroVida,
@@ -677,15 +678,20 @@ export class LiquidacionesService {
           }],
         };
 
+        // Se calcula UNA unidad y se multiplica por la cantidad de la fila (monitoreo). Asi da exactamente lo mismo
+        // que cuando cada unidad era su propia fila y se liquidaba por separado (el redondeo es por unidad)
         const resultado = await this.ordenServicioService.obtenerPrecio(precioOrden);
 
-        costosDirectos = resultado.costosDirectos;
-        seguroVida = resultado.seguroVida;
-        aui = resultado.aui;
-        costosDirectosSeguroVida = resultado.costosDirectosSeguroVida;
-        precioAntesIva = resultado.precioAntesIva;
-        iva = resultado.iva;
-        precio = resultado.precio;
+        const cantidadFila = detalle.cantidad ?? 1;
+        const porCantidad = (valor: number) => round2(Number(valor) * cantidadFila);
+
+        costosDirectos = porCantidad(resultado.costosDirectos);
+        seguroVida = porCantidad(resultado.seguroVida);
+        aui = porCantidad(resultado.aui);
+        costosDirectosSeguroVida = porCantidad(resultado.costosDirectosSeguroVida);
+        precioAntesIva = porCantidad(resultado.precioAntesIva);
+        iva = porCantidad(resultado.iva);
+        precio = porCantidad(resultado.precio);
 
       } else {
 
@@ -722,6 +728,8 @@ export class LiquidacionesService {
         sabado: detalle.sabado,
         domingo: detalle.domingo,
         incluyeFestivos: detalle.incluyeFestivos,
+        // Unidades liquidadas en esta linea (los reportes cuentan unidades sumando este campo)
+        cantidad: esCatalogo ? (detalle.cantidad ?? 1) : 1,
         costosDirectos,
         seguroVida,
         costosDirectosSeguroVida,
@@ -1805,7 +1813,8 @@ export class LiquidacionesService {
 
           if (centro.error) agrupado[clienteId].servicios[idServicio].erroresCentroCostos.push(centro.error);
 
-          agrupado[clienteId].servicios[idServicio].cantidadOrdenes += 1;
+          // Unidades de la linea (monitoreo puede traer varias en una sola linea, ver cantidad)
+          agrupado[clienteId].servicios[idServicio].cantidadOrdenes += Number(liquidacionServicioOrdenServicio.cantidad ?? 1);
 
           agrupado[clienteId].servicios[idServicio].valorLiquidarAplicacion += Number(liquidacionServicioOrdenServicio.costosDirectos);
           agrupado[clienteId].servicios[idServicio].seguroVida += Number(liquidacionServicioOrdenServicio.seguroVida);
@@ -2000,7 +2009,8 @@ export class LiquidacionesService {
           cantidadHorasPrestadas: 0,
           valorLiquidadoVidelca: 0,
 
-          cantidadOrdenesFacturar: 1,
+          // Unidades de la linea (monitoreo: una linea con su cantidad, con los valores ya totalizados)
+          cantidadOrdenesFacturar: Number(liquidacionServicioOrdenServicio.cantidad ?? 1),
           valorLiquidarAplicacion: Number(liquidacionServicioOrdenServicio.costosDirectos),
           seguroVida: Number(liquidacionServicioOrdenServicio.seguroVida),
           aui: Number(liquidacionServicioOrdenServicio.aui),
@@ -2359,8 +2369,13 @@ export class LiquidacionesService {
           const horaInicio = lsos.horaInicio ?? detalle?.horaInicio;
           const horaFin = lsos.horaFin ?? detalle?.horaFin;
 
+          // Monitoreo: una linea puede representar varias unidades (ver cantidad)
+          const cantidadLinea = Number(lsos.cantidad ?? 1);
+
           return {
-            descripcion: nombreServicioReporte(servicio),
+            descripcion: cantidadLinea > 1
+              ? `${nombreServicioReporte(servicio)} x ${cantidadLinea} unidades`
+              : nombreServicioReporte(servicio),
             codigo: servicio.codigo,
             horario: horaInicio && horaFin ? `${horaInicio} - ${horaFin}` : null,
             tipoTarifa: servicio.idTipoTarifa?.nombre ?? null,

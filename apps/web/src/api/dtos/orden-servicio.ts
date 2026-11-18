@@ -33,6 +33,8 @@ export interface CreateOrdenServicioDto {
 // Dias de la semana opcionales: si no se envian, el backend conserva los que ya tiene el servicio en la orden.
 // idOrdenServicioDetalle identifica la fila exacta (necesario con varias unidades del mismo servicio)
 export interface UpdateOrdenServicioDetalleDto extends PatronDiasSemanaDto {
+  // Unidades del servicio (solo Monitoreo de alarmas, max 1000; Vigilancia siempre 1). Precios = total de las unidades
+  cantidad?: number;
   idOrdenServicioDetalle?: number;
   idTarifa: number;
   horaInicio: string;
@@ -72,6 +74,8 @@ export interface PatronDiasSemanaDto {
 // (horaInicio/horaFin, cantidadHoras, fecha y los campos de precio) se obtiene tal cual desde la respuesta de
 // POST /orden-servicio/obtener-precio y se reenvia sin modificar, no se vuelve a calcular nada en el front
 export interface CreateOrdenServicioDetalleDto extends PatronDiasSemanaDto {
+  // Unidades del servicio (solo Monitoreo de alarmas, max 1000; Vigilancia siempre 1). Precios = total de las unidades
+  cantidad?: number;
   idTarifa: number;
   horaInicio: string;
   horaFin: string;
@@ -95,6 +99,8 @@ export interface CreateOrdenServicioTarifaDto extends CreateOrdenServicioDetalle
 }
 
 export interface UpdateOrdenServicioTarifaDto extends PatronDiasSemanaDto {
+  // Unidades del servicio (solo Monitoreo de alarmas, max 1000; Vigilancia siempre 1). Precios = total de las unidades
+  cantidad?: number;
   // Fila del desglose de la orden que se esta editando
   idOrdenServicioDetalle?: number;
   idTarifa: number;
@@ -142,6 +148,8 @@ export interface ValidarHorarioServicioDto extends PatronDiasSemanaDto {
 
 // CATALOGO: cada servicio ya tiene una tarifa (idTarifa) elegida del catalogo del periodo
 export interface PrecioOrdenServicioItemDto extends PatronDiasSemanaDto {
+  // Unidades del servicio (solo Monitoreo de alarmas, max 1000; Vigilancia siempre 1). Precios = total de las unidades
+  cantidad?: number;
   idTarifa: number;
   horaInicio: string;
   horaFin: string;
