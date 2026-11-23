@@ -12,9 +12,12 @@ import { OrdenServicioCard } from "./OrdenServicioCard";
 export function GrupoLiquidacionCard({
   group,
   actions,
+  resaltarDefinidas = false,
 }: {
   group: GruposLiquidaciones;
   actions?: ReactNode;
+  /** Resalta en rojo pastel las ordenes definidas (con fecha de fin) */
+  resaltarDefinidas?: boolean;
 }) {
   const [hidden, setHidden] = useState(false);
 
@@ -64,7 +67,11 @@ export function GrupoLiquidacionCard({
         </div>
       </Box>
 
-      {!hidden && <OrdenServicioCard grupoLiquidacion={group} showTotal={true} />}
+      {!hidden && <OrdenServicioCard
+          grupoLiquidacion={group}
+          showTotal={true}
+          resaltarDefinidas={resaltarDefinidas}
+        />}
     </Paper>
   );
 }

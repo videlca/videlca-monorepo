@@ -1,11 +1,12 @@
 import Chip from "@mui/material/Chip";
 import { tones, type Tone } from "../../theme/tones";
 
-// Mismos colores que el gráfico de estados del dashboard
+// Mismos colores que el gráfico de estados del dashboard. Programado, por iniciar e iniciado NO usan los colores de
+// los tags de tipo de servicio (monitoreo azul, vigilancia morado, adicional naranja) para no confundirse con ellos
 const stateTone: Record<string, Tone> = {
-  programado: "amber",
-  "por iniciar": "purple",
-  iniciado: "blue",
+  programado: "blueGray",
+  "por iniciar": "brown",
+  iniciado: "teal",
   "por terminar": "yellow",
   terminado: "green",
   cancelado: "red",

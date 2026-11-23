@@ -319,6 +319,8 @@ function RouteComponent() {
               <GrupoLiquidacionCard
                 key={group.idGrupoLiquidacion}
                 group={group}
+                // Ordenes definidas (con fecha de fin) en rojo pastel, para distinguirlas de las indefinidas
+                resaltarDefinidas
                 actions={
                   <>
                     <ButtonOrdenes

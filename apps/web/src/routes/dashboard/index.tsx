@@ -43,14 +43,15 @@ const MESES_OPTIONS: { label: string; value: MonthsAvailable }[] = [
   { label: "12 meses", value: 12 },
 ];
 
+// Mismos colores que las etiquetas de estado (OrderStateLabel)
 const COLORES_ESTADO: Record<string, string> = {
-  INICIADO: "#3B82F6",     // Blue
+  INICIADO: "#0D9488",     // Teal
   TERMINADO: "#10B981",    // Emerald Green
-  PROGRAMADO: "#F59E0B",   // Amber / Orange
-  POR_INICIAR: "#8B5CF6",  // Purple
+  PROGRAMADO: "#94A3B8",   // Gris azulado claro
+  POR_INICIAR: "#8D6E63",  // Cafe
   POR_TERMINAR: "#EAB308", // Yellow
   CANCELADA: "#EF4444",    // Red
-  ANULADA: "#6B7280",      // Slate Gray
+  ANULADA: "#4B5563",      // Gris oscuro
 };
 
 const LABEL_ESTADO: Record<string, string> = {

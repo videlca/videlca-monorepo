@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import { red } from "@mui/material/colors";
 import { tones, type Tone } from "../../theme/tones";
 import { OrderStateLabel } from "./OrderStateLabel";
 import { useState } from "react";
@@ -39,12 +40,21 @@ const TipoServicioBadge = ({
   );
 };
 
+// ORDEN DEFINIDA: tiene fecha de fin (las indefinidas, que se cobran mes a mes, la tienen en null)
+const esOrdenDefinida = (liquidacion: Liquidaciones) =>
+  !!liquidacion.ordenServicio?.fechaFin;
+
+const fechaCorta = (fecha: string) => fecha.slice(0, 10).split("-").reverse().join("/");
+
 export const OrdenServicioCard = ({
   grupoLiquidacion,
   showTotal = false,
+  resaltarDefinidas = false,
 }: {
   grupoLiquidacion: GruposLiquidaciones;
   showTotal?: boolean;
+  /** Pinta en rojo pastel las ordenes definidas (con fecha de fin), para distinguirlas a simple vista */
+  resaltarDefinidas?: boolean;
 }) => {
   const [isOpenDetalles, setIsOpenDetalles] = useState(false);
 
@@ -71,7 +81,9 @@ export const OrdenServicioCard = ({
     <>
       <div className="p-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {grupoLiquidacion.liquidaciones.map((liquidacion) => (
+          {grupoLiquidacion.liquidaciones.map((liquidacion) => {
+            const resaltada = resaltarDefinidas && esOrdenDefinida(liquidacion);
+            return (
             <Paper
               key={liquidacion.idLiquidacion}
               variant="outlined"
@@ -81,6 +93,7 @@ export const OrdenServicioCard = ({
                 opacity: isPending ? 0.5 : 1,
                 transition: "box-shadow .2s",
                 "&:hover": { boxShadow: 2 },
+                ...(resaltada && { bgcolor: red[50], borderColor: red[200] }),
               }}
               onClick={() => {
                 if (isPending) return;
@@ -111,6 +124,12 @@ export const OrdenServicioCard = ({
                   <div className="flex flex-col items-start gap-1">
                     {liquidacion.tipoServicio && (
                       <TipoServicioBadge tipo={liquidacion.tipoServicio} />
+                    )}
+                    {/* El color solo no basta (daltonismo): se indica tambien con texto */}
+                    {resaltada && liquidacion.ordenServicio.fechaFin && (
+                      <Typography variant="caption" sx={{ fontWeight: 600, color: red[800] }}>
+                        Definida · hasta {fechaCorta(liquidacion.ordenServicio.fechaFin)}
+                      </Typography>
                     )}
                     <Typography variant="caption" sx={{ fontWeight: 500 }}>
                       {liquidacion.ordenServicio.idLocacion?.idCliente.nombre ||
@@ -158,7 +177,8 @@ export const OrdenServicioCard = ({
                 </Typography>
               </Box>
             </Paper>
-          ))}
+            );
+          })}
         </div>
         {showTotal && (
           <div className="mt-4 flex items-baseline justify-end gap-6">
