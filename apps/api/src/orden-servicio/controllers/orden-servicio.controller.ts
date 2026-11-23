@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query, DefaultValuePipe, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query, DefaultValuePipe, Res, UploadedFiles, UseFilters, UseInterceptors } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 
 import { AppAuth, GetUser, ValidateJwtAuth } from '../../auth/decorators';
@@ -25,6 +26,9 @@ import {
 } from '../dto';
 
 import { ApiQuery } from '@nestjs/swagger';
+import { CrearOrdenConNotificacionDto, type ArchivoSubido } from '../dto/orden-servicio/crear-orden-con-notificacion.dto';
+import { MAX_BYTES_IMAGENES_CORREO, MAX_IMAGENES_CORREO, validarCreacionMultipart } from '../helpers/creacion-multipart.helper';
+import { ErroresSubidaFilter } from '../helpers/errores-subida.filter';
 import { LiquidacionesService } from '../../liquidaciones/services/liquidaciones.service';
 
 
@@ -36,12 +40,35 @@ export class OrdenServicioController {
     private liquidacionesService: LiquidacionesService
   ) {}
 
+  // CREAR ORDEN + CORREO DE CREACION (multipart/form-data): "orden" (CreateOrdenServicioDto en JSON), "mensaje"
+  // (opcional), "destinatarios" (arreglo JSON de correos, al menos uno) e "imagenes" (hasta 5, 3 MB en total, solo
+  // viajan en el correo). El correo se envia antes de confirmar la orden: si falla, la orden no se guarda
   @Post()
-  create(
-    @Body() createOrdenServicioDto: CreateOrdenServicioDto,
+  @UseFilters(ErroresSubidaFilter)
+  @UseInterceptors(
+    FilesInterceptor('imagenes', MAX_IMAGENES_CORREO, {
+      limits: { fileSize: MAX_BYTES_IMAGENES_CORREO, files: MAX_IMAGENES_CORREO },
+    }),
+  )
+  async create(
+    @Body() body: CrearOrdenConNotificacionDto,
+    @UploadedFiles() imagenes: ArchivoSubido[],
     @GetUser() user: User
   ) {
-    return this.ordenServicioService.create(createOrdenServicioDto, user);
+    const { orden, notificacion } = await validarCreacionMultipart(body, imagenes ?? []);
+    return this.ordenServicioService.create(orden, user, notificacion);
+  }
+
+  // DESTINATARIOS DEL CORREO DE CREACION (paso final de crear una orden): contactos del puesto, del cliente y
+  // correos de aplicacion con el estado "creacion orden de servicio", sin repetidos
+  @Get('destinatarios-creacion')
+  @ApiQuery({ name: 'idLocacion', required: false })
+  @ApiQuery({ name: 'idCliente', required: false })
+  findDestinatariosCreacion(
+    @Query('idLocacion', new ParseIntPipe({ optional: true })) idLocacion?: number,
+    @Query('idCliente', new ParseIntPipe({ optional: true })) idCliente?: number,
+  ) {
+    return this.ordenServicioService.findDestinatariosCreacion(idLocacion, idCliente);
   }
 
   @Get()

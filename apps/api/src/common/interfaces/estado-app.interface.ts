@@ -28,6 +28,9 @@ export enum EstadoAppInterface {
     CREACION_CONSOLIDACION = "creacion consolidacion",
 
     // CREACION INTERFASE
-    CREACION_INTERFASE = "creacion interfase"
+    CREACION_INTERFASE = "creacion interfase",
+
+    // CREACION ORDEN DE SERVICIO (destinatarios de aplicacion que se ofrecen en el paso final de crear una orden)
+    CREACION_ORDEN_SERVICIO = "creacion orden de servicio"
 
 }

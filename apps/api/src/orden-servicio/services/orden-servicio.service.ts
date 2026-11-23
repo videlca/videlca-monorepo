@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, In, Not, Repository } from 'typeorm';
+import { Brackets, DataSource, EntityManager, In, Not, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 
 import { subMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -29,7 +29,9 @@ import { TipoHoraDescripcionInterface } from '../../tarifas/interfaces/tipo-hora
 import { OrigenServicioEnum } from '../interfaces/origen-servicio.interface';
 
 import { Tarifa } from '../../tarifas/entities';
-import { Locacion, Cliente } from '../../clientes/entities';
+import { Locacion, Cliente, Correo } from '../../clientes/entities';
+import { CorreoDefault } from '../../common/entities';
+import type { NotificacionCreacionOrden } from '../dto/orden-servicio/crear-orden-con-notificacion.dto';
 
 import {
   OrdenServicio,
@@ -130,12 +132,9 @@ export class OrdenServicioService {
 
   }
 
-  async create(createOrdenServicioDto: CreateOrdenServicioDto, user: User) {
-
-    // Usar QueryRunner para transacción manual
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  // CREA LA ORDEN Y ENVIA EL CORREO DE CREACION EN UNA SOLA TRANSACCION: el correo se envia ANTES del commit, asi
+  // que si falla (o falla cualquier otra cosa) se hace rollback y la orden no queda guardada
+  async create(createOrdenServicioDto: CreateOrdenServicioDto, user: User, notificacion: NotificacionCreacionOrden) {
 
     // VERIFICAR QUE NO EXISTA EL NUMERO DE ORDEN
     const existeNumeroOrden = await this.ordenServicioIdRepository.findOneBy({
@@ -303,6 +302,12 @@ export class OrdenServicioService {
       createOrdenServicioDto.fechaFin != null ? this.fechaYMD(fechaFinOrden) : null,
     );
 
+    // Usar QueryRunner para transacción manual. Se abre aca (y no al inicio) para que las validaciones de arriba,
+    // que lanzan errores, no dejen una transaccion abierta y una conexion sin liberar
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
 
       // Primero crear el OrdenServicioId
@@ -386,19 +391,13 @@ export class OrdenServicioService {
 
       }
 
-      // contactos que quieren aviso de este estado: los del puesto, o los del cliente si la orden va directo a el
-      const emailsLocacion = await this.emailsContactosOrden(locacion?.idLocacion, cliente?.idCliente, estadoOrdenServicio.idEstadoOrdenServicio);
+      // CORREO DE CREACION ANTES DEL COMMIT: la orden se lee dentro de la misma transaccion (aun no esta confirmada)
+      // para armar el PDF. Si el envio falla, el catch hace rollback y la orden no queda guardada
+      const ordenCompleta = await this.findOneOrdenRelations(savedOrdenServicio.idOrdenServicio, queryRunner.manager);
 
-      const emailsApp = await this.correoDefaultService.findAllByEstadoOrden(estadoOrdenServicio.nombre);
-
-      const emails = [...emailsLocacion, ...emailsApp];
+      await this.notificationEmail(ordenCompleta, notificacion);
 
       await queryRunner.commitTransaction();
-
-      await this.notificationEmail(
-        savedOrdenServicio.idOrdenServicio,
-        emails
-      );
 
       return savedOrdenServicio;
 
@@ -437,15 +436,37 @@ export class OrdenServicioService {
 
   }
 
-  // ENVIAR CORREO PARA INFORMAR CREACION DE ORDEN DE SERVICIO
+  // ENVIAR CORREO PARA INFORMAR CREACION DE ORDEN DE SERVICIO: PDF de la orden, mensaje adicional (opcional) e
+  // imagenes adjuntas (ej. la foto del vigilante). Nada de esto se guarda, solo viaja en el correo
   private async notificationEmail(
-    idOrdenServicio: number,
-    emails: string[]
+    ordenServicio: OrdenServicio,
+    notificacion: NotificacionCreacionOrden,
   ) {
 
-    const ordenServicio = await this.findOneOrdenRelations(idOrdenServicio);
+    const emails = notificacion.destinatarios;
 
     const descripcionEntidad = this.construirFraseEntidadOrden(ordenServicio);
+
+    // Mensaje escrito por el usuario: se escapa (no se interpreta como HTML) y se respetan los saltos de linea
+    const mensajeHtml = notificacion.mensaje
+      ? notificacion.mensaje
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/\r?\n/g, '<br>')
+      : null;
+
+    const bloqueMensaje = mensajeHtml
+      ? `
+            <div style="margin: 0 0 20px; padding: 15px 18px; background: #f4f8fc; border-left: 4px solid #0055a5; border-radius: 6px; text-align: left; font-size: 15px; line-height: 1.6;">
+              <b>Información adicional:</b><br>${mensajeHtml}
+            </div>`
+      : '';
+
+    const textoImagenes = notificacion.imagenes.length
+      ? ` y ${notificacion.imagenes.length === 1 ? 'la <b>imagen adjunta</b>' : `las <b>${notificacion.imagenes.length} imágenes adjuntas</b>`}`
+      : '';
 
     const html = `
       <div style="background-color: #f9f9f9; padding: 30px; font-family: 'Poppins', Arial, sans-serif; color: #333;">
@@ -460,8 +481,8 @@ export class OrdenServicioService {
           <div style="padding: 25px; text-align: center;">
             <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
               Buen día, se ha creado una orden de servicio para ${descripcionEntidad}. <br><br>
-              Por favor, revise el <b>PDF adjunto</b> para más detalles de la orden de servicio.
-            </p>
+              Por favor, revise el <b>PDF adjunto</b>${textoImagenes} para más detalles de la orden de servicio.
+            </p>${bloqueMensaje}
             <p style="font-size: 15px; line-height: 1.6; color: #555;">
               Si usted no brindó su correo para el sistema de notificaciones, omita este mensaje.
             </p>
@@ -505,6 +526,11 @@ export class OrdenServicioService {
           content: ordenServicioBuffer,
           contentType: 'application/pdf',
         },
+        ...notificacion.imagenes.map((imagen, i) => ({
+          filename: imagen.originalname || `imagen-${i + 1}.jpg`,
+          content: imagen.buffer,
+          contentType: imagen.mimetype,
+        })),
       ],
     }
 
@@ -512,7 +538,7 @@ export class OrdenServicioService {
     const isEmailSend = await this.emailService.sendEmail(options);
 
     if (!isEmailSend) {
-      throw new InternalServerErrorException(`Error al enviar correo de notificacion a los emails ${emails.join(', ')}, revisar correos si estan bien escritos`);
+      throw new InternalServerErrorException(`No se pudo enviar el correo de creación a ${emails.join(', ')}; la orden NO se guardó. Revise que los correos estén bien escritos e intente de nuevo`);
     }
 
   }
@@ -662,9 +688,12 @@ export class OrdenServicioService {
 
   }
 
-  async findOneOrdenRelations(id: number) {
+  // manager: para leer dentro de una transaccion sin confirmar (ver create)
+  async findOneOrdenRelations(id: number, manager?: EntityManager) {
 
-    const ordenServicio = await this.ordenServicioRepository.findOne({
+    const repositorio = manager ? manager.getRepository(OrdenServicio) : this.ordenServicioRepository;
+
+    const ordenServicio = await repositorio.findOne({
       where: { idOrdenServicio: id },
       relations: {
         ordenServicioId: true,
@@ -2073,6 +2102,62 @@ export class OrdenServicioService {
       await queryRunner.release();
 
     }
+
+  }
+
+  // DESTINATARIOS QUE SE OFRECEN EN EL PASO FINAL DE CREAR UNA ORDEN (todos los asociados, esten suscritos a un
+  // estado o no): contactos del puesto; contactos del cliente (el del puesto, o el de la orden si va directo al
+  // cliente) sin repetir los del puesto; y correos de aplicacion con el estado "creacion orden de servicio" sin
+  // repetir ninguno de los anteriores
+  async findDestinatariosCreacion(idLocacion?: number, idCliente?: number) {
+
+    if (!idLocacion && !idCliente) {
+      throw new BadRequestException('Debe indicar el puesto (idLocacion) o el cliente (idCliente) de la orden');
+    }
+
+    const correoRepo = this.dataSource.getRepository(Correo);
+    const destinatario = (c: Correo) => ({
+      email: c.email.trim(),
+      nombre: [c.nombre, c.apellido].filter(Boolean).join(' ').trim() || null,
+    });
+
+    let puesto: { email: string; nombre: string | null }[] = [];
+    let idClienteContactos = idCliente;
+
+    if (idLocacion) {
+      const locacion = await this.dataSource.getRepository(Locacion).findOne({
+        where: { idLocacion },
+        relations: { idCliente: true },
+      });
+      if (!locacion) throw new NotFoundException(`Locación con id "${idLocacion}" no encontrada`);
+      idClienteContactos = locacion.idCliente?.idCliente;
+      const correosPuesto = await correoRepo.find({ where: { locacion: { idLocacion } }, order: { email: 'ASC' } });
+      puesto = correosPuesto.map(destinatario);
+    }
+
+    const vistos = new Set(puesto.map((d) => d.email.toLowerCase()));
+    const sinRepetir = <T extends { email: string }>(lista: T[]) =>
+      lista.filter((d) => {
+        const clave = d.email.trim().toLowerCase();
+        if (!clave || vistos.has(clave)) return false;
+        vistos.add(clave);
+        return true;
+      });
+
+    const cliente = idClienteContactos
+      ? sinRepetir(
+          (await correoRepo.find({ where: { cliente: { idCliente: idClienteContactos } }, order: { email: 'ASC' } }))
+            .map(destinatario),
+        )
+      : [];
+
+    const correosApp = await this.dataSource.getRepository(CorreoDefault).find({
+      where: { estadosApp: { nombre: EstadoAppInterface.CREACION_ORDEN_SERVICIO } },
+      order: { email: 'ASC' },
+    });
+    const aplicacion = sinRepetir(correosApp.map((c) => ({ email: c.email.trim(), nombre: c.descripcion || null })));
+
+    return { puesto, cliente, aplicacion };
 
   }
 

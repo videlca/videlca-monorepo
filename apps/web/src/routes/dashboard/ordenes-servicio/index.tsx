@@ -10,7 +10,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Table from "../../../components/common/Table";
 import { ServiciosOrdenResumen } from "../../../components/common/ServiciosOrdenResumen";
 import { SimpleModal } from "../../../components/common/SimpleModal";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ConfirmarDelete } from "../../../components/ui/modals/ConfirmarDelete";
 import {
   useAnularOrdenServicio,
@@ -32,6 +32,7 @@ import {
   useFilterOrdenesServicio,
   useValidarRangoHorarioPersonalOrdenServicio,
   useGetMesesLiquidadosOrden,
+  useGetDestinatariosCreacionOrden,
 } from "../../../api/queryFunctions/orden-servicio";
 import {
   type CreateOrdenServicioDto,
@@ -64,6 +65,10 @@ import { ConfigurarHorariosServicios } from "../../../components/common/stepsOrd
 import { ConfigurarHorarioAMedida } from "../../../components/common/stepsOrdenServicio/ConfigurarHorarioAMedida";
 import { AsignacionPersonalServicio } from "../../../components/common/stepsOrdenServicio/AsignacionPersonalServicio";
 import { PreviewInformacionOrden } from "../../../components/common/stepsOrdenServicio/PreviewInformacionOrden";
+import {
+  MensajeCorreoOrden,
+  emailsDestinatarios,
+} from "../../../components/common/stepsOrdenServicio/MensajeCorreoOrden";
 import { SeleccionarPuestoCliente } from "../../../components/common/stepsOrdenServicio/SeleccionarPuestoCliente";
 import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "../../../components/common/stepsOrdenServicio/tipoServicioConstantes";
 import {
@@ -155,8 +160,20 @@ function RouteComponent() {
     horaFin: "",
   });
   // El flujo "a la medida" no tiene paso de seleccionar servicios ni de configurar horarios por servicio, por
-  // lo que tiene un paso menos que el flujo por catalogo
-  const totalSteps = origenServicio === OrigenServicioEnum.A_MEDIDA ? 6 : 7;
+  // lo que tiene un paso menos que el flujo por catalogo. El ultimo paso (despues de la vista previa) es el del
+  // correo de creacion: mensaje adicional, imagenes y destinatarios
+  const totalSteps = origenServicio === OrigenServicioEnum.A_MEDIDA ? 7 : 8;
+  const pasoCorreo = totalSteps;
+
+  // PASO FINAL: correo de creacion (no se guarda nada de esto, solo viaja en el correo)
+  const [mensajeCorreo, setMensajeCorreo] = useState("");
+  const [imagenesCorreo, setImagenesCorreo] = useState<File[]>([]);
+  // Correos marcados (en minusculas) y correos agregados a mano
+  const [destinatariosCorreo, setDestinatariosCorreo] = useState<string[]>([]);
+  const [correosExtra, setCorreosExtra] = useState<string[]>([]);
+  // Puesto/cliente para el que ya se marcaron todos los correos (para no volver a marcar los que el usuario
+  // desmarco si va hacia atras y vuelve)
+  const destinatariosInicializadosPara = useRef<string | null>(null);
 
   const { mutate: filterOrdenesServicio, isPending: isFilteringOrdenesServicio } = useFilterOrdenesServicio();
   const [filteredOrdenesServicio, setFilteredOrdenesServicio] = useState<OrdenServicio[] | null>(null);
@@ -283,6 +300,31 @@ function RouteComponent() {
   // Orden tal cual estaba al abrir la edicion (para comparar fechas/dias y saber su origen y estado)
   const [ordenEnEdicion, setOrdenEnEdicion] = useState<OrdenServicio | null>(null);
 
+  // DESTINATARIOS DEL CORREO DE CREACION (paso final): del puesto o del cliente elegido en el paso 2
+  const idLocacionOrden = watchCreate("idLocacion") || undefined;
+  const idClienteOrden = watchCreate("idCliente") || undefined;
+  const {
+    data: destinatariosCreacionQuery,
+    isLoading: isLoadingDestinatarios,
+    isError: isErrorDestinatarios,
+  } = useGetDestinatariosCreacionOrden(
+    idClienteOrden ? { idCliente: idClienteOrden } : { idLocacion: idLocacionOrden },
+    isOpenAdd && !isEditing && currentStep >= pasoCorreo - 1,
+  );
+  const destinatariosCreacion = destinatariosCreacionQuery?.data;
+
+  // Al cargar los correos de un puesto/cliente se marcan todos (el usuario desmarca a quien no quiera)
+  useEffect(() => {
+    if (!destinatariosCreacion) return;
+    const clave = idClienteOrden ? `cliente-${idClienteOrden}` : `puesto-${idLocacionOrden}`;
+    if (destinatariosInicializadosPara.current === clave) return;
+    destinatariosInicializadosPara.current = clave;
+    setDestinatariosCorreo([
+      ...new Set([...emailsDestinatarios(destinatariosCreacion), ...correosExtra]),
+    ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destinatariosCreacion, idClienteOrden, idLocacionOrden]);
+
   // Meses ya liquidados de la orden en edicion (aviso + restricciones de fechas)
   const { data: mesesLiquidadosQuery } = useGetMesesLiquidadosOrden(
     ordenEnEdicion?.idOrdenServicio ?? 0,
@@ -304,6 +346,11 @@ function RouteComponent() {
     tipoServicioSeleccionado?.nombre === TIPO_SERVICIO_MONITOREO_ALARMAS;
 
   const handleCloseModal = () => {
+    setMensajeCorreo("");
+    setImagenesCorreo([]);
+    setDestinatariosCorreo([]);
+    setCorreosExtra([]);
+    destinatariosInicializadosPara.current = null;
     setIsOpenAdd(false);
     setIsEditing(false);
     setCurrentStep(1);
@@ -872,7 +919,18 @@ function RouteComponent() {
       servicios,
     };
 
-    crearOrdenServicio(ordenesDeServicioMutation, {
+    // El correo de creacion es obligatorio: sin destinatarios no se crea la orden
+    if (destinatariosCorreo.length === 0) {
+      toast.error("Seleccione o agregue al menos un correo para enviar la creación de la orden");
+      return;
+    }
+
+    crearOrdenServicio({
+      orden: ordenesDeServicioMutation,
+      mensaje: mensajeCorreo,
+      destinatarios: destinatariosCorreo,
+      imagenes: imagenesCorreo,
+    }, {
       // Ver nota en handleNext: apiHandler resuelve (no rechaza) las respuestas de error de POST, hay que
       // revisar el status antes de cerrar el modal (si no, un error del backend al crear cerraria el modal
       // igual y se perderia toda la informacion ya diligenciada)
@@ -1416,6 +1474,24 @@ function RouteComponent() {
     },
   ];
 
+  // PASO FINAL: mensaje adicional, imagenes y destinatarios del correo de creacion
+  const renderPasoCorreo = () => (
+    <MensajeCorreoOrden
+      destinatarios={destinatariosCreacion}
+      isLoading={isLoadingDestinatarios}
+      isError={isErrorDestinatarios}
+      esPuesto={!idClienteOrden}
+      mensaje={mensajeCorreo}
+      setMensaje={setMensajeCorreo}
+      imagenes={imagenesCorreo}
+      setImagenes={setImagenesCorreo}
+      seleccionados={destinatariosCorreo}
+      setSeleccionados={setDestinatariosCorreo}
+      extras={correosExtra}
+      setExtras={setCorreosExtra}
+    />
+  );
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -1501,7 +1577,7 @@ function RouteComponent() {
       //     />
       //   );
 
-      // A LA MEDIDA: el paso 5 ya calculo el precio, aqui va directo a la vista previa (ultimo paso)
+      // A LA MEDIDA: el paso 5 ya calculo el precio, aqui va directo a la vista previa
       // CATALOGO: configurar horarios por servicio (aqui se calcula el precio, ver handleNext)
       case 6:
         return origenServicio === OrigenServicioEnum.A_MEDIDA ? (
@@ -1524,9 +1600,11 @@ function RouteComponent() {
           />
         );
 
-      // CATALOGO unicamente: vista previa (para A LA MEDIDA la vista previa ya es el paso 6)
+      // CATALOGO: vista previa (para A LA MEDIDA la vista previa ya es el paso 6). A LA MEDIDA: correo de creacion
       case 7:
-        return (
+        return origenServicio === OrigenServicioEnum.A_MEDIDA ? (
+          renderPasoCorreo()
+        ) : (
           <PreviewInformacionOrden
             selectedPuesto={selectedPuesto}
             selectedCliente={selectedCliente}
@@ -1539,6 +1617,10 @@ function RouteComponent() {
             cobroParcial={cobroParcial}
           />
         );
+
+      // CATALOGO unicamente: correo de creacion (para A LA MEDIDA es el paso 7)
+      case 8:
+        return renderPasoCorreo();
 
       default:
         return null;
@@ -1735,12 +1817,14 @@ function RouteComponent() {
               (currentStep === 5 &&
                 origenServicio === OrigenServicioEnum.A_MEDIDA &&
                 (horarioAMedida.horaInicio === "" ||
-                  horarioAMedida.horaFin === ""))
+                  horarioAMedida.horaFin === "")) ||
+              // El correo de creacion es obligatorio
+              (currentStep === pasoCorreo && destinatariosCorreo.length === 0)
               // TODO: Revisar validaciones de los pasos
             }
             loading={isCrearOrdenServicioPending}
-            finalLabel="Crear Orden"
-            loadingLabel="Creando..."
+            finalLabel="Crear orden y enviar correo"
+            loadingLabel="Creando y enviando..."
           />
         </>
       </SimpleModal>

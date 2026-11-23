@@ -1,11 +1,25 @@
 import { apiDelete, apiGet, apiPatch, apiPost, axiosClient } from "../../config";
-import type { CreateObservacionOrdenServicioDto, CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
+import type { CreateObservacionOrdenServicioDto, CrearOrdenConCorreoDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateObservacionOrdenServicioDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos"
 import type { ApiResponse, Personal , PaginatedResponse } from "../../types/common";
-import type { MesesLiquidadosOrden, OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
+import type { DestinatariosCreacionOrden, MesesLiquidadosOrden, OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
 import type { LiquidacionesOrdenPage } from "../../types/liquidaciones";
 
-export const createOrdenServicio = async (data: CreateOrdenServicioDto): Promise<ApiResponse<OrdenServicio>> => {
-  return await apiPost<OrdenServicio>("/orden-servicio", data);
+// Crea la orden y envia el correo de creacion en una sola peticion multipart (lleva las imagenes del correo). La
+// orden va como JSON en el campo "orden" y los destinatarios como arreglo JSON
+export const createOrdenServicio = async ({ orden, mensaje, destinatarios, imagenes }: CrearOrdenConCorreoDto): Promise<ApiResponse<OrdenServicio>> => {
+  const formData = new FormData();
+  formData.append("orden", JSON.stringify(orden));
+  if (mensaje.trim()) formData.append("mensaje", mensaje.trim());
+  formData.append("destinatarios", JSON.stringify(destinatarios));
+  imagenes.forEach((imagen) => formData.append("imagenes", imagen, imagen.name));
+  return await apiPost<OrdenServicio>("/orden-servicio", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+}
+
+// Destinatarios del correo de creacion: contactos del puesto, del cliente y correos de aplicacion, sin repetidos
+export const getDestinatariosCreacionOrden = async (params: { idLocacion?: number; idCliente?: number }): Promise<ApiResponse<DestinatariosCreacionOrden>> => {
+  return await apiGet<DestinatariosCreacionOrden>("/orden-servicio/destinatarios-creacion", params);
 }
 
 export const updateOrdenServicio = async (id: number, data: UpdateOrdenServicioDto): Promise<ApiResponse<OrdenServicio>> => {

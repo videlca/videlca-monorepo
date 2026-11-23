@@ -268,3 +268,11 @@ export interface FilterOrdenServicioDto {
   offset?: number;
   pagination?: boolean;
 }
+// Creacion de una orden + correo de creacion (POST /orden-servicio en multipart/form-data). El correo se envia antes
+// de confirmar la orden: si falla, la orden no se guarda. El mensaje y las imagenes solo viajan en el correo
+export interface CrearOrdenConCorreoDto {
+  orden: CreateOrdenServicioDto;
+  mensaje: string;
+  destinatarios: string[];
+  imagenes: File[];
+}

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, type UseMutationResult, type UseQueryResult } from "@tanstack/react-query";
-import { anularOrdenServicio, getMesesLiquidadosOrden, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getLiquidacionesByOrdenId, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio, getFilteredOrdenesServicio } from "../../functions/orden-servicio";
-import type { CreateOrdenServicioDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
-import type { MesesLiquidadosOrden, OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
+import { anularOrdenServicio, getDestinatariosCreacionOrden, getMesesLiquidadosOrden, cancelarOrdenServicio, createOrdenServicio, deleteOrdenServicio, descargarPdf, enviarPdfPorCorreo, getLiquidacionesByOrdenId, getOrdenesServicio, getOrdenServicioById, getPrecioOrdenServicio, imprimirPdf, updateOrdenServicio, updateValidarFechasOrdenServicio, validarEmpleadosDisponibles, validarHorarioServicioOrdenServicio, validarIdOrdenServicio, validarRangoHorarioPersonalOrdenServicio, validateFechasOrdenServicio, getFilteredOrdenesServicio } from "../../functions/orden-servicio";
+import type { CrearOrdenConCorreoDto, EnviarCorreoDto, PaginationDto, PrecioOrdenDto, UpdateOrdenServicioDto, UpdateValidarFechaOrdenServicioDto, ValidarEmpleadosDisponiblesDto, ValidarFechasOrdenServicioDto, ValidarHorarioServicioDto, ValidarIdOrdenServicioDto, ValidarRangoHorarioPersonalOrdenDto } from "../../dtos";
+import type { DestinatariosCreacionOrden, MesesLiquidadosOrden, OrdenServicio, OrdenServicioId, PrecioOrdenResponse } from "../../types/orden-servicio";
 import type { LiquidacionesOrdenPage } from "../../types/liquidaciones";
 import type { ApiResponse, PaginatedResponse } from "../../types/common";
 import { showErrorToast } from "../../utils/toastError";
@@ -9,12 +9,12 @@ import { toast } from "sonner";
 import { queryClient } from "../../../App";
 import type { Personal } from "../../types";
 
-export const useCreateOrdenServicio = (): UseMutationResult<ApiResponse<OrdenServicio>, Error, CreateOrdenServicioDto> => {
+export const useCreateOrdenServicio = (): UseMutationResult<ApiResponse<OrdenServicio>, Error, CrearOrdenConCorreoDto> => {
   return useMutation({
     mutationFn: createOrdenServicio,
     onSuccess: (data) => {
       if (data.status === 200 || data.status === 201) {
-        toast.success("Orden de servicio creada correctamente");
+        toast.success("Orden de servicio creada y correo enviado correctamente");
         queryClient.invalidateQueries({
           queryKey: ["orden-servicio"],
         });
@@ -359,6 +359,19 @@ export const useGetMesesLiquidadosOrden = (idOrdenServicio: number, enabled: boo
     queryKey: ["orden-servicio-meses-liquidados", idOrdenServicio],
     queryFn: () => getMesesLiquidadosOrden(idOrdenServicio),
     enabled: !!idOrdenServicio && enabled,
+    staleTime: 0,
+  });
+};
+
+// Destinatarios que se ofrecen en el paso final de crear una orden (puesto o cliente de la orden)
+export const useGetDestinatariosCreacionOrden = (
+  params: { idLocacion?: number; idCliente?: number },
+  enabled: boolean,
+): UseQueryResult<ApiResponse<DestinatariosCreacionOrden>, Error> => {
+  return useQuery({
+    queryKey: ["orden-servicio-destinatarios-creacion", params.idLocacion ?? null, params.idCliente ?? null],
+    queryFn: () => getDestinatariosCreacionOrden(params),
+    enabled: enabled && !!(params.idLocacion || params.idCliente),
     staleTime: 0,
   });
 };

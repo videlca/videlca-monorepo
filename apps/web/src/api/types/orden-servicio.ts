@@ -188,3 +188,17 @@ export interface MesesLiquidadosOrden {
   // Fecha de fin mas temprana que se le puede poner a la orden (null si no tiene liquidaciones)
   fechaFinMinima: string | null;
 }
+
+// Destinatario del correo de creacion de una orden (GET /orden-servicio/destinatarios-creacion)
+export interface DestinatarioCreacion {
+  email: string;
+  // Nombre del contacto, o la descripcion del correo de aplicacion
+  nombre: string | null;
+}
+
+// Destinatarios que se ofrecen en el paso final de crear una orden, ya sin repetidos entre grupos
+export interface DestinatariosCreacionOrden {
+  puesto: DestinatarioCreacion[];
+  cliente: DestinatarioCreacion[];
+  aplicacion: DestinatarioCreacion[];
+}
