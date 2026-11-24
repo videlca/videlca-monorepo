@@ -393,9 +393,18 @@ export class OrdenServicioService {
 
       // CORREO DE CREACION ANTES DEL COMMIT: la orden se lee dentro de la misma transaccion (aun no esta confirmada)
       // para armar el PDF. Si el envio falla, el catch hace rollback y la orden no queda guardada
-      const ordenCompleta = await this.findOneOrdenRelations(savedOrdenServicio.idOrdenServicio, queryRunner.manager);
+      // Sin destinatarios elegidos en el paso final: correo automatico a los contactos del puesto (o del cliente) que
+      // quieren aviso del estado en que quedo la orden y a los correos de aplicacion de "creacion orden de servicio"
+      const destinatarios = notificacion.destinatarios ?? await this.destinatariosAutomaticosCreacion(
+        locacion?.idLocacion,
+        cliente?.idCliente,
+        estadoOrdenServicio.idEstadoOrdenServicio,
+      );
 
-      await this.notificationEmail(ordenCompleta, notificacion);
+      if (destinatarios.length) {
+        const ordenCompleta = await this.findOneOrdenRelations(savedOrdenServicio.idOrdenServicio, queryRunner.manager);
+        await this.notificationEmail(ordenCompleta, { ...notificacion, destinatarios });
+      }
 
       await queryRunner.commitTransaction();
 
@@ -443,7 +452,7 @@ export class OrdenServicioService {
     notificacion: NotificacionCreacionOrden,
   ) {
 
-    const emails = notificacion.destinatarios;
+    const emails = notificacion.destinatarios ?? [];
 
     const descripcionEntidad = this.construirFraseEntidadOrden(ordenServicio);
 
@@ -2158,6 +2167,21 @@ export class OrdenServicioService {
     const aplicacion = sinRepetir(correosApp.map((c) => ({ email: c.email.trim(), nombre: c.descripcion || null })));
 
     return { puesto, cliente, aplicacion };
+
+  }
+
+  // DESTINATARIOS DEL CORREO DE CREACION CUANDO NO SE ELIGEN EN EL PASO FINAL: contactos con el estado en que quedo
+  // la orden y correos de aplicacion con el estado "creacion orden de servicio", sin repetidos
+  private async destinatariosAutomaticosCreacion(
+    idLocacion: number | null | undefined,
+    idCliente: number | null | undefined,
+    idEstadoOrden: number,
+  ): Promise<string[]> {
+
+    const emailsContactos = await this.emailsContactosOrden(idLocacion, idCliente, idEstadoOrden);
+    const emailsApp = await this.correoDefaultService.findAllByEstadoApp(EstadoAppInterface.CREACION_ORDEN_SERVICIO);
+
+    return [...new Set([...emailsContactos, ...emailsApp].map((e) => e?.trim().toLowerCase()).filter(Boolean))];
 
   }
 

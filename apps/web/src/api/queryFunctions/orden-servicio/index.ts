@@ -12,9 +12,9 @@ import type { Personal } from "../../types";
 export const useCreateOrdenServicio = (): UseMutationResult<ApiResponse<OrdenServicio>, Error, CrearOrdenConCorreoDto> => {
   return useMutation({
     mutationFn: createOrdenServicio,
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       if (data.status === 200 || data.status === 201) {
-        toast.success("Orden de servicio creada y correo enviado correctamente");
+        toast.success(variables.destinatarios ? "Orden de servicio creada y correo enviado correctamente" : "Orden de servicio creada correctamente");
         queryClient.invalidateQueries({
           queryKey: ["orden-servicio"],
         });

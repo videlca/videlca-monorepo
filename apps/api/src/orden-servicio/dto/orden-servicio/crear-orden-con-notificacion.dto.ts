@@ -16,9 +16,11 @@ export class CrearOrdenConNotificacionDto {
   @MaxLength(5000, { message: 'El mensaje adicional no puede superar los 5000 caracteres' })
   mensaje?: string;
 
-  // Arreglo JSON de correos a los que se envia la creacion (al menos uno)
+  // Arreglo JSON de correos a los que se envia la creacion (al menos uno). Si no se envia, el correo va a los
+  // destinatarios automaticos (contactos con el estado en que quedo la orden y correos de aplicacion de creacion)
+  @IsOptional()
   @IsString()
-  destinatarios: string;
+  destinatarios?: string;
 
 }
 
@@ -31,8 +33,9 @@ export interface ArchivoSubido {
 }
 
 // Datos del correo de creacion que se envia ANTES de confirmar la orden (si el correo falla, la orden no se guarda)
+// destinatarios null: correo automatico (sin mensaje ni imagenes), ver OrdenServicioService.create
 export interface NotificacionCreacionOrden {
   mensaje: string | null;
-  destinatarios: string[];
+  destinatarios: string[] | null;
   imagenes: ArchivoSubido[];
 }

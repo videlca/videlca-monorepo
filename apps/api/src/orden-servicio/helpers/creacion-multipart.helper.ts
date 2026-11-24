@@ -33,8 +33,8 @@ const parsearJson = (texto: string, campo: string): unknown => {
 };
 
 // PARSEA Y VALIDA EL CUERPO MULTIPART DE LA CREACION DE UNA ORDEN: la orden (con las mismas reglas que el
-// ValidationPipe global: whitelist + forbidNonWhitelisted + conversion implicita), los destinatarios (al menos un
-// correo valido, sin repetidos) y las imagenes (maximo 5, solo imagenes, 3 MB en total)
+// ValidationPipe global: whitelist + forbidNonWhitelisted + conversion implicita), los destinatarios (opcionales:
+// si vienen, al menos un correo valido, sin repetidos) y las imagenes (maximo 5, solo imagenes, 3 MB en total)
 export const validarCreacionMultipart = async (
   body: CrearOrdenConNotificacionDto,
   imagenes: ArchivoSubido[] = [],
@@ -45,6 +45,17 @@ export const validarCreacionMultipart = async (
   });
   const errores = await validate(orden, { whitelist: true, forbidNonWhitelisted: true });
   if (errores.length) throw new BadRequestException(mensajesValidacion(errores));
+
+  const mensaje = body.mensaje?.trim() || null;
+
+  // Sin destinatarios: correo automatico (contactos con el estado de la orden y correos de aplicacion de creacion),
+  // que no lleva mensaje ni imagenes
+  if (body.destinatarios === undefined || body.destinatarios.trim() === '') {
+    if (mensaje || imagenes.length) {
+      throw new BadRequestException('Para enviar observaciones o imagenes debe seleccionar los destinatarios del correo');
+    }
+    return { orden, notificacion: { mensaje: null, destinatarios: null, imagenes: [] } };
+  }
 
   const destinatariosJson = parsearJson(body.destinatarios, 'destinatarios');
   if (!Array.isArray(destinatariosJson) || destinatariosJson.some((d) => typeof d !== 'string')) {
@@ -73,8 +84,6 @@ export const validarCreacionMultipart = async (
   if (totalBytes > MAX_BYTES_IMAGENES_CORREO) {
     throw new BadRequestException('Las imagenes superan los 3 MB en total, que es lo maximo que admite el correo');
   }
-
-  const mensaje = body.mensaje?.trim() || null;
 
   return { orden, notificacion: { mensaje, destinatarios, imagenes } };
 };

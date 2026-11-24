@@ -37,6 +37,7 @@ export function WizardFooter({
   loading = false,
   finalLabel,
   loadingLabel,
+  hideNext = false,
 }: {
   currentStep: number;
   totalSteps: number;
@@ -49,6 +50,8 @@ export function WizardFooter({
   loading?: boolean;
   finalLabel: string;
   loadingLabel: string;
+  /** Oculta el boton Siguiente/accion final (cuando el propio paso trae sus botones de accion) */
+  hideNext?: boolean;
 }) {
   const isLast = currentStep >= totalSteps;
   return (
@@ -69,16 +72,18 @@ export function WizardFooter({
             Anterior
           </Button>
         )}
-        <Button
-          variant="contained"
-          color={isLast ? "success" : "primary"}
-          onClick={onNext}
-          disabled={nextDisabled}
-          loading={loading}
-          loadingPosition="start"
-        >
-          {loading ? loadingLabel : isLast ? finalLabel : "Siguiente"}
-        </Button>
+        {!hideNext && (
+          <Button
+            variant="contained"
+            color={isLast ? "success" : "primary"}
+            onClick={onNext}
+            disabled={nextDisabled}
+            loading={loading}
+            loadingPosition="start"
+          >
+            {loading ? loadingLabel : isLast ? finalLabel : "Siguiente"}
+          </Button>
+        )}
       </div>
     </Box>
   );

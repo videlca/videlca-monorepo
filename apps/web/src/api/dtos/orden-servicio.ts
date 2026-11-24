@@ -273,6 +273,7 @@ export interface FilterOrdenServicioDto {
 export interface CrearOrdenConCorreoDto {
   orden: CreateOrdenServicioDto;
   mensaje: string;
-  destinatarios: string[];
+  // null: correo automatico (contactos con el estado de la orden y correos de aplicacion de creacion)
+  destinatarios: string[] | null;
   imagenes: File[];
 }

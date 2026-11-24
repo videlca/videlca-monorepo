@@ -69,6 +69,7 @@ import {
   MensajeCorreoOrden,
   emailsDestinatarios,
 } from "../../../components/common/stepsOrdenServicio/MensajeCorreoOrden";
+import { PreguntaCorreoOrden } from "../../../components/common/stepsOrdenServicio/PreguntaCorreoOrden";
 import { SeleccionarPuestoCliente } from "../../../components/common/stepsOrdenServicio/SeleccionarPuestoCliente";
 import { TIPO_SERVICIO_MONITOREO_ALARMAS } from "../../../components/common/stepsOrdenServicio/tipoServicioConstantes";
 import {
@@ -165,7 +166,9 @@ function RouteComponent() {
   const totalSteps = origenServicio === OrigenServicioEnum.A_MEDIDA ? 7 : 8;
   const pasoCorreo = totalSteps;
 
-  // PASO FINAL: correo de creacion (no se guarda nada de esto, solo viaja en el correo)
+  // PASO FINAL: correo de creacion (no se guarda nada de esto, solo viaja en el correo). Es opcional: primero se
+  // pregunta si se quieren anadir observaciones y fotos; si no, la orden se crea con el correo automatico
+  const [personalizarCorreo, setPersonalizarCorreo] = useState(false);
   const [mensajeCorreo, setMensajeCorreo] = useState("");
   const [imagenesCorreo, setImagenesCorreo] = useState<File[]>([]);
   // Correos marcados (en minusculas) y correos agregados a mano
@@ -309,7 +312,7 @@ function RouteComponent() {
     isError: isErrorDestinatarios,
   } = useGetDestinatariosCreacionOrden(
     idClienteOrden ? { idCliente: idClienteOrden } : { idLocacion: idLocacionOrden },
-    isOpenAdd && !isEditing && currentStep >= pasoCorreo - 1,
+    isOpenAdd && !isEditing && currentStep === pasoCorreo && personalizarCorreo,
   );
   const destinatariosCreacion = destinatariosCreacionQuery?.data;
 
@@ -346,6 +349,7 @@ function RouteComponent() {
     tipoServicioSeleccionado?.nombre === TIPO_SERVICIO_MONITOREO_ALARMAS;
 
   const handleCloseModal = () => {
+    setPersonalizarCorreo(false);
     setMensajeCorreo("");
     setImagenesCorreo([]);
     setDestinatariosCorreo([]);
@@ -919,17 +923,18 @@ function RouteComponent() {
       servicios,
     };
 
-    // El correo de creacion es obligatorio: sin destinatarios no se crea la orden
-    if (destinatariosCorreo.length === 0) {
+    // Con observaciones/fotos el usuario elige los destinatarios (al menos uno). Sin ellas el backend envia el
+    // correo automatico (contactos con el estado de la orden y correos de aplicacion de creacion)
+    if (personalizarCorreo && destinatariosCorreo.length === 0) {
       toast.error("Seleccione o agregue al menos un correo para enviar la creación de la orden");
       return;
     }
 
     crearOrdenServicio({
       orden: ordenesDeServicioMutation,
-      mensaje: mensajeCorreo,
-      destinatarios: destinatariosCorreo,
-      imagenes: imagenesCorreo,
+      ...(personalizarCorreo
+        ? { mensaje: mensajeCorreo, destinatarios: destinatariosCorreo, imagenes: imagenesCorreo }
+        : { mensaje: "", destinatarios: null, imagenes: [] }),
     }, {
       // Ver nota en handleNext: apiHandler resuelve (no rechaza) las respuestas de error de POST, hay que
       // revisar el status antes de cerrar el modal (si no, un error del backend al crear cerraria el modal
@@ -1474,8 +1479,24 @@ function RouteComponent() {
     },
   ];
 
-  // PASO FINAL: mensaje adicional, imagenes y destinatarios del correo de creacion
-  const renderPasoCorreo = () => (
+  // PASO FINAL: primero la pregunta; si se eligen observaciones y fotos, mensaje adicional, imagenes y destinatarios
+  const renderPasoCorreo = () => !personalizarCorreo ? (
+    <PreguntaCorreoOrden
+      onPersonalizar={() => setPersonalizarCorreo(true)}
+      onCrear={handleSaveOrder}
+      creando={isCrearOrdenServicioPending}
+    />
+  ) : (
+    <div className="flex flex-col gap-2">
+      <div>
+        <Button
+          size="small"
+          onClick={() => setPersonalizarCorreo(false)}
+          disabled={isCrearOrdenServicioPending}
+        >
+          ← No añadir observaciones (correo automático)
+        </Button>
+      </div>
     <MensajeCorreoOrden
       destinatarios={destinatariosCreacion}
       isLoading={isLoadingDestinatarios}
@@ -1490,6 +1511,7 @@ function RouteComponent() {
       extras={correosExtra}
       setExtras={setCorreosExtra}
     />
+    </div>
   );
 
   const renderStepContent = () => {
@@ -1819,12 +1841,13 @@ function RouteComponent() {
                 (horarioAMedida.horaInicio === "" ||
                   horarioAMedida.horaFin === "")) ||
               // El correo de creacion es obligatorio
-              (currentStep === pasoCorreo && destinatariosCorreo.length === 0)
+              (currentStep === pasoCorreo && personalizarCorreo && destinatariosCorreo.length === 0)
               // TODO: Revisar validaciones de los pasos
             }
             loading={isCrearOrdenServicioPending}
             finalLabel="Crear orden y enviar correo"
             loadingLabel="Creando y enviando..."
+            hideNext={currentStep === pasoCorreo && !personalizarCorreo}
           />
         </>
       </SimpleModal>

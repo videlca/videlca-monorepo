@@ -10,7 +10,7 @@ export const createOrdenServicio = async ({ orden, mensaje, destinatarios, image
   const formData = new FormData();
   formData.append("orden", JSON.stringify(orden));
   if (mensaje.trim()) formData.append("mensaje", mensaje.trim());
-  formData.append("destinatarios", JSON.stringify(destinatarios));
+  if (destinatarios) formData.append("destinatarios", JSON.stringify(destinatarios));
   imagenes.forEach((imagen) => formData.append("imagenes", imagen, imagen.name));
   return await apiPost<OrdenServicio>("/orden-servicio", formData, {
     headers: { "Content-Type": "multipart/form-data" },
