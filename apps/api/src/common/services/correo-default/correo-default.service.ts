@@ -56,25 +56,25 @@ export class CorreoDefaultService {
         await queryRunner.connect();
         await queryRunner.startTransaction();
 
-        // Obtener correos existentes con sus estados
-        const correosExistentes = await queryRunner.manager.find(CorreoDefault, {
-            relations: {
-                estados: true,
-                estadosApp: true
-            }
-        });
-
-        const crearCorreos = await this.analizarCambiosCorreos(correosExistentes, uniqueCorreos);
-
-        // Eliminar correos existentes
-        await queryRunner.manager
-            .createQueryBuilder()
-            .delete()
-            .from(CorreoDefault)
-            .where("1=1")
-            .execute();
-
         try {
+
+            // Obtener correos existentes con sus estados
+            const correosExistentes = await queryRunner.manager.find(CorreoDefault, {
+                relations: {
+                    estados: true,
+                    estadosApp: true
+                }
+            });
+
+            const crearCorreos = await this.analizarCambiosCorreos(correosExistentes, uniqueCorreos);
+
+            // Eliminar correos existentes (todos: se reemplazan por la lista enviada). Sin WHERE a proposito:
+            // TypeORM rechaza un WHERE vacio o "1=1" en un DELETE ("Empty criteria(s) are not allowed")
+            await queryRunner.manager
+                .createQueryBuilder()
+                .delete()
+                .from(CorreoDefault)
+                .execute();
 
             // Procesar cada correo
             const correosCreados: CorreoDefault[] = [];
